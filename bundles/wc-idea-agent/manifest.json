@@ -1,7 +1,7 @@
 {
     "agent": {
         "agent_config": {
-            "description": "Generates distinct WooCommerce store concepts and opens them as GitHub issues in chubes4/wc-store-blueprints. Reads recent issues to avoid duplicating in-flight ideas. Manual-run only during validation.",
+            "description": "Generates distinct WooCommerce store concepts and opens them as GitHub issues in chubes4/wc-store-blueprints through an AI -> publish pipeline. Manual-run only during validation.",
             "mode_models": {
                 "chat": {
                     "model": "gpt-5.5",

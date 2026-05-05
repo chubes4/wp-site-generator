@@ -6,28 +6,19 @@
         {
             "step_config": {
                 "execution_order": 0,
-                "label": "Read recent issues",
-                "step_type": "fetch"
-            },
-            "step_position": 0,
-            "step_type": "fetch"
-        },
-        {
-            "step_config": {
-                "execution_order": 1,
                 "label": "Generate concept",
                 "step_type": "ai"
             },
-            "step_position": 1,
+            "step_position": 0,
             "step_type": "ai"
         },
         {
             "step_config": {
-                "execution_order": 2,
+                "execution_order": 1,
                 "label": "Open GitHub issue",
                 "step_type": "publish"
             },
-            "step_position": 2,
+            "step_position": 1,
             "step_type": "publish"
         }
     ]
