@@ -1,0 +1,63 @@
+{
+  "$schema": "https://playground.wordpress.net/blueprint-schema.json",
+  "landingPage": "/",
+  "preferredVersions": {
+    "php": "8.0",
+    "wp": "latest"
+  },
+  "features": {
+    "networking": true
+  },
+  "steps": [
+    {
+      "step": "installPlugin",
+      "pluginData": {
+        "resource": "wordpress.org/plugins",
+        "slug": "woocommerce"
+      },
+      "options": {
+        "activate": true
+      }
+    },
+    {
+      "step": "runPHP",
+      "code": "<?php $theme = WP_CONTENT_DIR . '/themes/marbling-bench'; wp_mkdir_p($theme . '/templates'); wp_mkdir_p($theme . '/parts'); file_put_contents($theme . '/style.css', '/*\\nTheme Name: Marbling Bench\\nTheme URI: https://github.com/chubes4/wc-store-blueprints\\nDescription: A compact WooCommerce block theme for paper marbling supplies.\\nVersion: 0.1.0\\n*/'); file_put_contents($theme . '/templates/index.html', '<!-- wp:post-content /-->'); ?>"
+    },
+    {
+      "step": "writeFile",
+      "path": "/wordpress/wp-content/themes/marbling-bench/theme.json",
+      "data": {
+        "resource": "url",
+        "url": "https://raw.githubusercontent.com/chubes4/wc-store-blueprints/store/marbling-bench/blueprints/marbling-bench/theme.json"
+      }
+    },
+    {
+      "step": "writeFile",
+      "path": "/wordpress/wp-content/themes/marbling-bench/templates/home.html",
+      "data": {
+        "resource": "url",
+        "url": "https://raw.githubusercontent.com/chubes4/wc-store-blueprints/store/marbling-bench/blueprints/marbling-bench/templates/home.html"
+      }
+    },
+    {
+      "step": "writeFile",
+      "path": "/wordpress/wp-content/themes/marbling-bench/parts/header.html",
+      "data": {
+        "resource": "url",
+        "url": "https://raw.githubusercontent.com/chubes4/wc-store-blueprints/store/marbling-bench/blueprints/marbling-bench/parts/header.html"
+      }
+    },
+    {
+      "step": "writeFile",
+      "path": "/wordpress/wp-content/themes/marbling-bench/parts/footer.html",
+      "data": {
+        "resource": "url",
+        "url": "https://raw.githubusercontent.com/chubes4/wc-store-blueprints/store/marbling-bench/blueprints/marbling-bench/parts/footer.html"
+      }
+    },
+    {
+      "step": "runPHP",
+      "code": "<?php switch_theme('marbling-bench'); update_option('blogname', 'Marbling Bench'); update_option('blogdescription', 'Paper marbling supplies for bookbinders and stationery makers'); update_option('woocommerce_onboarding_profile', array('skipped' => true)); update_option('woocommerce_task_list_hidden', 'yes'); update_option('woocommerce_task_list_complete', 'yes'); update_option('woocommerce_allow_tracking', 'no'); update_option('woocommerce_coming_soon', 'no'); update_option('woocommerce_store_pages_only', 'no'); if (class_exists('WC_Install')) { WC_Install::create_pages(); } function marbling_bench_term_path($path) { $parent = 0; $last = 0; foreach (array_map('trim', explode('>', $path)) as $name) { if ($name === '') { continue; } $term = term_exists($name, 'product_cat', $parent); if (! $term) { $term = wp_insert_term($name, 'product_cat', array('parent' => $parent)); } if (is_wp_error($term)) { continue; } $last = (int) (is_array($term) ? $term['term_id'] : $term); $parent = $last; } return $last; } $products = array(array('First Tray Marbling Kit','96','Shop > Starter Kits','A guided first setup with tray, sizing, alum, comb, droppers, and cotton test sheets.','Everything a new marbler needs to pull the first clean print without chasing supplies across multiple catalogs.','MB-KIT-FIRST','instock'),array('Bookbinder Endpaper Kit','124','Shop > Starter Kits','Coordinated pigments, alum, cotton sheets, and edition cards for custom endpapers.','Built for binders planning covers, case bindings, journals, and small edition work.','MB-KIT-ENDPAPER','instock'),array('Classroom Safe Marbling Kit','148','Shop > Starter Kits','Low-mess tools, shared color cups, gloves, and simple chemistry notes for group sessions.','Designed for art teachers and workshop hosts who need repeatable results and fast cleanup.','MB-KIT-CLASS','instock'),array('Carrageenan Sizing Powder','22','Shop > Surface Chemistry','Measured powder for building a smooth floating bath.','A replenishable studio staple packed with clear mixing ratios and batch notes.','MB-CHEM-CARRAGEENAN','instock'),array('Alum Prep Solution','18','Shop > Surface Chemistry','Paper mordant for stronger pigment transfer on cotton sheets and card blanks.','Use before printing to help marbled colors grip evenly across absorbent surfaces.','MB-CHEM-ALUM','instock'),array('pH Strip and Scoop Set','14','Shop > Surface Chemistry','Test strips, measuring scoops, and a laminated bench card for consistent chemistry.','Small tools that keep sizing batches predictable from one studio day to the next.','MB-CHEM-PH','instock'),array('Storm Garden Pigment Set','42','Shop > Pigments & Color','Five botanical greens, blues, and smoky violets for organic comb patterns.','A moody color story for endpapers, envelopes, wrapping sheets, and art prints.','MB-COLOR-STORM','instock'),array('Madder and Brass Accent Set','38','Shop > Pigments & Color','Warm red, ochre, brass, and umber accents for historical paper palettes.','Adds bookish warmth to classic stone, bouquet, and nonpareil patterns.','MB-COLOR-MADDER','instock'),array('Test Swatch Paper Pack','16','Shop > Pigments & Color','Pre-cut strips for testing color spread, bath strength, and pigment balance.','Keep a visible record before committing full sheets to the tray.','MB-COLOR-SWATCH','instock'),array('Maple Comb Pair','34','Shop > Tools & Workspace','Two spacing combs for nonpareil lines, feathering, and controlled pulls.','Comfortable wood-handled combs sized for common studio trays.','MB-TOOLS-COMBS','instock'),array('Adjustable Pattern Rake','46','Shop > Tools & Workspace','A sliding-pin rake for waves, chevrons, and wide repeat structures.','Tune the spacing for stationery runs, endpaper editions, and workshop demonstrations.','MB-TOOLS-RAKE','instock'),array('Drying Line Clip Set','28','Shop > Tools & Workspace','Waxed line, stainless clips, and labels for organizing wet prints.','Turns a small room into a tidy drying station without mixing up editions.','MB-TOOLS-DRYING','instock'),array('Cotton Sheet Studio Pack','32','Shop > Paper & Projects','Twenty absorbent cotton sheets cut for tray work and bookbinding use.','A reliable surface for crisp pulls, deep color, and easy trimming.','MB-PAPER-COTTON','instock'),array('Card Blank and Envelope Bundle','30','Shop > Paper & Projects','Folded cards, envelopes, and note slips for weekend stationery projects.','Make small giftable sets from the same bath before the color story changes.','MB-PAPER-CARDS','instock'),array('Pattern Archive Logbook','24','Shop > Paper & Projects','A ring-bound log for bath recipes, pigment notes, and edition samples.','Track what worked so favorite patterns can be repeated later.','MB-PAPER-LOGBOOK','instock')); foreach ($products as $p) { if (! class_exists('WC_Product_Simple') || wc_get_product_id_by_sku($p[5])) { continue; } $product = new WC_Product_Simple(); $product->set_name($p[0]); $product->set_regular_price($p[1]); $product->set_short_description($p[3]); $product->set_description($p[4]); $product->set_sku($p[5]); $product->set_stock_status($p[6]); $product->set_catalog_visibility('visible'); $product_id = $product->save(); $term_id = marbling_bench_term_path($p[2]); if ($term_id) { wp_set_object_terms($product_id, array($term_id), 'product_cat'); } } $content = file_get_contents(get_theme_file_path('templates/home.html')); $page = get_page_by_path('home'); if ($page) { $page_id = $page->ID; wp_update_post(array('ID' => $page_id, 'post_title' => 'Home', 'post_content' => $content, 'post_status' => 'publish')); } else { $page_id = wp_insert_post(array('post_title' => 'Home', 'post_name' => 'home', 'post_type' => 'page', 'post_status' => 'publish', 'post_content' => $content)); } update_option('show_on_front', 'page'); update_option('page_on_front', $page_id); update_option('posts_per_page', 8); ?>"
+    }
+  ]
+}
