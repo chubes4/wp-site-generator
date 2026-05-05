@@ -1,0 +1,119 @@
+{
+    "max_items": [],
+    "name": "WC Blueprint Manual Flow v2",
+    "pipeline_slug": "wc-blueprint-pipeline-v2",
+    "schedule": "manual",
+    "schema_version": 1,
+    "slug": "wc-blueprint-manual-flow-v2",
+    "steps": [
+        {
+            "config_patch_queue": [],
+            "disabled_tools": [],
+            "enabled": true,
+            "handler_config": {
+                "artifact_name": "homeboy-ci-results",
+                "base_ref": "",
+                "branch": "",
+                "context_paths": "",
+                "data_source": "issues",
+                "docs_paths": "",
+                "exclude_keywords": "",
+                "file_path": "",
+                "file_pattern": "",
+                "head_sha": "",
+                "include_base_contents": false,
+                "include_check_output": false,
+                "include_checks": false,
+                "include_file_contents": false,
+                "include_homeboy_ci": false,
+                "include_statuses": false,
+                "labels": "status:idea-ready,lane:manual-validation",
+                "max_artifact_bytes": 2000000,
+                "max_check_runs": 30,
+                "max_context_files": 10,
+                "max_file_content_chars": 20000,
+                "max_file_size": 512000,
+                "max_items": 1,
+                "max_patch_chars": 200000,
+                "max_total_context_chars": 100000,
+                "pull_number": 0,
+                "repo": "chubes4/wc-store-blueprints",
+                "search": "",
+                "sha": "",
+                "state": "open",
+                "timeframe_limit": ""
+            },
+            "handler_configs": {
+                "github": {
+                    "artifact_name": "homeboy-ci-results",
+                    "base_ref": "",
+                    "branch": "",
+                    "context_paths": "",
+                    "data_source": "issues",
+                    "docs_paths": "",
+                    "exclude_keywords": "",
+                    "file_path": "",
+                    "file_pattern": "",
+                    "head_sha": "",
+                    "include_base_contents": false,
+                    "include_check_output": false,
+                    "include_checks": false,
+                    "include_file_contents": false,
+                    "include_homeboy_ci": false,
+                    "include_statuses": false,
+                    "labels": "status:idea-ready,lane:manual-validation",
+                    "max_artifact_bytes": 2000000,
+                    "max_check_runs": 30,
+                    "max_context_files": 10,
+                    "max_file_content_chars": 20000,
+                    "max_file_size": 512000,
+                    "max_items": 1,
+                    "max_patch_chars": 200000,
+                    "max_total_context_chars": 100000,
+                    "pull_number": 0,
+                    "repo": "chubes4/wc-store-blueprints",
+                    "search": "",
+                    "sha": "",
+                    "state": "open",
+                    "timeframe_limit": ""
+                }
+            },
+            "handler_slug": "github",
+            "queue_mode": "static",
+            "step_position": 0,
+            "step_type": "fetch"
+        },
+        {
+            "disabled_tools": [],
+            "handler_configs": [],
+            "prompt_queue": [
+                {
+                    "added_at": "2026-05-05T20:19:07+00:00",
+                    "prompt": "Manual validation: build the next open issue labeled status:idea-ready and lane:manual-validation into a runnable blueprint PR. Use the fetched issue only. Keep it compact but complete enough to boot in Playground."
+                }
+            ],
+            "queue_mode": "static",
+            "step_position": 1,
+            "step_type": "ai"
+        },
+        {
+            "disabled_tools": [],
+            "enabled": true,
+            "handler_configs": {
+                "github_pull_request": {
+                    "base": "main",
+                    "draft": false,
+                    "maintainer_can_modify": false,
+                    "repo": "chubes4/wc-store-blueprints"
+                }
+            },
+            "handler_slugs": [
+                "github_pull_request"
+            ],
+            "prompt_queue": [],
+            "queue_mode": "static",
+            "step_position": 2,
+            "step_type": "publish"
+        }
+    ]
+}

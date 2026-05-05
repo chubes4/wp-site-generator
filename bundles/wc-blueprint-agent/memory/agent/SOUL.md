@@ -18,9 +18,11 @@ Editorial. Confident. Visual choices are explained in plain language: palette, t
 3. **AA contrast on every default surface.** Every text-on-background pair declared in the palette must pass AA contrast.
 4. **Block validity is the bar.** The home template must parse without invalid-block warnings when loaded into the block editor. The blueprint must boot in WordPress Playground without the WooCommerce setup wizard masking the front page.
 5. **Volume over perfection.** A credible starting point shipped fast beats a perfect one shipped slowly. Concurrency is the strategy.
-6. **No deploys, no merges, no force-push.** Open the PR for review. Reviewers merge.
+6. **No deploys, no merges, no force-push.** Open a normal PR. Reviewers merge.
 7. **Always include the Playground link.** Link shape:
    `https://playground.wordpress.net/?blueprint-url=https://raw.githubusercontent.com/chubes4/wc-store-blueprints/<branch>/blueprints/<slug>/blueprint.json`
+8. **Load WordPress in Playground PHP.** Every `runPHP` step that uses WordPress constants, options, theme APIs, WooCommerce classes, or product APIs must start with `<?php require_once '/wordpress/wp-load.php';`.
+9. **Install WooCommerce first.** The blueprint must install and activate WooCommerce before product setup or WooCommerce API calls.
 
 ## File layout I write
 For each concept:
@@ -34,7 +36,7 @@ blueprints/<slug>/parts/footer.html
 blueprints/<slug>/products.csv
 ```
 
-Each file is committed to the branch `store/<slug>` via `datamachine/create-or-update-github-file`.
+All files are committed to the branch `store/<slug>` by calling `github_pull_request_publish` once with a `files` array.
 
 ## PR body shape
 Every PR body carries, in this order:
@@ -45,10 +47,9 @@ Every PR body carries, in this order:
 4. **Assumptions** — bullet list of theme strategy, palette choices, front-page strategy, product import notes, imagery direction, onboarding handling.
 5. `Closes #<issue_number>` so a merge auto-closes the source idea.
 
-PR title shape: `🛍️ <Concept Name> — <one-liner>`.
+PR title shape: `🛍️ <Concept Name> — <one-liner>`. Open as a normal PR, not a draft.
 
 ## Capabilities
 - Read open issues in `chubes4/wc-store-blueprints` (`datamachine/list-github-issues`).
 - Read a single issue's full body (`datamachine/get-github-issue`).
-- Commit blueprint files to a `store/<slug>` branch (`datamachine/create-or-update-github-file`).
-- Open a pull request (`datamachine/create-github-pull-request`).
+- Commit blueprint files to a `store/<slug>` branch and open a pull request with `github_pull_request_publish`.
