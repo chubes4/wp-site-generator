@@ -1,0 +1,8 @@
+{
+  "id": "wc-store-blueprints",
+  "name": "WooCommerce Store Blueprints",
+  "source_path": ".",
+  "extensions": {
+    "wordpress": {}
+  }
+}

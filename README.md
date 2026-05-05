@@ -1,8 +1,8 @@
 # wc-store-blueprints
 
-A two-agent loop that generates **WooCommerce store blueprints** at scale.
+A Data Machine loop that generates **WooCommerce store previews** at scale.
 
-Ideas live as **GitHub issues**. Blueprints arrive as **pull requests**. Every PR includes a **WordPress Playground link** so a reviewer can preview the running store with one click. Concurrency is the strategy: the system is designed to produce many credible starting points fast, not one perfect store slowly.
+Ideas live as **GitHub issues**. Store implementations arrive as **pull requests**. A PR either contains a direct WordPress Playground blueprint, or a static site that CI imports through Static Site Importer and reports back with an imported Playground preview plus SSI/BFB/H2BC telemetry. Concurrency is the strategy: the system is designed to produce many credible starting points fast, not one perfect store slowly.
 
 > Volume over perfection. If a hundred blueprints land in a day, the cost of any individual one being wrong is small, and the cost of finding a good one is just clicking the Playground link.
 
@@ -64,7 +64,7 @@ That's the entire reviewer experience. Open a PR, click the link, decide if you 
                     +--------------------+
 ```
 
-There are two agents. Each is narrow on purpose.
+There are three agents. Each is narrow on purpose.
 
 ### Agent 1 — `wc-idea-agent`
 
@@ -85,7 +85,7 @@ The idea agent does **not** generate blueprints. It produces work items.
 
 **What it does on each run:**
 
-1. Picks the next open idea issue that doesn't already have a PR pointing at it.
+1. Picks the next open idea issue labeled `status:idea-ready` and `target:blueprint` that doesn't already have a PR pointing at it.
 2. Generates the blueprint files for that concept:
    - `blueprints/<slug>/blueprint.json` — the WordPress Playground blueprint
    - `blueprints/<slug>/theme.json` — global styles, palette, typography
@@ -102,13 +102,33 @@ The idea agent does **not** generate blueprints. It produces work items.
 
 The blueprint agent does **not** invent concepts. It only implements existing issues.
 
-### Why two agents instead of one
+### Agent 3 — `wc-static-site-agent`
 
-Splitting "what should we build" from "how do we build it" keeps each agent's prompt and tool surface narrow. Concept generation can read prior GitHub issues without the implementation noise; blueprint generation can focus on style rules and block validity without re-justifying the concept. It also lets us scale them independently — many idea workers feeding many blueprint workers — without one being bottlenecked by the other.
+**Job:** take an open idea and turn it into a static WooCommerce-style storefront source site as a pull request.
+
+**What it does on each run:**
+
+1. Picks the next open idea issue labeled `status:idea-ready` and `target:static-site`.
+2. Generates source files under `static-sites/<slug>/`:
+   - `index.html`
+   - `assets/styles.css`
+   - optional supporting assets/data such as `products.json`
+3. Creates a `static/<slug>` branch and commits the files to it.
+4. Opens a pull request against `main` with `Closes #<issue>`.
+
+The static-site agent does **not** run Static Site Importer and does **not** write telemetry. CI/Homeboy owns import, validation, metrics, artifacts, and the imported-site Playground preview link.
+
+### Why three agents instead of one
+
+Splitting "what should we build" from "how do we build it" keeps each agent's prompt and tool surface narrow. Concept generation can read prior GitHub issues without the implementation noise; blueprint generation can focus on Playground rules and block validity, while static-site generation can focus on realistic source HTML for SSI. It also lets us scale them independently — many idea workers feeding many blueprint and static-site workers — without one lane bottlenecking the other.
 
 ---
 
-## How a Playground link works
+## How Playground links work
+
+Blueprint PRs use a direct blueprint link. Static-site PRs use a CI-generated imported-site preview link.
+
+### Blueprint PRs
 
 Every PR body contains exactly one preview link of this shape:
 
@@ -123,6 +143,25 @@ Three things happen when a reviewer clicks it:
 3. The blueprint installs the theme files, seeds the products, sets the home page, and lands the reviewer on the rendered storefront.
 
 There is no infrastructure to host. There is no preview environment to provision. The PR branch itself is the preview, because Playground reads it directly.
+
+### Static-site PRs
+
+Static-site PRs are validated after the agent finishes. The validation workflow is gated on the `target:static-site` label, so normal blueprint PRs keep using direct Playground links and never run SSI telemetry.
+
+```
+static-sites/<slug>/...
+        |
+        v
+Homeboy CI imports the source site through Static Site Importer
+        |
+        v
+Homeboy collects SSI/BFB/H2BC telemetry and artifacts
+        |
+        v
+Homeboy posts a PR comment with metrics and an imported-site Playground link
+```
+
+The static-site agent only writes source HTML/CSS/assets. The validation harness imports that source into WordPress, packages the imported result for Playground, and reports importer quality without the agent knowing about the telemetry system.
 
 This is also how merge works for free: the reviewer either merges the PR (and the source idea closes), or leaves it. Volume of decent starting points compounds.
 
@@ -162,7 +201,7 @@ wc-store-blueprints/
   README.md                  ← this file
   .gitignore
   .gitattributes
-  blueprints/                ← generated output, one directory per store
+  blueprints/                ← generated Playground blueprints, one directory per store
     <slug>/
       blueprint.json
       theme.json
@@ -170,6 +209,11 @@ wc-store-blueprints/
       parts/header.html
       parts/footer.html
       products.csv
+  static-sites/              ← generated static source sites for SSI validation
+    <slug>/
+      index.html
+      assets/styles.css
+      products.json
   resources/                 ← reusable theme bases / shared assets
   scripts/                   ← optional dev helpers (not required to use a blueprint)
 ```
@@ -192,7 +236,7 @@ That's the loop. Generate. Click. Decide. Repeat.
 
 ## How to run the agents (operator notes)
 
-The two agents run as a Data Machine agent bundle on a host site (currently a Studio site). The host site needs:
+The agents run as Data Machine agent bundles on a host site (currently a Studio site). The host site needs:
 
 1. **Data Machine** + **Data Machine Code** plugins active.
 2. A **GitHub credential profile** in DMC scoped to this repo with `Contents`, `Issues`, and `Pull requests` write access.
@@ -204,6 +248,7 @@ Both flows are **manual-trigger** by default during validation:
 ```
 studio wp datamachine flow run <wc-idea-flow-id>
 studio wp datamachine flow run <wc-blueprint-flow-id>
+studio wp datamachine flow run <wc-static-site-flow-id>
 ```
 
 Once the loop is observed end-to-end, scheduling is enabled and concurrency is increased. There is no fixed daily cap; the goal is to scale toward many parallel idea+blueprint workers so a backlog of preview-ready PRs exists for any reviewer at any time.

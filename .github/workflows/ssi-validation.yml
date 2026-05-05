@@ -1,0 +1,64 @@
+name: SSI validation
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened, labeled, unlabeled]
+    branches: [main]
+    paths:
+      - 'static-sites/**'
+      - 'scripts/ssi-validation.mjs'
+      - 'homeboy.json'
+      - '.github/workflows/ssi-validation.yml'
+  workflow_dispatch:
+
+concurrency:
+  group: ssi-validation-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+permissions:
+  contents: read
+  issues: write
+  pull-requests: write
+
+jobs:
+  ssi-validation:
+    name: Static Site Importer validation
+    if: github.event_name == 'workflow_dispatch' || contains(github.event.pull_request.labels.*.name, 'target:static-site')
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+
+      - name: Detect changed static sites
+        id: changed
+        shell: bash
+        run: |
+          BASE_SHA="${{ github.event.pull_request.base.sha || 'HEAD~1' }}"
+          HEAD_SHA="${{ github.sha }}"
+          mapfile -t sites < <(git diff --name-only "$BASE_SHA" "$HEAD_SHA" -- 'static-sites/**' | awk -F/ 'NF >= 2 { print $2 }' | sort -u)
+          if [ "${#sites[@]}" -eq 0 ]; then
+            echo "has_static_sites=false" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          printf '%s\n' "${sites[@]}" > /tmp/static-sites.txt
+          echo "has_static_sites=true" >> "$GITHUB_OUTPUT"
+          echo "sites=$(paste -sd, /tmp/static-sites.txt)" >> "$GITHUB_OUTPUT"
+
+      - name: Run SSI validation scaffold
+        if: steps.changed.outputs.has_static_sites == 'true'
+        run: node scripts/ssi-validation.mjs --sites "${{ steps.changed.outputs.sites }}" --output ssi-validation-report.md
+
+      - name: Comment SSI validation summary
+        if: github.event_name == 'pull_request' && steps.changed.outputs.has_static_sites == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh pr comment "${{ github.event.pull_request.number }}" --body-file ssi-validation-report.md
+
+      - name: Skip summary
+        if: steps.changed.outputs.has_static_sites != 'true'
+        run: echo "No static-sites/** changes; SSI validation skipped."

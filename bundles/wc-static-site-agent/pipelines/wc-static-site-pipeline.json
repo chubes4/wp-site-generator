@@ -1,0 +1,35 @@
+{
+    "name": "WC Static Site Pipeline",
+    "schema_version": 1,
+    "slug": "wc-static-site-pipeline",
+    "steps": [
+        {
+            "step_config": {
+                "execution_order": 0,
+                "label": "Pull next static-site idea",
+                "step_type": "fetch"
+            },
+            "step_position": 0,
+            "step_type": "fetch"
+        },
+        {
+            "step_config": {
+                "execution_order": 1,
+                "label": "Author static storefront files",
+                "step_type": "ai",
+                "system_prompt": "You are turning one fetched WooCommerce store idea issue into a static source storefront for Static Site Importer validation. Do not invent a new concept. Use the fetched issue title/body as the source of truth. Choose SLUG from the concept name, set BRANCH to static/SLUG, and write files under static-sites/SLUG/: index.html, assets/styles.css, and products.json. Generate realistic ecommerce static HTML with semantic landmarks, navigation, hero, product cards, prices, collection sections, CTAs, and footer. Do not write WordPress blocks, PHP, or Playground blueprints. Then call github_pull_request_publish exactly once with title, head set to BRANCH, body, draft=false, and a files array containing every file path and content. The PR body must include Source Static Site, Design Intent, SSI Validation, AI assistance with Tool(s): Data Machine (OpenAI gpt-5.5), and Closes #ISSUE_NUMBER."
+            },
+            "step_position": 1,
+            "step_type": "ai"
+        },
+        {
+            "step_config": {
+                "execution_order": 2,
+                "label": "Commit static site and open PR",
+                "step_type": "publish"
+            },
+            "step_position": 2,
+            "step_type": "publish"
+        }
+    ]
+}
