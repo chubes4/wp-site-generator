@@ -1,0 +1,844 @@
+:root {
+  --blue-950: #061a3a;
+  --blue-900: #08275a;
+  --blue-800: #0b3475;
+  --blue-700: #0e4c9a;
+  --blue-500: #2178c7;
+  --blue-100: #dcecff;
+  --cyan-100: #ecf8ff;
+  --paper: #f7f0df;
+  --paper-deep: #e7d5ad;
+  --ink: #152035;
+  --muted: #647086;
+  --white: #fffaf0;
+  --shadow: 0 22px 60px rgba(6, 26, 58, 0.22);
+  --radius-lg: 32px;
+  --radius-md: 22px;
+  --radius-sm: 14px;
+  --max-width: 1180px;
+  font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  margin: 0;
+  color: var(--ink);
+  background:
+    radial-gradient(circle at top left, rgba(33, 120, 199, 0.18), transparent 32rem),
+    linear-gradient(135deg, rgba(8, 39, 90, 0.06) 25%, transparent 25%) 0 0 / 34px 34px,
+    var(--paper);
+  line-height: 1.6;
+}
+
+a {
+  color: inherit;
+  text-decoration: none;
+}
+
+.skip-link {
+  position: absolute;
+  left: 1rem;
+  top: 1rem;
+  transform: translateY(-150%);
+  background: var(--blue-900);
+  color: white;
+  padding: 0.7rem 1rem;
+  border-radius: 999px;
+  z-index: 20;
+}
+
+.skip-link:focus {
+  transform: translateY(0);
+}
+
+.site-header {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  background: rgba(247, 240, 223, 0.94);
+  backdrop-filter: blur(18px);
+  border-bottom: 1px solid rgba(8, 39, 90, 0.16);
+}
+
+.announcement {
+  background: var(--blue-950);
+  color: var(--cyan-100);
+  text-align: center;
+  font-size: 0.85rem;
+  letter-spacing: 0.04em;
+  padding: 0.45rem 1rem;
+}
+
+.header-inner,
+.hero,
+.trust-bar,
+.section-block,
+.cta-panel,
+.footer-grid {
+  width: min(var(--max-width), calc(100% - 2rem));
+  margin-inline: auto;
+}
+
+.header-inner {
+  min-height: 74px;
+  display: flex;
+  align-items: center;
+  gap: 1.5rem;
+  justify-content: space-between;
+}
+
+.brand {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.7rem;
+  font-weight: 800;
+  color: var(--blue-950);
+}
+
+.brand-mark {
+  display: grid;
+  place-items: center;
+  width: 2.4rem;
+  height: 2.4rem;
+  border-radius: 50%;
+  color: var(--paper);
+  background: radial-gradient(circle, var(--blue-500), var(--blue-900));
+  box-shadow: inset 0 0 0 2px rgba(255, 250, 240, 0.28);
+}
+
+.brand-text {
+  letter-spacing: -0.03em;
+  font-size: 1.15rem;
+}
+
+.primary-nav {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  font-size: 0.94rem;
+  color: var(--blue-900);
+}
+
+.primary-nav a,
+.cart-link,
+.text-link {
+  border-bottom: 1px solid transparent;
+}
+
+.primary-nav a:hover,
+.cart-link:hover,
+.text-link:hover {
+  border-color: currentColor;
+}
+
+.cart-link {
+  color: var(--blue-950);
+  font-weight: 700;
+}
+
+.cart-link span {
+  display: inline-grid;
+  place-items: center;
+  min-width: 1.4rem;
+  height: 1.4rem;
+  margin-left: 0.25rem;
+  color: var(--paper);
+  background: var(--blue-800);
+  border-radius: 999px;
+  font-size: 0.75rem;
+}
+
+.hero {
+  display: grid;
+  grid-template-columns: minmax(0, 1.05fr) minmax(340px, 0.95fr);
+  gap: 3rem;
+  align-items: center;
+  padding: 6rem 0 4rem;
+}
+
+.eyebrow {
+  margin: 0 0 0.75rem;
+  color: var(--blue-700);
+  text-transform: uppercase;
+  letter-spacing: 0.14em;
+  font-size: 0.78rem;
+  font-weight: 800;
+}
+
+h1,
+h2,
+h3,
+p {
+  margin-top: 0;
+}
+
+h1,
+h2,
+h3 {
+  line-height: 1.08;
+  color: var(--blue-950);
+}
+
+h1 {
+  max-width: 760px;
+  font-size: clamp(3rem, 7vw, 6.4rem);
+  letter-spacing: -0.075em;
+  margin-bottom: 1.35rem;
+}
+
+h2 {
+  font-size: clamp(2rem, 4vw, 3.4rem);
+  letter-spacing: -0.055em;
+  margin-bottom: 1rem;
+}
+
+h3 {
+  font-size: 1.22rem;
+  letter-spacing: -0.035em;
+  margin-bottom: 0.6rem;
+}
+
+.hero-text,
+.section-heading p,
+.collection-copy p,
+.cta-panel p,
+.site-footer p,
+.product-card p {
+  color: var(--muted);
+}
+
+.hero-text {
+  max-width: 630px;
+  font-size: 1.2rem;
+}
+
+.hero-actions,
+.product-meta {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.8rem;
+}
+
+.cta {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 3rem;
+  border-radius: 999px;
+  font-weight: 800;
+  padding: 0.8rem 1.2rem;
+  transition: transform 180ms ease, box-shadow 180ms ease, background 180ms ease;
+}
+
+.cta:hover {
+  transform: translateY(-2px);
+}
+
+.cta.primary,
+.cta.small {
+  color: white;
+  background: var(--blue-900);
+  box-shadow: 0 14px 28px rgba(8, 39, 90, 0.24);
+}
+
+.cta.secondary {
+  color: var(--blue-950);
+  background: rgba(255, 250, 240, 0.76);
+  border: 1px solid rgba(8, 39, 90, 0.18);
+}
+
+.cta.small {
+  min-height: 2.45rem;
+  padding: 0.55rem 0.85rem;
+  font-size: 0.86rem;
+}
+
+.hero-stats {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.9rem;
+  max-width: 610px;
+  margin: 2rem 0 0;
+}
+
+.hero-stats div {
+  padding: 1rem;
+  border-radius: var(--radius-sm);
+  background: rgba(255, 250, 240, 0.66);
+  border: 1px solid rgba(8, 39, 90, 0.14);
+}
+
+.hero-stats dt {
+  color: var(--blue-900);
+  font-size: 1.45rem;
+  font-weight: 900;
+}
+
+.hero-stats dd {
+  margin: 0;
+  color: var(--muted);
+  font-size: 0.9rem;
+}
+
+.hero-art {
+  position: relative;
+  min-height: 570px;
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+  background:
+    linear-gradient(rgba(255,255,255,0.08) 1px, transparent 1px) 0 0 / 28px 28px,
+    linear-gradient(90deg, rgba(255,255,255,0.08) 1px, transparent 1px) 0 0 / 28px 28px,
+    radial-gradient(circle at 78% 12%, rgba(247, 240, 223, 0.95), rgba(247, 240, 223, 0.18) 18%, transparent 30%),
+    linear-gradient(145deg, var(--blue-700), var(--blue-950));
+  box-shadow: var(--shadow);
+}
+
+.sun-disc {
+  position: absolute;
+  right: 2rem;
+  top: 2rem;
+  width: 8rem;
+  height: 8rem;
+  border-radius: 50%;
+  background: radial-gradient(circle, #fff6b7, #f3bf56 62%, rgba(243, 191, 86, 0));
+  opacity: 0.95;
+}
+
+.print-sheet {
+  position: absolute;
+  width: 62%;
+  min-height: 330px;
+  padding: 1rem;
+  border-radius: 18px;
+  background:
+    linear-gradient(rgba(255,255,255,0.18) 1px, transparent 1px) 0 0 / 22px 22px,
+    linear-gradient(90deg, rgba(255,255,255,0.14) 1px, transparent 1px) 0 0 / 22px 22px,
+    var(--blue-800);
+  border: 12px solid rgba(255, 250, 240, 0.86);
+  box-shadow: 0 26px 50px rgba(0, 0, 0, 0.22);
+}
+
+.sheet-one {
+  left: 9%;
+  top: 18%;
+  transform: rotate(-8deg);
+}
+
+.sheet-two {
+  right: 8%;
+  bottom: 9%;
+  transform: rotate(9deg);
+}
+
+.label {
+  position: absolute;
+  left: 1rem;
+  bottom: 1rem;
+  color: var(--blue-900);
+  background: var(--paper);
+  border-radius: 999px;
+  padding: 0.35rem 0.65rem;
+  font-size: 0.76rem;
+  font-weight: 800;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+.leaf,
+.lace {
+  position: absolute;
+  display: block;
+  opacity: 0.72;
+  filter: blur(0.2px);
+}
+
+.leaf::before,
+.leaf::after {
+  content: "";
+  position: absolute;
+  background: var(--cyan-100);
+  border-radius: 100% 0;
+}
+
+.leaf-a {
+  left: 29%;
+  top: 14%;
+  width: 1rem;
+  height: 13rem;
+  background: var(--cyan-100);
+  transform: rotate(23deg);
+}
+
+.leaf-a::before {
+  width: 4.3rem;
+  height: 1.7rem;
+  left: -4.1rem;
+  top: 2.5rem;
+  transform: rotate(-25deg);
+}
+
+.leaf-a::after {
+  width: 4rem;
+  height: 1.5rem;
+  right: -3.8rem;
+  top: 5.3rem;
+  transform: rotate(25deg);
+}
+
+.leaf-b {
+  left: 58%;
+  top: 20%;
+  width: 0.8rem;
+  height: 12rem;
+  background: var(--cyan-100);
+  transform: rotate(-18deg);
+}
+
+.leaf-b::before {
+  width: 3.8rem;
+  height: 1.5rem;
+  left: -3.6rem;
+  top: 3rem;
+}
+
+.leaf-b::after {
+  width: 3.4rem;
+  height: 1.4rem;
+  right: -3.2rem;
+  top: 6rem;
+}
+
+.lace {
+  inset: 20% 12% 25%;
+  border: 10px dotted var(--cyan-100);
+  border-radius: 50%;
+  box-shadow:
+    inset 0 0 0 16px rgba(236, 248, 255, 0.25),
+    inset 0 0 0 38px rgba(236, 248, 255, 0.14);
+}
+
+.trust-bar {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 1rem;
+  padding: 1rem;
+  border-radius: var(--radius-md);
+  background: rgba(255, 250, 240, 0.82);
+  border: 1px solid rgba(8, 39, 90, 0.14);
+  box-shadow: 0 16px 36px rgba(8, 39, 90, 0.08);
+}
+
+.trust-bar div {
+  padding: 1rem;
+  border-right: 1px solid rgba(8, 39, 90, 0.13);
+}
+
+.trust-bar div:last-child {
+  border-right: 0;
+}
+
+.trust-bar strong,
+.trust-bar span {
+  display: block;
+}
+
+.trust-bar strong {
+  color: var(--blue-950);
+}
+
+.trust-bar span {
+  color: var(--muted);
+  font-size: 0.92rem;
+}
+
+.section-block {
+  padding: 5rem 0 0;
+}
+
+.section-heading {
+  max-width: 760px;
+  margin-bottom: 1.7rem;
+}
+
+.split-heading {
+  max-width: none;
+  display: flex;
+  justify-content: space-between;
+  align-items: end;
+  gap: 2rem;
+}
+
+.text-link {
+  color: var(--blue-800);
+  font-weight: 800;
+  white-space: nowrap;
+}
+
+.process-grid,
+.product-grid,
+.tool-grid,
+.collection-grid,
+.chemistry-products,
+.compact-products {
+  display: grid;
+  gap: 1rem;
+}
+
+.process-grid {
+  grid-template-columns: repeat(4, 1fr);
+}
+
+.process-card,
+.product-card,
+.collection-card,
+.cta-panel,
+.chemistry-banner {
+  background: rgba(255, 250, 240, 0.88);
+  border: 1px solid rgba(8, 39, 90, 0.14);
+  box-shadow: 0 18px 42px rgba(8, 39, 90, 0.08);
+}
+
+.process-card {
+  position: relative;
+  padding: 1.35rem;
+  border-radius: var(--radius-md);
+}
+
+.step-number {
+  display: inline-flex;
+  margin-bottom: 1rem;
+  color: var(--blue-700);
+  font-weight: 900;
+  letter-spacing: 0.12em;
+}
+
+.product-grid {
+  grid-template-columns: 1.2fr repeat(3, 1fr);
+  align-items: stretch;
+}
+
+.product-card {
+  overflow: hidden;
+  border-radius: var(--radius-md);
+}
+
+.product-card.featured {
+  grid-row: span 2;
+}
+
+.product-media {
+  min-height: 220px;
+}
+
+.featured .product-media {
+  min-height: 330px;
+}
+
+.cyanotype-media,
+.collection-art {
+  background-color: var(--blue-800);
+  background-image:
+    radial-gradient(circle at 22% 30%, rgba(236, 248, 255, 0.88) 0 5%, transparent 5.5%),
+    radial-gradient(circle at 65% 38%, rgba(236, 248, 255, 0.62) 0 4%, transparent 4.5%),
+    linear-gradient(rgba(255,255,255,0.12) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255,255,255,0.12) 1px, transparent 1px),
+    linear-gradient(145deg, var(--blue-500), var(--blue-950));
+  background-size: auto, auto, 24px 24px, 24px 24px, auto;
+}
+
+.fern-media {
+  background-image:
+    linear-gradient(68deg, transparent 44%, rgba(236, 248, 255, 0.82) 44% 47%, transparent 47%),
+    radial-gradient(ellipse at 40% 28%, rgba(236, 248, 255, 0.7) 0 13%, transparent 14%),
+    radial-gradient(ellipse at 61% 48%, rgba(236, 248, 255, 0.58) 0 11%, transparent 12%),
+    linear-gradient(rgba(255,255,255,0.13) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255,255,255,0.13) 1px, transparent 1px),
+    linear-gradient(145deg, var(--blue-500), var(--blue-950));
+}
+
+.balcony-media {
+  background-image:
+    linear-gradient(115deg, rgba(255, 250, 240, 0.86) 0 14%, transparent 14% 100%),
+    repeating-linear-gradient(90deg, rgba(236, 248, 255, 0.7) 0 3px, transparent 3px 24px),
+    linear-gradient(145deg, var(--blue-500), var(--blue-950));
+}
+
+.family-media {
+  background-image:
+    radial-gradient(circle at 28% 34%, rgba(236, 248, 255, 0.86) 0 12%, transparent 13%),
+    radial-gradient(circle at 61% 56%, rgba(236, 248, 255, 0.72) 0 9%, transparent 10%),
+    radial-gradient(circle at 72% 28%, rgba(236, 248, 255, 0.58) 0 6%, transparent 7%),
+    linear-gradient(145deg, var(--blue-500), var(--blue-950));
+}
+
+.workshop-media {
+  background-image:
+    repeating-linear-gradient(0deg, rgba(236, 248, 255, 0.58) 0 2px, transparent 2px 42px),
+    repeating-linear-gradient(90deg, rgba(236, 248, 255, 0.58) 0 2px, transparent 2px 42px),
+    linear-gradient(145deg, var(--blue-500), var(--blue-950));
+}
+
+.product-body,
+.mini-product,
+.tool-card,
+.collection-card {
+  padding: 1.25rem;
+}
+
+.category {
+  margin-bottom: 0.35rem;
+  color: var(--blue-700) !important;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  font-size: 0.72rem;
+  font-weight: 900;
+}
+
+.price {
+  color: var(--blue-950);
+  font-size: 1.15rem;
+  font-weight: 900;
+}
+
+.collection.product-section {
+  display: grid;
+  grid-template-columns: 0.82fr 1.18fr;
+  align-items: center;
+  gap: 2rem;
+  padding-top: 5.5rem;
+}
+
+.compact-products {
+  grid-template-columns: repeat(2, 1fr);
+}
+
+.mini-product p {
+  margin-bottom: 1rem;
+}
+
+.tool-grid {
+  grid-template-columns: repeat(4, 1fr);
+}
+
+.tool-card {
+  min-height: 250px;
+}
+
+.tool-icon {
+  display: grid;
+  place-items: center;
+  width: 3.2rem;
+  height: 3.2rem;
+  margin-bottom: 1.3rem;
+  border-radius: 18px;
+  color: var(--paper);
+  background: var(--blue-800);
+  font-size: 1.4rem;
+}
+
+.collection-grid {
+  grid-template-columns: repeat(4, 1fr);
+}
+
+.collection-art {
+  min-height: 170px;
+  border-radius: 18px;
+  margin-bottom: 1.1rem;
+}
+
+.fern-art {
+  background-image:
+    repeating-linear-gradient(110deg, rgba(236,248,255,0.7) 0 4px, transparent 4px 18px),
+    linear-gradient(145deg, var(--blue-500), var(--blue-950));
+}
+
+.coastal-art {
+  background-image:
+    radial-gradient(ellipse at 40% 60%, rgba(236,248,255,0.74) 0 20%, transparent 21%),
+    radial-gradient(ellipse at 64% 34%, rgba(236,248,255,0.54) 0 12%, transparent 13%),
+    linear-gradient(145deg, var(--blue-500), var(--blue-950));
+}
+
+.wedding-art {
+  background-image:
+    radial-gradient(circle at 50% 50%, transparent 0 18%, rgba(236,248,255,0.76) 19% 23%, transparent 24%),
+    repeating-linear-gradient(90deg, rgba(236,248,255,0.45) 0 2px, transparent 2px 18px),
+    linear-gradient(145deg, var(--blue-500), var(--blue-950));
+}
+
+.lace-art {
+  background-image:
+    radial-gradient(circle at 50% 50%, transparent 0 17%, rgba(236,248,255,0.85) 18% 20%, transparent 21% 28%, rgba(236,248,255,0.5) 29% 31%, transparent 32%),
+    linear-gradient(145deg, var(--blue-500), var(--blue-950));
+}
+
+.chemistry-banner {
+  display: grid;
+  grid-template-columns: 0.9fr 1.1fr;
+  gap: 2rem;
+  align-items: center;
+  padding: 2rem;
+  border-radius: var(--radius-lg);
+  margin-top: 5rem;
+}
+
+.chemistry-products {
+  grid-template-columns: repeat(3, 1fr);
+}
+
+.cta-panel {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 2rem;
+  padding: 2rem;
+  margin-top: 5rem;
+  margin-bottom: 5rem;
+  border-radius: var(--radius-lg);
+  background:
+    linear-gradient(135deg, rgba(255,250,240,0.9), rgba(220,236,255,0.74)),
+    var(--white);
+}
+
+.cta-panel div {
+  max-width: 720px;
+}
+
+.site-footer {
+  color: rgba(255,255,255,0.8);
+  background: var(--blue-950);
+  padding: 4rem 0;
+}
+
+.footer-grid {
+  display: grid;
+  grid-template-columns: 1.4fr repeat(3, 1fr);
+  gap: 2rem;
+}
+
+.footer-brand {
+  color: var(--paper);
+  margin-bottom: 1rem;
+}
+
+.site-footer h2 {
+  color: var(--paper);
+  font-size: 1rem;
+  letter-spacing: 0;
+  margin-bottom: 0.8rem;
+}
+
+.site-footer nav a {
+  display: block;
+  margin: 0.45rem 0;
+  color: rgba(255,255,255,0.76);
+}
+
+.site-footer code {
+  color: var(--paper);
+  background: rgba(255,255,255,0.1);
+  border-radius: 6px;
+  padding: 0.1rem 0.35rem;
+}
+
+@media (max-width: 980px) {
+  .header-inner {
+    flex-wrap: wrap;
+    padding: 0.9rem 0;
+  }
+
+  .primary-nav {
+    order: 3;
+    width: 100%;
+    overflow-x: auto;
+    padding-bottom: 0.25rem;
+  }
+
+  .hero,
+  .collection.product-section,
+  .chemistry-banner {
+    grid-template-columns: 1fr;
+  }
+
+  .hero {
+    padding-top: 4rem;
+  }
+
+  .hero-art {
+    min-height: 460px;
+  }
+
+  .process-grid,
+  .product-grid,
+  .tool-grid,
+  .collection-grid,
+  .footer-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .product-card.featured {
+    grid-row: auto;
+  }
+
+  .trust-bar {
+    grid-template-columns: 1fr;
+  }
+
+  .trust-bar div {
+    border-right: 0;
+    border-bottom: 1px solid rgba(8, 39, 90, 0.13);
+  }
+
+  .trust-bar div:last-child {
+    border-bottom: 0;
+  }
+}
+
+@media (max-width: 680px) {
+  .hero-stats,
+  .process-grid,
+  .product-grid,
+  .tool-grid,
+  .collection-grid,
+  .compact-products,
+  .chemistry-products,
+  .footer-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .split-heading,
+  .cta-panel {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .hero-art {
+    min-height: 360px;
+  }
+
+  .print-sheet {
+    width: 72%;
+    min-height: 230px;
+    border-width: 8px;
+  }
+
+  .sheet-one {
+    left: 4%;
+  }
+
+  .sheet-two {
+    right: 3%;
+  }
+
+  h1 {
+    font-size: clamp(2.65rem, 15vw, 4rem);
+  }
+}
