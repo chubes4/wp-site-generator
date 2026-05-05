@@ -1,0 +1,168 @@
+{
+  "$schema": "https://schemas.wp.org/trunk/theme.json",
+  "version": 3,
+  "settings": {
+    "appearanceTools": true,
+    "layout": {
+      "contentSize": "760px",
+      "wideSize": "1180px"
+    },
+    "color": {
+      "defaultPalette": false,
+      "palette": [
+        {
+          "slug": "paper",
+          "name": "Rag Paper",
+          "color": "#fff8ea"
+        },
+        {
+          "slug": "ink",
+          "name": "Iron Ink",
+          "color": "#24121e"
+        },
+        {
+          "slug": "bath",
+          "name": "Sizing Bath",
+          "color": "#e3f0ec"
+        },
+        {
+          "slug": "madder",
+          "name": "Madder Pigment",
+          "color": "#923f30"
+        },
+        {
+          "slug": "brass",
+          "name": "Brass Ochre",
+          "color": "#b98324"
+        },
+        {
+          "slug": "sheet",
+          "name": "Pressed Sheet",
+          "color": "#f2e3c7"
+        }
+      ]
+    },
+    "typography": {
+      "defaultFontSizes": false,
+      "fontFamilies": [
+        {
+          "slug": "serif",
+          "name": "Editorial Serif",
+          "fontFamily": "Libre Baskerville, Georgia, serif"
+        },
+        {
+          "slug": "sans",
+          "name": "Bench Sans",
+          "fontFamily": "Inter, -apple-system, BlinkMacSystemFont, Segoe UI, sans-serif"
+        }
+      ],
+      "fontSizes": [
+        {
+          "slug": "small",
+          "name": "Small",
+          "size": "0.9rem"
+        },
+        {
+          "slug": "base",
+          "name": "Base",
+          "size": "1rem"
+        },
+        {
+          "slug": "large",
+          "name": "Large",
+          "size": "1.35rem"
+        },
+        {
+          "slug": "display",
+          "name": "Display",
+          "size": "clamp(2.8rem, 8vw, 6.7rem)"
+        }
+      ]
+    },
+    "spacing": {
+      "units": [
+        "px",
+        "rem",
+        "%",
+        "vw"
+      ]
+    }
+  },
+  "styles": {
+    "color": {
+      "background": "var(--wp--preset--color--paper)",
+      "text": "var(--wp--preset--color--ink)"
+    },
+    "typography": {
+      "fontFamily": "var(--wp--preset--font-family--sans)",
+      "fontSize": "var(--wp--preset--font-size--base)",
+      "lineHeight": "1.65"
+    },
+    "elements": {
+      "heading": {
+        "typography": {
+          "fontFamily": "var(--wp--preset--font-family--serif)",
+          "fontWeight": "700",
+          "lineHeight": "1.05"
+        },
+        "color": {
+          "text": "var(--wp--preset--color--ink)"
+        }
+      },
+      "link": {
+        "color": {
+          "text": "var(--wp--preset--color--madder)"
+        }
+      },
+      "button": {
+        "border": {
+          "radius": "999px"
+        },
+        "color": {
+          "background": "var(--wp--preset--color--madder)",
+          "text": "var(--wp--preset--color--paper)"
+        },
+        "typography": {
+          "fontWeight": "700"
+        }
+      }
+    },
+    "blocks": {
+      "core/site-title": {
+        "typography": {
+          "fontFamily": "var(--wp--preset--font-family--serif)",
+          "fontSize": "1.25rem",
+          "fontWeight": "700"
+        }
+      },
+      "core/navigation": {
+        "typography": {
+          "fontSize": "0.92rem",
+          "fontWeight": "700"
+        }
+      }
+    },
+    "css": ".is-style-bench-paper{background:var(--wp--preset--color--paper);color:var(--wp--preset--color--ink)}.is-style-bench-bath{background:var(--wp--preset--color--bath);color:var(--wp--preset--color--ink)}.is-style-bench-sheet{background:var(--wp--preset--color--sheet);color:var(--wp--preset--color--ink)}.is-style-bench-dark{background:var(--wp--preset--color--ink);color:var(--wp--preset--color--paper)}.is-style-bench-card{background:rgba(255,248,234,.78);border:1px solid rgba(36,18,30,.16);border-radius:24px;box-shadow:0 18px 45px rgba(36,18,30,.08)}.bench-wrap{padding:clamp(1.25rem,4vw,3rem)}.bench-section{padding:clamp(3rem,8vw,6rem) clamp(1.25rem,4vw,3rem)}.bench-hero{min-height:78vh;display:flex;align-items:center}.bench-eyebrow{letter-spacing:.16em;text-transform:uppercase;font-size:.78rem;font-weight:800}.bench-meta{border-top:1px solid currentColor;padding-top:1rem;opacity:.82}.bench-grid-note{font-size:.92rem}.wp-block-button__link{box-shadow:0 10px 30px rgba(146,63,48,.25)}"
+  },
+  "templateParts": [
+    {
+      "name": "header",
+      "title": "Header",
+      "area": "header"
+    },
+    {
+      "name": "footer",
+      "title": "Footer",
+      "area": "footer"
+    }
+  ],
+  "customTemplates": [
+    {
+      "name": "home",
+      "title": "Home",
+      "postTypes": [
+        "page"
+      ]
+    }
+  ]
+}
