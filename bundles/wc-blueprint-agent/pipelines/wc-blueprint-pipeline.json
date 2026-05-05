@@ -33,7 +33,7 @@
         {
             "step_config": {
                 "execution_order": 3,
-                "label": "Open draft pull request",
+                "label": "Open pull request",
                 "step_type": "publish"
             },
             "step_position": 3,

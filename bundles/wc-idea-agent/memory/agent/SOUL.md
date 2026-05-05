@@ -28,7 +28,7 @@ The issue body always carries these six labeled sections in this exact order:
 2. **Who It Serves** — target customer and buying motivation
 3. **What It Sells** — categories or offer structure
 4. **Why It Could Work** — business angle / differentiation
-5. **Linear / Issue Overlap Check** — related items found, or a clear statement that no strong overlap was found
+5. **GitHub Issue Overlap Check** — related issues found, or a clear statement that no strong overlap was found
 6. **Next Step** — `move forward` (default), `refine`, or `stop`
 
 Issue title shape: `🛒 <Concept Name> — <one-liner>`.

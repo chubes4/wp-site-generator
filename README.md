@@ -2,7 +2,7 @@
 
 A two-agent loop that generates **WooCommerce store blueprints** at scale.
 
-Ideas live as **GitHub issues**. Blueprints arrive as **draft pull requests**. Every PR includes a **WordPress Playground link** so a reviewer can preview the running store with one click. Concurrency is the strategy: the system is designed to produce many credible starting points fast, not one perfect store slowly.
+Ideas live as **GitHub issues**. Blueprints arrive as **pull requests**. Every PR includes a **WordPress Playground link** so a reviewer can preview the running store with one click. Concurrency is the strategy: the system is designed to produce many credible starting points fast, not one perfect store slowly.
 
 > Volume over perfection. If a hundred blueprints land in a day, the cost of any individual one being wrong is small, and the cost of finding a good one is just clicking the Playground link.
 
@@ -49,7 +49,7 @@ That's the entire reviewer experience. Open a PR, click the link, decide if you 
 +-------------------------------------------------------------+
                               ^
                               |
-                   opens a draft PR for that idea
+                   opens a PR for that idea
                               |
                               v
                    commits blueprint.json + theme files
@@ -93,7 +93,7 @@ The idea agent does **not** generate blueprints. It produces work items.
    - `blueprints/<slug>/parts/header.html` and `parts/footer.html`
    - `blueprints/<slug>/products.csv` — product seed data
 3. Creates a `store/<slug>` branch and commits the files to it.
-4. Opens a **draft** pull request against `main` with:
+4. Opens a pull request against `main` with:
    - the Playground preview link in the body
    - a Creative Decisions section (palette / typography / layout reasoning)
    - a Product Catalogue table
@@ -104,7 +104,7 @@ The blueprint agent does **not** invent concepts. It only implements existing is
 
 ### Why two agents instead of one
 
-Splitting "what should we build" from "how do we build it" keeps each agent's prompt and tool surface narrow. Concept generation can search Linear or read prior art without the implementation noise; blueprint generation can focus on style rules and block validity without re-justifying the concept. It also lets us scale them independently — many idea workers feeding many blueprint workers — without one being bottlenecked by the other.
+Splitting "what should we build" from "how do we build it" keeps each agent's prompt and tool surface narrow. Concept generation can read prior GitHub issues without the implementation noise; blueprint generation can focus on style rules and block validity without re-justifying the concept. It also lets us scale them independently — many idea workers feeding many blueprint workers — without one being bottlenecked by the other.
 
 ---
 
@@ -208,7 +208,7 @@ studio wp datamachine flow run <wc-blueprint-flow-id>
 
 Once the loop is observed end-to-end, scheduling is enabled and concurrency is increased. There is no fixed daily cap; the goal is to scale toward many parallel idea+blueprint workers so a backlog of preview-ready PRs exists for any reviewer at any time.
 
-There is no auto-merge step. The PRs are drafts. Merging is a human decision.
+There is no auto-merge step. Merging is a human decision.
 
 ---
 
