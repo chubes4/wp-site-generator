@@ -1,7 +1,7 @@
 {
     "agent": {
         "agent_config": {
-            "description": "Picks the next open idea issue in chubes4/wc-store-blueprints and authors a draft pull request that proposes a runnable WooCommerce blueprint with a WordPress Playground preview link. Manual-run only during validation.",
+            "description": "Picks the next open idea issue in chubes4/wc-store-blueprints and authors a pull request that proposes a runnable WooCommerce blueprint with a WordPress Playground preview link. Manual-run only during validation.",
             "mode_models": {
                 "chat": {
                     "model": "gpt-5.5",
