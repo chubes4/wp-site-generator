@@ -28,7 +28,7 @@
       "path": "/wordpress/wp-content/themes/marbling-bench/theme.json",
       "data": {
         "resource": "url",
-        "url": "https://raw.githubusercontent.com/chubes4/wc-store-blueprints/store/marbling-bench/blueprints/marbling-bench/theme.json"
+        "url": "https://raw.githubusercontent.com/chubes4/wc-store-blueprints/store/marbling-bench/blueprints/marbling-bench/theme.json?v=20260505-2029"
       }
     },
     {
@@ -36,7 +36,7 @@
       "path": "/wordpress/wp-content/themes/marbling-bench/templates/home.html",
       "data": {
         "resource": "url",
-        "url": "https://raw.githubusercontent.com/chubes4/wc-store-blueprints/store/marbling-bench/blueprints/marbling-bench/templates/home.html"
+        "url": "https://raw.githubusercontent.com/chubes4/wc-store-blueprints/store/marbling-bench/blueprints/marbling-bench/templates/home.html?v=20260505-2029"
       }
     },
     {
@@ -44,7 +44,7 @@
       "path": "/wordpress/wp-content/themes/marbling-bench/parts/header.html",
       "data": {
         "resource": "url",
-        "url": "https://raw.githubusercontent.com/chubes4/wc-store-blueprints/store/marbling-bench/blueprints/marbling-bench/parts/header.html"
+        "url": "https://raw.githubusercontent.com/chubes4/wc-store-blueprints/store/marbling-bench/blueprints/marbling-bench/parts/header.html?v=20260505-2029"
       }
     },
     {
@@ -52,7 +52,7 @@
       "path": "/wordpress/wp-content/themes/marbling-bench/parts/footer.html",
       "data": {
         "resource": "url",
-        "url": "https://raw.githubusercontent.com/chubes4/wc-store-blueprints/store/marbling-bench/blueprints/marbling-bench/parts/footer.html"
+        "url": "https://raw.githubusercontent.com/chubes4/wc-store-blueprints/store/marbling-bench/blueprints/marbling-bench/parts/footer.html?v=20260505-2029"
       }
     },
     {
