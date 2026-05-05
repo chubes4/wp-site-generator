@@ -7,27 +7,28 @@
     "slug": "wc-idea-manual-flow",
     "steps": [
         {
-            "config_patch_queue": [],
-            "disabled_tools": [],
-            "handler_configs": [],
-            "queue_mode": "static",
-            "step_position": 0,
-            "step_type": "fetch"
-        },
-        {
             "disabled_tools": [],
             "handler_configs": [],
             "prompt_queue": [],
             "queue_mode": "static",
-            "step_position": 1,
+            "step_position": 0,
             "step_type": "ai"
         },
         {
             "disabled_tools": [],
-            "handler_configs": [],
+            "enabled": true,
+            "handler_configs": {
+                "github_issue": {
+                    "labels": "status:idea-ready,lane:manual-validation",
+                    "repo": "chubes4/wc-store-blueprints"
+                }
+            },
+            "handler_slugs": [
+                "github_issue"
+            ],
             "prompt_queue": [],
             "queue_mode": "static",
-            "step_position": 2,
+            "step_position": 1,
             "step_type": "publish"
         }
     ]
