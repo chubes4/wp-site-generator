@@ -1,0 +1,49 @@
+{
+    "agent": {
+        "agent_config": {
+            "description": "Generates distinct WooCommerce store concepts and opens them as GitHub issues in chubes4/wc-store-blueprints. Reads recent issues to avoid duplicating in-flight ideas. Manual-run only during validation.",
+            "mode_models": {
+                "chat": {
+                    "model": "gpt-5.5",
+                    "provider": "openai"
+                },
+                "pipeline": {
+                    "model": "gpt-5.5",
+                    "provider": "openai"
+                },
+                "system": {
+                    "model": "gpt-5.5-mini",
+                    "provider": "openai"
+                }
+            }
+        },
+        "description": "",
+        "label": "WC Idea Agent",
+        "slug": "wc-idea-agent"
+    },
+    "bundle_slug": "wc-idea-agent",
+    "bundle_version": "1",
+    "exported_at": "2026-05-05T16:18:37+00:00",
+    "exported_by": "data-machine/0.103.14",
+    "included": {
+        "auth_refs": [],
+        "extensions": [],
+        "flows": [
+            "wc-idea-manual-flow"
+        ],
+        "handler_auth": "refs",
+        "memory": [
+            "agent/SOUL.md"
+        ],
+        "pipelines": [
+            "wc-idea-pipeline"
+        ],
+        "prompts": [],
+        "rubrics": [],
+        "seed_queues": [],
+        "tool_policies": []
+    },
+    "schema_version": 1,
+    "source_ref": "",
+    "source_revision": ""
+}

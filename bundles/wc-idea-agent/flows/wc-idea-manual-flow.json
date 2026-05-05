@@ -1,0 +1,34 @@
+{
+    "max_items": [],
+    "name": "WC Idea Manual Flow",
+    "pipeline_slug": "wc-idea-pipeline",
+    "schedule": "manual",
+    "schema_version": 1,
+    "slug": "wc-idea-manual-flow",
+    "steps": [
+        {
+            "config_patch_queue": [],
+            "disabled_tools": [],
+            "handler_configs": [],
+            "queue_mode": "static",
+            "step_position": 0,
+            "step_type": "fetch"
+        },
+        {
+            "disabled_tools": [],
+            "handler_configs": [],
+            "prompt_queue": [],
+            "queue_mode": "static",
+            "step_position": 1,
+            "step_type": "ai"
+        },
+        {
+            "disabled_tools": [],
+            "handler_configs": [],
+            "prompt_queue": [],
+            "queue_mode": "static",
+            "step_position": 2,
+            "step_type": "publish"
+        }
+    ]
+}

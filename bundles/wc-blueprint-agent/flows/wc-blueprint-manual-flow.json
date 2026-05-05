@@ -1,0 +1,50 @@
+{
+    "max_items": [],
+    "name": "WC Blueprint Manual Flow",
+    "pipeline_slug": "wc-blueprint-pipeline",
+    "schedule": "manual",
+    "schema_version": 1,
+    "slug": "wc-blueprint-manual-flow",
+    "steps": [
+        {
+            "config_patch_queue": [],
+            "disabled_tools": [],
+            "handler_configs": [],
+            "queue_mode": "static",
+            "step_position": 0,
+            "step_type": "fetch"
+        },
+        {
+            "disabled_tools": [],
+            "handler_configs": [],
+            "prompt_queue": [],
+            "queue_mode": "static",
+            "step_position": 1,
+            "step_type": "ai"
+        },
+        {
+            "disabled_tools": [],
+            "enabled": true,
+            "handler_configs": {
+                "github_upsert": {
+                    "commit_message": "docs: update generated content"
+                }
+            },
+            "handler_slugs": [
+                "github_upsert"
+            ],
+            "prompt_queue": [],
+            "queue_mode": "static",
+            "step_position": 2,
+            "step_type": "upsert"
+        },
+        {
+            "disabled_tools": [],
+            "handler_configs": [],
+            "prompt_queue": [],
+            "queue_mode": "static",
+            "step_position": 3,
+            "step_type": "publish"
+        }
+    ]
+}
