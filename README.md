@@ -1,4 +1,4 @@
-# wc-store-blueprints
+# wc-site-generator
 
 A two-agent loop that generates **WooCommerce store blueprints** at scale.
 
@@ -15,7 +15,7 @@ Ideas live as **GitHub issues**. Blueprints arrive as **pull requests**. Every P
 3. Every PR body contains a **WordPress Playground preview link** of the form
 
    ```
-   https://playground.wordpress.net/?blueprint-url=https://raw.githubusercontent.com/chubes4/wc-store-blueprints/<branch>/blueprints/<slug>/blueprint.json
+   https://playground.wordpress.net/?blueprint-url=https://raw.githubusercontent.com/chubes4/wc-site-generator/<branch>/blueprints/<slug>/blueprint.json
    ```
 
    Click it. The store boots inside the browser. No local install, no setup, no auth.
@@ -113,7 +113,7 @@ Splitting "what should we build" from "how do we build it" keeps each agent's pr
 Every PR body contains exactly one preview link of this shape:
 
 ```
-https://playground.wordpress.net/?blueprint-url=https://raw.githubusercontent.com/chubes4/wc-store-blueprints/<branch>/blueprints/<slug>/blueprint.json
+https://playground.wordpress.net/?blueprint-url=https://raw.githubusercontent.com/chubes4/wc-site-generator/<branch>/blueprints/<slug>/blueprint.json
 ```
 
 Three things happen when a reviewer clicks it:
@@ -158,7 +158,7 @@ Today the system relies on prompt rules + Playground booting cleanly as the vali
 ## What this repo contains
 
 ```
-wc-store-blueprints/
+wc-site-generator/
   README.md                  ← this file
   .gitignore
   .gitattributes
@@ -197,7 +197,7 @@ The two agents run as a Data Machine agent bundle on a host site (currently a St
 1. **Data Machine** + **Data Machine Code** plugins active.
 2. A **GitHub credential profile** in DMC scoped to this repo with `Contents`, `Issues`, and `Pull requests` write access.
 3. An **AI provider** configured (OpenAI today, with the bundle pinned to `gpt-5.5`; Claude planned later for the idea agent).
-4. The agent bundle imported and pointed at `chubes4/wc-store-blueprints`.
+4. The agent bundle imported and pointed at `chubes4/wc-site-generator`.
 
 Both flows are **manual-trigger** by default during validation:
 
@@ -214,7 +214,7 @@ There is no auto-merge step. Merging is a human decision.
 
 ## Status
 
-- `chubes4/wc-store-blueprints` repo seeded.
+- `chubes4/wc-site-generator` repo seeded.
 - Data Machine Code v0.30.0 in place with `create-github-issue` and `create-github-pull-request` abilities and credential profiles.
 - Agent bundle (manual-trigger flows) under construction on the host Studio site.
 - First end-to-end pass (one idea → one blueprint PR with a working Playground link) is the validation gate before scaling concurrency.
