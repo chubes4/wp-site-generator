@@ -1,10 +1,10 @@
 {
     "max_items": [],
-    "name": "WC Idea — Manual Validation",
+    "name": "WC Idea — Outdoors & Field",
     "pipeline_slug": "wc-idea-pipeline",
     "schedule": "manual",
     "schema_version": 1,
-    "slug": "wc-idea-manual-flow",
+    "slug": "wc-idea-outdoors-and-field-flow",
     "steps": [
         {
             "disabled_tools": [],
@@ -12,7 +12,7 @@
             "prompt_queue": [
                 {
                     "added_at": "2026-05-06T13:55:00+00:00",
-                    "prompt": "Industry: open. Generate one distinct, buildable store concept for an underserved but visually interesting product category. Treat this as a manual validation run; pick a concept that produces a strong homepage and product catalog when built downstream."
+                    "prompt": "Industry: outdoors and field. Generate one distinct, buildable store concept for outdoors and field-use products. Examples of valid sub-spaces: backpacking and camping, fly-fishing, foraging and field naturalism, cyanotype and field photography kits, bird and wildlife observation, cycling and ultra-cycling, climbing or canyoneering specialty, beekeeping, gardening for harsh climates, overlanding. Stay inside outdoors and field-use; do not drift into pure apparel or pure home goods."
                 }
             ],
             "queue_mode": "static",

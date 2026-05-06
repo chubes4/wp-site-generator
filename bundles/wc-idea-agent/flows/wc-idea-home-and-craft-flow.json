@@ -1,10 +1,10 @@
 {
     "max_items": [],
-    "name": "WC Idea — Manual Validation",
+    "name": "WC Idea — Home & Craft",
     "pipeline_slug": "wc-idea-pipeline",
     "schedule": "manual",
     "schema_version": 1,
-    "slug": "wc-idea-manual-flow",
+    "slug": "wc-idea-home-and-craft-flow",
     "steps": [
         {
             "disabled_tools": [],
@@ -12,7 +12,7 @@
             "prompt_queue": [
                 {
                     "added_at": "2026-05-06T13:55:00+00:00",
-                    "prompt": "Industry: open. Generate one distinct, buildable store concept for an underserved but visually interesting product category. Treat this as a manual validation run; pick a concept that produces a strong homepage and product catalog when built downstream."
+                    "prompt": "Industry: home goods and craft. Generate one distinct, buildable store concept for the home goods and craft industry. Examples of valid sub-spaces: ceramics and tableware, textiles and bedding, lighting, woodworking supplies, leatherwork, fiber arts and yarn, marbling and bookbinding, candles and soap, small-batch furniture, restoration tooling. Stay inside home and craft; do not drift into general apparel, food, or pure decor without a craft angle."
                 }
             ],
             "queue_mode": "static",
