@@ -1,0 +1,32 @@
+{
+    "id": "wc-site-generator",
+    "name": "WC Site Generator",
+    "extensions": {
+        "wordpress": {
+            "settings": {
+                "playground_blueprint": {
+                    "$schema": "https://playground.wordpress.net/blueprint-schema.json",
+                    "preferredVersions": {
+                        "php": "8.3",
+                        "wp": "latest"
+                    },
+                    "steps": [
+                        {
+                            "step": "installPlugin",
+                            "pluginData": {
+                                "resource": "git:directory",
+                                "url": "https://github.com/chubes4/static-site-importer",
+                                "ref": "main",
+                                "refType": "branch"
+                            },
+                            "options": {
+                                "activate": true,
+                                "targetFolderName": "static-site-importer"
+                            }
+                        }
+                    ]
+                }
+            }
+        }
+    }
+}

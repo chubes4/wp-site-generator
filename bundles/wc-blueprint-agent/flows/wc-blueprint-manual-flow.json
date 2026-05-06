@@ -52,6 +52,7 @@
                 "github_pull_request": {
                     "base": "main",
                     "draft": false,
+                    "labels": "target:blueprint",
                     "maintainer_can_modify": false,
                     "repo": "chubes4/wc-site-generator"
                 }
