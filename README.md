@@ -194,9 +194,10 @@ Every static site must:
 1. Use realistic ecommerce structure (header, nav, hero, product grids, category modules, cards, prices, CTAs, footer).
 2. Use stable semantic hooks: `header`, `nav`, `main`, `section`, `footer`, `.hero`, `.product-card`, `.price`, `.cta`, `.brand`, `.collection`.
 3. Use local assets only — no remote stylesheets, fonts, scripts, or images.
-4. Import cleanly through Static Site Importer with low fallback / freeform / invalid-block counts.
+4. Include a Static Site Importer-compatible `products.json` manifest when product data is generated: root object with `schema_version: 1`, `products` as a flat array, lowercase URL-safe product `slug` values, and decimal string `regular_price` values.
+5. Import cleanly through Static Site Importer with low fallback / freeform / invalid-block counts.
 
-Items 1–3 are prompt rules. Item 4 is enforced by the CI validation lane.
+Items 1–4 are prompt rules. Item 5 is enforced by the CI validation lane.
 
 ---
 

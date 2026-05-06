@@ -31,6 +31,40 @@ static-sites/<slug>/products.json
 
 Additional files under `static-sites/<slug>/assets/` are allowed when they improve realism. Use the concept's slug derived from its name.
 
+## products.json Contract
+`products.json` must match the Static Site Importer generated-store contract exactly:
+
+```json
+{
+  "schema_version": 1,
+  "products": [
+    {
+      "name": "Field Repair Kit",
+      "slug": "field-repair-kit",
+      "regular_price": "49.00",
+      "short_description": "Compact repair kit for field work.",
+      "categories": ["Repair Kits"],
+      "status": "publish",
+      "stock_status": "instock",
+      "source_selectors": [".product-card"]
+    }
+  ]
+}
+```
+
+Required fields per product: `name`, `slug`, `regular_price`.
+
+Rules:
+- Root value is an object, not an array.
+- `schema_version` is the number `1`.
+- `products` is a flat JSON array of product objects, not nested under categories, collections, or store metadata.
+- `slug` is lowercase URL-safe text matching `^[a-z0-9]+(?:-[a-z0-9]+)*$`.
+- `regular_price` and `sale_price` are decimal strings such as `19.00`, not numbers.
+- Optional string fields: `description`, `short_description`, `image`, `status`, `stock_status`.
+- Optional array-of-string fields: `categories`, `source_selectors`.
+- Optional integer field: `stock_quantity`.
+- Do not substitute custom fields like `id`, `price`, `price_from`, `currency`, `best_for`, or `includes` for the contract fields.
+
 ## Branch & PR Shape
 - Branch: `static/<slug>`.
 - PR base: the configured repository's default branch.

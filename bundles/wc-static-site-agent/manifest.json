@@ -22,7 +22,7 @@
         "slug": "wc-static-site-agent"
     },
     "bundle_slug": "wc-static-site-agent",
-    "bundle_version": "5",
+    "bundle_version": "6",
     "exported_at": "2026-05-06T23:28:00+00:00",
     "exported_by": "data-machine/0.104.0",
     "included": {
