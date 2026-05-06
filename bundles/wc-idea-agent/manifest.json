@@ -22,8 +22,8 @@
         "slug": "wc-idea-agent"
     },
     "bundle_slug": "wc-idea-agent",
-    "bundle_version": "2",
-    "exported_at": "2026-05-06T14:00:00+00:00",
+    "bundle_version": "3",
+    "exported_at": "2026-05-06T16:30:00+00:00",
     "exported_by": "data-machine/0.104.0",
     "included": {
         "auth_refs": [],

@@ -15,7 +15,7 @@
                 "data_source": "issues",
                 "labels": "status:idea-ready",
                 "max_items": 1,
-                "repo": "chubes4/wc-store-blueprints",
+                "repo": "chubes4/wc-site-generator",
                 "state": "open"
             },
             "handler_configs": {
@@ -23,7 +23,7 @@
                     "data_source": "issues",
                     "labels": "status:idea-ready",
                     "max_items": 1,
-                    "repo": "chubes4/wc-store-blueprints",
+                    "repo": "chubes4/wc-site-generator",
                     "state": "open"
                 }
             },
@@ -53,7 +53,7 @@
                     "base": "main",
                     "draft": false,
                     "maintainer_can_modify": false,
-                    "repo": "chubes4/wc-store-blueprints"
+                    "repo": "chubes4/wc-site-generator"
                 }
             },
             "handler_slugs": [
