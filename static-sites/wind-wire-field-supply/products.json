@@ -1,137 +1,207 @@
 {
   "store": {
     "name": "Wind & Wire Field Supply",
+    "slug": "wind-wire-field-supply",
     "tagline": "Field recording kits for musicians collecting sound outdoors",
-    "slug": "wind-wire-field-supply"
+    "customer": "Sample-based musicians, ambient artists, experimental composers, podcast sound designers, nature recordists with music instincts, audio hobbyists, and students building a first portable audio kit"
   },
-  "categories": [
-    "Starter field kits",
-    "Capture hardware",
-    "Wind and handling control",
-    "Field-bag infrastructure",
-    "Logging and listening tools",
-    "Scenario bundles"
-  ],
-  "products": [
+  "collections": [
     {
-      "id": "first-field-recorder-bag",
-      "name": "First Field Recorder Bag",
-      "category": "Starter field kits",
-      "price": 289,
-      "description": "A first portable recording bag with recorder protection, foam and furry wind control, coiled cable, memory-card case, rechargeable batteries, field notebook, and gain-setting cheat card.",
-      "scenario": "first field recorder bag"
+      "name": "Starter field kits",
+      "description": "Ready-to-pack kits built around the field bag instead of scattered pro-audio, camera-rig, outdoor, and DIY electronics carts.",
+      "products": [
+        {
+          "name": "First Field Recorder Bag",
+          "category": "Starter kit",
+          "price": 349,
+          "summary": "Handheld recorder foundation with foam, furry windshield, monitoring, cable labels, battery planning, and a take-log notebook.",
+          "includes": ["handheld recorder", "foam screen", "furry windshield", "closed-back monitoring headphones", "labeled cable ties", "rechargeable batteries", "field notebook"]
+        },
+        {
+          "name": "Urban Texture Kit",
+          "category": "Starter kit",
+          "price": 289,
+          "summary": "Compact setup for alleys, train platforms, mechanical pulse, and found rhythm.",
+          "includes": ["compact stereo mic", "shock mount", "pistol grip", "right-angle adapters", "slate cards", "soft recorder wrap"]
+        },
+        {
+          "name": "Nature Ambience Kit",
+          "category": "Starter kit",
+          "price": 319,
+          "summary": "Long-session outdoor kit for dawn beds, trail ambience, and quieter environmental material.",
+          "includes": ["lavalier pair", "small stereo bar", "wind layers", "weather pouch", "battery set", "location labels"]
+        },
+        {
+          "name": "Contact-Mic Discovery Kit",
+          "category": "Starter kit",
+          "price": 176,
+          "summary": "A first resonant-surface kit for turning fences, rails, benches, signs, and scrap into source material.",
+          "includes": ["contact microphone pair", "clips", "short cables", "adapter set", "sample archive sleeves"]
+        },
+        {
+          "name": "Rainy-Day Capture Bundle",
+          "category": "Starter kit",
+          "price": 214,
+          "summary": "Wet-weather protection and boundary pickup for rainy-window texture and protected outdoor sessions.",
+          "includes": ["boundary mic", "weather pouches", "soft recorder wrap", "washable labels", "gain-setting cheat card"]
+        }
+      ]
     },
     {
-      "id": "urban-texture-kit",
-      "name": "Urban Texture Kit",
-      "category": "Starter field kits",
-      "price": 348,
-      "description": "Compact setup for train platforms, alleys, and street percussion with stereo capture, handling control, right-angle adapters, cable ties, labels, and slate cards.",
-      "scenario": "urban texture"
+      "name": "Capture hardware",
+      "description": "Compact microphones and recorders for surfaces, spaces, water, and portable stereo capture.",
+      "products": [
+        {
+          "name": "Pocket XY Stereo Mic",
+          "category": "Compact stereo mic",
+          "price": 129,
+          "summary": "Quick ambience, motion, and room tone capture without carrying a full rig."
+        },
+        {
+          "name": "Found-Percussion Contact Pair",
+          "category": "Contact microphones",
+          "price": 96,
+          "summary": "Contact mics for fences, rails, benches, signs, and resonant scrap."
+        },
+        {
+          "name": "Harbor Drop Hydrophone",
+          "category": "Hydrophone",
+          "price": 148,
+          "summary": "Waterline capture for harbor movement, drainage echoes, dock slap, and submerged motion."
+        },
+        {
+          "name": "Rain Glass Boundary Pickup",
+          "category": "Boundary mic",
+          "price": 112,
+          "summary": "Place-and-wait pickup for windows, tables, panels, and rainy indoor/outdoor edges."
+        }
+      ]
     },
     {
-      "id": "nature-ambience-kit",
-      "name": "Nature Ambience Kit",
-      "category": "Starter field kits",
-      "price": 412,
-      "description": "Long-form dawn ambience kit with layered wind protection, small stereo bar, tripod adapter, battery planning, memory case, notebook, and sample archive sleeves.",
-      "scenario": "dawn ambience"
+      "name": "Wind and handling control",
+      "description": "Protection and isolation for wind, hand movement, cable bumps, and quick placement.",
+      "products": [
+        {
+          "name": "Furry Windshield Field Pair",
+          "category": "Wind protection",
+          "price": 54,
+          "summary": "Furry windshields for exposed streets, docks, trailheads, and blustery open spaces."
+        },
+        {
+          "name": "Foam Screen Multipack",
+          "category": "Wind protection",
+          "price": 24,
+          "summary": "Foam screens for indoor drafts, mild exterior air, and backup capsule protection."
+        },
+        {
+          "name": "Soft Recorder Wrap",
+          "category": "Handling control",
+          "price": 38,
+          "summary": "Wrap a handheld recorder to reduce bag rub and incidental handling noise."
+        },
+        {
+          "name": "Suspension Clip and Pistol Grip Set",
+          "category": "Shock mount",
+          "price": 68,
+          "summary": "Keep capsules isolated while moving through platforms, piers, alleys, and street corners."
+        }
+      ]
     },
     {
-      "id": "contact-mic-discovery-kit",
-      "name": "Contact-Mic Discovery Kit",
-      "category": "Starter field kits",
-      "price": 176,
-      "description": "Contact microphones, labeled cable ties, boundary helper, washable location labels, and a surface-focused logging format for found-percussion sessions.",
-      "scenario": "found-percussion contact"
+      "name": "Field-bag infrastructure",
+      "description": "Cables, power, pouches, memory organization, and small tools that keep sessions from falling apart.",
+      "products": [
+        {
+          "name": "Right-Angle Field Cable Set",
+          "category": "Cable discipline",
+          "price": 42,
+          "summary": "Short coiled runs, right-angle adapters, and labels for cleaner recorder-bag routing."
+        },
+        {
+          "name": "Storm Pouch Trio",
+          "category": "Weather pouches",
+          "price": 58,
+          "summary": "Weatherproof pouches sized for recorder, power, and memory cards."
+        },
+        {
+          "name": "Long-Take Battery Plan",
+          "category": "Power",
+          "price": 74,
+          "summary": "Rechargeable battery set, small power bank, and session planning card."
+        },
+        {
+          "name": "Memory Card Case + Sample Sleeves",
+          "category": "Archive",
+          "price": 31,
+          "summary": "Separate blank, used, copied, and release-ready material in the field bag."
+        }
+      ]
     },
     {
-      "id": "rainy-day-capture-bundle",
-      "name": "Rainy-Day Capture Bundle",
-      "category": "Starter field kits",
-      "price": 236,
-      "description": "Weather pouch, soft recorder wrap, foam screens, boundary mic support, memory case, and archive sleeves for rainy-window texture and weathered close detail.",
-      "scenario": "rainy-window texture"
+      "name": "Logging and listening tools",
+      "description": "Monitoring, notebooks, slate cards, labels, gain guides, and archive materials for making outdoor sound usable later.",
+      "products": [
+        {
+          "name": "Closed-Back Field Monitors",
+          "category": "Monitoring headphones",
+          "price": 89,
+          "summary": "Portable closed-back monitoring for gain decisions and noise checks outside the studio."
+        },
+        {
+          "name": "Field Take Notebook",
+          "category": "Logging",
+          "price": 18,
+          "summary": "Notebook pages shaped for location, mic, gain, weather, and musical-use notes."
+        },
+        {
+          "name": "Slate Card and Washable Label Pack",
+          "category": "Logging",
+          "price": 22,
+          "summary": "Reusable cards and labels for take IDs, location notes, and bag organization."
+        },
+        {
+          "name": "Gain-Setting Cheat Cards",
+          "category": "Logging",
+          "price": 14,
+          "summary": "Quick reference cards for setting levels before wind, traffic, or rain changes the scene."
+        }
+      ]
     },
     {
-      "id": "pocket-pair-stereo-bar",
-      "name": "Pocket Pair Stereo Bar",
-      "category": "Capture hardware",
-      "price": 64,
-      "description": "Small stereo bar with tripod adapter and cable tie points for repeatable spacing in a portable field bag.",
-      "scenario": "compact stereo capture"
-    },
-    {
-      "id": "harbor-hydrophone-lead",
-      "name": "Harbor Hydrophone Lead",
-      "category": "Capture hardware",
-      "price": 118,
-      "description": "Hydrophone with labeled sleeve, coiled cable, and quick rinse card for harbor movement, creek beds, dock slap, and submerged texture.",
-      "scenario": "harbor hydrophone"
-    },
-    {
-      "id": "soft-recorder-wrap",
-      "name": "Soft Recorder Wrap",
-      "category": "Wind and handling control",
-      "price": 32,
-      "description": "Quiet wrap for handheld recorders that reduces bag scrape and finger noise during moving takes.",
-      "scenario": "handling-noise control"
-    },
-    {
-      "id": "layered-fur-windshield-set",
-      "name": "Layered Fur Windshield Set",
-      "category": "Wind and handling control",
-      "price": 74,
-      "description": "Foam and furry windshield layers for compact mics and handheld recorders used in low wind, dawn ambience, and travel-light sessions.",
-      "scenario": "wind control"
-    },
-    {
-      "id": "cable-discipline-pack",
-      "name": "Cable Discipline Pack",
-      "category": "Field-bag infrastructure",
-      "price": 41,
-      "description": "Coiled cables, right-angle adapters, labeled cable ties, and washable location labels for fast setup and fewer lost takes.",
-      "scenario": "field-bag infrastructure"
-    },
-    {
-      "id": "power-memory-pocket",
-      "name": "Power & Memory Pocket",
-      "category": "Field-bag infrastructure",
-      "price": 58,
-      "description": "Rechargeable battery set, small power bank, memory-card case, and session checklist for longer outdoor capture days.",
-      "scenario": "battery planning"
-    },
-    {
-      "id": "take-log-slate-set",
-      "name": "Take Log & Slate Set",
-      "category": "Logging and listening tools",
-      "price": 36,
-      "description": "Field notebook, slate cards, washable location labels, gain-setting cheat cards, and sample archive sleeves for organized sample collection.",
-      "scenario": "logging and archive"
-    },
-    {
-      "id": "closed-back-monitoring-kit",
-      "name": "Closed-Back Monitoring Kit",
-      "category": "Logging and listening tools",
-      "price": 129,
-      "description": "Closed-back monitoring headphones and quick gain notes for checking wind, handling noise, and usable signal before leaving a location.",
-      "scenario": "field monitoring"
-    },
-    {
-      "id": "subway-rhythm-pack",
-      "name": "Subway Rhythm Pack",
-      "category": "Scenario bundles",
-      "price": 214,
-      "description": "Right-angle adapters, compact stereo mic support, shock mount, cable ties, and slate cards for train platforms and metallic rhythmic transitions.",
-      "scenario": "subway rhythm"
-    },
-    {
-      "id": "travel-light-carry-on-pack",
-      "name": "Travel-Light Carry-On Pack",
-      "category": "Scenario bundles",
-      "price": 268,
-      "description": "Compact recorder wrap, windscreen set, lavalier pair support, power bank, memory case, and cable labels for lighter travel recording.",
-      "scenario": "travel-light carry-on"
+      "name": "Scenario bundles",
+      "description": "Focused packs for specific outdoor recording situations.",
+      "products": [
+        {
+          "name": "Subway Rhythm Pack",
+          "category": "Scenario bundle",
+          "price": 289,
+          "summary": "Compact stereo capture, handling isolation, and cable discipline for transit rhythms and metallic transients."
+        },
+        {
+          "name": "Forest Dawn Pack",
+          "category": "Scenario bundle",
+          "price": 319,
+          "summary": "Wind layers, long power, quiet monitoring, and logging tools for dawn ambience."
+        },
+        {
+          "name": "Harbor Hydrophone Pack",
+          "category": "Scenario bundle",
+          "price": 246,
+          "summary": "Hydrophone, weather protection, monitoring, and labels for creaking piers and harbor edges."
+        },
+        {
+          "name": "Found-Percussion Contact Pack",
+          "category": "Scenario bundle",
+          "price": 178,
+          "summary": "Contact mics, clips, adapters, and archive sleeves for turning resonant objects into instruments."
+        },
+        {
+          "name": "Travel-Light Carry-On Pack",
+          "category": "Scenario bundle",
+          "price": 264,
+          "summary": "A compact bag plan with recorder protection, power, cable control, and logging tools for portable sessions."
+        }
+      ]
     }
   ]
 }
