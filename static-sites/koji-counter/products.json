@@ -1,0 +1,258 @@
+{
+  "store": "Koji Counter",
+  "slug": "koji-counter",
+  "tagline": "Fermented umami pantry for cooks building deeper flavor without shortcuts",
+  "currency": "USD",
+  "collections": [
+    {
+      "id": "ready-to-use-staples",
+      "name": "Ready-to-use koji staples",
+      "description": "Approachable fermented staples for marinades, broths, grains, vegetables, sauces, and drinks.",
+      "products": [
+        {
+          "id": "shio-koji-everyday-jar",
+          "name": "Shio Koji Everyday Jar",
+          "price": 14,
+          "unit": "12 oz jar",
+          "use_case": "Tender grilled proteins and deeply seasoned roasted vegetables",
+          "description": "Salted rice koji for chicken, pork, fish, tofu, mushrooms, and quick vegetable marinades."
+        },
+        {
+          "id": "shoyu-koji-spoon-sauce",
+          "name": "Shoyu Koji Spoon Sauce",
+          "price": 15,
+          "unit": "10 oz jar",
+          "use_case": "Rice bowls, broths, pan sauces, and finishing spoonfuls",
+          "description": "A spoonable shoyu koji condiment that brings soy-sauce depth with fermented roundness."
+        },
+        {
+          "id": "barley-koji-paste",
+          "name": "Barley Koji Paste",
+          "price": 13,
+          "unit": "9 oz jar",
+          "use_case": "Roasted vegetables, mushrooms, beans, and grain bowls",
+          "description": "A savory barley koji paste for cooks who want deeper vegetable flavor without meat stock."
+        },
+        {
+          "id": "sweet-white-miso-crock",
+          "name": "Sweet White Miso Crock",
+          "price": 12,
+          "unit": "11 oz crock",
+          "use_case": "Dressings, soups, butter sauces, corn, and desserts",
+          "description": "Mellow white miso for everyday cooking and quiet savory-sweet applications."
+        },
+        {
+          "id": "red-miso-broth-base",
+          "name": "Red Miso Broth Base",
+          "price": 13,
+          "unit": "11 oz crock",
+          "use_case": "Richer soups, broths, beans, and noodle bowls",
+          "description": "A deeper miso staple for soup-and-broth depth packs and slow-tasting weeknight meals."
+        },
+        {
+          "id": "chickpea-miso",
+          "name": "Chickpea Miso",
+          "price": 14,
+          "unit": "10 oz crock",
+          "use_case": "Vegetarian weeknight sauces and savory depth",
+          "description": "A chickpea-based miso for vegetable-forward cooking, brothy beans, and dressings."
+        },
+        {
+          "id": "amazake-concentrate",
+          "name": "Amazake Concentrate",
+          "price": 16,
+          "unit": "12 oz bottle",
+          "use_case": "Non-alcoholic drinks, citrus shrubs, smoothies, and low-sugar desserts",
+          "description": "A lightly sweet fermented rice concentrate for beverage and dessert pantry builds."
+        }
+      ]
+    },
+    {
+      "id": "fermentation-foundations",
+      "name": "Fermentation foundations",
+      "description": "Foundational ingredients and guides for small-batch cooks who want reliable koji projects.",
+      "products": [
+        {
+          "id": "dried-rice-koji",
+          "name": "Dried Rice Koji",
+          "price": 18,
+          "unit": "1 lb pouch",
+          "use_case": "Homemade shio koji, amazake, pickling beds, and starter batches",
+          "description": "Dried rice koji for cooks ready to make practical fermented staples at home."
+        },
+        {
+          "id": "barley-koji",
+          "name": "Barley Koji",
+          "price": 18,
+          "unit": "1 lb pouch",
+          "use_case": "Savory pastes, vegetable seasonings, and brothy bases",
+          "description": "Barley koji for building a deeper, grain-forward fermented pantry."
+        },
+        {
+          "id": "small-batch-starter-pack",
+          "name": "Small Batch Starter Pack",
+          "price": 32,
+          "unit": "kit",
+          "use_case": "First koji pantry project",
+          "description": "Dried koji, salt blend, brine guide, and safety checklist sized for approachable home batches."
+        }
+      ]
+    },
+    {
+      "id": "sauces-and-condiments",
+      "name": "Cooking sauces and condiments",
+      "description": "Fermented condiments for heat, sweetness, finishing, glazing, and fast savory depth.",
+      "products": [
+        {
+          "id": "koji-hot-sauce",
+          "name": "Koji Hot Sauce",
+          "price": 11,
+          "unit": "6 oz bottle",
+          "use_case": "Eggs, beans, noodles, grilled food, and vegetables",
+          "description": "A fermented hot sauce that brings depth and heat without flattening the food underneath."
+        },
+        {
+          "id": "koji-mustard",
+          "name": "Koji Mustard",
+          "price": 10,
+          "unit": "6 oz jar",
+          "use_case": "Sandwiches, dressings, roasted vegetables, and grilled proteins",
+          "description": "A savory mustard built for pantry cooks who want bright acidity and fermented body."
+        },
+        {
+          "id": "miso-caramel",
+          "name": "Miso Caramel",
+          "price": 12,
+          "unit": "7 oz jar",
+          "use_case": "Desserts, apples, ice cream, cakes, and pantry gifting",
+          "description": "A sweet-salty miso dessert sauce with the quiet complexity of fermentation."
+        },
+        {
+          "id": "tamari-style-finishing-sauce",
+          "name": "Tamari-Style Finishing Sauce",
+          "price": 15,
+          "unit": "8 oz bottle",
+          "use_case": "Table seasoning, broths, grains, and vegetable bowls",
+          "description": "A deep finishing sauce for cooks who already reach for good soy sauce and vinegar."
+        },
+        {
+          "id": "fermented-garlic-paste",
+          "name": "Fermented Garlic Paste",
+          "price": 13,
+          "unit": "8 oz jar",
+          "use_case": "Pan sauces, soups, marinades, beans, and roasted vegetables",
+          "description": "Garlic paste with fermented roundness for faster savory foundations."
+        }
+      ]
+    },
+    {
+      "id": "meal-oriented-bundles",
+      "name": "Meal-oriented bundles",
+      "description": "Curated kits arranged around cooking outcomes instead of fermentation jargon.",
+      "products": [
+        {
+          "id": "grilled-protein-marinade-set",
+          "name": "Grilled Protein Marinade Set",
+          "price": 38,
+          "unit": "bundle",
+          "use_case": "Juicier grilled chicken, pork, fish, and tofu",
+          "description": "Shio koji, glaze base, fermented garlic paste, and marinade timing card."
+        },
+        {
+          "id": "roasted-vegetable-umami-kit",
+          "name": "Roasted Vegetable Umami Kit",
+          "price": 36,
+          "unit": "bundle",
+          "use_case": "Deeper carrots, squash, mushrooms, greens, and grain bowls",
+          "description": "Barley koji paste, sweet white miso, fermented garlic paste, and a vegetable flavor map."
+        },
+        {
+          "id": "quick-pickle-bed",
+          "name": "Quick Pickle Bed",
+          "price": 28,
+          "unit": "bundle",
+          "use_case": "Faster pickles and crisp everyday sides",
+          "description": "Koji pickling bed, salt blend, brine guide, and timing cards."
+        },
+        {
+          "id": "soup-and-broth-depth-pack",
+          "name": "Soup-and-Broth Depth Pack",
+          "price": 40,
+          "unit": "bundle",
+          "use_case": "Richer soups, broths, beans, and noodle bowls",
+          "description": "Red miso, chickpea miso, tamari-style finishing sauce, and broth timing cards."
+        },
+        {
+          "id": "vegetarian-weeknight-flavor-set",
+          "name": "Vegetarian Weeknight Flavor Set",
+          "price": 42,
+          "unit": "bundle",
+          "use_case": "Savory depth for vegetable-forward cooking",
+          "description": "Chickpea miso, barley koji paste, tamari-style finishing sauce, and printed flavor map."
+        }
+      ]
+    },
+    {
+      "id": "beverage-and-dessert-pantry",
+      "name": "Beverage and dessert pantry",
+      "description": "Amazake drink bases, dessert sauces, shrubs, and low-sugar fermented syrups.",
+      "products": [
+        {
+          "id": "koji-citrus-shrub-concentrate",
+          "name": "Koji Citrus Shrub Concentrate",
+          "price": 15,
+          "unit": "10 oz bottle",
+          "use_case": "Quietly complex non-alcoholic drinks",
+          "description": "A citrus shrub concentrate built around fermented depth and bright acidity."
+        },
+        {
+          "id": "low-sugar-fermented-syrup",
+          "name": "Low-Sugar Fermented Syrup",
+          "price": 14,
+          "unit": "8 oz bottle",
+          "use_case": "Seltzer, tea, desserts, and hosting drinks",
+          "description": "A low-sugar syrup for drinks and desserts that need body without heaviness."
+        }
+      ]
+    },
+    {
+      "id": "teaching-goods",
+      "name": "Teaching goods",
+      "description": "Printed materials focused on everyday cooking, timing, safety, tasting, and use cases.",
+      "products": [
+        {
+          "id": "printed-flavor-map",
+          "name": "Printed Flavor Map",
+          "price": 9,
+          "unit": "foldout guide",
+          "use_case": "Choosing a ferment by protein, vegetable, grain, broth, drink, or dessert",
+          "description": "A practical map that turns scattered fermented jars into an intentional pantry system."
+        },
+        {
+          "id": "fermentation-timing-cards",
+          "name": "Fermentation Timing Cards",
+          "price": 8,
+          "unit": "card set",
+          "use_case": "Marinades, pickles, miso additions, and amazake drinks",
+          "description": "Small reference cards for reliable timing without treating koji like a science project."
+        },
+        {
+          "id": "safety-checklist",
+          "name": "Safety Checklist",
+          "price": 6,
+          "unit": "laminated card",
+          "use_case": "Small-batch starter packs and home fermentation confidence",
+          "description": "A concise checklist for careful pantry projects and fermentation-curious cooks."
+        },
+        {
+          "id": "everyday-koji-recipe-zine",
+          "name": "Everyday Koji Recipe Zine",
+          "price": 12,
+          "unit": "printed zine",
+          "use_case": "Weeknight recipes and dinner-party hosting",
+          "description": "Recipes for grilled proteins, roasted vegetables, faster pickles, richer soups, drinks, and desserts."
+        }
+      ]
+    }
+  ]
+}
