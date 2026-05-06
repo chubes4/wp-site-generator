@@ -80,6 +80,10 @@ jobs:
                     "type": "wp-cli",
                     "command": ("wp static-site-importer import-theme /wordpress/wp-content/plugins/wc-site-generator/static-sites/" + $site + "/index.html --slug=" + $site + " --activate --overwrite --keep-source --format=json"),
                     "parse": "json"
+                  },
+                  {
+                    "type": "php",
+                    "file": ".github/homeboy/ssi-import-diagnostics.php"
                   }
                 ],
                 "artifacts": {
@@ -170,10 +174,28 @@ jobs:
                 ([ .[] | "| `\(.key)` | \(.value) |" ] | join("\n"))
               end)
           ')
+          diagnostics=$(printf '%s' "$ssi" | jq -r '
+            .metadata.import_report_summary as $summary
+            | if $summary == null then "" else
+                "\n\n### SSI Import Report\n" +
+                "- **Report path:** `\($summary.path // "unknown")`\n" +
+                "- **Readable:** `\($summary.readable // false)`\n" +
+                "- **Top-level keys:** `\((($summary.top_level_keys // []) | join(", ")) // "")`\n" +
+                (if (($summary.findings // []) | length) == 0 then
+                  "\n_No warning/error/fallback/core-html signals found in the import report._"
+                else
+                  "\n| Kind | Path | Preview |\n| --- | --- | --- |\n" +
+                  ([ ($summary.findings // [])[]
+                    | "| `\(.kind)` | `\(.path)` | \((.preview // "") | gsub("\\n"; " ") | gsub("\\|"; "\\\\|")) |"
+                  ] | join("\n"))
+                end)
+              end
+          ')
           delim="EOF_$(openssl rand -hex 8)"
           {
             echo "metrics_md<<$delim"
             printf '%s\n' "$metrics"
+            printf '%s\n' "$diagnostics"
             echo "$delim"
           } >> "$GITHUB_OUTPUT"
 
