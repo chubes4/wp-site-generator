@@ -1,7 +1,7 @@
 {
     "agent": {
         "agent_config": {
-            "description": "Picks the next open idea issue in chubes4/wc-store-blueprints and authors a pull request that commits a runnable WooCommerce blueprint with a WordPress Playground preview link. Manual-run only during validation.",
+            "description": "Reads an open store-concept idea issue and authors a pull request that commits a runnable WordPress Playground blueprint with a working preview link in the PR body.",
             "mode_models": {
                 "chat": {
                     "model": "gpt-5.5",
@@ -22,21 +22,21 @@
         "slug": "wc-blueprint-agent"
     },
     "bundle_slug": "wc-blueprint-agent",
-    "bundle_version": "1",
-    "exported_at": "2026-05-05T20:33:08+00:00",
+    "bundle_version": "2",
+    "exported_at": "2026-05-06T16:00:00+00:00",
     "exported_by": "data-machine/0.104.0",
     "included": {
         "auth_refs": [],
         "extensions": [],
         "flows": [
-            "wc-blueprint-manual-flow-v2"
+            "wc-blueprint-manual-flow"
         ],
         "handler_auth": "refs",
         "memory": [
             "agent/SOUL.md"
         ],
         "pipelines": [
-            "wc-blueprint-pipeline-v2"
+            "wc-blueprint-pipeline"
         ],
         "prompts": [],
         "rubrics": [],
