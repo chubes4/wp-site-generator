@@ -1,0 +1,130 @@
+{
+  "store": "Cane & Cord Seatworks",
+  "slug": "cane-cord-seatworks",
+  "tagline": "Chair caning kits for restoring well-built seats at home",
+  "customer_groups": [
+    "old-house owners",
+    "thrifted-furniture rescuers",
+    "woodworking hobbyists",
+    "rental-property fixers",
+    "preservation-minded families",
+    "small vintage dealers"
+  ],
+  "collections": [
+    {
+      "name": "Seat repair kits",
+      "description": "Project bundles organized around recognizable chair, rocker, stool, bench, and practice-frame repairs.",
+      "products": [
+        {
+          "name": "Pressed-Cane Dining Chair Kit",
+          "price": 64,
+          "unit": "kit",
+          "includes": [
+            "measured cane webbing",
+            "spline",
+            "groove cleaner",
+            "glue",
+            "wedges",
+            "seat measurement template"
+          ],
+          "best_for": "dining chairs with routed grooves and failed pressed cane"
+        },
+        {
+          "name": "Hand-Caned Rocker Kit",
+          "price": 92,
+          "unit": "kit",
+          "includes": [
+            "binder cane",
+            "lacing cane",
+            "peg set",
+            "caning awl",
+            "wedges",
+            "weave-count cards"
+          ],
+          "best_for": "rockers and chairs with hole-to-hole hand caning"
+        },
+        {
+          "name": "Fiber-Rush Stool Kit",
+          "price": 58,
+          "unit": "kit",
+          "includes": [
+            "fiber rush",
+            "clamps",
+            "seat gauge",
+            "bench mat",
+            "snips",
+            "polishing cloth"
+          ],
+          "best_for": "stools and small frames with rush seats"
+        },
+        {
+          "name": "Danish-Cord Bench Kit",
+          "price": 118,
+          "unit": "kit",
+          "includes": [
+            "paper cord or Danish cord",
+            "pattern ruler",
+            "lacing guide",
+            "clamp plan",
+            "repair logbook page"
+          ],
+          "best_for": "benches and chairs with corded seats"
+        },
+        {
+          "name": "First-Practice Frame Bundle",
+          "price": 74,
+          "unit": "bundle",
+          "includes": [
+            "practice frame",
+            "sample cane",
+            "sample rush",
+            "sample cord",
+            "pegs",
+            "beginner seat map"
+          ],
+          "best_for": "learning a repeatable hand skill before repairing a family chair"
+        }
+      ]
+    },
+    {
+      "name": "Weaving materials",
+      "description": "Replenishable chair-seat materials sorted by pattern, width, and repair type.",
+      "products": [
+        { "name": "Cane Webbing by Pattern and Width", "price_from": 18, "unit": "panel" },
+        { "name": "Spline Rolls", "price_from": 9, "unit": "roll" },
+        { "name": "Binder Cane", "price_from": 16, "unit": "coil" },
+        { "name": "Flat Reed", "price_from": 14, "unit": "bundle" },
+        { "name": "Fiber Rush", "price_from": 22, "unit": "coil" },
+        { "name": "Paper Cord", "price_from": 28, "unit": "coil" },
+        { "name": "Danish Cord", "price_from": 34, "unit": "coil" },
+        { "name": "Sample Swatch Cards", "price": 12, "unit": "card set" }
+      ]
+    },
+    {
+      "name": "Tools and setup",
+      "description": "Small bench tools for cutting, cleaning, holding, soaking, measuring, and weaving seat materials.",
+      "products": [
+        { "name": "Caning Awl", "price": 14, "unit": "tool" },
+        { "name": "Spline Chisel", "price": 18, "unit": "tool" },
+        { "name": "Wedge and Peg Set", "price": 16, "unit": "set" },
+        { "name": "Seat Gauge", "price": 21, "unit": "tool" },
+        { "name": "Soaking Tray", "price": 32, "unit": "tray" },
+        { "name": "Pattern Ruler", "price": 13, "unit": "tool" },
+        { "name": "Bench Mat", "price": 24, "unit": "mat" }
+      ]
+    },
+    {
+      "name": "Prep, finishing, and planning",
+      "description": "Frame-safe prep goods, finish touch-up supplies, chair identification, measurement, and repair recording materials.",
+      "products": [
+        { "name": "Groove Cleaner", "price": 12, "unit": "tool" },
+        { "name": "Frame-Safe Scraper", "price": 15, "unit": "tool" },
+        { "name": "Wax and Shellac Touch-Up Set", "price": 29, "unit": "set" },
+        { "name": "Seat Measurement Templates", "price": 10, "unit": "template pack" },
+        { "name": "Weave-Count Cards", "price": 8, "unit": "card set" },
+        { "name": "Repair Logbook", "price": 18, "unit": "book" },
+        { "name": "Workshop-Host Supply Pack", "price_from": 185, "unit": "pack" }
+      ]
+    }
+  ]
+}
