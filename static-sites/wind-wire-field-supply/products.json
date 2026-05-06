@@ -1,0 +1,207 @@
+{
+  "store": {
+    "name": "Wind & Wire Field Supply",
+    "slug": "wind-wire-field-supply",
+    "tagline": "Field recording kits for musicians collecting usable sound outdoors.",
+    "customer": "Sample-based musicians, ambient artists, experimental composers, podcast sound designers, nature recordists with music instincts, audio hobbyists, and students building a first portable audio kit."
+  },
+  "categories": [
+    {
+      "name": "Starter field kits",
+      "description": "First field recorder bags and complete creative kits for musicians who want cleaner recordings without piecing together fragile gear from unrelated catalogs."
+    },
+    {
+      "name": "Capture hardware",
+      "description": "Compact microphones, handheld recorders, lavalier pairs, contact microphones, hydrophones, boundary mics, and small stereo bars."
+    },
+    {
+      "name": "Wind and handling control",
+      "description": "Furry windshields, foam screens, shock mounts, pistol grips, suspension clips, soft recorder wraps, and tripod adapters."
+    },
+    {
+      "name": "Field-bag infrastructure",
+      "description": "Coiled cables, right-angle adapters, labeled cable ties, weather pouches, memory-card cases, rechargeable battery sets, and small power banks."
+    },
+    {
+      "name": "Logging and listening tools",
+      "description": "Closed-back monitoring headphones, field notebooks, slate cards, washable location labels, gain-setting cheat cards, and sample archive sleeves."
+    },
+    {
+      "name": "Scenario bundles",
+      "description": "Subway rhythm, forest dawn, harbor hydrophone, found-percussion contact, rainy-window, and travel-light capture packs."
+    }
+  ],
+  "products": [
+    {
+      "id": "first-take-field-bag",
+      "name": "First Take Field Bag",
+      "category": "Starter field kits",
+      "price": 329,
+      "currency": "USD",
+      "summary": "A first field recorder bag with recorder, soft wrap, wind screen, memory-card case, rechargeable batteries, cable ties, and gain-setting cheat card.",
+      "best_for": ["students", "first portable audio kit", "travel-light outdoor sound"]
+    },
+    {
+      "id": "alley-texture-kit",
+      "name": "Alley Texture Kit",
+      "category": "Starter field kits",
+      "price": 246,
+      "currency": "USD",
+      "summary": "Compact stereo mic, suspension clip, right-angle adapter, soft wrap, and slate cards for alleys, stairs, vents, and street percussion.",
+      "best_for": ["urban texture", "alley percussion", "street transitions"]
+    },
+    {
+      "id": "forest-dawn-pack",
+      "name": "Forest Dawn Pack",
+      "category": "Scenario bundles",
+      "price": 288,
+      "currency": "USD",
+      "summary": "Furry windshield, compact stereo bar, tripod adapter, weather pouch, location labels, and power bank for long dawn ambience takes.",
+      "best_for": ["dawn ambience", "nature recording", "long pre-sunrise takes"]
+    },
+    {
+      "id": "found-percussion-contact-pack",
+      "name": "Found Percussion Contact Pack",
+      "category": "Scenario bundles",
+      "price": 174,
+      "currency": "USD",
+      "summary": "Contact microphone pair, washable location labels, coiled cable, sample archive sleeves, and field notebook for turning objects into instruments.",
+      "best_for": ["contact mic discovery", "found percussion", "resonant textures"]
+    },
+    {
+      "id": "subway-rhythm-pack",
+      "name": "Subway Rhythm Pack",
+      "category": "Scenario bundles",
+      "price": 312,
+      "currency": "USD",
+      "summary": "Recorder, grip, slate cards, suspension clip, and compact accessories for train platforms, mechanical pulses, station air, and rhythm beds.",
+      "best_for": ["train platforms", "subway rhythm", "mechanical beds"]
+    },
+    {
+      "id": "harbor-hydrophone-pack",
+      "name": "Harbor Hydrophone Pack",
+      "category": "Scenario bundles",
+      "price": 214,
+      "currency": "USD",
+      "summary": "Hydrophone, weather pouch, labels, cable discipline, and logging tools for creaking piers, dock wash, submerged knocks, and boatyard texture.",
+      "best_for": ["harbors", "hydrophone sessions", "creaking piers"]
+    },
+    {
+      "id": "rainy-window-capture-bundle",
+      "name": "Rainy-Window Capture Bundle",
+      "category": "Scenario bundles",
+      "price": 196,
+      "currency": "USD",
+      "summary": "Weather pouch, soft recorder wrap, foam screens, batteries, and labels for rainy glass, sheltered ambience, and soft noise beds.",
+      "best_for": ["rainy-window texture", "weather-safe sessions", "soft noise beds"]
+    },
+    {
+      "id": "travel-light-carry-on-pack",
+      "name": "Travel-Light Carry-On Pack",
+      "category": "Scenario bundles",
+      "price": 352,
+      "currency": "USD",
+      "summary": "Compact recorder-bag configuration with power, card storage, small microphones, and cable discipline for musicians traveling light.",
+      "best_for": ["carry-on recording", "portable sessions", "all-day sound hunts"]
+    },
+    {
+      "id": "compact-stereo-mic-pair",
+      "name": "Compact Stereo Mic Pair",
+      "category": "Capture hardware",
+      "price": 189,
+      "currency": "USD",
+      "summary": "Low-profile stereo capture for ambience, urban movement, and fast travel rigs.",
+      "best_for": ["dawn ambience", "alley texture", "portable stereo capture"]
+    },
+    {
+      "id": "handheld-recorder-core",
+      "name": "Handheld Recorder Core",
+      "category": "Capture hardware",
+      "price": 219,
+      "currency": "USD",
+      "summary": "A dependable recorder anchor for field bags, students, and first portable kits.",
+      "best_for": ["first recorder bag", "students", "outdoor captures"]
+    },
+    {
+      "id": "contact-microphone-pair",
+      "name": "Contact Microphone Pair",
+      "category": "Capture hardware",
+      "price": 98,
+      "currency": "USD",
+      "summary": "Pair of contact microphones for metal, wood, glass, and found percussion objects.",
+      "best_for": ["found percussion", "resonance", "object-as-instrument sessions"]
+    },
+    {
+      "id": "harbor-hydrophone",
+      "name": "Harbor Hydrophone",
+      "category": "Capture hardware",
+      "price": 132,
+      "currency": "USD",
+      "summary": "Submerged capture tool for piers, docks, rain runoff, boat knocks, and waterline texture.",
+      "best_for": ["hydrophone recording", "harbors", "submerged texture"]
+    },
+    {
+      "id": "boundary-mic-tile",
+      "name": "Boundary Mic Tile",
+      "category": "Capture hardware",
+      "price": 86,
+      "currency": "USD",
+      "summary": "Flat capture option for windows, tables, floors, and sheltered surfaces with minimal profile.",
+      "best_for": ["rainy windows", "surface captures", "sheltered ambience"]
+    },
+    {
+      "id": "furry-windshield-set",
+      "name": "Furry Windshield Set",
+      "category": "Wind and handling control",
+      "price": 54,
+      "currency": "USD",
+      "summary": "Furry wind protection for exposed dawn ambience, platforms, harbors, and weathered outdoor takes.",
+      "best_for": ["wind control", "outdoor ambience", "harbor sessions"]
+    },
+    {
+      "id": "shock-mount-pistol-grip",
+      "name": "Shock Mount + Pistol Grip",
+      "category": "Wind and handling control",
+      "price": 76,
+      "currency": "USD",
+      "summary": "Handling-noise control for walking alleys, piers, and crowded transit corridors.",
+      "best_for": ["handling noise", "walking captures", "platform sessions"]
+    },
+    {
+      "id": "cable-discipline-roll",
+      "name": "Cable Discipline Roll",
+      "category": "Field-bag infrastructure",
+      "price": 64,
+      "currency": "USD",
+      "summary": "Coiled cables, right-angle adapters, and labeled cable ties for fast and quiet field-bag setup.",
+      "best_for": ["cable discipline", "field-bag organization", "quiet setup"]
+    },
+    {
+      "id": "battery-planning-set",
+      "name": "Battery Planning Set",
+      "category": "Field-bag infrastructure",
+      "price": 72,
+      "currency": "USD",
+      "summary": "Rechargeable battery sets and a small power bank for long ambience recordings and travel days.",
+      "best_for": ["battery planning", "long sessions", "travel recording"]
+    },
+    {
+      "id": "field-notebook-slate-cards",
+      "name": "Field Notebook + Slate Cards",
+      "category": "Logging and listening tools",
+      "price": 24,
+      "currency": "USD",
+      "summary": "Handwritten take logging for location, gain, weather, mic choice, and creative use notes.",
+      "best_for": ["take logs", "sample archives", "session notes"]
+    },
+    {
+      "id": "closed-back-monitoring-headphones",
+      "name": "Closed-Back Monitoring Headphones",
+      "category": "Logging and listening tools",
+      "price": 119,
+      "currency": "USD",
+      "summary": "Portable monitoring for checking wind, clipping, and handling noise before leaving the location.",
+      "best_for": ["monitoring", "quality checks", "field recording"]
+    }
+  ]
+}
