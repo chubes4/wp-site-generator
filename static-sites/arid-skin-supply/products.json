@@ -1,0 +1,173 @@
+{
+  "store": {
+    "name": "Arid Skin Supply",
+    "slug": "arid-skin-supply",
+    "positioning": "A practical barrier-care pantry for dry climates, hard-water homes, wind, indoor heat, travel, and high-UV routines."
+  },
+  "conditions": [
+    "desert mornings",
+    "hard-water showers",
+    "ski-town winters",
+    "radiator apartments",
+    "frequent flights",
+    "outdoor work days",
+    "post-workout rinse routines",
+    "winter commutes"
+  ],
+  "products": [
+    {
+      "id": "desert-morning-barrier-kit",
+      "name": "Desert Morning Barrier Kit",
+      "category": "Climate kits",
+      "price": 68,
+      "useCase": "desert daily kit",
+      "includes": [
+        "low-lather face wash",
+        "ceramide cream",
+        "mineral face SPF",
+        "lip SPF",
+        "pocket balm stick"
+      ]
+    },
+    {
+      "id": "shower-reset-stack",
+      "name": "Shower Reset Stack",
+      "category": "Climate kits",
+      "price": 92,
+      "useCase": "hard-water shower reset",
+      "includes": [
+        "shower filter",
+        "fragrance-free wash",
+        "bath oil",
+        "soft microfiber towel",
+        "hard-water checklist card"
+      ]
+    },
+    {
+      "id": "nightstand-occlusive-kit",
+      "name": "Nightstand Occlusive Kit",
+      "category": "Climate kits",
+      "price": 54,
+      "useCase": "radiator apartment nightstand kit",
+      "includes": [
+        "ointment tin",
+        "cuticle repair",
+        "heel balm",
+        "hand mask",
+        "humidity card"
+      ]
+    },
+    {
+      "id": "ski-week-skin-rescue",
+      "name": "Ski-Week Skin Rescue",
+      "category": "Climate kits",
+      "price": 74,
+      "useCase": "ski-town winters",
+      "includes": [
+        "wind balm",
+        "lip SPF",
+        "ceramide cream",
+        "hand repair cream",
+        "UPF neck gaiter"
+      ]
+    },
+    {
+      "id": "frequent-flyer-carry-on-pack",
+      "name": "Frequent-Flyer Carry-On Pack",
+      "category": "Climate kits",
+      "price": 48,
+      "useCase": "dry cabin air and travel days",
+      "includes": [
+        "travel decanting tins",
+        "balm stick",
+        "fragrance-free hand cream",
+        "lip SPF",
+        "gym-bag refill pouch"
+      ]
+    },
+    {
+      "id": "ceramide-utility-cream",
+      "name": "Ceramide Utility Cream",
+      "category": "Barrier support",
+      "price": 22,
+      "useCase": "face, hands, elbows, and exposed patches",
+      "includes": [
+        "ceramide cream"
+      ]
+    },
+    {
+      "id": "pocket-balm-stick",
+      "name": "Pocket Balm Stick",
+      "category": "Barrier support",
+      "price": 14,
+      "useCase": "lips, cuticles, knuckles, and wind-exposed cheekbones",
+      "includes": [
+        "balm stick"
+      ]
+    },
+    {
+      "id": "mineral-face-shield-spf",
+      "name": "Mineral Face Shield SPF",
+      "category": "Protection basics",
+      "price": 28,
+      "useCase": "high-UV daily protection and reapplication",
+      "includes": [
+        "mineral face sunscreen"
+      ]
+    },
+    {
+      "id": "outdoor-work-hand-care",
+      "name": "Outdoor-Work Hand Care",
+      "category": "Routine guides and bundles",
+      "price": 36,
+      "useCase": "hands exposed to wind, dry air, frequent washing, and outdoor work",
+      "includes": [
+        "fragrance-free hand wash",
+        "repair cream",
+        "cuticle repair tin",
+        "overnight cotton gloves"
+      ]
+    },
+    {
+      "id": "hard-water-checklist-cards",
+      "name": "Hard-Water Checklist Cards",
+      "category": "Routine guides and bundles",
+      "price": 8,
+      "useCase": "repeatable shower reset guidance",
+      "includes": [
+        "checklist cards"
+      ]
+    },
+    {
+      "id": "shower-filter-cartridge",
+      "name": "Shower Filter Cartridge",
+      "category": "Shower and room support",
+      "price": 42,
+      "useCase": "hard-water shower support",
+      "includes": [
+        "shower filter cartridge"
+      ]
+    },
+    {
+      "id": "soft-microfiber-towel",
+      "name": "Soft Microfiber Towel",
+      "category": "Shower and room support",
+      "price": 18,
+      "useCase": "post-shower and gym-bag drying",
+      "includes": [
+        "microfiber towel"
+      ]
+    },
+    {
+      "id": "humidifier-cleaning-set",
+      "name": "Humidifier Cleaning Set",
+      "category": "Shower and room support",
+      "price": 16,
+      "useCase": "humidifier-side winter room routines",
+      "includes": [
+        "humidifier cleaning supplies",
+        "humidity card"
+      ]
+    }
+  ]
+}
