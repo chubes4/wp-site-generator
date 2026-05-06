@@ -1,0 +1,111 @@
+{
+  "store": "Canyon Rack Supply",
+  "tagline": "Wet-route gear systems for canyoneering crews",
+  "currency": "USD",
+  "routeProfiles": [
+    {
+      "name": "First technical canyon",
+      "crewSize": "3-5",
+      "waterLevel": "Variable",
+      "focus": ["beginner group rappel kit", "emergency prusiks", "checklist cards", "inspectable shared rack"]
+    },
+    {
+      "name": "Wet route day",
+      "crewSize": "4-6",
+      "waterLevel": "Swims and splash",
+      "focus": ["drainable rope systems", "dry storage", "waterproof map sleeves", "hypothermia wraps"]
+    },
+    {
+      "name": "Desert pothole push",
+      "crewSize": "3-6",
+      "waterLevel": "Potholes and sand",
+      "focus": ["pothole escape aids", "compact ascenders", "foot loops", "repair tape"]
+    },
+    {
+      "name": "Anchor inspection day",
+      "crewSize": "2-5",
+      "waterLevel": "Any",
+      "focus": ["webbing", "rapide links", "anchor rings", "anchor log cards"]
+    }
+  ],
+  "products": [
+    {
+      "id": "first-technical-canyon-rack",
+      "name": "First Technical Canyon Rack",
+      "category": "Route-ready kits",
+      "price": 689,
+      "summary": "Core kit for leaders assembling a clean, inspectable shared rack before a crew's first technical slot.",
+      "bestFor": ["climbing partners moving into wet canyons", "outdoor clubs", "experienced hikers building a safe shared kit"],
+      "includes": ["static canyon rope", "drainable rope bag", "canyon descenders", "belay gloves", "emergency prusik kits", "anchor log cards", "group checklist cards"],
+      "fieldSpecs": { "crewSize": "3-5", "rappels": "introductory technical routes", "waterLevel": "dry to splash" }
+    },
+    {
+      "id": "wet-canyon-day-kit",
+      "name": "Wet Canyon Day Kit",
+      "category": "Route-ready kits",
+      "price": 412,
+      "summary": "Dry storage, rope handling, and hypothermia essentials for canyons with swims, splash, and soaked exits.",
+      "includes": ["dry bags", "drainable gear pouches", "waterproof map sleeve", "rope markers", "hypothermia wraps", "first-aid module"],
+      "fieldSpecs": { "crewSize": "4-6", "waterLevel": "swims and splash", "exitTime": "same-day" }
+    },
+    {
+      "id": "desert-pothole-kit",
+      "name": "Desert Pothole Kit",
+      "category": "Route-ready kits",
+      "price": 338,
+      "summary": "Pothole escape and sandy-exit tools grouped for desert canyons where movement problems slow the day down.",
+      "includes": ["pothole escape aids", "toss bag", "compact ascenders", "foot loops", "repair tape", "sand brush", "post-trip inspection notebook"],
+      "fieldSpecs": { "crewSize": "3-6", "waterLevel": "potholes", "exitTime": "long" }
+    },
+    {
+      "id": "two-rope-pull-cord-bundle",
+      "name": "Two-Rope Pull-Cord Bundle",
+      "category": "Rope and rope handling",
+      "price": 264,
+      "summary": "Pull cord, protection, tagging, and rope staging tools for teams managing two-rope rappel systems.",
+      "includes": ["pull cord", "rope tarp", "rope protector", "rope markers", "inspection tags"],
+      "fieldSpecs": { "rappels": "5+", "anchorPlan": "clean pull" }
+    },
+    {
+      "id": "static-canyon-rope-200",
+      "name": "Static Canyon Rope — 200 ft",
+      "category": "Rope and rope handling",
+      "price": 219,
+      "summary": "Low-stretch canyon rope selected for wet rappels, clear marking, and repeatable post-trip inspection.",
+      "includes": ["200 ft static canyon rope", "inspection tag", "rope marker"],
+      "fieldSpecs": { "length": "200 ft", "use": "wet-route rappel line" }
+    },
+    {
+      "id": "drainable-rope-bag-pair",
+      "name": "Drainable Rope Bag Pair",
+      "category": "Wet-route organization",
+      "price": 146,
+      "summary": "Color-coded rope bags with mesh drains, tie-in points, and field labels for separating wet lines.",
+      "includes": ["two drainable rope bags", "helmet sticker ID set", "waterproof label cards"],
+      "fieldSpecs": { "crewSize": "4-6", "waterLevel": "wet" }
+    },
+    {
+      "id": "anchor-restock-ledger",
+      "name": "Anchor Restock Ledger",
+      "category": "Anchor and rigging supplies",
+      "price": 144,
+      "summary": "Countable webbing, hardware, cleanup, and log cards for replacing suspect anchors and recording decisions.",
+      "includes": ["30 ft tubular webbing", "rapide link 5-pack", "anchor ring pair", "natural-anchor cleanup saw", "waterproof anchor log cards"],
+      "fieldSpecs": { "anchorPlan": "inspect and replenish", "consumable": true }
+    },
+    {
+      "id": "post-trip-rope-care-set",
+      "name": "Post-Trip Rope Care Set",
+      "category": "Care and recovery",
+      "price": 128,
+      "summary": "Rope wash, drying rack, sand brush, repair tape, and inspection notebook for making the rack ready after the canyon.",
+      "includes": ["rope wash", "folding drying rack", "sand brush kit", "repair tape", "post-trip inspection notebook"],
+      "fieldSpecs": { "use": "after exit", "replenishment": "repeat" }
+    }
+  ],
+  "checklists": {
+    "beforeDescent": ["route card reviewed", "water level matched to dry storage", "rope lengths and pull cord verified"],
+    "atEachRappel": ["anchor inspected and logged", "webbing and rapide link checked", "whistles and gloves in reach"],
+    "afterExit": ["rope washed and dried", "sand brushed from devices", "repair tape and first-aid modules restocked"]
+  }
+}
