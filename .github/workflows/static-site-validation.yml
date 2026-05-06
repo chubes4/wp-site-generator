@@ -98,7 +98,7 @@ jobs:
                   "run": [
                     {
                       "type": "wp-cli",
-                      "command": ("wp static-site-importer import-theme static-sites/" + $site + "/index.html --slug=" + $site + " --activate --overwrite --keep-source --format=json"),
+                      "command": ("wp static-site-importer import-theme /wordpress/wp-content/plugins/wc-site-generator/static-sites/" + $site + "/index.html --slug=" + $site + " --activate --overwrite --keep-source --format=json"),
                       "parse": "json"
                     }
                   ],
@@ -146,7 +146,7 @@ jobs:
             exit 0
           fi
           ssi=$(jq -r --arg site "$SITE" '
-            .scenarios[] | select(.id == "ssi-import")
+            .data.results.scenarios[] | select(.id == "ssi-import")
           ' "$report" || echo '{}')
           if [ -z "$ssi" ] || [ "$ssi" = "null" ]; then
             echo "metrics_md=_SSI workload did not run._" >> "$GITHUB_OUTPUT"
