@@ -1,0 +1,50 @@
+name: Label generated PR
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+    branches: [main]
+    paths:
+      - 'blueprints/**'
+      - 'static-sites/**'
+
+permissions:
+  contents: read
+  pull-requests: read
+  issues: write
+
+jobs:
+  label:
+    name: Label generated PR
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Determine generated target labels
+        id: labels
+        shell: bash
+        run: |
+          BASE_SHA="${{ github.event.pull_request.base.sha }}"
+          HEAD_SHA="${{ github.event.pull_request.head.sha }}"
+          changed_files="$(git diff --name-only "$BASE_SHA" "$HEAD_SHA")"
+          labels=()
+          if grep -q '^blueprints/' <<< "$changed_files"; then
+            labels+=("target:blueprint")
+          fi
+          if grep -q '^static-sites/' <<< "$changed_files"; then
+            labels+=("target:static-site")
+          fi
+          if [ "${#labels[@]}" -eq 0 ]; then
+            echo "labels=" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          printf '%s\n' "${labels[@]}" > /tmp/generated-labels.txt
+          echo "labels=$(paste -sd, /tmp/generated-labels.txt)" >> "$GITHUB_OUTPUT"
+
+      - name: Apply generated target labels
+        if: steps.labels.outputs.labels != ''
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh pr edit "${{ github.event.pull_request.number }}" --add-label "${{ steps.labels.outputs.labels }}"

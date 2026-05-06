@@ -27,7 +27,7 @@
                 "include_file_contents": false,
                 "include_homeboy_ci": false,
                 "include_statuses": false,
-                "labels": "status:idea-ready,target:blueprint",
+                "labels": "status:idea-ready",
                 "max_artifact_bytes": 2000000,
                 "max_check_runs": 30,
                 "max_context_files": 10,
@@ -61,7 +61,7 @@
                     "include_file_contents": false,
                     "include_homeboy_ci": false,
                     "include_statuses": false,
-                    "labels": "status:idea-ready,target:blueprint",
+                    "labels": "status:idea-ready",
                     "max_artifact_bytes": 2000000,
                     "max_check_runs": 30,
                     "max_context_files": 10,
@@ -89,7 +89,7 @@
             "prompt_queue": [
                 {
                     "added_at": "2026-05-05T20:19:07+00:00",
-                    "prompt": "Manual validation: build the next open issue labeled status:idea-ready and target:blueprint into a runnable blueprint PR. Use the fetched issue only. Keep it compact but complete enough to boot in Playground."
+                    "prompt": "Manual validation: build the next open issue labeled status:idea-ready into a runnable blueprint PR. Use the fetched issue only. Keep it compact but complete enough to boot in Playground."
                 }
             ],
             "queue_mode": "static",

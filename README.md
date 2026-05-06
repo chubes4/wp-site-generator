@@ -85,7 +85,7 @@ The idea agent does **not** generate blueprints. It produces work items.
 
 **What it does on each run:**
 
-1. Picks the next open idea issue labeled `status:idea-ready` and `target:blueprint` that doesn't already have a PR pointing at it.
+1. Picks the next open idea issue labeled `status:idea-ready` that doesn't already have a PR pointing at it.
 2. Generates the blueprint files for that concept:
    - `blueprints/<slug>/blueprint.json` — the WordPress Playground blueprint
    - `blueprints/<slug>/theme.json` — global styles, palette, typography
@@ -108,7 +108,7 @@ The blueprint agent does **not** invent concepts. It only implements existing is
 
 **What it does on each run:**
 
-1. Picks the next open idea issue labeled `status:idea-ready` and `target:static-site`.
+1. Picks the next open idea issue labeled `status:idea-ready`.
 2. Generates source files under `static-sites/<slug>/`:
    - `index.html`
    - `assets/styles.css`
@@ -146,7 +146,7 @@ There is no infrastructure to host. There is no preview environment to provision
 
 ### Static-site PRs
 
-Static-site PRs are validated after the agent finishes. The validation workflow is gated on the `target:static-site` label, so normal blueprint PRs keep using direct Playground links and never run SSI telemetry.
+Static-site PRs are validated after the agent finishes. Repository automation labels PRs based on their changed paths: `blueprints/**` becomes `target:blueprint`, and `static-sites/**` becomes `target:static-site`. The SSI workflow is gated on the PR-side `target:static-site` label, so normal blueprint PRs keep using direct Playground links and never run SSI telemetry.
 
 ```
 static-sites/<slug>/...

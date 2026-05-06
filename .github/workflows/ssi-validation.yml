@@ -51,7 +51,7 @@ jobs:
 
       - name: Run SSI validation scaffold
         if: steps.changed.outputs.has_static_sites == 'true'
-        run: node scripts/ssi-validation.mjs --sites "${{ steps.changed.outputs.sites }}" --output ssi-validation-report.md
+        run: node scripts/ssi-validation.mjs --sites "${{ steps.changed.outputs.sites }}" --ref "${{ github.event.pull_request.head.ref || github.ref_name }}" --output ssi-validation-report.md
 
       - name: Comment SSI validation summary
         if: github.event_name == 'pull_request' && steps.changed.outputs.has_static_sites == 'true'

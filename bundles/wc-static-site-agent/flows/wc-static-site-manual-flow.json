@@ -12,7 +12,7 @@
             "enabled": true,
             "handler_config": {
                 "data_source": "issues",
-                "labels": "status:idea-ready,target:static-site",
+                "labels": "status:idea-ready",
                 "max_items": 1,
                 "repo": "chubes4/wc-store-blueprints",
                 "state": "open"
@@ -20,7 +20,7 @@
             "handler_configs": {
                 "github": {
                     "data_source": "issues",
-                    "labels": "status:idea-ready,target:static-site",
+                    "labels": "status:idea-ready",
                     "max_items": 1,
                     "repo": "chubes4/wc-store-blueprints",
                     "state": "open"
@@ -37,7 +37,7 @@
             "prompt_queue": [
                 {
                     "added_at": "2026-05-05T20:45:00+00:00",
-                    "prompt": "Manual validation: build the next open issue labeled status:idea-ready and target:static-site into a static storefront PR for SSI validation. Use the fetched issue only."
+                    "prompt": "Manual validation: build the next open issue labeled status:idea-ready into a static storefront PR for SSI validation. Use the fetched issue only."
                 }
             ],
             "queue_mode": "static",

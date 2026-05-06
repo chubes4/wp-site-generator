@@ -15,7 +15,65 @@ const sites = argValue('--sites')
   .split(',')
   .map((site) => site.trim())
   .filter(Boolean);
+const ref = argValue('--ref', 'main');
 const output = argValue('--output', 'ssi-validation-report.md');
+
+function titleFromSlug(slug) {
+  return slug
+    .split('-')
+    .filter(Boolean)
+    .map((part) => `${part.charAt(0).toUpperCase()}${part.slice(1)}`)
+    .join(' ');
+}
+
+function playgroundUrl(site) {
+  const blueprint = {
+    $schema: 'https://playground.wordpress.net/blueprint-schema.json',
+    landingPage: '/',
+    preferredVersions: {
+      php: '8.3',
+      wp: 'latest',
+    },
+    steps: [
+      {
+        step: 'installPlugin',
+        pluginData: {
+          resource: 'git:directory',
+          url: 'https://github.com/chubes4/static-site-importer',
+          ref: 'main',
+          refType: 'branch',
+        },
+        options: {
+          activate: true,
+          targetFolderName: 'static-site-importer',
+        },
+      },
+      {
+        step: 'writeFiles',
+        writeToPath: '/tmp/static-site',
+        filesTree: {
+          resource: 'git:directory',
+          url: 'https://github.com/chubes4/wc-store-blueprints',
+          ref,
+          refType: 'branch',
+          path: `static-sites/${site}`,
+        },
+      },
+      {
+        step: 'wp-cli',
+        command: `wp static-site-importer import-theme /tmp/static-site/index.html --slug=${site} --name='${titleFromSlug(site).replaceAll("'", "'\\''")}' --activate --overwrite --keep-source --format=json`,
+      },
+      {
+        step: 'login',
+        username: 'admin',
+        password: 'password',
+      },
+    ],
+  };
+
+  const encoded = encodeURIComponent(JSON.stringify(blueprint));
+  return `https://playground.wordpress.net/#${encoded}`;
+}
 
 const metrics = {
   importer_core_html_block_count: 'pending',
@@ -34,6 +92,10 @@ const lines = [
   'Static-site lane detected. This scaffold is wired to run only for PRs labeled `target:static-site` with `static-sites/**` changes.',
   '',
   `Changed static sites: ${sites.length ? sites.map((site) => `\`${site}\``).join(', ') : '_none_'}`,
+  '',
+  '### Playground preview',
+  '',
+  ...sites.flatMap((site) => [`- [Open ${titleFromSlug(site)} in Playground](${playgroundUrl(site)})`]),
   '',
   '### Telemetry contract',
   '',
