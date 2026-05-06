@@ -1,7 +1,7 @@
 {
     "agent": {
         "agent_config": {
-            "description": "Generates distinct WooCommerce store concepts and opens them as GitHub issues in chubes4/wc-store-blueprints through an AI -> publish pipeline. Manual-run only during validation.",
+            "description": "Generates distinct store concepts and opens them as GitHub issues. Industry/problem space comes from the flow user message; downstream generation target is decided elsewhere.",
             "mode_models": {
                 "chat": {
                     "model": "gpt-5.5",
@@ -22,14 +22,22 @@
         "slug": "wc-idea-agent"
     },
     "bundle_slug": "wc-idea-agent",
-    "bundle_version": "1",
-    "exported_at": "2026-05-05T16:18:37+00:00",
-    "exported_by": "data-machine/0.103.14",
+    "bundle_version": "2",
+    "exported_at": "2026-05-06T14:00:00+00:00",
+    "exported_by": "data-machine/0.104.0",
     "included": {
         "auth_refs": [],
         "extensions": [],
         "flows": [
-            "wc-idea-manual-flow"
+            "wc-idea-manual-flow",
+            "wc-idea-food-and-beverage-flow",
+            "wc-idea-home-and-craft-flow",
+            "wc-idea-outdoors-and-field-flow",
+            "wc-idea-apparel-and-accessories-flow",
+            "wc-idea-music-and-audio-flow",
+            "wc-idea-health-and-body-flow",
+            "wc-idea-pet-and-animal-flow",
+            "wc-idea-print-paper-and-stationery-flow"
         ],
         "handler_auth": "refs",
         "memory": [
