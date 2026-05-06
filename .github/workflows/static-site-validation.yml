@@ -165,7 +165,6 @@ jobs:
           fi
           metrics=$(printf '%s' "$ssi" | jq -r '
             .metrics // {} | to_entries
-            | map(select(.key | startswith("ssi_") or test("^(import|editor|visual|semantic)_"))) // .
             | (if length == 0 then "_No SSI metrics emitted yet._" else
                 "| Metric | Value |\n| --- | --- |\n" +
                 ([ .[] | "| `\(.key)` | \(.value) |" ] | join("\n"))
