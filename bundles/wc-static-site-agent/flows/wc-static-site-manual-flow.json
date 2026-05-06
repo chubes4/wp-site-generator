@@ -14,7 +14,7 @@
             "handler_config": {
                 "data_source": "issues",
                 "labels": "status:idea-ready",
-                "max_items": 1,
+                "max_items": 5,
                 "repo": "chubes4/wc-site-generator",
                 "state": "open"
             },
@@ -22,7 +22,7 @@
                 "github": {
                     "data_source": "issues",
                     "labels": "status:idea-ready",
-                    "max_items": 1,
+                    "max_items": 5,
                     "repo": "chubes4/wc-site-generator",
                     "state": "open"
                 }
