@@ -28,7 +28,7 @@ static-sites/<slug>/index.html
 static-sites/<slug>/assets/styles.css
 ```
 
-Additional files under `static-sites/<slug>/assets/` are allowed when they improve realism. Do not generate `products.json` or any other sidecar data file; product information belongs in the visible storefront HTML. Use the concept's slug derived from its name.
+Additional files under `static-sites/<slug>/assets/` are allowed when they improve realism. Do not generate `products.json` or any other sidecar data file; product information belongs in the visible storefront HTML. The PR publish files array must not contain JSON sidecars, manifest files, or product data files. Use the concept's slug derived from its name.
 
 ## Branch & PR Shape
 - Branch: `static/<slug>`.
