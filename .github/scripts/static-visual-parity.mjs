@@ -8,7 +8,10 @@ import { existsSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { spawn } from 'node:child_process';
-import { Socket } from 'node:net';
+import { createRequire } from 'node:module';
+
+const require = createRequire(import.meta.url);
+const { waitForWordPressReady } = require('homeboy-extension-wordpress/playground-readiness');
 
 const repoRoot = process.cwd();
 const site = process.env.SITE || process.argv[2];
@@ -152,13 +155,22 @@ playground.stderr.on('data', (data) => {
 
 try {
 	const importReadiness = await waitForImportMarker(importReadyPath, 180_000, () => playground.exitCode !== null);
-	await waitForUrl(importedUrl, 120_000, () => playground.exitCode !== null, {
-		outputDir,
-		playground,
+	const wordpressReadiness = await waitForWordPressReady(importedUrl, {
+		timeoutMs: 120_000,
+		readyOnSelfRedirect: true,
+		playgroundProcess: playground,
 		playgroundOutput: () => playgroundOutput,
 	});
+	if (wordpressReadiness.status === 'process_exited') {
+		throw new Error(`Playground server exited before WordPress became available: ${importedUrl}`);
+	}
 	await captureParityScreenshots({ sourceUrl, importedUrl, outputDir });
 	await writeSummary({ site, sourceUrl, importedUrl, outputDir, playgroundOutput, importReadiness });
+} catch (error) {
+	if (error?.diagnostics) {
+		await writeFile(path.join(outputDir, 'frontend-readiness-error.json'), JSON.stringify(error.diagnostics, null, 2));
+	}
+	throw error;
 } finally {
 	sourceServer.close();
 	await rm(importReadyScriptPath, { force: true });
@@ -226,155 +238,6 @@ function listen(server, port) {
 		server.once('error', reject);
 		server.listen(port, '127.0.0.1', resolve);
 	});
-}
-
-async function waitForUrl(url, timeoutMs, shouldStop, diagnostics = {}) {
-	const started = Date.now();
-	let lastError = null;
-	let attempts = 0;
-	const recentAttempts = [];
-
-	while (Date.now() - started < timeoutMs) {
-		if (shouldStop()) {
-			throw new Error(`Playground server exited before ${url} became available`);
-		}
-
-		attempts += 1;
-		const attempt = {
-			attempts,
-			elapsedMs: Date.now() - started,
-		};
-
-		try {
-			const response = await fetch(url, {
-				signal: AbortSignal.timeout(5000),
-			});
-			attempt.httpStatus = response.status;
-			if (response.ok || [301, 302, 401, 403].includes(response.status)) {
-				return;
-			}
-			lastError = new Error(`HTTP ${response.status}`);
-		} catch (error) {
-			lastError = error;
-			attempt.fetchError = serializeError(error);
-		}
-
-		attempt.tcp = await probeTcp(url, 1000);
-		recentAttempts.push(attempt);
-		if (recentAttempts.length > 10) {
-			recentAttempts.shift();
-		}
-
-		await new Promise((resolve) => setTimeout(resolve, 1000));
-	}
-
-	if (diagnostics.outputDir) {
-		await writeFile(
-			path.join(diagnostics.outputDir, 'frontend-readiness-error.json'),
-			JSON.stringify(
-				{
-					url,
-					timeoutMs,
-					attempts,
-					lastError: serializeError(lastError),
-					recentAttempts,
-					urlDiagnostics: await probeWordPressUrls(url),
-					playground: diagnostics.playground
-						? {
-							pid: diagnostics.playground.pid,
-							exitCode: diagnostics.playground.exitCode,
-							signalCode: diagnostics.playground.signalCode,
-						}
-						: null,
-					playgroundOutputTail: diagnostics.playgroundOutput?.().slice(-4000) || '',
-				},
-				null,
-				2
-			)
-		);
-	}
-
-	throw new Error(`Timed out waiting for ${url}: ${lastError?.message || 'no response'}`);
-}
-
-async function probeWordPressUrls(url) {
-	const parsed = new URL(url);
-	const origin = `${parsed.protocol}//${parsed.host}`;
-	const paths = ['/', '/wp-login.php', '/wp-json/', '/wp-admin/'];
-	const results = [];
-
-	for (const pathname of paths) {
-		const target = new URL(pathname, origin).toString();
-		const started = Date.now();
-		const result = {
-			url: target,
-		};
-
-		try {
-			const response = await fetch(target, {
-				headers: {
-					accept: 'text/html,application/json;q=0.9,*/*;q=0.8',
-				},
-				signal: AbortSignal.timeout(5000),
-			});
-			result.status = response.status;
-			result.contentType = response.headers.get('content-type');
-			result.elapsedMs = Date.now() - started;
-			result.bodyPreview = (await response.text()).slice(0, 500);
-		} catch (error) {
-			result.elapsedMs = Date.now() - started;
-			result.error = serializeError(error);
-			result.tcp = await probeTcp(target, 1000);
-		}
-
-		results.push(result);
-	}
-
-	return results;
-}
-
-function probeTcp(url, timeoutMs) {
-	return new Promise((resolve) => {
-		const parsed = new URL(url);
-		const socket = new Socket();
-		let settled = false;
-
-		const finish = (result) => {
-			if (settled) {
-				return;
-			}
-			settled = true;
-			socket.destroy();
-			resolve(result);
-		};
-
-		socket.setTimeout(timeoutMs);
-		socket.once('connect', () => finish({ ok: true }));
-		socket.once('timeout', () => finish({ ok: false, error: 'timeout' }));
-		socket.once('error', (error) => finish({ ok: false, error: serializeError(error) }));
-		socket.connect(Number(parsed.port || 80), parsed.hostname);
-	});
-}
-
-function serializeError(error) {
-	if (!error) {
-		return null;
-	}
-
-	return {
-		name: error.name,
-		message: error.message,
-		code: error.code,
-		cause: error.cause
-			? {
-				name: error.cause.name,
-				message: error.cause.message,
-				code: error.cause.code,
-				errno: error.cause.errno,
-				syscall: error.cause.syscall,
-			}
-			: null,
-	};
 }
 
 async function captureParityScreenshots({ sourceUrl, importedUrl, outputDir }) {
