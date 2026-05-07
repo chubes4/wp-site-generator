@@ -1,0 +1,160 @@
+{
+  "store": {
+    "name": "Stem Room Uniform",
+    "tagline": "Thorn-ready apparel and carry pieces for working florists",
+    "audience": [
+      "working florists",
+      "floral designers",
+      "market bouquet sellers",
+      "event installers",
+      "studio assistants",
+      "floral freelancers",
+      "shop owners outfitting small teams"
+    ]
+  },
+  "collections": [
+    {
+      "name": "Trade Uniforms",
+      "slug": "trade-uniforms",
+      "description": "Washable smocks, reinforced aprons, pocketed chore shirts, overshirts, and studio jackets for wet, sharp, public-facing floral work.",
+      "products": [
+        {
+          "name": "Waterline Canvas Smock",
+          "price": 118,
+          "currency": "USD",
+          "colors": ["washed clay", "moss", "canvas"],
+          "use_case": "Processing buckets, stripping stems, and building arrangements",
+          "features": ["water-resistant canvas", "deep tool pockets", "rinse-ready lower panel"]
+        },
+        {
+          "name": "Event Wrap Apron",
+          "price": 86,
+          "currency": "USD",
+          "colors": ["black", "washed clay"],
+          "use_case": "Client-facing event setup and breakdown",
+          "features": ["reinforced lower panels", "wrap fit", "shear and phone pockets"]
+        },
+        {
+          "name": "Stem Chore Shirt",
+          "price": 92,
+          "currency": "USD",
+          "colors": ["moss", "canvas"],
+          "use_case": "Studio bench work and van loading",
+          "features": ["washable overshirt", "roll sleeves", "tape tab"]
+        }
+      ]
+    },
+    {
+      "name": "Protective Accessories",
+      "slug": "protective-accessories",
+      "description": "Thorn-resistant sleeves, liner gloves, pollen-safe bandanas, hair scarves, utility cuffs, and washable knee pads.",
+      "products": [
+        {
+          "name": "Thornline Arm Sleeves",
+          "price": 34,
+          "currency": "USD",
+          "use_case": "Rose processing, smilax handling, and thorny greens",
+          "features": ["forearm coverage", "washable", "low-bulk fit"]
+        },
+        {
+          "name": "Cut-Resistant Liner Gloves",
+          "price": 28,
+          "currency": "USD",
+          "use_case": "Stem knives, wire snips, and fast processing",
+          "features": ["cut-resistant liner", "low bulk", "fits under utility gloves"]
+        },
+        {
+          "name": "Install Knee Pads",
+          "price": 42,
+          "currency": "USD",
+          "use_case": "Ceremony floors, stair garlands, and late-night breakdown",
+          "features": ["washable shell", "cushioned pad", "strap-free sleeve fit"]
+        }
+      ]
+    },
+    {
+      "name": "Footwear and Soft Goods",
+      "slug": "footwear-soft-goods",
+      "description": "Shop clogs, cushioned socks, waterproof shoe covers, compression socks, and cold-room layers for concrete days and coolers.",
+      "products": [
+        {
+          "name": "Non-Slip Shop Clogs",
+          "price": 76,
+          "currency": "USD",
+          "use_case": "Wet studio floors and concrete workdays",
+          "features": ["closed toe", "rinseable upper", "non-slip sole"]
+        },
+        {
+          "name": "Cushioned Boot Socks",
+          "price": 22,
+          "currency": "USD",
+          "use_case": "Delivery routes, market shifts, and long installs",
+          "features": ["cushioned footbed", "light compression", "boot-height cuff"]
+        },
+        {
+          "name": "Cold-Room Layer",
+          "price": 64,
+          "currency": "USD",
+          "use_case": "Cooler pulls and winter greens processing",
+          "features": ["light insulation", "washable", "layerable fit"]
+        }
+      ]
+    },
+    {
+      "name": "Carry Systems",
+      "slug": "carry-systems",
+      "description": "Tool belts, shear pouches, tape-and-wire rolls, cash aprons, waist packs, and event-install harnesses.",
+      "products": [
+        {
+          "name": "Crossbody Shear Pouch",
+          "price": 58,
+          "currency": "USD",
+          "use_case": "Freelancers moving between benches, vans, venues, and booths",
+          "features": ["shear sleeve", "snip loop", "flat note pocket"]
+        },
+        {
+          "name": "Event-Install Harness",
+          "price": 132,
+          "currency": "USD",
+          "use_case": "Arches, stair garlands, zip ties, ribbon, and breakdown",
+          "features": ["tape-and-wire mount", "balanced pockets", "low-profile back strap"]
+        },
+        {
+          "name": "Market Cash Apron",
+          "price": 48,
+          "currency": "USD",
+          "use_case": "Farmers market bouquet sellers",
+          "features": ["hidden zip cash pocket", "phone pocket", "bouquet tag sleeve"]
+        }
+      ]
+    },
+    {
+      "name": "Team and Season Bundles",
+      "slug": "team-season-bundles",
+      "description": "First studio uniform, wedding install crew kit, farmers market seller kit, winter greens processing kit, and black-client-facing event set.",
+      "products": [
+        {
+          "name": "First Studio Uniform",
+          "price": 238,
+          "currency": "USD",
+          "use_case": "New studio assistants",
+          "includes": ["canvas smock", "chore shirt", "liner gloves", "bandana", "cushioned socks"]
+        },
+        {
+          "name": "Black Event Set",
+          "price": 214,
+          "currency": "USD",
+          "use_case": "Client-facing wedding and event crews",
+          "includes": ["black wrap apron", "shear pouch", "arm sleeves", "liner gloves", "compression socks"]
+        },
+        {
+          "name": "Farmers Market Seller Kit",
+          "price": 156,
+          "currency": "USD",
+          "use_case": "Bouquet booth sellers",
+          "includes": ["cash apron", "hair scarf", "utility cuff", "shoe covers", "tag pocket setup"]
+        }
+      ]
+    }
+  ]
+}
