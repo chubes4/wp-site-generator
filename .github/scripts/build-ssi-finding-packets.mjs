@@ -3,7 +3,7 @@
 import { mkdir, readFile, writeFile } from 'node:fs/promises';
 import path from 'node:path';
 
-const schemaVersion = 1;
+const schemaVersion = 2;
 const site = requiredEnv('SITE');
 const sourceRepo = requiredEnv('SOURCE_REPO');
 const sourcePr = process.env.SOURCE_PR || '';
@@ -13,16 +13,27 @@ const validationRunId = process.env.VALIDATION_RUN_ID || '';
 const benchPath = process.env.BENCH_PATH || 'homeboy-ci-results/bench.json';
 const outputPath = process.env.FINDING_PACKETS_PATH || 'homeboy-ci-results/finding-packets.json';
 const candidateRepo = process.env.CANDIDATE_REPO || 'chubes4/static-site-importer';
+const designPath = process.env.DESIGN_JSON_PATH || `static-sites/${site}/design.json`;
+const designDistributionPath = process.env.DESIGN_DISTRIBUTION_PATH || 'homeboy-ci-results/design-distribution.json';
+
+const designFields = await loadDesignFields(designPath);
 
 const artifactNames = {
 	ssi_validation: `ssi-validation-${site}`,
 	visual_parity: `visual-parity-${site}`,
 	finding_packets_file: path.basename(outputPath),
+	design_distribution_file: path.basename(designDistributionPath),
 };
 
 const packets = await buildPackets();
 await mkdir(path.dirname(outputPath), { recursive: true });
 await writeFile(outputPath, `${JSON.stringify(packets, null, 2)}\n`);
+
+await mkdir(path.dirname(designDistributionPath), { recursive: true });
+await writeFile(
+	designDistributionPath,
+	`${JSON.stringify(buildDesignDistribution(), null, 2)}\n`,
+);
 
 async function buildPackets() {
 	let bench;
@@ -66,6 +77,12 @@ function packetBase() {
 		validation_run_id: normalizeNumber(validationRunId),
 		candidate_repo: candidateRepo,
 		artifact_names: artifactNames,
+		design_system: designFields.design_system,
+		palette_kind: designFields.palette_kind,
+		typography_kind: designFields.typography_kind,
+		layout_kind: designFields.layout_kind,
+		density: designFields.density,
+		commerce_pattern: designFields.commerce_pattern,
 	};
 }
 
@@ -166,4 +183,110 @@ function requiredEnv(name) {
 	}
 
 	return value;
+}
+
+async function loadDesignFields(filePath) {
+	const fallback = {
+		schema_version: '',
+		design_system: 'unknown',
+		palette_kind: 'unknown',
+		typography_kind: 'unknown',
+		layout_kind: 'unknown',
+		density: 'unknown',
+		commerce_pattern: 'unknown',
+		accent_palette: [],
+		font_family_primary: '',
+		font_family_secondary: '',
+		notes: '',
+		source: 'missing',
+	};
+
+	let raw;
+	try {
+		raw = await readFile(filePath, 'utf8');
+	} catch {
+		return fallback;
+	}
+
+	let parsed;
+	try {
+		parsed = JSON.parse(raw);
+	} catch {
+		return { ...fallback, source: 'invalid_json' };
+	}
+
+	if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) {
+		return { ...fallback, source: 'invalid_shape' };
+	}
+
+	const accent = Array.isArray(parsed.accent_palette)
+		? parsed.accent_palette.filter((item) => typeof item === 'string')
+		: [];
+
+	return {
+		schema_version: numberOrText(parsed.schema_version),
+		design_system: stringOr(parsed.design_system, 'unknown'),
+		palette_kind: stringOr(parsed.palette_kind, 'unknown'),
+		typography_kind: stringOr(parsed.typography_kind, 'unknown'),
+		layout_kind: stringOr(parsed.layout_kind, 'unknown'),
+		density: stringOr(parsed.density, 'unknown'),
+		commerce_pattern: stringOr(parsed.commerce_pattern, 'unknown'),
+		accent_palette: accent,
+		font_family_primary: stringOr(parsed.font_family_primary, ''),
+		font_family_secondary: stringOr(parsed.font_family_secondary, ''),
+		notes: stringOr(parsed.notes, ''),
+		source: 'design_json',
+	};
+}
+
+function buildDesignDistribution() {
+	return {
+		schema_version: 1,
+		generated_at: new Date().toISOString(),
+		validation_run_id: normalizeNumber(validationRunId),
+		source_repo: sourceRepo,
+		source_pr: normalizeNumber(sourcePr),
+		source_head_sha: sourceHeadSha,
+		source_branch: sourceBranch,
+		sites: [
+			{
+				site,
+				design_json_path: designPath,
+				design_json_status: designFields.source,
+				design_system: designFields.design_system,
+				palette_kind: designFields.palette_kind,
+				typography_kind: designFields.typography_kind,
+				layout_kind: designFields.layout_kind,
+				density: designFields.density,
+				commerce_pattern: designFields.commerce_pattern,
+				accent_palette: designFields.accent_palette,
+				font_family_primary: designFields.font_family_primary,
+				font_family_secondary: designFields.font_family_secondary,
+				notes: designFields.notes,
+			},
+		],
+		totals: {
+			design_system: { [designFields.design_system]: 1 },
+			palette_kind: { [designFields.palette_kind]: 1 },
+			typography_kind: { [designFields.typography_kind]: 1 },
+			layout_kind: { [designFields.layout_kind]: 1 },
+			density: { [designFields.density]: 1 },
+			commerce_pattern: { [designFields.commerce_pattern]: 1 },
+		},
+	};
+}
+
+function stringOr(value, fallback) {
+	if (typeof value === 'string' && value.trim() !== '') {
+		return value;
+	}
+	return fallback;
+}
+
+function numberOrText(value) {
+	if (value === null || value === undefined || value === '') {
+		return '';
+	}
+	const number = Number(value);
+	return Number.isFinite(number) ? number : text(value);
 }
