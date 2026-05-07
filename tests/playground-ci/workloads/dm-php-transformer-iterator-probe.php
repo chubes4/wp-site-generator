@@ -50,17 +50,27 @@ $source_repo = trim((string) (getenv('ITERATOR_SOURCE_REPO') ?: 'chubes4/wc-site
 $source_pr = trim((string) getenv('ITERATOR_SOURCE_PR'));
 $source_head_sha = trim((string) getenv('ITERATOR_SOURCE_HEAD_SHA'));
 $validation_run_id = trim((string) getenv('ITERATOR_VALIDATION_RUN_ID'));
-// The grouped finding payload is mounted into the Playground component
-// rather than passed inline. Embedding the JSON inside Homeboy's bench_env
-// breaks `sed`-based template substitution in homeboy-extensions
-// (escaped quotes get stripped, `&` is replaced with the matched pattern),
-// so the script writes the payload to a file inside COMPONENT_PATH and
-// hands the workload the guest-side path.
+// Resolve the grouped finding payload. Two transports are accepted:
+//
+// 1. ITERATOR_FINDING_GROUPS_JSON — raw JSON via Homeboy's bench_env.
+//    This is the Playground transport. Extra-Chill/homeboy-extensions#448
+//    escapes sed metacharacters in the bench_env substitution so JSON
+//    escapes (`\"`) and `&` survive the template round-trip intact.
+// 2. ITERATOR_FINDING_GROUPS_PATH — host filesystem path. Local-dev
+//    fallback for callers that run the workload directly without the
+//    Playground sandbox; the host path is not visible inside Playground.
+$finding_groups_json = trim((string) getenv('ITERATOR_FINDING_GROUPS_JSON'));
 $finding_groups_path = trim((string) getenv('ITERATOR_FINDING_GROUPS_PATH'));
 $finding_groups = null;
-if ($finding_groups_path !== '' && is_file($finding_groups_path)) {
+$finding_groups_source = '';
+if ($finding_groups_json !== '') {
+    $finding_groups = json_decode($finding_groups_json, true);
+    $finding_groups_source = is_array($finding_groups) ? 'json' : '';
+}
+if (!is_array($finding_groups) && $finding_groups_path !== '' && is_file($finding_groups_path)) {
     $raw = (string) file_get_contents($finding_groups_path);
     $finding_groups = json_decode($raw, true);
+    $finding_groups_source = is_array($finding_groups) ? 'path' : $finding_groups_source;
 }
 
 $metadata = [
@@ -72,6 +82,8 @@ $metadata = [
     'github_token_present' => $github_token !== '',
     'openai_key_present' => $openai_api_key !== '',
     'openai_provider_registered' => $openai_provider_registered,
+    'finding_groups_source' => $finding_groups_source,
+    'finding_groups_json_len' => strlen($finding_groups_json),
     'finding_groups_path' => $finding_groups_path,
     'finding_group_count' => is_array($finding_groups) ? (int) ($finding_groups['group_count'] ?? 0) : 0,
 ];
@@ -90,8 +102,7 @@ if (!is_array($finding_groups) || empty($finding_groups['groups'])) {
     return [
         'metrics' => ['finding_groups_valid' => 0],
         'metadata' => $metadata + [
-            'finding_groups_path' => $finding_groups_path,
-            'error' => 'ITERATOR_FINDING_GROUPS_PATH must point to grouped findings JSON',
+            'error' => 'ITERATOR_FINDING_GROUPS_JSON or ITERATOR_FINDING_GROUPS_PATH must provide grouped findings JSON',
         ],
     ];
 }
