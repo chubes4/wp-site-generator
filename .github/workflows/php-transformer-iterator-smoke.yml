@@ -1,0 +1,177 @@
+name: PHP transformer iterator (smoke)
+
+# Synthetic-packet smoke test for the php-transformer-iterator-agent.
+#
+# This is intentionally a sibling of php-transformer-iterator.yml. Where the
+# production iterator pulls grouped finding packets out of a real
+# static-site-validation artifact, this workflow swaps that input for a
+# committed synthetic fixture under tests/fixtures/iterator-smoke/. That lets
+# us prove the iterator end-to-end (real upstream PRs + real source-PR
+# callback) even when the SSI validation lane is regressed and produces no
+# usable artifact.
+#
+# Use this workflow ONLY for iterator validation. It is workflow_dispatch-only
+# on purpose so it never fires on push or PR events.
+#
+# validation_run_id design choice:
+#   We deliberately use `github.run_id` of THIS smoke workflow run. That keeps
+#   the value a real, navigable Actions run on this repo (helpful when the
+#   iterator embeds it in callback comments / upstream PR bodies) instead of
+#   a fabricated placeholder like 0. The production iterator gets this value
+#   from the upstream static-site-validation run; the smoke iterator does not
+#   have one, so its own run is the most honest reference point.
+
+on:
+  workflow_dispatch:
+    inputs:
+      source_repo:
+        description: Repository that owns the generated-site PR being smoke-tested.
+        required: true
+        default: chubes4/wc-site-generator
+      source_pr:
+        description: Generated-site PR number to report back to.
+        required: true
+      source_head_sha:
+        description: Generated-site PR head SHA to attach to callback evidence.
+        required: true
+      openai_model:
+        description: OpenAI model to use for the imported agent flow.
+        required: true
+        default: gpt-5.5
+      data_machine_ref:
+        description: Data Machine ref.
+        required: true
+        default: main
+      data_machine_code_ref:
+        description: Data Machine Code ref.
+        required: true
+        default: main
+      homeboy_extensions_ref:
+        description: Homeboy Extensions ref.
+        required: true
+        default: main
+
+permissions:
+  actions: read
+  contents: write
+  issues: write
+  pull-requests: write
+
+env:
+  HOMEBOY_APP_ID: ${{ secrets.HOMEBOY_APP_ID }}
+  HOMEBOY_APP_PRIVATE_KEY: ${{ secrets.HOMEBOY_APP_PRIVATE_KEY }}
+
+jobs:
+  iterator-smoke:
+    name: Run PR-first transformer iterator (synthetic packets)
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+
+    steps:
+      - name: Checkout site generator
+        uses: actions/checkout@v4
+
+      - name: Require cross-repo app credentials
+        # Fail closed: the iterator MUST author cross-repo PRs/comments via the
+        # Homeboy GitHub App. There is intentionally no github.token fallback,
+        # because that token cannot push to candidate repos.
+        run: |
+          set -euo pipefail
+          if [ -z "${HOMEBOY_APP_ID:-}" ] || [ -z "${HOMEBOY_APP_PRIVATE_KEY:-}" ]; then
+            echo "HOMEBOY_APP_ID and HOMEBOY_APP_PRIVATE_KEY are required for cross-repo iterator writes." >&2
+            exit 1
+          fi
+
+      - name: Generate cross-repo app token
+        id: app-token
+        uses: actions/create-github-app-token@v1
+        with:
+          app-id: ${{ env.HOMEBOY_APP_ID }}
+          private-key: ${{ env.HOMEBOY_APP_PRIVATE_KEY }}
+          owner: chubes4
+          repositories: wc-site-generator,static-site-importer,html-to-blocks-converter,block-format-bridge
+
+      - name: Checkout Homeboy Extensions
+        uses: actions/checkout@v4
+        with:
+          repository: Extra-Chill/homeboy-extensions
+          ref: ${{ inputs.homeboy_extensions_ref }}
+          path: .ci/homeboy-extensions
+
+      - name: Checkout Data Machine
+        uses: actions/checkout@v4
+        with:
+          repository: Extra-Chill/data-machine
+          ref: ${{ inputs.data_machine_ref }}
+          path: .ci/data-machine
+
+      - name: Checkout Data Machine Code
+        uses: actions/checkout@v4
+        with:
+          repository: Extra-Chill/data-machine-code
+          ref: ${{ inputs.data_machine_code_ref }}
+          path: .ci/data-machine-code
+
+      - name: Checkout OpenAI provider
+        uses: actions/checkout@v4
+        with:
+          repository: WordPress/ai-provider-for-openai
+          path: .ci/ai-provider-for-openai
+
+      - name: Stage synthetic finding packets
+        # Copy the committed synthetic fixture into the same .ci/finding-packets
+        # layout that the production iterator workflow uses after `gh run download`,
+        # so the grouping step below is byte-identical to production.
+        run: |
+          set -euo pipefail
+          mkdir -p .ci/finding-packets
+          cp tests/fixtures/iterator-smoke/finding-packets.json .ci/finding-packets/finding-packets.json
+          jq empty .ci/finding-packets/finding-packets.json
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+
+      - name: Group finding packets
+        env:
+          FINDING_GROUPS_PATH: .ci/php-transformer-iterator-input.json
+        run: |
+          set -euo pipefail
+          mapfile -t packets < <(find .ci/finding-packets -name finding-packets.json -type f | sort)
+          if [ "${#packets[@]}" -eq 0 ]; then
+            echo "No synthetic finding-packets.json files staged for iterator smoke run." >&2
+            exit 1
+          fi
+          node .github/scripts/group-ssi-finding-packets.mjs "${packets[@]}"
+          jq '.group_count, .candidate_repos' "$FINDING_GROUPS_PATH"
+
+      - name: Install Homeboy WordPress extension dependencies
+        working-directory: .ci/homeboy-extensions/wordpress
+        run: |
+          composer install --no-interaction --no-progress --prefer-dist
+          npm install
+
+      - name: Install plugin PHP dependencies
+        run: |
+          composer install --working-dir=.ci/data-machine --no-interaction --no-progress --prefer-dist
+          composer install --working-dir=.ci/data-machine-code --no-interaction --no-progress --prefer-dist
+
+      - name: Run PHP transformer iterator in Playground
+        env:
+          GITHUB_TOKEN: ${{ steps.app-token.outputs.token }}
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+          HOMEBOY_EXTENSION_PATH: ${{ github.workspace }}/.ci/homeboy-extensions/wordpress
+          DM_PATH: ${{ github.workspace }}/.ci/data-machine
+          DMC_PATH: ${{ github.workspace }}/.ci/data-machine-code
+          OPENAI_PROVIDER_PATH: ${{ github.workspace }}/.ci/ai-provider-for-openai
+          ITERATOR_OPENAI_MODEL: ${{ inputs.openai_model }}
+          ITERATOR_SOURCE_REPO: ${{ inputs.source_repo }}
+          ITERATOR_SOURCE_PR: ${{ inputs.source_pr }}
+          ITERATOR_SOURCE_HEAD_SHA: ${{ inputs.source_head_sha }}
+          # Use this smoke run's own GitHub Actions run ID as validation_run_id.
+          # The synthetic fixture has no upstream validation run to point at;
+          # this keeps the value a real navigable Actions run on this repo.
+          ITERATOR_VALIDATION_RUN_ID: ${{ github.run_id }}
+          ITERATOR_FINDING_GROUPS_PATH: ${{ github.workspace }}/.ci/php-transformer-iterator-input.json
+        run: tests/playground-ci/scripts/run-php-transformer-iterator.sh

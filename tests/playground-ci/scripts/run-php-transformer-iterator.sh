@@ -66,6 +66,13 @@ RESULTS_TMPFILE=$(mktemp "${TMPDIR:-/tmp}/wc-site-generator-php-transformer-iter
 RUNTIME_DIR=$(mktemp -d "${TMPDIR:-/tmp}/wc-site-generator-homeboy-runtime.XXXXXX")
 COMPONENT_WORKLOAD="$COMPONENT_PATH/dm-php-transformer-iterator-probe.php"
 COMPONENT_BUNDLE_DIR="$COMPONENT_PATH/bundles/php-transformer-iterator-agent"
+
+# Validate the host-side finding groups payload (compact via jq doubles as
+# a JSON syntax check) before forwarding it through Homeboy's bench_env
+# seam. The bench_env value travels as raw JSON; Extra-Chill/homeboy-extensions#448
+# escapes sed metacharacters in the replacement string so JSON escapes
+# (`\"`) and `&` no longer corrupt the bench_env block during template
+# substitution.
 FINDING_GROUPS_JSON="$(jq -c . "$ITERATOR_FINDING_GROUPS_PATH")"
 
 cleanup() {
@@ -177,6 +184,7 @@ ITERATOR_SOURCE_PR="$ITERATOR_SOURCE_PR" \
 ITERATOR_SOURCE_HEAD_SHA="$ITERATOR_SOURCE_HEAD_SHA" \
 ITERATOR_VALIDATION_RUN_ID="$ITERATOR_VALIDATION_RUN_ID" \
 ITERATOR_FINDING_GROUPS_JSON="$FINDING_GROUPS_JSON" \
+ITERATOR_FINDING_GROUPS_PATH="$ITERATOR_FINDING_GROUPS_PATH" \
 HOMEBOY_BENCH_RESULTS_FILE="$RESULTS_TMPFILE" \
 HOMEBOY_BENCH_ITERATIONS=1 \
 HOMEBOY_COMPONENT_ID=wc-site-generator-ci-driver \

@@ -100,6 +100,10 @@ jobs:
                 "run": [
                   {
                     "type": "wp-cli",
+                    "command": "wp plugin install woocommerce --activate"
+                  },
+                  {
+                    "type": "wp-cli",
                     "command": ("wp static-site-importer import-theme /wordpress/wp-content/plugins/wc-site-generator/static-sites/" + $site + "/index.html --slug=" + $site + " --activate --overwrite --keep-source --format=json"),
                     "parse": "json"
                   },
@@ -124,17 +128,6 @@ jobs:
                 "$schema": "https://playground.wordpress.net/blueprint-schema.json",
                 "preferredVersions": { "php": "8.3", "wp": "latest" },
                 "steps": [
-                  {
-                    "step": "installPlugin",
-                    "pluginData": {
-                      "resource": "wordpress.org/plugins",
-                      "slug": "woocommerce"
-                    },
-                    "options": {
-                      "activate": true,
-                      "targetFolderName": "woocommerce"
-                    }
-                  },
                   {
                     "step": "installPlugin",
                     "pluginData": {
@@ -187,7 +180,8 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          npm install --no-save --prefix "$PWD" playwright @wp-playground/cli
+          git clone --depth 1 https://github.com/Extra-Chill/homeboy-extensions .homeboy-extensions
+          npm install --no-save --prefix "$PWD" playwright @wp-playground/cli ./.homeboy-extensions/wordpress
           ./node_modules/.bin/playwright install --with-deps chromium
 
       - name: Capture visual parity screenshots

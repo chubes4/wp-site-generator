@@ -13,6 +13,7 @@
             "handler_slug": "github",
             "handler_config": {
                 "data_source": "issues",
+                "exclude_labels": "status:built,status:abandoned",
                 "labels": "status:idea-ready",
                 "max_items": 5,
                 "repo": "chubes4/wc-site-generator",
@@ -21,6 +22,7 @@
             "handler_configs": {
                 "github": {
                     "data_source": "issues",
+                    "exclude_labels": "status:built,status:abandoned",
                     "labels": "status:idea-ready",
                     "max_items": 5,
                     "repo": "chubes4/wc-site-generator",
@@ -39,10 +41,6 @@
                 {
                     "added_at": "2026-05-06T15:00:00+00:00",
                     "prompt": "Implement the fetched concept as a static storefront. Use only the fetched issue as the source of truth — do not invent a different concept."
-                },
-                {
-                    "added_at": "2026-05-07T00:00:00+00:00",
-                    "prompt": "Lifecycle guard: inspect the fetched item's metadata.github_labels. If it contains either 'status:built' or 'status:abandoned', stop immediately. Do not author a static-site PR for that idea. Report the skip reason in your final message and exit. The status:idea-ready label is the only valid entry signal; ideas already built or abandoned must not be re-implemented from this flow."
                 }
             ],
             "queue_mode": "static",
