@@ -177,10 +177,12 @@ wc-site-generator/
   .github/
     workflows/
       static-site-validation.yml     SSI import in Playground for target:static-site PRs
+      wc-static-site-agent.yml       Manual run of the static-site agent for a single status:idea-ready issue
       php-transformer-iterator.yml   Manual PR-first upstream repair iterator
       playground-stage-5.yml         Data Machine idea-agent proof in Playground CI
   bundles/
     wc-idea-agent/                   Data Machine bundle: concept generation
+    wc-static-site-agent/            Data Machine bundle: static storefront authoring
     php-transformer-iterator-agent/  Data Machine bundle: upstream transformer repair iteration
   static-sites/                      generated raw HTML/CSS storefronts for SSI validation
     <slug>/
@@ -232,6 +234,29 @@ studio wp datamachine flow run <flow-id> --drain
 Each agent ships with a default manual flow. The idea agent additionally ships a set of industry-tuned flows; add more by dropping new flow JSON into `bundles/wc-idea-agent/flows/` and reinstalling.
 
 Once the loop is observed end-to-end, scheduling is enabled and concurrency is increased. There is no auto-merge step. Merging is a human decision.
+
+### Running the static-site agent in CI
+
+`.github/workflows/wc-static-site-agent.yml` is a manual `workflow_dispatch` workflow that runs the imported `wc-static-site-agent` inside Playground against a single supplied `status:idea-ready` issue and opens a static-site pull request.
+
+Inputs:
+
+- `issue_number` (required) — issue number to implement, e.g. `99`.
+- `openai_model` (default `gpt-5.5`) — model used by the imported agent flow.
+- `data_machine_ref`, `data_machine_code_ref`, `homeboy_extensions_ref` (default `main`) — pin the upstream plugins used by Playground.
+
+Required repository secrets:
+
+- `HOMEBOY_APP_ID`, `HOMEBOY_APP_PRIVATE_KEY` — GitHub App credentials. The workflow generates a scoped token via `actions/create-github-app-token@v1` constrained to `chubes4/wc-site-generator` and fails closed if either secret is missing. There is no `github.token` fallback.
+- `OPENAI_API_KEY` — provider key for the AI step.
+
+The workflow checks out Data Machine, Data Machine Code, the Homeboy WordPress extension, and the OpenAI provider, then invokes `tests/playground-ci/scripts/run-wc-static-site-agent.sh`. The runner copies the bundle into the Playground component path, drives the bench runner, and prints a summary including:
+
+- `static_site_pr_url` — the upstream PR opened by the imported `github_pull_request_publish` tool.
+- `static_site_branch` — the `static/<slug>` branch the agent pushed.
+- `static_site_slug` — the slug derived from that branch.
+
+The probe wraps the publish handler so a successful PR open is recorded into engine data, and the workflow fails closed if the captured URL is empty. The targeted single-issue fetch relies on the GitHub fetch handler's `issue_number` config (Extra-Chill/data-machine-code#279).
 
 ---
 
