@@ -61,14 +61,27 @@ if [ -z "$OPENAI_API_KEY" ]; then
 fi
 
 RESULTS_TMPFILE=$(mktemp "${TMPDIR:-/tmp}/wc-site-generator-stage-5.XXXXXX")
+RUNTIME_DIR=$(mktemp -d "${TMPDIR:-/tmp}/wc-site-generator-homeboy-runtime.XXXXXX")
 COMPONENT_WORKLOAD="$COMPONENT_PATH/dm-openai-issue-flow-probe.php"
 COMPONENT_BUNDLE_DIR="$COMPONENT_PATH/bundles/wc-idea-agent"
 
 cleanup() {
     rm -f "$RESULTS_TMPFILE" "$COMPONENT_WORKLOAD"
+    rm -rf "$RUNTIME_DIR"
     rm -rf "$COMPONENT_PATH/bundles"
 }
 trap cleanup EXIT
+
+cat > "$RUNTIME_DIR/bench-helper.sh" <<'SH'
+#!/usr/bin/env bash
+homeboy_write_empty_bench_results() {
+    printf '{"component":"%s","iterations":%s,"scenarios":[]}' "$1" "$2" > "$3"
+}
+SH
+
+cat > "$RUNTIME_DIR/bench-helper.php" <<'PHP'
+<?php
+PHP
 
 cp "$WORKLOAD_PATH" "$COMPONENT_WORKLOAD"
 mkdir -p "$COMPONENT_PATH/bundles"
@@ -124,6 +137,8 @@ HOMEBOY_BENCH_ITERATIONS=1 \
 HOMEBOY_COMPONENT_ID=wc-site-generator-ci-driver \
 HOMEBOY_COMPONENT_PATH="$COMPONENT_PATH" \
 HOMEBOY_EXTENSION_PATH="$EXTENSION_PATH" \
+HOMEBOY_RUNTIME_BENCH_HELPER_SH="$RUNTIME_DIR/bench-helper.sh" \
+HOMEBOY_RUNTIME_BENCH_HELPER_PHP="$RUNTIME_DIR/bench-helper.php" \
 HOMEBOY_SETTINGS_JSON="$SETTINGS_JSON" \
     bash "$EXTENSION_PATH/scripts/bench/bench-runner.sh"
 
