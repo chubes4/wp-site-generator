@@ -315,6 +315,17 @@ jobs:
                 {
                   "step": "installPlugin",
                   "pluginData": {
+                    "resource": "wordpress.org/plugins",
+                    "slug": "woocommerce"
+                  },
+                  "options": {
+                    "activate": true,
+                    "targetFolderName": "woocommerce"
+                  }
+                },
+                {
+                  "step": "installPlugin",
+                  "pluginData": {
                     "resource": "git:directory",
                     "url": "https://github.com/chubes4/static-site-importer",
                     "ref": "main",
