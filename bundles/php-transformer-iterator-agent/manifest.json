@@ -12,7 +12,7 @@
                     "provider": "openai"
                 },
                 "system": {
-                    "model": "gpt-5.5-mini",
+                    "model": "gpt-5.5",
                     "provider": "openai"
                 }
             }
