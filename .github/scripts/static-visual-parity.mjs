@@ -47,6 +47,8 @@ const importReadyPhp = [
 	`\t'site' => ${phpString(site)},`,
 	"\t'theme' => $theme->get_stylesheet(),",
 	"\t'theme_name' => $theme->get('Name'),",
+	"\t'active_plugins' => get_option('active_plugins'),",
+	"\t'woocommerce_loaded' => class_exists('WooCommerce'),",
 	"\t'time' => time(),",
 	');',
 	`file_put_contents(${phpString(mountedImportReadyPath)}, wp_json_encode($payload));`,
@@ -272,6 +274,7 @@ async function waitForUrl(url, timeoutMs, shouldStop, diagnostics = {}) {
 					attempts,
 					lastError: serializeError(lastError),
 					recentAttempts,
+					urlDiagnostics: await probeWordPressUrls(url),
 					playground: diagnostics.playground
 						? {
 							pid: diagnostics.playground.pid,
@@ -288,6 +291,42 @@ async function waitForUrl(url, timeoutMs, shouldStop, diagnostics = {}) {
 	}
 
 	throw new Error(`Timed out waiting for ${url}: ${lastError?.message || 'no response'}`);
+}
+
+async function probeWordPressUrls(url) {
+	const parsed = new URL(url);
+	const origin = `${parsed.protocol}//${parsed.host}`;
+	const paths = ['/', '/wp-login.php', '/wp-json/', '/wp-admin/'];
+	const results = [];
+
+	for (const pathname of paths) {
+		const target = new URL(pathname, origin).toString();
+		const started = Date.now();
+		const result = {
+			url: target,
+		};
+
+		try {
+			const response = await fetch(target, {
+				headers: {
+					accept: 'text/html,application/json;q=0.9,*/*;q=0.8',
+				},
+				signal: AbortSignal.timeout(5000),
+			});
+			result.status = response.status;
+			result.contentType = response.headers.get('content-type');
+			result.elapsedMs = Date.now() - started;
+			result.bodyPreview = (await response.text()).slice(0, 500);
+		} catch (error) {
+			result.elapsedMs = Date.now() - started;
+			result.error = serializeError(error);
+			result.tcp = await probeTcp(target, 1000);
+		}
+
+		results.push(result);
+	}
+
+	return results;
 }
 
 function probeTcp(url, timeoutMs) {
