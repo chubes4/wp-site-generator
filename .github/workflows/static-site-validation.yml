@@ -174,19 +174,25 @@ jobs:
                 ([ .[] | "| `\(.key)` | \(.value) |" ] | join("\n"))
               end)
           ')
-          diagnostics=$(printf '%s' "$ssi" | jq -r '
+          diagnostics=$(printf '%s' "$ssi" | jq -r --arg site "$SITE" '
+            def cell: (. // "") | tostring | gsub("\\n"; " ") | gsub("\\|"; "\\\\|");
             .metadata.import_report_summary as $summary
             | if $summary == null then "" else
                 "\n\n### SSI Import Report\n" +
                 "- **Report path:** `\($summary.path // "unknown")`\n" +
                 "- **Readable:** `\($summary.readable // false)`\n" +
                 "- **Top-level keys:** `\((($summary.top_level_keys // []) | join(", ")) // "")`\n" +
-                (if (($summary.findings // []) | length) == 0 then
+                (if (($summary.fallback_diagnostics // []) | length) > 0 then
+                  "\n| Site | Selector | Excerpt | Source HTML | Block | Converter | Stage | Reason |\n| --- | --- | --- | --- | --- | --- | --- | --- |\n" +
+                  ([ ($summary.fallback_diagnostics // [])[]
+                    | "| `\($site)` | \(.selector | cell) | \(.excerpt | cell) | \(.source_html_preview | cell) | `\(.block_name | cell)` | `\(.converter | cell)` | `\(.stage | cell)` | \(.reason | cell) |"
+                  ] | join("\n"))
+                elif (($summary.findings // []) | length) == 0 then
                   "\n_No classified validation signals found in the import report._"
                 else
                   "\n| Kind | Path | Preview |\n| --- | --- | --- |\n" +
                   ([ ($summary.findings // [])[]
-                    | "| `\(.kind)` | `\(.path)` | \((.preview // "") | gsub("\\n"; " ") | gsub("\\|"; "\\\\|")) |"
+                    | "| `\(.kind)` | `\(.path)` | \(.preview | cell) |"
                   ] | join("\n"))
                 end)
               end
