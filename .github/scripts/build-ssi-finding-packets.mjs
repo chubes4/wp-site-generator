@@ -15,6 +15,9 @@ const outputPath = process.env.FINDING_PACKETS_PATH || 'homeboy-ci-results/findi
 const candidateRepo = process.env.CANDIDATE_REPO || 'chubes4/static-site-importer';
 const designPath = process.env.DESIGN_JSON_PATH || `static-sites/${site}/design.json`;
 const designDistributionPath = process.env.DESIGN_DISTRIBUTION_PATH || 'homeboy-ci-results/design-distribution.json';
+const benchOutcome = (process.env.BENCH_OUTCOME || '').toLowerCase();
+const visualOutcome = (process.env.VISUAL_OUTCOME || '').toLowerCase();
+const generatorRepo = 'chubes4/wc-site-generator';
 
 const designFields = await loadDesignFields(designPath);
 
@@ -36,24 +39,46 @@ await writeFile(
 );
 
 async function buildPackets() {
-	let bench;
+	let bench = null;
+	let benchReadError = '';
 	try {
 		bench = JSON.parse(await readFile(benchPath, 'utf8'));
-	} catch {
-		return [];
+	} catch (error) {
+		benchReadError = error?.message || String(error);
+	}
+
+	const packets = [];
+	const benchFailure = detectBenchFailure(bench, benchReadError);
+	if (benchFailure) {
+		packets.push(packetFromBenchFailure(benchFailure));
 	}
 
 	const summary = findSsiSummary(bench);
 	if (!summary) {
-		return [];
+		// Bench did not produce a parseable SSI scenario summary. Always emit
+		// a routing packet so the iterator has at least one finding to act
+		// on instead of receiving an empty payload.
+		packets.push(packetFromMissingSummary(benchFailure, benchReadError));
+	} else {
+		const fallbacks = asArray(summary.fallback_diagnostics);
+		const findings = asArray(summary.findings);
+		for (const diagnostic of fallbacks) {
+			packets.push(packetFromFallbackDiagnostic(diagnostic));
+		}
+		for (const finding of findings) {
+			packets.push(packetFromFinding(finding));
+		}
+		// Even on a clean import (no fallbacks, no findings) emit a baseline
+		// info packet so the grouped payload always carries at least one
+		// candidate-routed entry. The PHP transformer iterator depends on a
+		// non-empty group set to do useful work.
+		if (fallbacks.length === 0 && findings.length === 0) {
+			packets.push(packetFromCleanImport(summary));
+		}
 	}
 
-	const packets = [];
-	for (const diagnostic of asArray(summary.fallback_diagnostics)) {
-		packets.push(packetFromFallbackDiagnostic(diagnostic));
-	}
-	for (const finding of asArray(summary.findings)) {
-		packets.push(packetFromFinding(finding));
+	if (visualOutcome && visualOutcome !== 'success' && visualOutcome !== 'skipped') {
+		packets.push(packetFromVisualOutcome(visualOutcome));
 	}
 
 	return dedupePackets(packets);
@@ -66,7 +91,40 @@ function findSsiSummary(bench) {
 	return scenario?.metadata?.import_report_summary || null;
 }
 
-function packetBase() {
+function detectBenchFailure(bench, benchReadError) {
+	if (benchReadError) {
+		return {
+			source: 'bench_artifact_unreadable',
+			detail: benchReadError,
+			exit_code: '',
+			status: '',
+			stderr_tail: '',
+		};
+	}
+	if (!bench || typeof bench !== 'object') {
+		return null;
+	}
+	const data = bench.data && typeof bench.data === 'object' ? bench.data : null;
+	const status = text(data?.status);
+	const exitCode = data?.exit_code;
+	const benchSucceeded = bench.success === true && status !== 'failed' && (exitCode === 0 || exitCode === undefined);
+	if (benchSucceeded) {
+		return null;
+	}
+	const failure = data?.failure && typeof data.failure === 'object' ? data.failure : {};
+	return {
+		source: 'bench_runner',
+		detail: '',
+		exit_code: exitCode === undefined || exitCode === null ? '' : String(exitCode),
+		status,
+		stderr_tail: text(failure.stderr_tail),
+		component_id: text(failure.component_id),
+		component_path: text(failure.component_path),
+		scenario_id: text(failure.scenario_id),
+	};
+}
+
+function packetBase(overrideRepo) {
 	return {
 		schema_version: schemaVersion,
 		site,
@@ -75,8 +133,10 @@ function packetBase() {
 		source_head_sha: sourceHeadSha,
 		source_branch: sourceBranch,
 		validation_run_id: normalizeNumber(validationRunId),
-		candidate_repo: candidateRepo,
+		candidate_repo: overrideRepo || candidateRepo,
 		artifact_names: artifactNames,
+		bench_outcome: benchOutcome,
+		visual_outcome: visualOutcome,
 		design_system: designFields.design_system,
 		palette_kind: designFields.palette_kind,
 		typography_kind: designFields.typography_kind,
@@ -118,6 +178,103 @@ function packetFromFinding(finding) {
 		stage: text(finding?.stage),
 		reason: text(finding?.reason),
 	};
+}
+
+function packetFromBenchFailure(failure) {
+	const reasonParts = [];
+	if (failure.status) {
+		reasonParts.push(`status=${failure.status}`);
+	}
+	if (failure.exit_code !== '') {
+		reasonParts.push(`exit_code=${failure.exit_code}`);
+	}
+	if (failure.source) {
+		reasonParts.push(`source=${failure.source}`);
+	}
+	if (failure.stderr_tail) {
+		reasonParts.push(`stderr_tail=${truncate(failure.stderr_tail, 220)}`);
+	}
+	if (failure.detail) {
+		reasonParts.push(`detail=${truncate(failure.detail, 220)}`);
+	}
+	const reason = reasonParts.join('; ') || 'Homeboy bench step did not produce a parseable scenario summary.';
+	return {
+		...packetBase(generatorRepo),
+		kind: 'bench_failure',
+		path: benchPath,
+		preview: truncate(failure.stderr_tail || failure.detail || reason, 180),
+		selector: '',
+		excerpt: '',
+		source_html_preview: '',
+		block_name: '',
+		converter: 'homeboy-bench',
+		stage: failure.source || 'bench_runner',
+		reason,
+	};
+}
+
+function packetFromMissingSummary(failure, benchReadError) {
+	const reasonParts = ['SSI workload did not emit import_report_summary metadata.'];
+	if (benchReadError) {
+		reasonParts.push(`bench_artifact_read_error=${truncate(benchReadError, 180)}`);
+	}
+	if (failure?.status) {
+		reasonParts.push(`bench_status=${failure.status}`);
+	}
+	if (failure && failure.exit_code !== '') {
+		reasonParts.push(`bench_exit_code=${failure.exit_code}`);
+	}
+	return {
+		...packetBase(),
+		kind: 'report_missing',
+		path: benchPath,
+		preview: 'No SSI import_report_summary metadata in bench output.',
+		selector: '',
+		excerpt: '',
+		source_html_preview: '',
+		block_name: '',
+		converter: 'static-site-importer',
+		stage: 'workload',
+		reason: reasonParts.join('; '),
+	};
+}
+
+function packetFromCleanImport(summary) {
+	const topKeys = Array.isArray(summary?.top_level_keys) ? summary.top_level_keys.join(',') : '';
+	return {
+		...packetBase(),
+		kind: 'import_clean',
+		path: text(summary?.path),
+		preview: 'SSI import completed without fallback diagnostics or classified findings.',
+		selector: '',
+		excerpt: '',
+		source_html_preview: '',
+		block_name: '',
+		converter: 'static-site-importer',
+		stage: 'baseline',
+		reason: topKeys ? `import_report top_level_keys=${truncate(topKeys, 180)}` : 'import_report present, no fallbacks or findings recorded.',
+	};
+}
+
+function packetFromVisualOutcome(outcome) {
+	return {
+		...packetBase(generatorRepo),
+		kind: 'visual_parity_outcome',
+		path: '.github/scripts/static-visual-parity.mjs',
+		preview: `visual parity step outcome=${outcome}`,
+		selector: '',
+		excerpt: '',
+		source_html_preview: '',
+		block_name: '',
+		converter: 'visual-parity',
+		stage: 'screenshots',
+		reason: `Static visual parity capture reported outcome=${outcome}; decoupled from packet emission.`,
+	};
+}
+
+function truncate(value, length) {
+	const s = text(value);
+	return s.length <= length ? s : s.slice(0, length);
 }
 
 function dedupePackets(packets) {
