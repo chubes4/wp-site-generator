@@ -77,6 +77,16 @@ const blueprint = {
 		{
 			step: 'installPlugin',
 			pluginData: {
+				resource: 'wordpress.org/plugins',
+				slug: 'woocommerce',
+			},
+			options: {
+				activate: true,
+			},
+		},
+		{
+			step: 'installPlugin',
+			pluginData: {
 				resource: 'git:directory',
 				url: 'https://github.com/chubes4/static-site-importer',
 				ref: 'main',
