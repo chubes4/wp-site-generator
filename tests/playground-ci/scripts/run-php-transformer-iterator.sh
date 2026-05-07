@@ -67,17 +67,13 @@ RUNTIME_DIR=$(mktemp -d "${TMPDIR:-/tmp}/wc-site-generator-homeboy-runtime.XXXXX
 COMPONENT_WORKLOAD="$COMPONENT_PATH/dm-php-transformer-iterator-probe.php"
 COMPONENT_BUNDLE_DIR="$COMPONENT_PATH/bundles/php-transformer-iterator-agent"
 
-# Validate the host-side finding groups payload (compact via jq doubles as a
-# JSON syntax check) and encode it as base64 before forwarding through
-# Homeboy's bench_env seam. Homeboy's playground-bench-runner.php template
-# is built with a `sed` substitution that strips backslashes and treats `&`
-# as a backreference, so any value containing JSON escapes (`\"`) or `&`
-# corrupts the entire bench_env block — making every declared env var,
-# including GITHUB_TOKEN and OPENAI_API_KEY, drop silently. Base64's
-# alphabet is `[A-Za-z0-9+/=]`, none of which are sed-special, so the
-# payload survives the upstream substitution intact.
+# Validate the host-side finding groups payload (compact via jq doubles as
+# a JSON syntax check) before forwarding it through Homeboy's bench_env
+# seam. The bench_env value travels as raw JSON; Extra-Chill/homeboy-extensions#448
+# escapes sed metacharacters in the replacement string so JSON escapes
+# (`\"`) and `&` no longer corrupt the bench_env block during template
+# substitution.
 FINDING_GROUPS_JSON="$(jq -c . "$ITERATOR_FINDING_GROUPS_PATH")"
-FINDING_GROUPS_JSON_B64="$(printf '%s' "$FINDING_GROUPS_JSON" | base64 | tr -d '\n')"
 
 cleanup() {
     rm -f "$RESULTS_TMPFILE" "$COMPONENT_WORKLOAD"
@@ -146,7 +142,7 @@ SETTINGS_JSON=$(jq -nc \
     --arg sourcePr "$ITERATOR_SOURCE_PR" \
     --arg sourceHeadSha "$ITERATOR_SOURCE_HEAD_SHA" \
     --arg validationRunId "$ITERATOR_VALIDATION_RUN_ID" \
-    --arg findingGroupsJsonB64 "$FINDING_GROUPS_JSON_B64" \
+    --arg findingGroupsJson "$FINDING_GROUPS_JSON" \
     '{
         validation_dependencies: [$dm, $dmc, $openaiProvider],
         playground_wordpress_version: "7.0",
@@ -158,7 +154,7 @@ SETTINGS_JSON=$(jq -nc \
             ITERATOR_SOURCE_PR: $sourcePr,
             ITERATOR_SOURCE_HEAD_SHA: $sourceHeadSha,
             ITERATOR_VALIDATION_RUN_ID: $validationRunId,
-            ITERATOR_FINDING_GROUPS_JSON_B64: $findingGroupsJsonB64
+            ITERATOR_FINDING_GROUPS_JSON: $findingGroupsJson
         },
         playground_workloads: [
             {
