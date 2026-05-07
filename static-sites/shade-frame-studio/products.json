@@ -1,0 +1,146 @@
+{
+  "store": "Shade Frame Studio",
+  "currency": "USD",
+  "categories": [
+    {
+      "id": "project-kits",
+      "name": "Lampshade project kits",
+      "description": "Kits organized around common shade problems: cracked liners, scorched fabric, missing fittings, and thrifted bases with the wrong proportions."
+    },
+    {
+      "id": "shade-structures",
+      "name": "Shade structures",
+      "description": "Wire frames, rings, spider fittings, uno adapters, clip-on fittings, harp sets, risers, reducers, and finials."
+    },
+    {
+      "id": "covering-materials",
+      "name": "Covering materials",
+      "description": "Styrene, linen panels, cotton prints, handmade paper, parchment sheets, silk-look fabric, binding tape, trim cord, and seam tape."
+    },
+    {
+      "id": "tools-adhesives",
+      "name": "Tools and adhesives",
+      "description": "Shade glue, double-sided tape, rotary cutters, craft knives, clips, burnishers, measuring tapes, curve templates, edge rollers, and heat-safe work mats."
+    },
+    {
+      "id": "light-finish-support",
+      "name": "Light and finish support",
+      "description": "Diffuser sheets, bulb-spacing cards, shade proportion guides, fabric swatch packs, repair labels, project notebooks, and care cards."
+    },
+    {
+      "id": "room-bundles",
+      "name": "Room and use-case bundles",
+      "description": "Reading-lamp refresh, pair-of-nightstands recovery set, cottage pleat kit, midcentury drum kit, and rental-friendly shade upgrade pack."
+    }
+  ],
+  "products": [
+    {
+      "id": "midcentury-drum-recovery-kit",
+      "name": "Midcentury Drum Recovery Kit",
+      "category": "project-kits",
+      "price": 68,
+      "badge": "Best for thrifted floor lamps",
+      "description": "Wire rings, translucent styrene, linen panel, seam tape, binding tape, and a proportion card for clean drum shade recovery.",
+      "includes": ["top and bottom rings", "lampshade styrene", "linen covering panel", "seam tape", "binding tape", "shade proportion guide"]
+    },
+    {
+      "id": "pleated-bedside-shade-kit",
+      "name": "Pleated Bedside Shade Kit",
+      "category": "project-kits",
+      "price": 74,
+      "badge": "Bedroom pair refresh",
+      "description": "Cottage pleat fabric, clip guides, edge tape, trim cord, and notebook pages for repeating the second shade.",
+      "includes": ["pleat fabric", "clip guides", "edge tape", "trim cord", "project notebook pages", "care card"]
+    },
+    {
+      "id": "parchment-empire-shade-kit",
+      "name": "Parchment Empire Shade Kit",
+      "category": "project-kits",
+      "price": 82,
+      "badge": "Warm old-house glow",
+      "description": "Empire frame, parchment sheets, diffuser sheet, burnisher, shade glue, and a bulb-spacing card.",
+      "includes": ["empire wire frame", "parchment sheets", "diffuser sheet", "burnisher", "shade glue", "bulb-spacing card"]
+    },
+    {
+      "id": "cracked-liner-repair-kit",
+      "name": "Cracked-Liner Repair Kit",
+      "category": "project-kits",
+      "price": 36,
+      "badge": "Fast repair",
+      "description": "Replacement styrene, double-sided tape, seam tape, clips, repair label, and a care card for brittle shade interiors.",
+      "includes": ["replacement styrene", "double-sided tape", "seam tape", "clips", "repair label", "care card"]
+    },
+    {
+      "id": "thrifted-base-fitting-bundle",
+      "name": "Thrifted-Base Fitting Bundle",
+      "category": "shade-structures",
+      "price": 44,
+      "badge": "Solves odd fittings",
+      "description": "Spider fitting, uno adapter, clip-on fitting, reducer, riser, harp set, and finial options for making a found base usable.",
+      "includes": ["spider fitting", "uno adapter", "clip-on fitting", "reducer", "riser", "harp set", "finials"]
+    },
+    {
+      "id": "linen-panel-pack",
+      "name": "Linen Panel Pack",
+      "category": "covering-materials",
+      "price": 28,
+      "badge": "Neutral covering",
+      "description": "Linen panels sized for shade recovery work, suitable for drum, empire, and bedside proportions.",
+      "includes": ["linen panels", "grain direction card", "edge finish notes"]
+    },
+    {
+      "id": "parchment-and-handmade-paper-sheets",
+      "name": "Parchment & Handmade Paper Sheets",
+      "category": "covering-materials",
+      "price": 32,
+      "badge": "Textured diffusion",
+      "description": "Warm translucent papers for shade builds that need visible texture and a softer glow.",
+      "includes": ["parchment sheets", "handmade paper sheets", "sample overlap guide"]
+    },
+    {
+      "id": "edge-finishing-tray",
+      "name": "Edge Finishing Tray",
+      "category": "tools-adhesives",
+      "price": 39,
+      "badge": "Clean seams",
+      "description": "Shade glue, trim cord, seam tape, clips, edge roller, and burnisher for smooth shade edges and durable seams.",
+      "includes": ["shade glue", "trim cord", "seam tape", "clips", "edge roller", "burnisher"]
+    },
+    {
+      "id": "shade-proportion-guide-set",
+      "name": "Shade Proportion Guide Set",
+      "category": "light-finish-support",
+      "price": 18,
+      "badge": "Measure first",
+      "description": "Measuring guide cards for base height, frame diameter, harp height, bulb spacing, and room-light use.",
+      "includes": ["shade proportion guide", "bulb-spacing card", "measuring worksheet", "project notebook sheet"]
+    },
+    {
+      "id": "reading-lamp-refresh-bundle",
+      "name": "Reading-Lamp Refresh Bundle",
+      "category": "room-bundles",
+      "price": 54,
+      "badge": "Task light repair",
+      "description": "Diffuser sheet, harp height card, warm linen panel, and bulb-spacing support for useful reading light.",
+      "includes": ["diffuser sheet", "harp height card", "linen panel", "bulb-spacing card", "care card"]
+    },
+    {
+      "id": "pair-of-nightstands-recovery-set",
+      "name": "Pair-of-Nightstands Recovery Set",
+      "category": "room-bundles",
+      "price": 96,
+      "badge": "Matched pair",
+      "description": "Matched panels, repeated trim, twin project notebook pages, and measuring tape for a balanced bedside pair.",
+      "includes": ["matched covering panels", "repeated trim", "two notebook page sets", "measuring tape", "care cards"]
+    },
+    {
+      "id": "rental-friendly-shade-upgrade-pack",
+      "name": "Rental-Friendly Shade Upgrade Pack",
+      "category": "room-bundles",
+      "price": 42,
+      "badge": "Apartment lighting",
+      "description": "Clip-on fittings, reversible covering choices, reducers, and care cards for thrifted apartment lighting.",
+      "includes": ["clip-on fittings", "reversible covering choices", "reducers", "care cards", "simple measuring guide"]
+    }
+  ]
+}
