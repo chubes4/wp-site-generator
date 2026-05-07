@@ -121,11 +121,22 @@ jobs:
       - name: Stage synthetic finding packets
         # Copy the committed synthetic fixture into the same .ci/finding-packets
         # layout that the production iterator workflow uses after `gh run download`,
-        # so the grouping step below is byte-identical to production.
+        # then stamp the source PR metadata from this dispatch. The fixture is
+        # intentionally generic in git; the iterator contract expects packets to
+        # carry the same source PR/SHA/run values that production artifacts carry.
         run: |
           set -euo pipefail
           mkdir -p .ci/finding-packets
           cp tests/fixtures/iterator-smoke/finding-packets.json .ci/finding-packets/finding-packets.json
+          tmpfile="$(mktemp)"
+          jq \
+            --arg source_repo "${{ inputs.source_repo }}" \
+            --argjson source_pr "${{ inputs.source_pr }}" \
+            --arg source_head_sha "${{ inputs.source_head_sha }}" \
+            --argjson validation_run_id "${{ github.run_id }}" \
+            'map(.source_repo = $source_repo | .source_pr = $source_pr | .source_head_sha = $source_head_sha | .validation_run_id = $validation_run_id)' \
+            .ci/finding-packets/finding-packets.json > "$tmpfile"
+          mv "$tmpfile" .ci/finding-packets/finding-packets.json
           jq empty .ci/finding-packets/finding-packets.json
 
       - name: Set up Node.js
