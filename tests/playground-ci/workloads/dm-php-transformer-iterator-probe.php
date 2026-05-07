@@ -50,17 +50,39 @@ $source_repo = trim((string) (getenv('ITERATOR_SOURCE_REPO') ?: 'chubes4/wc-site
 $source_pr = trim((string) getenv('ITERATOR_SOURCE_PR'));
 $source_head_sha = trim((string) getenv('ITERATOR_SOURCE_HEAD_SHA'));
 $validation_run_id = trim((string) getenv('ITERATOR_VALIDATION_RUN_ID'));
-// The grouped finding payload is mounted into the Playground component
-// rather than passed inline. Embedding the JSON inside Homeboy's bench_env
-// breaks `sed`-based template substitution in homeboy-extensions
-// (escaped quotes get stripped, `&` is replaced with the matched pattern),
-// so the script writes the payload to a file inside COMPONENT_PATH and
-// hands the workload the guest-side path.
+// Resolve the grouped finding payload. Three transports are accepted, in
+// priority order:
+//
+// 1. ITERATOR_FINDING_GROUPS_JSON_B64 — base64-encoded JSON. Required for
+//    the Playground bench path because Homeboy's playground-bench-runner.php
+//    template is built with a `sed` substitution that strips backslashes
+//    and treats `&` as a backreference; raw JSON containing `\"` or `&`
+//    corrupts the entire bench_env block. Base64's alphabet is sed-safe.
+// 2. ITERATOR_FINDING_GROUPS_JSON — raw JSON. Convenient for local dev or
+//    callers that don't go through Homeboy's sed-substituted template.
+// 3. ITERATOR_FINDING_GROUPS_PATH — host filesystem path. Only useful
+//    outside Playground (the host path is not visible inside the WASM
+//    sandbox even when COMPONENT_PATH is mounted).
+$finding_groups_json_b64 = trim((string) getenv('ITERATOR_FINDING_GROUPS_JSON_B64'));
+$finding_groups_json = trim((string) getenv('ITERATOR_FINDING_GROUPS_JSON'));
 $finding_groups_path = trim((string) getenv('ITERATOR_FINDING_GROUPS_PATH'));
 $finding_groups = null;
-if ($finding_groups_path !== '' && is_file($finding_groups_path)) {
+$finding_groups_source = '';
+if ($finding_groups_json_b64 !== '') {
+    $decoded_b64 = base64_decode($finding_groups_json_b64, true);
+    if (is_string($decoded_b64) && $decoded_b64 !== '') {
+        $finding_groups = json_decode($decoded_b64, true);
+        $finding_groups_source = 'base64';
+    }
+}
+if (!is_array($finding_groups) && $finding_groups_json !== '') {
+    $finding_groups = json_decode($finding_groups_json, true);
+    $finding_groups_source = is_array($finding_groups) ? 'json' : $finding_groups_source;
+}
+if (!is_array($finding_groups) && $finding_groups_path !== '' && is_file($finding_groups_path)) {
     $raw = (string) file_get_contents($finding_groups_path);
     $finding_groups = json_decode($raw, true);
+    $finding_groups_source = is_array($finding_groups) ? 'path' : $finding_groups_source;
 }
 
 $metadata = [
@@ -72,6 +94,9 @@ $metadata = [
     'github_token_present' => $github_token !== '',
     'openai_key_present' => $openai_api_key !== '',
     'openai_provider_registered' => $openai_provider_registered,
+    'finding_groups_source' => $finding_groups_source,
+    'finding_groups_b64_len' => strlen($finding_groups_json_b64),
+    'finding_groups_json_len' => strlen($finding_groups_json),
     'finding_groups_path' => $finding_groups_path,
     'finding_group_count' => is_array($finding_groups) ? (int) ($finding_groups['group_count'] ?? 0) : 0,
 ];
@@ -90,8 +115,7 @@ if (!is_array($finding_groups) || empty($finding_groups['groups'])) {
     return [
         'metrics' => ['finding_groups_valid' => 0],
         'metadata' => $metadata + [
-            'finding_groups_path' => $finding_groups_path,
-            'error' => 'ITERATOR_FINDING_GROUPS_PATH must point to grouped findings JSON',
+            'error' => 'ITERATOR_FINDING_GROUPS_JSON_B64, ITERATOR_FINDING_GROUPS_JSON, or ITERATOR_FINDING_GROUPS_PATH must provide grouped findings JSON',
         ],
     ];
 }

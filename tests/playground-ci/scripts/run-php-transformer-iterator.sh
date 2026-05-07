@@ -66,19 +66,21 @@ RESULTS_TMPFILE=$(mktemp "${TMPDIR:-/tmp}/wc-site-generator-php-transformer-iter
 RUNTIME_DIR=$(mktemp -d "${TMPDIR:-/tmp}/wc-site-generator-homeboy-runtime.XXXXXX")
 COMPONENT_WORKLOAD="$COMPONENT_PATH/dm-php-transformer-iterator-probe.php"
 COMPONENT_BUNDLE_DIR="$COMPONENT_PATH/bundles/php-transformer-iterator-agent"
-COMPONENT_FINDING_GROUPS_FILE="$COMPONENT_PATH/finding-groups.json"
-# COMPONENT_PATH gets mounted into Playground at
-# /wordpress/wp-content/plugins/<component-id>, so the workload reads the
-# grouped finding payload from this guest path via getenv().
-PLAYGROUND_FINDING_GROUPS_PATH="/wordpress/wp-content/plugins/wc-site-generator-ci-driver/finding-groups.json"
 
-# Validate the host-side finding groups payload before forwarding the file
-# into the Playground component mount. Compact-formatting via jq doubles as
-# a JSON syntax check; an invalid payload bails out before bench setup.
-jq -c . "$ITERATOR_FINDING_GROUPS_PATH" > "$COMPONENT_FINDING_GROUPS_FILE"
+# Validate the host-side finding groups payload (compact via jq doubles as a
+# JSON syntax check) and encode it as base64 before forwarding through
+# Homeboy's bench_env seam. Homeboy's playground-bench-runner.php template
+# is built with a `sed` substitution that strips backslashes and treats `&`
+# as a backreference, so any value containing JSON escapes (`\"`) or `&`
+# corrupts the entire bench_env block — making every declared env var,
+# including GITHUB_TOKEN and OPENAI_API_KEY, drop silently. Base64's
+# alphabet is `[A-Za-z0-9+/=]`, none of which are sed-special, so the
+# payload survives the upstream substitution intact.
+FINDING_GROUPS_JSON="$(jq -c . "$ITERATOR_FINDING_GROUPS_PATH")"
+FINDING_GROUPS_JSON_B64="$(printf '%s' "$FINDING_GROUPS_JSON" | base64 | tr -d '\n')"
 
 cleanup() {
-    rm -f "$RESULTS_TMPFILE" "$COMPONENT_WORKLOAD" "$COMPONENT_FINDING_GROUPS_FILE"
+    rm -f "$RESULTS_TMPFILE" "$COMPONENT_WORKLOAD"
     rm -rf "$RUNTIME_DIR"
     rm -rf "$COMPONENT_PATH/bundles"
 }
@@ -144,7 +146,7 @@ SETTINGS_JSON=$(jq -nc \
     --arg sourcePr "$ITERATOR_SOURCE_PR" \
     --arg sourceHeadSha "$ITERATOR_SOURCE_HEAD_SHA" \
     --arg validationRunId "$ITERATOR_VALIDATION_RUN_ID" \
-    --arg findingGroupsPath "$PLAYGROUND_FINDING_GROUPS_PATH" \
+    --arg findingGroupsJsonB64 "$FINDING_GROUPS_JSON_B64" \
     '{
         validation_dependencies: [$dm, $dmc, $openaiProvider],
         playground_wordpress_version: "7.0",
@@ -156,7 +158,7 @@ SETTINGS_JSON=$(jq -nc \
             ITERATOR_SOURCE_PR: $sourcePr,
             ITERATOR_SOURCE_HEAD_SHA: $sourceHeadSha,
             ITERATOR_VALIDATION_RUN_ID: $validationRunId,
-            ITERATOR_FINDING_GROUPS_PATH: $findingGroupsPath
+            ITERATOR_FINDING_GROUPS_JSON_B64: $findingGroupsJsonB64
         },
         playground_workloads: [
             {
@@ -185,6 +187,8 @@ ITERATOR_SOURCE_REPO="$ITERATOR_SOURCE_REPO" \
 ITERATOR_SOURCE_PR="$ITERATOR_SOURCE_PR" \
 ITERATOR_SOURCE_HEAD_SHA="$ITERATOR_SOURCE_HEAD_SHA" \
 ITERATOR_VALIDATION_RUN_ID="$ITERATOR_VALIDATION_RUN_ID" \
+ITERATOR_FINDING_GROUPS_JSON="$FINDING_GROUPS_JSON" \
+ITERATOR_FINDING_GROUPS_PATH="$ITERATOR_FINDING_GROUPS_PATH" \
 HOMEBOY_BENCH_RESULTS_FILE="$RESULTS_TMPFILE" \
 HOMEBOY_BENCH_ITERATIONS=1 \
 HOMEBOY_COMPONENT_ID=wc-site-generator-ci-driver \
