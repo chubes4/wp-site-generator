@@ -33,7 +33,7 @@ Additional files under `static-sites/<slug>/assets/` are allowed when they impro
 ## Branch & PR Shape
 - Branch: `static/<slug>`.
 - PR base: the configured repository's default branch.
-- PR title: `🧱 <Concept Name> — static storefront`.
+- PR title: `🧱 CONCEPT_NAME — static storefront`.
 - PR body sections, in order:
   1. **Generated Files** — list every committed file path.
   2. **Design Intent** — short notes on palette, typography, product model, and layout decisions.
