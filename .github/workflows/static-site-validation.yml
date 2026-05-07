@@ -263,9 +263,14 @@ jobs:
           VALIDATION_RUN_ID: ${{ github.run_id }}
           DESIGN_JSON_PATH: static-sites/${{ matrix.site }}/design.json
           DESIGN_DISTRIBUTION_PATH: homeboy-ci-results/design-distribution.json
+          BENCH_OUTCOME: ${{ steps.homeboy.outcome }}
+          VISUAL_OUTCOME: ${{ steps.visual.outcome }}
         run: |
           set -euo pipefail
           node .github/scripts/build-ssi-finding-packets.mjs
+          packet_count=$(jq 'length' homeboy-ci-results/finding-packets.json)
+          echo "finding-packets emitted: ${packet_count}"
+          jq -r '.[] | "  - kind=\(.kind) candidate_repo=\(.candidate_repo) reason=\(.reason | tostring | .[0:120])"' homeboy-ci-results/finding-packets.json
 
       - name: Upload design distribution artifact
         if: always()
