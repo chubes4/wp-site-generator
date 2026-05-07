@@ -82,6 +82,16 @@ jobs:
           SITE: ${{ matrix.site }}
         run: |
           set -euo pipefail
+          # WooCommerce is environment setup, not part of the SSI import
+          # measurement. Install it via the Playground blueprint so the bench
+          # workload only runs the actual SSI import + diagnostic dump. This
+          # also avoids the homeboy-extensions wp-cli workload step type
+          # missing the `plugin` command (`wp-cli/wp-cli` is the only wp-cli
+          # package vendored in the bench runtime — extension/core/option
+          # commands are not registered, so `wp plugin install ...` from a
+          # workload step fails with "'plugin' is not a registered wp
+          # command"). Tracked as a follow-up at homeboy-extensions; the
+          # blueprint path is independently the right factoring regardless.
           workloads=$(jq -nc --arg site "$SITE" '
             [
               {
