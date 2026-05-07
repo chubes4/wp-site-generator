@@ -182,7 +182,7 @@ jobs:
                 "- **Readable:** `\($summary.readable // false)`\n" +
                 "- **Top-level keys:** `\((($summary.top_level_keys // []) | join(", ")) // "")`\n" +
                 (if (($summary.findings // []) | length) == 0 then
-                  "\n_No warning/error/fallback/core-html signals found in the import report._"
+                  "\n_No classified validation signals found in the import report._"
                 else
                   "\n| Kind | Path | Preview |\n| --- | --- | --- |\n" +
                   ([ ($summary.findings // [])[]

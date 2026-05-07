@@ -7,13 +7,13 @@ return static function (): array {
 		'ssi_report_readable' => 0,
 		'ssi_report_top_level_keys' => 0,
 		'ssi_signal_total_count' => 0,
-		'ssi_signal_error_count' => 0,
-		'ssi_signal_warning_count' => 0,
-		'ssi_signal_fallback_count' => 0,
-		'ssi_signal_core_html_count' => 0,
-		'ssi_signal_invalid_count' => 0,
-		'ssi_signal_skipped_count' => 0,
-		'ssi_signal_dropped_count' => 0,
+		'ssi_ignored_region_count' => 0,
+		'ssi_unassigned_region_count' => 0,
+		'ssi_product_candidate_rejected_count' => 0,
+		'ssi_fallback_count' => 0,
+		'ssi_core_html_count' => 0,
+		'ssi_invalid_block_count' => 0,
+		'ssi_manifest_error_count' => 0,
 	);
 	$findings = array();
 
@@ -34,13 +34,7 @@ return static function (): array {
 	$metrics['ssi_report_readable'] = 1;
 	$metrics['ssi_report_top_level_keys'] = is_array( $report ) ? count( $report ) : 0;
 
-	$record_finding = static function ( string $kind, string $path, $value ) use ( &$findings, &$metrics ): void {
-		$metric = 'ssi_signal_' . $kind . '_count';
-		if ( isset( $metrics[ $metric ] ) ) {
-			$metrics[ $metric ]++;
-		}
-		$metrics['ssi_signal_total_count']++;
-
+	$record_finding = static function ( string $kind, string $path, $value ) use ( &$findings ): void {
 		if ( count( $findings ) >= 25 ) {
 			return;
 		}
@@ -53,47 +47,124 @@ return static function (): array {
 		);
 	};
 
-	$walk = static function ( $value, string $path = '$' ) use ( &$walk, $record_finding ): void {
-		$needles_by_kind = array(
-			'error' => array( 'error', 'exception', 'fatal' ),
-			'warning' => array( 'warning', 'notice' ),
-			'fallback' => array( 'fallback' ),
-			'core_html' => array( 'core/html', 'core html' ),
-			'invalid' => array( 'invalid' ),
-			'skipped' => array( 'skipped', 'skip' ),
-			'dropped' => array( 'dropped', 'missing' ),
-		);
-
-		if ( is_array( $value ) ) {
-			foreach ( $value as $key => $child ) {
-				$child_path = $path . '.' . (string) $key;
-				$haystack = strtolower( (string) $key . ' ' . ( is_scalar( $child ) ? (string) $child : '' ) );
-				foreach ( $needles_by_kind as $kind => $needles ) {
-					foreach ( $needles as $needle ) {
-						if ( false !== strpos( $haystack, $needle ) ) {
-							$record_finding( $kind, $child_path, $child );
-							break;
-						}
-					}
-				}
-				$walk( $child, $child_path );
+	$get_path = static function ( array $value, array $keys ) {
+		foreach ( $keys as $key ) {
+			if ( ! is_array( $value ) || ! array_key_exists( $key, $value ) ) {
+				return null;
 			}
+			$value = $value[ $key ];
+		}
+
+		return $value;
+	};
+
+	$count_value = static function ( $value ): int {
+		if ( is_array( $value ) ) {
+			return count( $value );
+		}
+		if ( is_numeric( $value ) ) {
+			return max( 0, (int) $value );
+		}
+
+		return empty( $value ) ? 0 : 1;
+	};
+
+	$set_metric = static function ( string $metric, string $kind, string $path, $value, ?int $count = null ) use ( &$metrics, $count_value, $record_finding ): void {
+		$count = null === $count ? $count_value( $value ) : $count;
+		if ( $count <= 0 ) {
 			return;
 		}
 
-		if ( is_string( $value ) ) {
-			$haystack = strtolower( $value );
-			foreach ( $needles_by_kind as $kind => $needles ) {
-				foreach ( $needles as $needle ) {
-					if ( false !== strpos( $haystack, $needle ) ) {
-						$record_finding( $kind, $path, $value );
-						break;
-					}
-				}
+		$metrics[ $metric ] += $count;
+		if ( 'ssi_ignored_region_count' !== $metric ) {
+			$metrics['ssi_signal_total_count'] += $count;
+		}
+		$record_finding( $kind, $path, $value );
+	};
+
+	$sum_named_counts = static function ( array $value, string $key ): int {
+		$total = 0;
+		foreach ( $value as $child ) {
+			if ( is_array( $child ) && isset( $child[ $key ] ) && is_numeric( $child[ $key ] ) ) {
+				$total += max( 0, (int) $child[ $key ] );
 			}
 		}
+
+		return $total;
 	};
-	$walk( $report );
+
+	$count_diagnostics = static function ( array $report, callable $matches ) use ( $get_path ): int {
+		$diagnostics = $get_path( $report, array( 'diagnostics' ) );
+		if ( ! is_array( $diagnostics ) ) {
+			return 0;
+		}
+
+		$count = 0;
+		foreach ( $diagnostics as $diagnostic ) {
+			if ( is_array( $diagnostic ) && $matches( $diagnostic ) ) {
+				$count++;
+			}
+		}
+
+		return $count;
+	};
+
+	$find_manifest_errors = static function ( $value, string $path = '$' ) use ( &$find_manifest_errors, $set_metric ): void {
+		if ( ! is_array( $value ) ) {
+			return;
+		}
+
+		foreach ( $value as $key => $child ) {
+			$child_path = $path . '.' . (string) $key;
+			$child_path_text = strtolower( $child_path );
+			$key_text = strtolower( (string) $key );
+			if ( false !== strpos( $child_path_text, 'manifest' ) && false !== strpos( $key_text, 'error' ) ) {
+				$set_metric( 'ssi_manifest_error_count', 'manifest_error', $child_path, $child );
+			}
+			$find_manifest_errors( $child, $child_path );
+		}
+	};
+
+	if ( is_array( $report ) ) {
+		$ignored_regions = $get_path( $report, array( 'source_region_selection', 'intentionally_ignored_regions' ) );
+		$set_metric( 'ssi_ignored_region_count', 'ignored_region', '$.source_region_selection.intentionally_ignored_regions', $ignored_regions );
+
+		$unassigned_regions = $get_path( $report, array( 'source_region_selection', 'unassigned_regions' ) );
+		$set_metric( 'ssi_unassigned_region_count', 'unassigned_region', '$.source_region_selection.unassigned_regions', $unassigned_regions );
+
+		foreach ( array( 'rejected_candidates', 'rejected_product_candidates', 'candidate_rejections', 'product_candidate_rejections' ) as $key ) {
+			$rejections = $get_path( $report, array( 'commerce_product_inference', $key ) );
+			$set_metric( 'ssi_product_candidate_rejected_count', 'product_candidate_rejected', '$.commerce_product_inference.' . $key, $rejections );
+		}
+
+		$fallback_count = $get_path( $report, array( 'quality', 'fallback_count' ) );
+		if ( null === $fallback_count ) {
+			$fragments = $get_path( $report, array( 'conversion_fragments' ) );
+			$fallback_count = is_array( $fragments ) ? $sum_named_counts( $fragments, 'fallback_count' ) : 0;
+		}
+		if ( 0 === $count_value( $fallback_count ) ) {
+			$fallback_count = $count_diagnostics(
+				$report,
+				static fn ( array $diagnostic ): bool => isset( $diagnostic['type'] ) && false !== strpos( strtolower( (string) $diagnostic['type'] ), 'fallback' )
+			);
+		}
+		$set_metric( 'ssi_fallback_count', 'fallback', '$.quality.fallback_count', $fallback_count );
+
+		$core_html_count = $count_diagnostics(
+			$report,
+			static fn ( array $diagnostic ): bool => isset( $diagnostic['block_name'] ) && 'core/html' === strtolower( (string) $diagnostic['block_name'] )
+		);
+		$set_metric( 'ssi_core_html_count', 'core_html', '$.diagnostics[*].block_name', $core_html_count );
+
+		$invalid_block_count = $get_path( $report, array( 'quality', 'invalid_block_count' ) );
+		if ( null === $invalid_block_count ) {
+			$documents = $get_path( $report, array( 'generated_theme', 'block_documents' ) );
+			$invalid_block_count = is_array( $documents ) ? $sum_named_counts( $documents, 'invalid_block_count' ) : 0;
+		}
+		$set_metric( 'ssi_invalid_block_count', 'invalid_block', '$.quality.invalid_block_count', $invalid_block_count );
+
+		$find_manifest_errors( $report );
+	}
 
 	return array(
 		'metrics' => $metrics,
