@@ -1,0 +1,123 @@
+{
+  "store": {
+    "name": "Recovery Shelf",
+    "tagline": "Home aftercare kits for outpatient surgery days",
+    "positioning": "Practical non-prescription supplies organized around comfort, hygiene, access, and routine for planned recovery at home."
+  },
+  "collections": [
+    {
+      "name": "Procedure-prep kits",
+      "description": "Scenario-based kits for the first days and weeks at home after planned procedures."
+    },
+    {
+      "name": "Bathing and hygiene support",
+      "description": "Shower protection, gentle cleansing, stability, and reach tools for less stressful washing routines."
+    },
+    {
+      "name": "Sleep and positioning",
+      "description": "Pillows, trays, caddies, and reach tools for rest setups when movement is limited."
+    },
+    {
+      "name": "Dressing and body access",
+      "description": "Front-closure clothing, robe layers, soft waist pants, and recovery garment care."
+    },
+    {
+      "name": "Tracking and organization",
+      "description": "Medication timing, note pads, label sheets, pill organizers, appointment folders, and checklist magnets."
+    },
+    {
+      "name": "Comfort and skin basics",
+      "description": "Cold packs, wraps, fragrance-free barrier balm, lip care, dry-mouth aids, and bedding protectors."
+    }
+  ],
+  "products": [
+    {
+      "id": "first-72-hours-home-kit",
+      "name": "First 72 Hours at Home Kit",
+      "category": "Procedure-prep kit",
+      "price": 118,
+      "summary": "Bedside caddy, timing cards, cold packs, cleansing cloths, label sheets, and supply tray for the first days at home.",
+      "tags": ["first days", "bedside", "caregiver-ready", "routine"]
+    },
+    {
+      "id": "dental-surgery-soft-care-kit",
+      "name": "Dental Surgery Soft-Care Kit",
+      "category": "Procedure-prep kit",
+      "price": 74,
+      "summary": "Dry-mouth aids, lip care, cold packs, and simple soft-food tools for dental procedure recovery routines.",
+      "tags": ["dental", "oral care", "cold pack", "soft foods"]
+    },
+    {
+      "id": "dermatology-dressing-change-kit",
+      "name": "Dermatology Dressing-Change Kit",
+      "category": "Procedure-prep kit",
+      "price": 64,
+      "summary": "Gentle wash, label sheets, supply tray, barrier balm, and note pad for organized dressing changes.",
+      "tags": ["dermatology", "dressing", "organization", "hygiene"]
+    },
+    {
+      "id": "abdominal-comfort-setup",
+      "name": "Abdominal Comfort Setup",
+      "category": "Procedure-prep kit",
+      "price": 132,
+      "summary": "Loose access layers, positioning pillows, lap tray, and reacher support for low-effort movement at home.",
+      "tags": ["abdominal", "positioning", "lap tray", "loose layers"]
+    },
+    {
+      "id": "breast-chest-recovery-layer-kit",
+      "name": "Breast & Chest Recovery Layer Kit",
+      "category": "Procedure-prep kit",
+      "price": 96,
+      "summary": "Front-closure shirt, robe layer, compression-friendly camisole, and laundry bag for delicate recovery garments.",
+      "tags": ["front closure", "compression-compatible", "robe", "garment care"]
+    },
+    {
+      "id": "caregiver-restock-pack",
+      "name": "Caregiver Restock Pack",
+      "category": "Procedure-prep kit",
+      "price": 42,
+      "summary": "Consumable refills, handoff pad, checklist magnet, and label sheets for helpers maintaining a recovery corner.",
+      "tags": ["caregiver", "restock", "handoff", "checklist"]
+    },
+    {
+      "id": "waterproof-shower-sleeve-pair",
+      "name": "Waterproof Shower Sleeve Pair",
+      "category": "Bathing and hygiene support",
+      "price": 32,
+      "summary": "Reusable sleeve coverage for shower routines when keeping an area dry matters.",
+      "tags": ["shower", "waterproof", "hygiene"]
+    },
+    {
+      "id": "incline-wedge-pillow-set",
+      "name": "Incline Wedge Pillow Set",
+      "category": "Sleep and positioning",
+      "price": 86,
+      "summary": "Supportive wedge with washable cover and matching knee pillow for planned rest setups.",
+      "tags": ["sleep", "positioning", "washable cover"]
+    },
+    {
+      "id": "front-closure-recovery-shirt",
+      "name": "Front-Closure Recovery Shirt",
+      "category": "Dressing and body access",
+      "price": 44,
+      "summary": "Soft shirt layer designed for easier dressing when overhead movement is uncomfortable.",
+      "tags": ["front closure", "soft clothing", "access"]
+    },
+    {
+      "id": "medication-timing-card-pack",
+      "name": "Medication Timing Card Pack",
+      "category": "Tracking and organization",
+      "price": 18,
+      "summary": "Readable cards for timing routines, caregiver notes, appointment reminders, and fridge checklists.",
+      "tags": ["timing", "notes", "caregiver", "checklist"]
+    },
+    {
+      "id": "reusable-cold-pack-trio",
+      "name": "Reusable Cold Pack Trio",
+      "category": "Comfort and skin basics",
+      "price": 28,
+      "summary": "Three fabric-sleeved packs sized for rotating comfort support during home recovery routines.",
+      "tags": ["cold pack", "comfort", "reusable"]
+    }
+  ]
+}
