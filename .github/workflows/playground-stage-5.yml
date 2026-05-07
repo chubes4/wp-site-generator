@@ -12,9 +12,9 @@ on:
         required: false
         default: ''
       data_machine_ref:
-        description: Data Machine ref. Use main after Extra-Chill/data-machine#1821 lands.
+        description: Data Machine ref.
         required: true
-        default: fix/run-flow-paused-manual
+        default: main
       data_machine_code_ref:
         description: Data Machine Code ref.
         required: true
