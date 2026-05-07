@@ -16,6 +16,9 @@ return static function (): array {
 		'ssi_signal_dropped_count' => 0,
 	);
 	$findings = array();
+	$fallback_diagnostics = array();
+	$seen_findings = array();
+	$seen_fallback_diagnostics = array();
 
 	if ( ! is_readable( $report_path ) ) {
 		return array(
@@ -24,6 +27,7 @@ return static function (): array {
 				'import_report_summary' => array(
 					'path' => $report_path,
 					'readable' => false,
+					'fallback_diagnostics' => array(),
 					'findings' => array(),
 				),
 			),
@@ -34,26 +38,63 @@ return static function (): array {
 	$metrics['ssi_report_readable'] = 1;
 	$metrics['ssi_report_top_level_keys'] = is_array( $report ) ? count( $report ) : 0;
 
-	$record_finding = static function ( string $kind, string $path, $value ) use ( &$findings, &$metrics ): void {
+	$preview_value = static function ( $value, int $length = 180 ): string {
+		$preview = is_scalar( $value ) ? (string) $value : wp_json_encode( $value );
+
+		return substr( $preview ?: '', 0, $length );
+	};
+
+	$record_finding = static function ( string $kind, string $path, $value ) use ( &$findings, &$metrics, &$seen_findings, $preview_value ): void {
 		$metric = 'ssi_signal_' . $kind . '_count';
 		if ( isset( $metrics[ $metric ] ) ) {
 			$metrics[ $metric ]++;
 		}
 		$metrics['ssi_signal_total_count']++;
 
+		$preview = $preview_value( $value );
+		$key = $kind . '|' . $path . '|' . $preview;
+		if ( isset( $seen_findings[ $key ] ) ) {
+			return;
+		}
+		$seen_findings[ $key ] = true;
+
 		if ( count( $findings ) >= 25 ) {
 			return;
 		}
 
-		$preview = is_scalar( $value ) ? (string) $value : wp_json_encode( $value );
 		$findings[] = array(
 			'kind' => $kind,
 			'path' => $path,
-			'preview' => substr( $preview ?: '', 0, 180 ),
+			'preview' => $preview,
 		);
 	};
 
-	$walk = static function ( $value, string $path = '$' ) use ( &$walk, $record_finding ): void {
+	$record_fallback_diagnostic = static function ( array $diagnostic ) use ( &$fallback_diagnostics, &$seen_fallback_diagnostics, $preview_value ): void {
+		$fields = array(
+			'selector' => 160,
+			'excerpt' => 220,
+			'source_html_preview' => 220,
+			'block_name' => 80,
+			'converter' => 80,
+			'stage' => 80,
+			'reason' => 220,
+		);
+		$row = array();
+
+		foreach ( $fields as $field => $length ) {
+			$row[ $field ] = isset( $diagnostic[ $field ] ) ? $preview_value( $diagnostic[ $field ], $length ) : '';
+		}
+
+		$key = wp_json_encode( $row );
+		if ( isset( $seen_fallback_diagnostics[ $key ] ) ) {
+			return;
+		}
+
+		$seen_fallback_diagnostics[ $key ] = true;
+		$fallback_diagnostics[] = $row;
+	};
+
+	$walk = static function ( $value, string $path = '$' ) use ( &$walk, $record_finding, $record_fallback_diagnostic ): void {
 		$needles_by_kind = array(
 			'error' => array( 'error', 'exception', 'fatal' ),
 			'warning' => array( 'warning', 'notice' ),
@@ -65,6 +106,29 @@ return static function (): array {
 		);
 
 		if ( is_array( $value ) ) {
+			$diagnostic_values = array();
+			foreach ( array( 'type', 'block_name', 'converter', 'stage', 'reason' ) as $diagnostic_field ) {
+				if ( isset( $value[ $diagnostic_field ] ) && is_scalar( $value[ $diagnostic_field ] ) ) {
+					$diagnostic_values[] = (string) $value[ $diagnostic_field ];
+				}
+			}
+			$diagnostic_haystack = strtolower( implode( ' ', $diagnostic_values ) );
+			$has_fallback_fields = array_intersect_key(
+				$value,
+				array_flip( array( 'selector', 'excerpt', 'source_html_preview', 'block_name', 'converter', 'stage', 'reason' ) )
+			);
+
+			if (
+				$has_fallback_fields
+				&& (
+					false !== strpos( $diagnostic_haystack, 'fallback' )
+					|| false !== strpos( $diagnostic_haystack, 'unsupported_html' )
+					|| false !== strpos( $diagnostic_haystack, 'core/html' )
+				)
+			) {
+				$record_fallback_diagnostic( $value );
+			}
+
 			foreach ( $value as $key => $child ) {
 				$child_path = $path . '.' . (string) $key;
 				$haystack = strtolower( (string) $key . ' ' . ( is_scalar( $child ) ? (string) $child : '' ) );
@@ -102,6 +166,7 @@ return static function (): array {
 				'path' => $report_path,
 				'readable' => true,
 				'top_level_keys' => is_array( $report ) ? array_keys( $report ) : array(),
+				'fallback_diagnostics' => $fallback_diagnostics,
 				'findings' => $findings,
 			),
 		),
