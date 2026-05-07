@@ -72,7 +72,9 @@ jobs:
 
       - name: Install Homeboy WordPress extension dependencies
         working-directory: .ci/homeboy-extensions/wordpress
-        run: npm install
+        run: |
+          composer install --no-interaction --no-progress --prefer-dist
+          npm install
 
       - name: Run Stage 5 Playground proof
         env:
