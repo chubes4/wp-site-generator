@@ -16,6 +16,9 @@ return static function (): array {
 		'ssi_manifest_error_count' => 0,
 	);
 	$findings = array();
+	$fallback_diagnostics = array();
+	$seen_findings = array();
+	$seen_fallback_diagnostics = array();
 
 	if ( ! is_readable( $report_path ) ) {
 		return array(
@@ -24,6 +27,7 @@ return static function (): array {
 				'import_report_summary' => array(
 					'path' => $report_path,
 					'readable' => false,
+					'fallback_diagnostics' => array(),
 					'findings' => array(),
 				),
 			),
@@ -34,17 +38,54 @@ return static function (): array {
 	$metrics['ssi_report_readable'] = 1;
 	$metrics['ssi_report_top_level_keys'] = is_array( $report ) ? count( $report ) : 0;
 
-	$record_finding = static function ( string $kind, string $path, $value ) use ( &$findings ): void {
+	$preview_value = static function ( $value, int $length = 180 ): string {
+		$preview = is_scalar( $value ) ? (string) $value : wp_json_encode( $value );
+
+		return substr( $preview ?: '', 0, $length );
+	};
+
+	$record_finding = static function ( string $kind, string $path, $value ) use ( &$findings, &$seen_findings, $preview_value ): void {
+		$preview = $preview_value( $value );
+		$key = $kind . '|' . $path . '|' . $preview;
+		if ( isset( $seen_findings[ $key ] ) ) {
+			return;
+		}
+		$seen_findings[ $key ] = true;
+
 		if ( count( $findings ) >= 25 ) {
 			return;
 		}
 
-		$preview = is_scalar( $value ) ? (string) $value : wp_json_encode( $value );
 		$findings[] = array(
 			'kind' => $kind,
 			'path' => $path,
-			'preview' => substr( $preview ?: '', 0, 180 ),
+			'preview' => $preview,
 		);
+	};
+
+	$record_fallback_diagnostic = static function ( array $diagnostic ) use ( &$fallback_diagnostics, &$seen_fallback_diagnostics, $preview_value ): void {
+		$fields = array(
+			'selector' => 160,
+			'excerpt' => 220,
+			'source_html_preview' => 220,
+			'block_name' => 80,
+			'converter' => 80,
+			'stage' => 80,
+			'reason' => 220,
+		);
+		$row = array();
+
+		foreach ( $fields as $field => $length ) {
+			$row[ $field ] = isset( $diagnostic[ $field ] ) ? $preview_value( $diagnostic[ $field ], $length ) : '';
+		}
+
+		$key = wp_json_encode( $row );
+		if ( isset( $seen_fallback_diagnostics[ $key ] ) ) {
+			return;
+		}
+
+		$seen_fallback_diagnostics[ $key ] = true;
+		$fallback_diagnostics[] = $row;
 	};
 
 	$get_path = static function ( array $value, array $keys ) {
@@ -109,6 +150,36 @@ return static function (): array {
 		return $count;
 	};
 
+	$collect_fallback_diagnostics = static function ( array $report ) use ( $get_path, $record_fallback_diagnostic ): void {
+		$diagnostics = $get_path( $report, array( 'diagnostics' ) );
+		if ( ! is_array( $diagnostics ) ) {
+			return;
+		}
+
+		$fallback_fields = array( 'selector', 'excerpt', 'source_html_preview', 'block_name', 'converter', 'stage', 'reason' );
+		foreach ( $diagnostics as $diagnostic ) {
+			if ( ! is_array( $diagnostic ) || ! array_intersect_key( $diagnostic, array_flip( $fallback_fields ) ) ) {
+				continue;
+			}
+
+			$diagnostic_values = array();
+			foreach ( array( 'type', 'block_name', 'converter', 'stage', 'reason' ) as $field ) {
+				if ( isset( $diagnostic[ $field ] ) && is_scalar( $diagnostic[ $field ] ) ) {
+					$diagnostic_values[] = (string) $diagnostic[ $field ];
+				}
+			}
+			$haystack = strtolower( implode( ' ', $diagnostic_values ) );
+
+			if (
+				false !== strpos( $haystack, 'fallback' )
+				|| false !== strpos( $haystack, 'unsupported_html' )
+				|| false !== strpos( $haystack, 'core/html' )
+			) {
+				$record_fallback_diagnostic( $diagnostic );
+			}
+		}
+	};
+
 	$find_manifest_errors = static function ( $value, string $path = '$' ) use ( &$find_manifest_errors, $set_metric ): void {
 		if ( ! is_array( $value ) ) {
 			return;
@@ -126,6 +197,8 @@ return static function (): array {
 	};
 
 	if ( is_array( $report ) ) {
+		$collect_fallback_diagnostics( $report );
+
 		$ignored_regions = $get_path( $report, array( 'source_region_selection', 'intentionally_ignored_regions' ) );
 		$set_metric( 'ssi_ignored_region_count', 'ignored_region', '$.source_region_selection.intentionally_ignored_regions', $ignored_regions );
 
@@ -173,6 +246,7 @@ return static function (): array {
 				'path' => $report_path,
 				'readable' => true,
 				'top_level_keys' => is_array( $report ) ? array_keys( $report ) : array(),
+				'fallback_diagnostics' => $fallback_diagnostics,
 				'findings' => $findings,
 			),
 		),
