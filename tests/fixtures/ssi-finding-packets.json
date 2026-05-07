@@ -1,6 +1,6 @@
 [
   {
-    "schema_version": 1,
+    "schema_version": 2,
     "site": "demo-store",
     "source_repo": "chubes4/wc-site-generator",
     "source_pr": 77,
@@ -14,10 +14,16 @@
     "block_name": "core/group",
     "converter": "static-site-importer",
     "stage": "import",
-    "reason": "Unsupported hero wrapper"
+    "reason": "Unsupported hero wrapper",
+    "design_system": "editorial-magazine",
+    "palette_kind": "warm-neutral",
+    "typography_kind": "mixed-serif-sans",
+    "layout_kind": "magazine",
+    "density": "comfortable",
+    "commerce_pattern": "editorial-pdp"
   },
   {
-    "schema_version": 1,
+    "schema_version": 2,
     "site": "demo-store",
     "source_repo": "chubes4/wc-site-generator",
     "source_pr": 77,
@@ -31,10 +37,16 @@
     "block_name": "core/group",
     "converter": "static-site-importer",
     "stage": "import",
-    "reason": "Unsupported hero wrapper"
+    "reason": "Unsupported hero wrapper",
+    "design_system": "editorial-magazine",
+    "palette_kind": "warm-neutral",
+    "typography_kind": "mixed-serif-sans",
+    "layout_kind": "magazine",
+    "density": "comfortable",
+    "commerce_pattern": "editorial-pdp"
   },
   {
-    "schema_version": 1,
+    "schema_version": 2,
     "site": "demo-store",
     "source_repo": "chubes4/wc-site-generator",
     "source_pr": 77,
@@ -47,7 +59,13 @@
     "block_name": "core/html",
     "converter": "h2bc-card-converter",
     "stage": "convert",
-    "reason": "Card markup escaped"
+    "reason": "Card markup escaped",
+    "design_system": "editorial-magazine",
+    "palette_kind": "warm-neutral",
+    "typography_kind": "mixed-serif-sans",
+    "layout_kind": "magazine",
+    "density": "comfortable",
+    "commerce_pattern": "editorial-pdp"
   },
   {
     "schema_version": 1,
