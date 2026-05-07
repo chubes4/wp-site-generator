@@ -374,10 +374,13 @@ add_filter('datamachine_resolved_tools', static function (array $tools): array {
 
 $component_path = '/wordpress/wp-content/plugins/wc-site-generator-ci-driver';
 $bundle_path = $component_path . '/bundles/php-transformer-iterator-agent';
+$import_agent_slug_suffix = sanitize_title($validation_run_id !== '' ? $validation_run_id : uniqid('local-', false));
+$import_agent_slug = 'php-transformer-iterator-agent-' . $import_agent_slug_suffix;
 $metadata += [
     'bundle_path' => $bundle_path,
     'bundle_exists' => is_dir($bundle_path),
     'bundle_manifest_exists' => is_file($bundle_path . '/manifest.json'),
+    'import_agent_slug' => $import_agent_slug,
 ];
 
 if (!$metadata['bundle_exists'] || !$metadata['bundle_manifest_exists']) {
@@ -390,7 +393,8 @@ if (!$metadata['bundle_exists'] || !$metadata['bundle_manifest_exists']) {
 $import_start_ns = hrtime(true);
 $import_result = wp_get_ability('datamachine/import-agent')->execute([
     'source' => $bundle_path,
-    'on_conflict' => 'skip',
+    'slug' => $import_agent_slug,
+    'on_conflict' => 'upgrade',
 ]);
 $import_elapsed_ms = (hrtime(true) - $import_start_ns) / 1_000_000;
 $metadata['import_result'] = $import_result;
@@ -406,7 +410,7 @@ $agents = new Agents();
 $flows = new Flows();
 $jobs = new Jobs();
 
-$agent = $agents->get_by_slug('php-transformer-iterator-agent');
+$agent = $agents->get_by_slug($import_agent_slug);
 if (!$agent) {
     return [
         'metrics' => ['import_succeeded' => 1, 'agent_resolved' => 0],
@@ -422,11 +426,17 @@ $agent_config['default_model'] = $openai_model;
 $agents->update_agent($agent_id, ['agent_config' => $agent_config]);
 PluginSettings::clearCache();
 
-$flow = $flows->get_by_portable_slug(0, 'php-transformer-iterator-manual-flow');
+$flow = null;
+$all_flows = method_exists($flows, 'get_all_flows') ? $flows->get_all_flows(null, $agent_id) : [];
+foreach ((array) $all_flows as $candidate_flow) {
+    if (($candidate_flow['portable_slug'] ?? '') === 'php-transformer-iterator-manual-flow') {
+        $flow = $candidate_flow;
+        break;
+    }
+}
 if (!$flow) {
-    $all_flows = method_exists($flows, 'get_flows') ? $flows->get_flows() : [];
     foreach ((array) $all_flows as $candidate_flow) {
-        if (($candidate_flow['flow_slug'] ?? '') === 'php-transformer-iterator-manual-flow') {
+        if (($candidate_flow['flow_name'] ?? '') === 'PHP Transformer Iterator — Manual') {
             $flow = $candidate_flow;
             break;
         }
