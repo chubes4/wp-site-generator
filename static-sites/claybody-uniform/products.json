@@ -1,9 +1,8 @@
 {
   "store": {
     "name": "Claybody Uniform",
-    "slug": "claybody-uniform",
     "tagline": "Washable studio apparel for potters who live in dust and glaze",
-    "customer": [
+    "serves": [
       "home potters",
       "community-studio regulars",
       "ceramics instructors",
@@ -12,207 +11,175 @@
       "small studio owners"
     ]
   },
-  "categories": [
-    {
-      "id": "studio-uniforms",
-      "name": "Studio uniforms",
-      "description": "Cross-back throwing aprons, split-leg wheel aprons, cropped work pants, clay-wash overshirts, smocks, kiln-room chore coats, and washable market jackets."
-    },
-    {
-      "id": "protective-accessories",
-      "name": "Protective accessories",
-      "description": "Hair scarves, bandanas, sleeve guards, dust-control cover layers, glaze-safe gloves, towel loops, knee pads, and heat-aware cuffs."
-    },
-    {
-      "id": "footwear-soft-goods",
-      "name": "Footwear and soft goods",
-      "description": "Clog socks, washable studio slippers, non-slip studio clogs, compression socks, shoe covers, and laundry bags for clay-heavy clothes."
-    },
-    {
-      "id": "carry-systems",
-      "name": "Carry systems",
-      "description": "Trimming-tool rolls, apron pocket inserts, sponge pouches, needle-tool sleeves, glaze-test card wallets, and market-day crossbody bags."
-    },
-    {
-      "id": "role-based-bundles",
-      "name": "Role-based bundles",
-      "description": "First studio uniform, pottery teacher week kit, throwing-intensive apron set, glaze-room protection kit, kiln-load layer kit, and market booth outfit pack."
-    }
-  ],
   "products": [
-    {
-      "id": "cross-back-throwing-apron",
-      "name": "Cross-Back Throwing Apron",
-      "category": "studio-uniforms",
-      "price": 68,
-      "currency": "USD",
-      "badge": "Wheel posture",
-      "description": "Clay-shedding cross-back apron with towel loop, split reach, and pocket placement for wet wheel sessions.",
-      "best_for": ["throwing", "cleanup", "community studio"]
-    },
     {
       "id": "split-leg-wheel-apron",
       "name": "Split-Leg Wheel Apron",
-      "category": "studio-uniforms",
-      "price": 74,
+      "category": "Studio uniforms",
+      "price": 78,
       "currency": "USD",
-      "badge": "Seated coverage",
-      "description": "Full lap coverage that opens naturally around the wheel without bunching at the knees.",
-      "best_for": ["throwing", "trimming", "wet clay"]
+      "use_case": "throwing and trimming",
+      "description": "Clay-shedding apron cut for seated throwing with deep divided pockets and a towel loop."
+    },
+    {
+      "id": "short-sleeve-glaze-smock",
+      "name": "Short-Sleeve Glaze Smock",
+      "category": "Studio uniforms",
+      "price": 64,
+      "currency": "USD",
+      "use_case": "glazing and teaching",
+      "description": "Washable smock for glaze splatter, class demos, and quick cleanup shifts."
     },
     {
       "id": "cropped-wheel-pant",
       "name": "Cropped Wheel Pant",
-      "category": "studio-uniforms",
-      "price": 92,
+      "category": "Studio uniforms",
+      "price": 96,
       "currency": "USD",
-      "badge": "Cropped hem",
-      "description": "Washable work pant cut above the clog line for seated throwing, trimming, and cleanup days.",
-      "best_for": ["wheel work", "clog-friendly wear", "long sessions"]
+      "use_case": "seated wheel work",
+      "description": "Clog-friendly work pant shaped for long hours at the wheel and clay-heavy laundry."
     },
     {
       "id": "kiln-room-chore-coat",
       "name": "Kiln-Room Chore Coat",
-      "category": "studio-uniforms",
-      "price": 128,
+      "category": "Studio uniforms",
+      "price": 138,
       "currency": "USD",
-      "badge": "Kiln-adjacent",
-      "description": "Reinforced overshirt layer for loading days, studio errands, and clay-dust containment.",
-      "best_for": ["kiln loading", "studio errands", "dust cover"]
+      "use_case": "kiln loading and cleanup",
+      "description": "Durable cover layer for loading days, cleanup, and moving between studio zones."
     },
     {
-      "id": "sleeve-guard-pair",
-      "name": "Sleeve Guard Pair",
-      "category": "protective-accessories",
-      "price": 28,
+      "id": "studio-hair-scarf-set",
+      "name": "Studio Hair Scarf Set",
+      "category": "Protective accessories",
+      "price": 32,
       "currency": "USD",
-      "badge": "Glaze room",
-      "description": "Washable forearm covers for glaze mixing, cleanup, and splatter-heavy sessions.",
-      "best_for": ["glazing", "cleanup", "class demos"]
+      "use_case": "hair control",
+      "description": "Washable wraps and bandanas for wheel sessions, cleanup, and market booths."
     },
     {
-      "id": "clayroom-bandana-set",
-      "name": "Clayroom Bandana Set",
-      "category": "protective-accessories",
+      "id": "glaze-safe-glove-pair",
+      "name": "Glaze-Safe Glove Pair",
+      "category": "Protective accessories",
       "price": 24,
       "currency": "USD",
-      "badge": "Hair + dust",
-      "description": "Hair scarves and bandanas for dusty classrooms, handbuilding benches, and market setup.",
-      "best_for": ["dust control", "teaching", "market booth"]
+      "use_case": "glaze room protection",
+      "description": "Reusable protection for glaze mixing, test tiles, and splatter-heavy workdays."
     },
     {
-      "id": "handbuilding-knee-pads",
-      "name": "Handbuilding Knee Pads",
-      "category": "protective-accessories",
+      "id": "dust-control-coverall",
+      "name": "Dust-Control Coverall",
+      "category": "Protective accessories",
+      "price": 112,
+      "currency": "USD",
+      "use_case": "trimming dust and cleanup",
+      "description": "Cover layer for trimming, sweeping, and clay-heavy cleanup before errands."
+    },
+    {
+      "id": "claybody-clog-sock-three-pack",
+      "name": "Claybody Clog Sock Three-Pack",
+      "category": "Footwear and soft goods",
       "price": 36,
       "currency": "USD",
-      "badge": "Kneeling work",
-      "description": "Low-profile knee pads for slab work, cleanup, and long handbuilding sessions.",
-      "best_for": ["handbuilding", "cleanup", "studio floor work"]
+      "use_case": "studio clogs and long classes",
+      "description": "Washable socks for studio clogs, long classes, and production shifts."
     },
     {
-      "id": "clog-socks",
-      "name": "Clog Socks",
-      "category": "footwear-soft-goods",
-      "price": 18,
+      "id": "washable-studio-clog",
+      "name": "Washable Studio Clog",
+      "category": "Footwear and soft goods",
+      "price": 88,
       "currency": "USD",
-      "badge": "Footwear support",
-      "description": "Cushioned knit for studio clogs and long teaching days.",
-      "best_for": ["studio clogs", "teaching", "standing"]
+      "use_case": "wet studio floors",
+      "description": "Non-slip clogs made for wet throwing floors and quick studio-to-car exits."
     },
     {
-      "id": "washable-studio-slippers",
-      "name": "Washable Studio Slippers",
-      "category": "footwear-soft-goods",
-      "price": 42,
+      "id": "clay-heavy-laundry-bag",
+      "name": "Clay-Heavy Laundry Bag",
+      "category": "Footwear and soft goods",
+      "price": 28,
       "currency": "USD",
-      "badge": "Home studio",
-      "description": "Soft indoor footwear for home pottery spaces and cleanup.",
-      "best_for": ["home pottery", "cleanup", "indoor studio"]
-    },
-    {
-      "id": "clay-laundry-bag",
-      "name": "Clay Laundry Bag",
-      "category": "footwear-soft-goods",
-      "price": 22,
-      "currency": "USD",
-      "badge": "Wash day",
-      "description": "A dedicated wash bag for clay-heavy clothes after studio sessions.",
-      "best_for": ["clay laundry", "car protection", "studio commute"]
+      "use_case": "clay laundry",
+      "description": "Laundry bag for dusty layers, towel loops, and splattered smocks after class or cleanup."
     },
     {
       "id": "trimming-tool-roll",
       "name": "Trimming-Tool Roll",
-      "category": "carry-systems",
+      "category": "Carry systems",
       "price": 46,
       "currency": "USD",
-      "badge": "Tool carry",
-      "description": "Roll-up carry for trimming tools, ribs, and needle tools.",
-      "best_for": ["trimming", "tool organization", "community studio"]
+      "use_case": "small tool carry",
+      "description": "Soft roll for trimming tools, needle tools, and small studio essentials."
     },
     {
-      "id": "apron-pocket-insert",
-      "name": "Apron Pocket Insert",
-      "category": "carry-systems",
-      "price": 32,
+      "id": "sponge-pouch-needle-sleeve",
+      "name": "Sponge Pouch + Needle Sleeve",
+      "category": "Carry systems",
+      "price": 34,
       "currency": "USD",
-      "badge": "Pocket system",
-      "description": "Modular pockets for sponge, needle tool, towel, and glaze notes.",
-      "best_for": ["throwing", "teaching", "tool access"]
+      "use_case": "wheel station organization",
+      "description": "Pocket insert set that keeps wet sponges and sharp tools separated."
     },
     {
-      "id": "glaze-test-card-wallet",
-      "name": "Glaze-Test Card Wallet",
-      "category": "carry-systems",
-      "price": 29,
+      "id": "market-day-crossbody-bag",
+      "name": "Market-Day Crossbody Bag",
+      "category": "Carry systems",
+      "price": 72,
       "currency": "USD",
-      "badge": "Glaze notes",
-      "description": "Compact storage for test tiles, glaze notes, and booth references.",
-      "best_for": ["glazing", "market booth", "studio records"]
-    },
-    {
-      "id": "market-day-crossbody",
-      "name": "Market-Day Crossbody",
-      "category": "carry-systems",
-      "price": 78,
-      "currency": "USD",
-      "badge": "Seller carry",
-      "description": "Hands-free bag for sellers moving between studio identity and sales table.",
-      "best_for": ["pottery markets", "errands", "sales table"]
+      "use_case": "market booth carry",
+      "description": "Carry sales-table supplies, glaze-test cards, and small tools without a hard toolbox."
     }
   ],
   "bundles": [
     {
       "id": "first-studio-uniform",
       "name": "First Studio Uniform",
-      "price": 186,
+      "price": 198,
       "currency": "USD",
-      "description": "Cross-back apron, cropped wheel pant, clayroom bandana, clog socks, and laundry bag.",
-      "items": ["cross-back-throwing-apron", "cropped-wheel-pant", "clayroom-bandana-set", "clog-socks", "clay-laundry-bag"]
+      "includes": [
+        "Split-Leg Wheel Apron",
+        "Cropped Wheel Pant",
+        "Claybody Clog Sock Three-Pack",
+        "Studio Hair Scarf Set",
+        "Clay-Heavy Laundry Bag"
+      ]
     },
     {
       "id": "pottery-teacher-week-kit",
       "name": "Pottery Teacher Week Kit",
-      "price": 214,
+      "price": 246,
       "currency": "USD",
-      "description": "Short-sleeve smock, clay-wash overshirt, sleeve guards, towel loop, and compression socks.",
-      "items": ["sleeve-guard-pair", "clog-socks", "apron-pocket-insert"]
+      "includes": [
+        "Short-sleeve smocks",
+        "Washable market jacket",
+        "Apron pocket inserts",
+        "Studio socks"
+      ]
     },
     {
       "id": "glaze-room-protection-kit",
       "name": "Glaze-Room Protection Kit",
-      "price": 142,
+      "price": 174,
       "currency": "USD",
-      "description": "Glaze-safe gloves, sleeve guards, dust-control cover layer, and glaze-test card wallet.",
-      "items": ["sleeve-guard-pair", "glaze-test-card-wallet", "clayroom-bandana-set"]
+      "includes": [
+        "Glaze-Safe Glove Pair",
+        "Sleeve guards",
+        "Dust-Control Coverall",
+        "Hair wraps",
+        "Shoe covers"
+      ]
     },
     {
       "id": "market-booth-outfit-pack",
       "name": "Market Booth Outfit Pack",
-      "price": 236,
+      "price": 224,
       "currency": "USD",
-      "description": "Washable market jacket, clayroom bandana set, market-day crossbody, and clog socks.",
-      "items": ["market-day-crossbody", "clayroom-bandana-set", "clog-socks"]
+      "includes": [
+        "Washable market jacket",
+        "Market-Day Crossbody Bag",
+        "Clay-shedding apron",
+        "Glaze-test card wallet"
+      ]
     }
   ]
 }
