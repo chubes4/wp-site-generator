@@ -158,19 +158,22 @@ closed** if either secret is missing. There is no `github.token` fallback.
 
 ### Fetch filter
 
-The `wc-static-site-agent` flow's GitHub fetch handler uses the positive
-filter `labels: status:idea-ready`. Because the lifecycle workflow removes
-`status:idea-ready` from an idea the moment a static-site PR opens against
-it, the positive filter naturally excludes ideas that are
-`status:built` or `status:abandoned`.
+The `wc-static-site-agent` flow's GitHub fetch handler composes two label
+filters in flow JSON:
 
-DMC's GitHub fetch handler (and GitHub's REST API) does not support negative
-label filters, so the lifecycle workflow is the authoritative mechanism for
-keeping built/abandoned ideas out of the queue. As a defense-in-depth
-measure against label-update races, the static-site agent's AI step also
-inspects each fetched item's `metadata.github_labels` and aborts if it sees
-`status:built` or `status:abandoned`. See
-`bundles/wc-static-site-agent/README.md` for details.
+- `labels: status:idea-ready` — server-side positive filter, forwarded to
+  GitHub's REST `list issues` endpoint.
+- `exclude_labels: status:built,status:abandoned` — DMC's post-fetch
+  negative label filter, applied in-process after the API call returns.
+
+`exclude_labels` is a generic DMC capability shipped in
+[Extra-Chill/data-machine-code#282](https://github.com/Extra-Chill/data-machine-code/pull/282).
+The handler does not know what `status:built` or `status:abandoned` mean;
+the lifecycle vocabulary lives in this repo's flow JSON and in the
+`idea-lifecycle-labels.yml` workflow. The workflow owns the write side of
+the label state machine; the fetch filter owns the read side. Together
+they keep built and abandoned ideas out of the agent's queue without any
+agent-side prompt logic.
 
 ## How Concepts Stay Distinct
 
