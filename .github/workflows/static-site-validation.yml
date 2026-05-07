@@ -65,7 +65,11 @@ jobs:
 
       - name: Generate Homeboy app token
         id: app-token
+        if: env.HOMEBOY_APP_ID != '' && env.HOMEBOY_APP_PRIVATE_KEY != ''
         uses: actions/create-github-app-token@v1
+        env:
+          HOMEBOY_APP_ID: ${{ secrets.HOMEBOY_APP_ID }}
+          HOMEBOY_APP_PRIVATE_KEY: ${{ secrets.HOMEBOY_APP_PRIVATE_KEY }}
         with:
           app-id: ${{ secrets.HOMEBOY_APP_ID }}
           private-key: ${{ secrets.HOMEBOY_APP_PRIVATE_KEY }}
@@ -275,8 +279,8 @@ jobs:
         run: |
           set -euo pipefail
           if [ -z "${GH_TOKEN:-}" ]; then
-            echo "Homeboy app token is required for PR comments; refusing to post as github-actions[bot]." >&2
-            exit 1
+            echo "Skipping PR comment because Homeboy app token is not configured."
+            exit 0
           fi
           body=$(cat <<MARKDOWN
           ## Static site validation: \`$SITE\`
