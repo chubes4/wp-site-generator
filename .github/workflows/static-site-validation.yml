@@ -100,10 +100,6 @@ jobs:
                 "run": [
                   {
                     "type": "wp-cli",
-                    "command": "wp plugin install woocommerce --activate"
-                  },
-                  {
-                    "type": "wp-cli",
                     "command": ("wp static-site-importer import-theme /wordpress/wp-content/plugins/wc-site-generator/static-sites/" + $site + "/index.html --slug=" + $site + " --activate --overwrite --keep-source --format=json"),
                     "parse": "json"
                   },
@@ -128,6 +124,17 @@ jobs:
                 "$schema": "https://playground.wordpress.net/blueprint-schema.json",
                 "preferredVersions": { "php": "8.3", "wp": "latest" },
                 "steps": [
+                  {
+                    "step": "installPlugin",
+                    "pluginData": {
+                      "resource": "wordpress.org/plugins",
+                      "slug": "woocommerce"
+                    },
+                    "options": {
+                      "activate": true,
+                      "targetFolderName": "woocommerce"
+                    }
+                  },
                   {
                     "step": "installPlugin",
                     "pluginData": {
