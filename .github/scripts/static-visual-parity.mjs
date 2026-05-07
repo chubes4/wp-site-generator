@@ -8,6 +8,7 @@ import { existsSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { spawn } from 'node:child_process';
+import { Socket } from 'node:net';
 
 const repoRoot = process.cwd();
 const site = process.env.SITE || process.argv[2];
@@ -132,7 +133,11 @@ playground.stderr.on('data', (data) => {
 
 try {
 	const importReadiness = await waitForImportMarker(importReadyPath, 180_000, () => playground.exitCode !== null);
-	await waitForUrl(importedUrl, 120_000, () => playground.exitCode !== null);
+	await waitForUrl(importedUrl, 120_000, () => playground.exitCode !== null, {
+		outputDir,
+		playground,
+		playgroundOutput: () => playgroundOutput,
+	});
 	await captureParityScreenshots({ sourceUrl, importedUrl, outputDir });
 	await writeSummary({ site, sourceUrl, importedUrl, outputDir, playgroundOutput, importReadiness });
 } finally {
@@ -204,29 +209,116 @@ function listen(server, port) {
 	});
 }
 
-async function waitForUrl(url, timeoutMs, shouldStop) {
+async function waitForUrl(url, timeoutMs, shouldStop, diagnostics = {}) {
 	const started = Date.now();
 	let lastError = null;
+	let attempts = 0;
+	const recentAttempts = [];
 
 	while (Date.now() - started < timeoutMs) {
 		if (shouldStop()) {
 			throw new Error(`Playground server exited before ${url} became available`);
 		}
 
+		attempts += 1;
+		const attempt = {
+			attempts,
+			elapsedMs: Date.now() - started,
+		};
+
 		try {
-			const response = await fetch(url);
+			const response = await fetch(url, {
+				signal: AbortSignal.timeout(5000),
+			});
+			attempt.httpStatus = response.status;
 			if (response.ok || [301, 302, 401, 403].includes(response.status)) {
 				return;
 			}
 			lastError = new Error(`HTTP ${response.status}`);
 		} catch (error) {
 			lastError = error;
+			attempt.fetchError = serializeError(error);
+		}
+
+		attempt.tcp = await probeTcp(url, 1000);
+		recentAttempts.push(attempt);
+		if (recentAttempts.length > 10) {
+			recentAttempts.shift();
 		}
 
 		await new Promise((resolve) => setTimeout(resolve, 1000));
 	}
 
+	if (diagnostics.outputDir) {
+		await writeFile(
+			path.join(diagnostics.outputDir, 'frontend-readiness-error.json'),
+			JSON.stringify(
+				{
+					url,
+					timeoutMs,
+					attempts,
+					lastError: serializeError(lastError),
+					recentAttempts,
+					playground: diagnostics.playground
+						? {
+							pid: diagnostics.playground.pid,
+							exitCode: diagnostics.playground.exitCode,
+							signalCode: diagnostics.playground.signalCode,
+						}
+						: null,
+					playgroundOutputTail: diagnostics.playgroundOutput?.().slice(-4000) || '',
+				},
+				null,
+				2
+			)
+		);
+	}
+
 	throw new Error(`Timed out waiting for ${url}: ${lastError?.message || 'no response'}`);
+}
+
+function probeTcp(url, timeoutMs) {
+	return new Promise((resolve) => {
+		const parsed = new URL(url);
+		const socket = new Socket();
+		let settled = false;
+
+		const finish = (result) => {
+			if (settled) {
+				return;
+			}
+			settled = true;
+			socket.destroy();
+			resolve(result);
+		};
+
+		socket.setTimeout(timeoutMs);
+		socket.once('connect', () => finish({ ok: true }));
+		socket.once('timeout', () => finish({ ok: false, error: 'timeout' }));
+		socket.once('error', (error) => finish({ ok: false, error: serializeError(error) }));
+		socket.connect(Number(parsed.port || 80), parsed.hostname);
+	});
+}
+
+function serializeError(error) {
+	if (!error) {
+		return null;
+	}
+
+	return {
+		name: error.name,
+		message: error.message,
+		code: error.code,
+		cause: error.cause
+			? {
+				name: error.cause.name,
+				message: error.cause.message,
+				code: error.cause.code,
+				errno: error.cause.errno,
+				syscall: error.cause.syscall,
+			}
+			: null,
+	};
 }
 
 async function captureParityScreenshots({ sourceUrl, importedUrl, outputDir }) {
