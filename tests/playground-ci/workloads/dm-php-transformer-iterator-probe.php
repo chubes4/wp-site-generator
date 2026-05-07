@@ -50,8 +50,18 @@ $source_repo = trim((string) (getenv('ITERATOR_SOURCE_REPO') ?: 'chubes4/wc-site
 $source_pr = trim((string) getenv('ITERATOR_SOURCE_PR'));
 $source_head_sha = trim((string) getenv('ITERATOR_SOURCE_HEAD_SHA'));
 $validation_run_id = trim((string) getenv('ITERATOR_VALIDATION_RUN_ID'));
-$finding_groups_json = trim((string) getenv('ITERATOR_FINDING_GROUPS_JSON'));
-$finding_groups = json_decode($finding_groups_json, true);
+// The grouped finding payload is mounted into the Playground component
+// rather than passed inline. Embedding the JSON inside Homeboy's bench_env
+// breaks `sed`-based template substitution in homeboy-extensions
+// (escaped quotes get stripped, `&` is replaced with the matched pattern),
+// so the script writes the payload to a file inside COMPONENT_PATH and
+// hands the workload the guest-side path.
+$finding_groups_path = trim((string) getenv('ITERATOR_FINDING_GROUPS_PATH'));
+$finding_groups = null;
+if ($finding_groups_path !== '' && is_file($finding_groups_path)) {
+    $raw = (string) file_get_contents($finding_groups_path);
+    $finding_groups = json_decode($raw, true);
+}
 
 $metadata = [
     'source_repo' => $source_repo,
@@ -62,6 +72,7 @@ $metadata = [
     'github_token_present' => $github_token !== '',
     'openai_key_present' => $openai_api_key !== '',
     'openai_provider_registered' => $openai_provider_registered,
+    'finding_groups_path' => $finding_groups_path,
     'finding_group_count' => is_array($finding_groups) ? (int) ($finding_groups['group_count'] ?? 0) : 0,
 ];
 
@@ -78,7 +89,10 @@ if ($github_token === '' || $openai_api_key === '') {
 if (!is_array($finding_groups) || empty($finding_groups['groups'])) {
     return [
         'metrics' => ['finding_groups_valid' => 0],
-        'metadata' => $metadata + ['error' => 'ITERATOR_FINDING_GROUPS_JSON must contain grouped findings'],
+        'metadata' => $metadata + [
+            'finding_groups_path' => $finding_groups_path,
+            'error' => 'ITERATOR_FINDING_GROUPS_PATH must point to grouped findings JSON',
+        ],
     ];
 }
 
