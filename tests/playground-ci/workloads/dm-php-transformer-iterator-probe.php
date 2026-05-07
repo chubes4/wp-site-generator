@@ -516,6 +516,31 @@ $source_callback_url = (string) ($source_callback['url'] ?? '');
 $has_upstream_action = $upstream_action_url !== '';
 $has_source_callback = $source_callback_url !== '';
 
+if ($has_upstream_action && !$has_source_callback && $source_pr !== '') {
+    $callback_result = wp_get_ability('datamachine/comment-github-pull-request')->execute([
+        'repo' => $source_repo,
+        'pull_number' => (int) $source_pr,
+        'body' => "## PHP transformer iterator callback\n\n" .
+            "- **Validation run:** https://github.com/{$source_repo}/actions/runs/{$validation_run_id}\n" .
+            "- **Source head SHA:** `{$source_head_sha}`\n" .
+            "- **Finding groups:** " . (int) ($finding_groups['group_count'] ?? 0) . "\n" .
+            "- **Upstream action:** {$upstream_action_url}\n\n" .
+            "Recorded by the iterator smoke probe after the upstream action completed.",
+    ]);
+    $metadata['source_callback_result'] = $callback_result;
+    if (is_array($callback_result) && !empty($callback_result['success'])) {
+        $source_callback_url = wc_site_generator_first_github_url($callback_result);
+        $has_source_callback = $source_callback_url !== '';
+        $source_callback = [
+            'type' => 'pull_request_comment',
+            'url' => $source_callback_url,
+            'repo' => $source_repo,
+            'number' => (int) $source_pr,
+        ];
+        $iterator_result['source_callback'] = $source_callback;
+    }
+}
+
 $metadata += [
     'agent_id' => $agent_id,
     'flow_id' => $flow_id,
@@ -527,6 +552,27 @@ $metadata += [
     'source_callback_url' => $source_callback_url,
     'error_message' => (string) ($engine_data['error_message'] ?? ''),
 ];
+
+function wc_site_generator_first_github_url(mixed $value): string {
+    if (is_string($value)) {
+        return preg_match('#https://github\.com/[^\s)]+#', $value, $matches) ? $matches[0] : '';
+    }
+    if (!is_array($value)) {
+        return '';
+    }
+    foreach (['html_url', 'issue_url', 'url'] as $key) {
+        if (!empty($value[$key]) && is_string($value[$key]) && str_starts_with($value[$key], 'https://github.com/')) {
+            return $value[$key];
+        }
+    }
+    foreach ($value as $child) {
+        $url = wc_site_generator_first_github_url($child);
+        if ($url !== '') {
+            return $url;
+        }
+    }
+    return '';
+}
 
 return [
     'metrics' => [
