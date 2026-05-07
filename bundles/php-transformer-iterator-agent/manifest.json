@@ -1,7 +1,7 @@
 {
     "agent": {
         "agent_config": {
-            "description": "Generates distinct store concepts and opens them as GitHub issues for downstream static site generation. Industry/problem space comes from the flow user message.",
+            "description": "Consumes normalized SSI finding groups, routes each actionable group to its owning transformer repository, and opens focused upstream repair pull requests with source validation evidence. Issues are fallback records for groups without a safe patch path.",
             "mode_models": {
                 "chat": {
                     "model": "gpt-5.5",
@@ -18,33 +18,25 @@
             }
         },
         "description": "",
-        "label": "WC Idea Agent",
-        "slug": "wc-idea-agent"
+        "label": "PHP Transformer Iterator Agent",
+        "slug": "php-transformer-iterator-agent"
     },
-    "bundle_slug": "wc-idea-agent",
-    "bundle_version": "3",
-    "exported_at": "2026-05-06T16:30:00+00:00",
+    "bundle_slug": "php-transformer-iterator-agent",
+    "bundle_version": "1",
+    "exported_at": "2026-05-07T00:00:00+00:00",
     "exported_by": "data-machine/0.104.0",
     "included": {
         "auth_refs": [],
         "extensions": [],
         "flows": [
-            "wc-idea-manual-flow",
-            "wc-idea-food-and-beverage-flow",
-            "wc-idea-home-and-craft-flow",
-            "wc-idea-outdoors-and-field-flow",
-            "wc-idea-apparel-and-accessories-flow",
-            "wc-idea-music-and-audio-flow",
-            "wc-idea-health-and-body-flow",
-            "wc-idea-pet-and-animal-flow",
-            "wc-idea-print-paper-and-stationery-flow"
+            "php-transformer-iterator-manual-flow"
         ],
         "handler_auth": "refs",
         "memory": [
             "agent/SOUL.md"
         ],
         "pipelines": [
-            "wc-idea-pipeline"
+            "php-transformer-iterator-pipeline"
         ],
         "prompts": [],
         "rubrics": [],

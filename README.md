@@ -10,7 +10,7 @@ Concurrency is the strategy. The system is designed to produce many credible sta
 
 ---
 
-## Two agents, one substrate
+## Three agents, one substrate
 
 ```
                 +---------------------+
@@ -46,6 +46,18 @@ Concurrency is the strategy. The system is designed to produce many credible sta
                     PR comment with metrics
                     + Playground preview link
                     + import-report.json artifact
+                            |
+                            v
+                +-----------+------------+
+                | php-transformer-       |
+                | iterator-agent         |
+                | (upstream repair PRs)  |
+                +-----------+------------+
+                            |
+                            v
+                    focused upstream PR
+                    + regression test
+                    + callback comment
 ```
 
 Every layer is intentionally generic on its own:
@@ -89,6 +101,12 @@ PR title shape: `🧱 <Concept Name> — static storefront`. Branch: `static/<sl
 
 The static site agent does **not** invent concepts. It only implements existing issues.
 
+### `php-transformer-iterator-agent`
+
+Consumes grouped SSI finding packets from a static-site validation run and turns actionable transformer gaps into focused upstream PRs. It routes each group to `chubes4/static-site-importer`, `chubes4/html-to-blocks-converter`, `chubes4/block-format-bridge`, or `chubes4/wc-site-generator`, uses an isolated DMC worktree for that repo, applies the smallest supported transformer fix, adds or updates regression coverage, runs targeted checks, opens the upstream PR with evidence, and comments back on the source generated-site PR.
+
+Fallback issues are reserved for groups that cannot yet produce a safe patch because the evidence is incomplete, ownership is ambiguous, or targeted verification cannot be established.
+
 ---
 
 ## Validation Lane
@@ -126,8 +144,27 @@ Every static site must:
 2. Use stable semantic hooks: `header`, `nav`, `main`, `section`, `footer`, `.hero`, `.product-card`, `.price`, `.cta`, `.brand`, `.collection`.
 3. Use local assets only: no remote stylesheets, fonts, scripts, or images.
 4. Import cleanly through Static Site Importer with low fallback / freeform / invalid-block counts.
+5. Ship `static-sites/<slug>/design.json` describing the design system so finding packets can be correlated with design choices and the corpus can be measured for diversity.
 
-Items 1-3 are prompt rules. Item 4 is enforced by the CI validation lane.
+Items 1-3 and 5 are prompt rules. Item 4 is enforced by the CI validation lane.
+
+### Design metadata (`design.json`)
+
+Every generated site declares its design system in a small JSON sidecar at `static-sites/<slug>/design.json`.
+
+Required fields:
+
+- `schema_version` (integer, currently `1`)
+- `design_system` — short slug for the overall aesthetic (e.g. `editorial-magazine`, `brutalist-grid`, `swiss-minimal`, `y2k-maximalist`)
+- `palette_kind` — one of `monochrome`, `duotone`, `earthy`, `pastel`, `neon`, `jewel-tone`, `high-contrast`, `warm-neutral`, `cool-neutral`, `vibrant`
+- `typography_kind` — one of `serif`, `sans-serif`, `slab-serif`, `display`, `monospace`, `mixed-serif-sans`, `handwritten`, `geometric-sans`
+- `layout_kind` — one of `single-column`, `asymmetric`, `grid-bento`, `magazine`, `split-screen`, `horizontal-scroll`, `masonry`, `hero-stacked`
+- `density` — one of `airy`, `comfortable`, `compact`, `dense`
+- `commerce_pattern` — one of `product-grid`, `editorial-pdp`, `single-product`, `category-led`, `lookbook`, `shoppable-story`, `marketplace`, `subscription-box`
+
+Optional fields: `accent_palette` (array of hex strings), `font_family_primary`, `font_family_secondary`, `notes`.
+
+The static-site validation workflow reads this file, stamps the design fields onto every SSI finding packet for the site (so downstream grouping/iteration can correlate findings with design choices), and uploads a per-run `design-distribution.json` artifact. Sites generated before this contract was introduced — or any PR that omits `design.json` — are treated as `design_system: "unknown"` rather than failing.
 
 ---
 
@@ -140,13 +177,18 @@ wc-site-generator/
   .github/
     workflows/
       static-site-validation.yml     SSI import in Playground for target:static-site PRs
+      wc-static-site-agent.yml       Manual run of the static-site agent for a single status:idea-ready issue
+      php-transformer-iterator.yml   Manual PR-first upstream repair iterator
       playground-stage-5.yml         Data Machine idea-agent proof in Playground CI
   bundles/
     wc-idea-agent/                   Data Machine bundle: concept generation
+    wc-static-site-agent/            Data Machine bundle: static storefront authoring
+    php-transformer-iterator-agent/  Data Machine bundle: upstream transformer repair iteration
   static-sites/                      generated raw HTML/CSS storefronts for SSI validation
     <slug>/
       index.html
       assets/styles.css
+      design.json                    structured design system metadata for the storefront
   resources/                         reusable theme bases / shared assets
   scripts/                           optional dev helpers
 ```
@@ -192,6 +234,29 @@ studio wp datamachine flow run <flow-id> --drain
 Each agent ships with a default manual flow. The idea agent additionally ships a set of industry-tuned flows; add more by dropping new flow JSON into `bundles/wc-idea-agent/flows/` and reinstalling.
 
 Once the loop is observed end-to-end, scheduling is enabled and concurrency is increased. There is no auto-merge step. Merging is a human decision.
+
+### Running the static-site agent in CI
+
+`.github/workflows/wc-static-site-agent.yml` is a manual `workflow_dispatch` workflow that runs the imported `wc-static-site-agent` inside Playground against a single supplied `status:idea-ready` issue and opens a static-site pull request.
+
+Inputs:
+
+- `issue_number` (required) — issue number to implement, e.g. `99`.
+- `openai_model` (default `gpt-5.5`) — model used by the imported agent flow.
+- `data_machine_ref`, `data_machine_code_ref`, `homeboy_extensions_ref` (default `main`) — pin the upstream plugins used by Playground.
+
+Required repository secrets:
+
+- `HOMEBOY_APP_ID`, `HOMEBOY_APP_PRIVATE_KEY` — GitHub App credentials. The workflow generates a scoped token via `actions/create-github-app-token@v1` constrained to `chubes4/wc-site-generator` and fails closed if either secret is missing. There is no `github.token` fallback.
+- `OPENAI_API_KEY` — provider key for the AI step.
+
+The workflow checks out Data Machine, Data Machine Code, the Homeboy WordPress extension, and the OpenAI provider, then invokes `tests/playground-ci/scripts/run-wc-static-site-agent.sh`. The runner copies the bundle into the Playground component path, drives the bench runner, and prints a summary including:
+
+- `static_site_pr_url` — the upstream PR opened by the imported `github_pull_request_publish` tool.
+- `static_site_branch` — the `static/<slug>` branch the agent pushed.
+- `static_site_slug` — the slug derived from that branch.
+
+The probe wraps the publish handler so a successful PR open is recorded into engine data, and the workflow fails closed if the captured URL is empty. The targeted single-issue fetch relies on the GitHub fetch handler's `issue_number` config (Extra-Chill/data-machine-code#279).
 
 ---
 

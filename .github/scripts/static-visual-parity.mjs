@@ -3,11 +3,12 @@
 import { chromium } from 'playwright';
 import { createServer } from 'node:http';
 import { createReadStream } from 'node:fs';
-import { mkdir, readFile, writeFile } from 'node:fs/promises';
+import { mkdir, readFile, rm, writeFile } from 'node:fs/promises';
 import { existsSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { spawn } from 'node:child_process';
+import { Socket } from 'node:net';
 
 const repoRoot = process.cwd();
 const site = process.env.SITE || process.argv[2];
@@ -27,6 +28,29 @@ if (!site) {
 const siteRoot = path.join(repoRoot, 'static-sites', site);
 const indexPath = path.join(siteRoot, 'index.html');
 const outputDir = path.join(repoRoot, outputRoot, site);
+const importReadyPath = path.join(outputDir, 'import-ready.json');
+const mountedImportReadyPath = toPosix(
+	path.join('/wordpress/wp-content/plugins/wc-site-generator', path.relative(repoRoot, importReadyPath))
+);
+const importReadyScriptPath = path.join(repoRoot, '.github', `.visual-parity-import-ready-${site}.php`);
+const mountedImportReadyScriptPath = toPosix(
+	path.join('/wordpress/wp-content/plugins/wc-site-generator', path.relative(repoRoot, importReadyScriptPath))
+);
+const importReadyPhp = [
+	'<?php',
+	'$theme = wp_get_theme();',
+	`if ($theme->get_stylesheet() !== ${phpString(site)}) {`,
+	`	fwrite(STDERR, 'Expected active theme ${site}, got ' . $theme->get_stylesheet() . PHP_EOL);`,
+	'\texit(1);',
+	'}',
+	'$payload = array(',
+	`\t'site' => ${phpString(site)},`,
+	"\t'theme' => $theme->get_stylesheet(),",
+	"\t'theme_name' => $theme->get('Name'),",
+	"\t'time' => time(),",
+	');',
+	`file_put_contents(${phpString(mountedImportReadyPath)}, wp_json_encode($payload));`,
+].join('\n');
 const sourceUrl = `http://127.0.0.1:${sourcePort}/index.html`;
 const importedUrl = `http://127.0.0.1:${wordpressPort}/`;
 
@@ -38,6 +62,8 @@ if (!existsSync(playgroundCli)) {
 }
 
 await mkdir(outputDir, { recursive: true });
+await rm(importReadyPath, { force: true });
+await writeFile(importReadyScriptPath, importReadyPhp);
 
 const sourceServer = createStaticServer(siteRoot);
 await listen(sourceServer, sourcePort);
@@ -48,6 +74,16 @@ const blueprint = {
 	landingPage: '/',
 	preferredVersions: { php: '8.3', wp: 'latest' },
 	steps: [
+		{
+			step: 'installPlugin',
+			pluginData: {
+				resource: 'wordpress.org/plugins',
+				slug: 'woocommerce',
+			},
+			options: {
+				activate: true,
+			},
+		},
 		{
 			step: 'installPlugin',
 			pluginData: {
@@ -66,6 +102,10 @@ const blueprint = {
 			command:
 				`wp static-site-importer import-theme /wordpress/wp-content/plugins/wc-site-generator/static-sites/${site}/index.html ` +
 				`--slug=${site} --activate --overwrite --keep-source --format=json`,
+		},
+		{
+			step: 'wp-cli',
+			command: `wp eval-file ${mountedImportReadyScriptPath}`,
 		},
 		{ step: 'login', username: 'admin', password: 'password' },
 	],
@@ -102,102 +142,43 @@ playground.stderr.on('data', (data) => {
 });
 
 try {
-	await waitForUrl(importedUrl, 120_000, () => playground.exitCode !== null);
-	const importReadiness = await waitForImportedTheme({
-		url: importedUrl,
-		site,
-		indexPath,
-		timeoutMs: 120_000,
-		shouldStop: () => playground.exitCode !== null,
+	const importReadiness = await waitForImportMarker(importReadyPath, 180_000, () => playground.exitCode !== null);
+	await waitForUrl(importedUrl, 120_000, () => playground.exitCode !== null, {
+		outputDir,
+		playground,
+		playgroundOutput: () => playgroundOutput,
 	});
 	await captureParityScreenshots({ sourceUrl, importedUrl, outputDir });
 	await writeSummary({ site, sourceUrl, importedUrl, outputDir, playgroundOutput, importReadiness });
 } finally {
 	sourceServer.close();
+	await rm(importReadyScriptPath, { force: true });
 	if (playground.exitCode === null) {
 		playground.kill('SIGTERM');
 	}
 }
 
-async function waitForImportedTheme({ url, site, indexPath, timeoutMs, shouldStop }) {
+async function waitForImportMarker(markerPath, timeoutMs, shouldStop) {
 	const started = Date.now();
-	const expectedText = await getExpectedStorefrontText(indexPath, site);
-	const themeMarker = `wp-content/themes/${site}`;
 	let lastError = null;
 
 	while (Date.now() - started < timeoutMs) {
 		if (shouldStop()) {
-			throw new Error(`Playground server exited before the ${site} import became visible`);
+			throw new Error(`Playground server exited before import marker was written: ${markerPath}`);
 		}
 
-		try {
-			const response = await fetch(`${url}?visual-parity-ready=${Date.now()}`, {
-				headers: { 'cache-control': 'no-cache' },
-			});
-			const html = await response.text();
-			const normalizedHtml = normalizeText(html);
-
-			if (html.includes(themeMarker)) {
-				return { marker: themeMarker, source: 'theme_path' };
+		if (existsSync(markerPath)) {
+			try {
+				return JSON.parse(await readFile(markerPath, 'utf8'));
+			} catch (error) {
+				lastError = error;
 			}
-
-			if (expectedText && normalizedHtml.includes(normalizeText(expectedText))) {
-				return { marker: expectedText, source: 'source_text' };
-			}
-
-			lastError = new Error(`import markers not visible yet; HTTP ${response.status}`);
-		} catch (error) {
-			lastError = error;
 		}
 
 		await new Promise((resolve) => setTimeout(resolve, 1000));
 	}
 
-	throw new Error(
-		`Timed out waiting for imported ${site} theme at ${url}: ${lastError?.message || 'no response'}`
-	);
-}
-
-async function getExpectedStorefrontText(indexPath, site) {
-	const html = await readFile(indexPath, 'utf8');
-	const candidates = [
-		matchTagText(html, 'h1'),
-		matchTagText(html, 'title'),
-		humanizeSlug(site),
-	].filter(Boolean);
-
-	return candidates.find((candidate) => normalizeText(candidate).length >= 6) || '';
-}
-
-function matchTagText(html, tagName) {
-	const match = html.match(new RegExp(`<${tagName}\\b[^>]*>([\\s\\S]*?)<\\/${tagName}>`, 'i'));
-	return match ? stripTags(match[1]) : '';
-}
-
-function stripTags(value) {
-	return decodeHtmlEntities(value.replace(/<[^>]+>/g, ' ')).trim();
-}
-
-function decodeHtmlEntities(value) {
-	return value
-		.replace(/&nbsp;/gi, ' ')
-		.replace(/&amp;/gi, '&')
-		.replace(/&lt;/gi, '<')
-		.replace(/&gt;/gi, '>')
-		.replace(/&quot;/gi, '"')
-		.replace(/&#39;/g, "'");
-}
-
-function humanizeSlug(value) {
-	return value
-		.split('-')
-		.filter(Boolean)
-		.map((part) => part.charAt(0).toUpperCase() + part.slice(1))
-		.join(' ');
-}
-
-function normalizeText(value) {
-	return String(value).replace(/\s+/g, ' ').trim().toLowerCase();
+	throw new Error(`Timed out waiting for import marker ${markerPath}: ${lastError?.message || 'not written'}`);
 }
 
 function createStaticServer(root) {
@@ -238,29 +219,116 @@ function listen(server, port) {
 	});
 }
 
-async function waitForUrl(url, timeoutMs, shouldStop) {
+async function waitForUrl(url, timeoutMs, shouldStop, diagnostics = {}) {
 	const started = Date.now();
 	let lastError = null;
+	let attempts = 0;
+	const recentAttempts = [];
 
 	while (Date.now() - started < timeoutMs) {
 		if (shouldStop()) {
 			throw new Error(`Playground server exited before ${url} became available`);
 		}
 
+		attempts += 1;
+		const attempt = {
+			attempts,
+			elapsedMs: Date.now() - started,
+		};
+
 		try {
-			const response = await fetch(url);
+			const response = await fetch(url, {
+				signal: AbortSignal.timeout(5000),
+			});
+			attempt.httpStatus = response.status;
 			if (response.ok || [301, 302, 401, 403].includes(response.status)) {
 				return;
 			}
 			lastError = new Error(`HTTP ${response.status}`);
 		} catch (error) {
 			lastError = error;
+			attempt.fetchError = serializeError(error);
+		}
+
+		attempt.tcp = await probeTcp(url, 1000);
+		recentAttempts.push(attempt);
+		if (recentAttempts.length > 10) {
+			recentAttempts.shift();
 		}
 
 		await new Promise((resolve) => setTimeout(resolve, 1000));
 	}
 
+	if (diagnostics.outputDir) {
+		await writeFile(
+			path.join(diagnostics.outputDir, 'frontend-readiness-error.json'),
+			JSON.stringify(
+				{
+					url,
+					timeoutMs,
+					attempts,
+					lastError: serializeError(lastError),
+					recentAttempts,
+					playground: diagnostics.playground
+						? {
+							pid: diagnostics.playground.pid,
+							exitCode: diagnostics.playground.exitCode,
+							signalCode: diagnostics.playground.signalCode,
+						}
+						: null,
+					playgroundOutputTail: diagnostics.playgroundOutput?.().slice(-4000) || '',
+				},
+				null,
+				2
+			)
+		);
+	}
+
 	throw new Error(`Timed out waiting for ${url}: ${lastError?.message || 'no response'}`);
+}
+
+function probeTcp(url, timeoutMs) {
+	return new Promise((resolve) => {
+		const parsed = new URL(url);
+		const socket = new Socket();
+		let settled = false;
+
+		const finish = (result) => {
+			if (settled) {
+				return;
+			}
+			settled = true;
+			socket.destroy();
+			resolve(result);
+		};
+
+		socket.setTimeout(timeoutMs);
+		socket.once('connect', () => finish({ ok: true }));
+		socket.once('timeout', () => finish({ ok: false, error: 'timeout' }));
+		socket.once('error', (error) => finish({ ok: false, error: serializeError(error) }));
+		socket.connect(Number(parsed.port || 80), parsed.hostname);
+	});
+}
+
+function serializeError(error) {
+	if (!error) {
+		return null;
+	}
+
+	return {
+		name: error.name,
+		message: error.message,
+		code: error.code,
+		cause: error.cause
+			? {
+				name: error.cause.name,
+				message: error.cause.message,
+				code: error.cause.code,
+				errno: error.cause.errno,
+				syscall: error.cause.syscall,
+			}
+			: null,
+	};
 }
 
 async function captureParityScreenshots({ sourceUrl, importedUrl, outputDir }) {
@@ -372,4 +440,12 @@ function escapeHtml(value) {
 		.replaceAll('<', '&lt;')
 		.replaceAll('>', '&gt;')
 		.replaceAll('"', '&quot;');
+}
+
+function phpString(value) {
+	return `'${String(value).replaceAll('\\', '\\\\').replaceAll("'", "\\'")}'`;
+}
+
+function toPosix(value) {
+	return value.split(path.sep).join('/');
 }
