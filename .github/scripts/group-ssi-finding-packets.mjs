@@ -85,6 +85,8 @@ function normalizePacket(packet) {
 		stage: text(packet.stage),
 		reason: text(packet.reason),
 		artifact_names: packet.artifact_names && typeof packet.artifact_names === 'object' ? packet.artifact_names : {},
+		bench_outcome: text(packet.bench_outcome),
+		visual_outcome: text(packet.visual_outcome),
 		design_system: designText(packet.design_system),
 		palette_kind: designText(packet.palette_kind),
 		typography_kind: designText(packet.typography_kind),
@@ -135,6 +137,14 @@ function routeCandidateRepo(packet) {
 		return explicit;
 	}
 
+	const kind = text(packet.kind).toLowerCase();
+	if (kind === 'bench_failure' || kind === 'visual_parity_outcome') {
+		return 'chubes4/wc-site-generator';
+	}
+	if (kind === 'report_missing' || kind === 'import_clean') {
+		return 'chubes4/static-site-importer';
+	}
+
 	const haystack = [packet.kind, packet.converter, packet.block_name, packet.stage, packet.reason, packet.path].join(' ').toLowerCase();
 
 	if (haystack.includes('html-to-block') || haystack.includes('h2bc')) {
@@ -143,7 +153,7 @@ function routeCandidateRepo(packet) {
 	if (haystack.includes('block-format-bridge') || haystack.includes('bfb') || haystack.includes('serialization')) {
 		return 'chubes4/block-format-bridge';
 	}
-	if (haystack.includes('generator') || haystack.includes('static-site-generator') || haystack.includes('visual parity')) {
+	if (haystack.includes('generator') || haystack.includes('static-site-generator') || haystack.includes('visual parity') || haystack.includes('homeboy-bench')) {
 		return 'chubes4/wc-site-generator';
 	}
 
