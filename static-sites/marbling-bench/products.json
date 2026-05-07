@@ -1,0 +1,134 @@
+{
+  "concept": "Marbling Bench",
+  "slug": "marbling-bench",
+  "tagline": "Paper marbling supplies for bookbinders and stationery makers",
+  "currency": "USD",
+  "collections": [
+    {
+      "name": "Starter marbling kits",
+      "description": "First tray, bookbinder endpaper, classroom-safe, and weekend stationery kits for clear buying paths."
+    },
+    {
+      "name": "Surface and chemistry goods",
+      "description": "Carrageenan or methylcellulose sizing, alum, dispersant, ox gall alternatives, pH strips, and measuring scoops."
+    },
+    {
+      "name": "Color materials",
+      "description": "Marbling pigments, ink droppers, color-story sets, metallic accents, and test swatch packs."
+    },
+    {
+      "name": "Tools and workspace",
+      "description": "Shallow trays, rakes, combs, styluses, rinse tubs, drying clips, aprons, gloves, and cleanup cloths."
+    },
+    {
+      "name": "Paper and project bundles",
+      "description": "Cotton sheets, bookcloth pairings, card blanks, envelope packs, label sheets, pattern archive cards, and edition logbooks."
+    }
+  ],
+  "products": [
+    {
+      "id": "kit-first-tray",
+      "name": "First Tray Marbling Kit",
+      "collection": "Starter marbling kits",
+      "price": 78,
+      "summary": "Tray, starter sizing, alum, droppers, four pigments, test paper, stylus, and a bench checklist for the first pull.",
+      "audience": ["home studios", "stationery makers", "craft-focused gift buyers"]
+    },
+    {
+      "id": "kit-bookbinder-endpaper",
+      "name": "Bookbinder Endpaper Kit",
+      "collection": "Starter marbling kits",
+      "price": 96,
+      "summary": "Cotton endpaper sheets, alum, comb, rake, color notes, and edition log cards for matching covers and text blocks.",
+      "audience": ["bookbinders", "letterpress studios", "small edition makers"]
+    },
+    {
+      "id": "kit-classroom-safe",
+      "name": "Classroom-Safe Kit",
+      "collection": "Starter marbling kits",
+      "price": 132,
+      "summary": "Small-group trays, aprons, gloves, cleanup cloths, pH strips, methylcellulose sizing, and student swatch cards.",
+      "audience": ["art teachers", "classrooms", "workshop hosts"]
+    },
+    {
+      "id": "chem-carrageenan-sizing",
+      "name": "Carrageenan Sizing Jar",
+      "collection": "Surface and chemistry goods",
+      "price": 24,
+      "summary": "Fine powder for traditional marbling baths with mixing notes sized for home and small studio trays.",
+      "audience": ["printmakers", "bookbinders", "studio users"]
+    },
+    {
+      "id": "chem-methylcellulose-studio-pack",
+      "name": "Methylcellulose Studio Pack",
+      "collection": "Surface and chemistry goods",
+      "price": 29,
+      "summary": "Classroom-friendly sizing option bundled with pH strips and a measuring scoop.",
+      "audience": ["art teachers", "workshops", "repeat sessions"]
+    },
+    {
+      "id": "chem-alum-prep-bottle",
+      "name": "Alum Prep Bottle",
+      "collection": "Surface and chemistry goods",
+      "price": 18,
+      "summary": "Paper-prep solution for cotton sheets, card blanks, envelopes, and label stock before pulling color.",
+      "audience": ["stationery makers", "bookbinders", "paper artists"]
+    },
+    {
+      "id": "color-endpaper-classics",
+      "name": "Endpaper Classics Pigment Set",
+      "collection": "Color materials",
+      "price": 42,
+      "summary": "Indigo, madder, moss, and warm black pigments with matching test swatch cards.",
+      "audience": ["bookbinders", "letterpress studios", "small editions"]
+    },
+    {
+      "id": "color-weekend-stationery",
+      "name": "Weekend Stationery Color Story",
+      "collection": "Color materials",
+      "price": 46,
+      "summary": "Soft rose, brass accent, teal, and parchment tones for cards, envelopes, and place cards.",
+      "audience": ["stationery makers", "gift buyers", "scrapbookers"]
+    },
+    {
+      "id": "tool-shallow-tray",
+      "name": "Shallow Studio Tray",
+      "collection": "Tools and workspace",
+      "price": 36,
+      "summary": "A broad, shallow tray sized for endpaper sheets, card blanks, and small art prints.",
+      "audience": ["home studios", "bookbinders", "printmakers"]
+    },
+    {
+      "id": "tool-rake-comb-pair",
+      "name": "Rake and Comb Pair",
+      "collection": "Tools and workspace",
+      "price": 31,
+      "summary": "Two pattern tools for peacock lines, gel-git spacing, and repeatable combed pulls.",
+      "audience": ["bookbinders", "paper artists", "workshops"]
+    },
+    {
+      "id": "paper-cotton-pull-pack",
+      "name": "Cotton Pull Pack",
+      "collection": "Paper and project bundles",
+      "price": 34,
+      "summary": "Twenty-five cotton sheets pre-sized for endpapers, prints, and cover panels.",
+      "audience": ["bookbinders", "printmakers", "small editions"]
+    },
+    {
+      "id": "project-card-envelope-set",
+      "name": "Card and Envelope Blank Set",
+      "collection": "Paper and project bundles",
+      "price": 28,
+      "summary": "Folded card blanks and matching envelopes for weekend stationery projects and gift buyers.",
+      "audience": ["stationery makers", "gift buyers", "scrapbookers"]
+    },
+    {
+      "id": "studio-pattern-archive-cards",
+      "name": "Pattern Archive Cards",
+      "collection": "Paper and project bundles",
+      "price": 19,
+      "summary": "Sample cards and edition logbook pages for recording pigments, bath age, paper, and rake pattern.",
+      "audience": ["letterpress studios", "bookbinders", "art teachers"]
+    }
+  ]
+}
