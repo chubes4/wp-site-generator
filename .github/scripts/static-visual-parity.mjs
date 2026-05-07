@@ -111,10 +111,6 @@ const blueprint = {
 		},
 		{
 			step: 'wp-cli',
-			command: 'wp plugin deactivate woocommerce',
-		},
-		{
-			step: 'wp-cli',
 			command: `wp eval-file ${mountedImportReadyScriptPath}`,
 		},
 		{ step: 'login', username: 'admin', password: 'password' },
@@ -155,6 +151,9 @@ playground.stderr.on('data', (data) => {
 
 try {
 	const importReadiness = await waitForImportMarker(importReadyPath, 180_000, () => playground.exitCode !== null);
+	if (!importReadiness.woocommerce_loaded) {
+		throw new Error('Visual parity import completed without WooCommerce loaded.');
+	}
 	const wordpressReadiness = await waitForWordPressReady(importedUrl, {
 		timeoutMs: 120_000,
 		readyOnSelfRedirect: true,
