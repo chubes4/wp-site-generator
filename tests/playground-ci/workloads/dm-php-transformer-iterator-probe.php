@@ -553,25 +553,27 @@ $metadata += [
     'error_message' => (string) ($engine_data['error_message'] ?? ''),
 ];
 
-function wc_site_generator_first_github_url(mixed $value): string {
-    if (is_string($value)) {
-        return preg_match('#https://github\.com/[^\s)]+#', $value, $matches) ? $matches[0] : '';
-    }
-    if (!is_array($value)) {
+if (!function_exists('wc_site_generator_first_github_url')) {
+    function wc_site_generator_first_github_url(mixed $value): string {
+        if (is_string($value)) {
+            return preg_match('#https://github\.com/[^\s)]+#', $value, $matches) ? $matches[0] : '';
+        }
+        if (!is_array($value)) {
+            return '';
+        }
+        foreach (['html_url', 'issue_url', 'url'] as $key) {
+            if (!empty($value[$key]) && is_string($value[$key]) && str_starts_with($value[$key], 'https://github.com/')) {
+                return $value[$key];
+            }
+        }
+        foreach ($value as $child) {
+            $url = wc_site_generator_first_github_url($child);
+            if ($url !== '') {
+                return $url;
+            }
+        }
         return '';
     }
-    foreach (['html_url', 'issue_url', 'url'] as $key) {
-        if (!empty($value[$key]) && is_string($value[$key]) && str_starts_with($value[$key], 'https://github.com/')) {
-            return $value[$key];
-        }
-    }
-    foreach ($value as $child) {
-        $url = wc_site_generator_first_github_url($child);
-        if ($url !== '') {
-            return $url;
-        }
-    }
-    return '';
 }
 
 return [
