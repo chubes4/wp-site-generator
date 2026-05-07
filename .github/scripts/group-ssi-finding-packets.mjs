@@ -55,7 +55,7 @@ function groupPackets(rawPackets) {
 	}
 
 	return {
-		schema_version: 1,
+		schema_version: 2,
 		packet_count: normalized.length,
 		deduped_packet_count: deduped.length,
 		group_count: groupMap.size,
@@ -85,7 +85,18 @@ function normalizePacket(packet) {
 		stage: text(packet.stage),
 		reason: text(packet.reason),
 		artifact_names: packet.artifact_names && typeof packet.artifact_names === 'object' ? packet.artifact_names : {},
+		design_system: designText(packet.design_system),
+		palette_kind: designText(packet.palette_kind),
+		typography_kind: designText(packet.typography_kind),
+		layout_kind: designText(packet.layout_kind),
+		density: designText(packet.density),
+		commerce_pattern: designText(packet.commerce_pattern),
 	};
+}
+
+function designText(value) {
+	const stringValue = text(value);
+	return stringValue === '' ? 'unknown' : stringValue;
 }
 
 function dedupe(packets) {
