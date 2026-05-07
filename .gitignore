@@ -16,3 +16,7 @@ dist/
 # Local environment
 .env
 .env.local
+
+# Stage 1 Playground proof — runtime artifacts written by the bench runner.
+tests/playground-ci/component/.pg-bench-result*
+tests/playground-ci/component/dm-boot-probe.php
