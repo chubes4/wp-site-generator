@@ -31,6 +31,25 @@ const importReadyPath = path.join(outputDir, 'import-ready.json');
 const mountedImportReadyPath = toPosix(
 	path.join('/wordpress/wp-content/plugins/wc-site-generator', path.relative(repoRoot, importReadyPath))
 );
+const importReadyScriptPath = path.join(repoRoot, '.github', `.visual-parity-import-ready-${site}.php`);
+const mountedImportReadyScriptPath = toPosix(
+	path.join('/wordpress/wp-content/plugins/wc-site-generator', path.relative(repoRoot, importReadyScriptPath))
+);
+const importReadyPhp = [
+	'<?php',
+	'$theme = wp_get_theme();',
+	`if ($theme->get_stylesheet() !== ${phpString(site)}) {`,
+	`	fwrite(STDERR, 'Expected active theme ${site}, got ' . $theme->get_stylesheet() . PHP_EOL);`,
+	'\texit(1);',
+	'}',
+	'$payload = array(',
+	`\t'site' => ${phpString(site)},`,
+	"\t'theme' => $theme->get_stylesheet(),",
+	"\t'theme_name' => $theme->get('Name'),",
+	"\t'time' => time(),",
+	');',
+	`file_put_contents(${phpString(mountedImportReadyPath)}, wp_json_encode($payload));`,
+].join('\n');
 const sourceUrl = `http://127.0.0.1:${sourcePort}/index.html`;
 const importedUrl = `http://127.0.0.1:${wordpressPort}/`;
 
@@ -43,6 +62,7 @@ if (!existsSync(playgroundCli)) {
 
 await mkdir(outputDir, { recursive: true });
 await rm(importReadyPath, { force: true });
+await writeFile(importReadyScriptPath, importReadyPhp);
 
 const sourceServer = createStaticServer(siteRoot);
 await listen(sourceServer, sourcePort);
@@ -74,22 +94,7 @@ const blueprint = {
 		},
 		{
 			step: 'wp-cli',
-			command: `wp eval ${shellSingleQuote(
-				[
-					'$theme = wp_get_theme();',
-					`if ($theme->get_stylesheet() !== ${phpString(site)}) {`,
-					`\tfwrite(STDERR, 'Expected active theme ${site}, got ' . $theme->get_stylesheet() . PHP_EOL);`,
-					'\texit(1);',
-					'}',
-					'$payload = array(',
-					`\t'site' => ${phpString(site)},`,
-					"\t'theme' => $theme->get_stylesheet(),",
-					"\t'theme_name' => $theme->get('Name'),",
-					"\t'time' => time(),",
-					');',
-					`file_put_contents(${phpString(mountedImportReadyPath)}, wp_json_encode($payload));`,
-				].join('\n')
-			)}`,
+			command: `wp eval-file ${mountedImportReadyScriptPath}`,
 		},
 		{ step: 'login', username: 'admin', password: 'password' },
 	],
@@ -132,6 +137,7 @@ try {
 	await writeSummary({ site, sourceUrl, importedUrl, outputDir, playgroundOutput, importReadiness });
 } finally {
 	sourceServer.close();
+	await rm(importReadyScriptPath, { force: true });
 	if (playground.exitCode === null) {
 		playground.kill('SIGTERM');
 	}
@@ -336,10 +342,6 @@ function escapeHtml(value) {
 
 function phpString(value) {
 	return `'${String(value).replaceAll('\\', '\\\\').replaceAll("'", "\\'")}'`;
-}
-
-function shellSingleQuote(value) {
-	return `'${String(value).replaceAll("'", "'\\''")}'`;
 }
 
 function toPosix(value) {
