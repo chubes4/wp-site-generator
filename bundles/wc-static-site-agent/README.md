@@ -7,30 +7,12 @@ Data Machine bundle that reads one open `status:idea-ready` issue from `chubes4/
 The fetch handler in `flows/wc-static-site-manual-flow.json` queries GitHub for issues with:
 
 - `state: open`
-- `labels: status:idea-ready`
+- `labels: status:idea-ready` — server-side positive filter, forwarded to GitHub's REST `list issues` endpoint.
+- `exclude_labels: status:built,status:abandoned` — DMC's post-fetch negative label filter.
 
-GitHub's REST `list issues` endpoint, and DMC's GitHub fetch handler on top of it, only support **positive** label filtering. There is no native `-label:` exclusion. Issue [#104](https://github.com/chubes4/wc-site-generator/issues/104) calls for skipping issues labelled `status:built` or `status:abandoned`.
+Both filters compose: `labels` narrows the server-side response to `status:idea-ready`, and `exclude_labels` drops anything that also carries a lifecycle label after the API call returns. Empty / missing `exclude_labels` is a no-op, so older bundles continue to work unchanged.
 
-### How exclusion is achieved without modifying DMC
-
-1. **Primary mechanism — natural label exclusion via lifecycle.** The
-   `.github/workflows/idea-lifecycle-labels.yml` workflow removes
-   `status:idea-ready` from an idea the moment a `target:static-site` PR opens
-   against it (and adds `status:built`). Because the fetch handler requires
-   `status:idea-ready`, an idea that has been built or abandoned is no longer
-   matched by the positive label filter. The lifecycle workflow is therefore
-   the source of truth for "this idea is still claimable".
-
-2. **Defense in depth — AI-step lifecycle guard.** The AI step prompt queue
-   includes an explicit guard: if the fetched item's
-   `metadata.github_labels` contains `status:built` or `status:abandoned`,
-   the agent must stop and skip the idea. This protects against race
-   conditions where the lifecycle workflow has not finished updating labels
-   before the next fetch run.
-
-If/when DMC ships native negative label filtering for the GitHub fetch
-handler, the AI guard can move to the fetch step config and the prompt
-instruction can be dropped.
+`exclude_labels` is generic in DMC — it knows nothing about `wc-site-generator`. The lifecycle vocabulary (`status:idea-ready`, `status:built`, `status:abandoned`) is owned by this repo and lives in the flow JSON, not the handler. See [Extra-Chill/data-machine-code#282](https://github.com/Extra-Chill/data-machine-code/pull/282) for the upstream feature.
 
 ## Lifecycle labels
 
@@ -38,10 +20,6 @@ Owned by `chubes4/wc-site-generator`:
 
 - `status:idea-ready` — claimable by the static-site agent.
 - `status:built` — a `target:static-site` PR is open that closes this idea.
-- `status:abandoned` — the most recent `target:static-site` PR for this idea
-  was closed without merging and no other open `target:static-site` PR claims
-  it.
+- `status:abandoned` — the most recent `target:static-site` PR for this idea was closed without merging and no other open `target:static-site` PR claims it.
 
-Transitions are maintained by the repo workflow, not by this bundle. See
-`.github/workflows/idea-lifecycle-labels.yml` in the repository for the
-authoritative state machine.
+Transitions are maintained by `.github/workflows/idea-lifecycle-labels.yml` in the repository, not by this bundle. The workflow reacts to PR open / close-unmerged / issue-reopened events on the GitHub side; the fetch handler is the read-side consumer of the resulting label state.
