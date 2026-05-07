@@ -108,6 +108,10 @@ const blueprint = {
 		},
 		{
 			step: 'wp-cli',
+			command: 'wp plugin deactivate woocommerce',
+		},
+		{
+			step: 'wp-cli',
 			command: `wp eval-file ${mountedImportReadyScriptPath}`,
 		},
 		{ step: 'login', username: 'admin', password: 'password' },
