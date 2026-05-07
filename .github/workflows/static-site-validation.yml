@@ -63,6 +63,17 @@ jobs:
         with:
           fetch-depth: 0
 
+      - name: Generate Homeboy app token
+        id: app-token
+        if: env.HOMEBOY_APP_ID != '' && env.HOMEBOY_APP_PRIVATE_KEY != ''
+        uses: actions/create-github-app-token@v1
+        env:
+          HOMEBOY_APP_ID: ${{ secrets.HOMEBOY_APP_ID }}
+          HOMEBOY_APP_PRIVATE_KEY: ${{ secrets.HOMEBOY_APP_PRIVATE_KEY }}
+        with:
+          app-id: ${{ secrets.HOMEBOY_APP_ID }}
+          private-key: ${{ secrets.HOMEBOY_APP_PRIVATE_KEY }}
+
       - name: Synthesize Homeboy settings for site
         id: settings
         shell: bash
@@ -141,6 +152,7 @@ jobs:
           extension-source: https://github.com/Extra-Chill/homeboy-extensions
           component: wc-site-generator
           autofix: 'false'
+          app-token: ${{ steps.app-token.outputs.token }}
           args: >-
             --setting-json playground_workloads='${{ steps.settings.outputs.workloads }}'
         env:
@@ -258,7 +270,7 @@ jobs:
       - name: Comment validation result on PR
         if: always() && github.event.pull_request != null
         env:
-          GH_TOKEN: ${{ github.token }}
+          GH_TOKEN: ${{ steps.app-token.outputs.token }}
           PR: ${{ github.event.pull_request.number }}
           SITE: ${{ matrix.site }}
           PREVIEW: ${{ steps.preview.outputs.url }}
@@ -266,6 +278,10 @@ jobs:
           BENCH_STATUS: ${{ steps.homeboy.outcome }}
         run: |
           set -euo pipefail
+          if [ -z "${GH_TOKEN:-}" ]; then
+            echo "Skipping PR comment because Homeboy app token is not configured."
+            exit 0
+          fi
           body=$(cat <<MARKDOWN
           ## Static site validation: \`$SITE\`
 
