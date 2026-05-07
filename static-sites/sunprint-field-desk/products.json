@@ -1,214 +1,167 @@
 {
-  "store": {
-    "name": "Sunprint Field Desk",
-    "slug": "sunprint-field-desk",
-    "tagline": "Cyanotype kits for botanical collectors and slow-craft artists",
-    "currency": "USD"
-  },
+  "store": "Sunprint Field Desk",
+  "slug": "sunprint-field-desk",
+  "currency": "USD",
   "collections": [
     {
+      "id": "starter-kits",
       "name": "Starter Kits",
-      "slug": "starter-kits",
-      "description": "Ready-to-print cyanotype kits for first sessions, balconies, families, and workshop hosts."
+      "description": "First cyanotype paper kits, balcony sunprint kits, family nature-walk kits, and workshop-host classroom bundles."
     },
     {
+      "id": "print-surfaces",
       "name": "Print Surfaces",
-      "slug": "print-surfaces",
-      "description": "Pre-treated papers, cotton squares, tote blanks, postcards, bookmarks, and archival card stock."
+      "description": "Pre-treated papers, cotton fabric squares, tote blanks, postcard sets, bookmark strips, and archival card stock."
     },
     {
-      "name": "Exposure & Rinse Tools",
-      "slug": "exposure-rinse-tools",
-      "description": "Contact frames, acrylic sheets, clips, foam boards, trays, rinse bottles, drying twine, and gloves."
+      "id": "exposure-rinse-tools",
+      "name": "Exposure and Rinse Tools",
+      "description": "Contact frames, acrylic sheets, clips, foam boards, trays, rinse bottles, drying twine, and print-safe gloves."
     },
     {
+      "id": "botanical-collection-goods",
       "name": "Botanical Collection Goods",
-      "slug": "botanical-collection-goods",
-      "description": "Pocket plant presses, specimen envelopes, field scissors, labeling tags, wax pencils, and motif cards."
+      "description": "Pocket plant presses, specimen envelopes, field scissors, labeling tags, wax pencils, and seasonal motif cards."
     },
     {
-      "name": "Chemistry & Finishing",
-      "slug": "chemistry-finishing",
-      "description": "Brush-on cyanotype chemistry, measuring cups, foam brushes, toning samples, sleeves, and logbooks."
+      "id": "chemistry-finishing",
+      "name": "Chemistry and Finishing Supplies",
+      "description": "Brush-on cyanotype chemistry, measuring cups, foam brushes, toning samples, archival sleeves, and print logbooks."
     },
     {
+      "id": "visual-bundles",
       "name": "Curated Visual Bundles",
-      "slug": "curated-visual-bundles",
-      "description": "Outcome-led kits for fern studies, coastal drift prints, garden weddings, and winter lace shadows."
+      "description": "Fern study sets, coastal drift kits, garden wedding place-card kits, and winter lace-and-shadow print sets."
     }
   ],
   "products": [
     {
-      "id": "SFD-KIT-001",
-      "name": "First Cyanotype Paper Kit",
-      "slug": "first-cyanotype-paper-kit",
-      "collection": "Starter Kits",
-      "price": 48,
-      "description": "Pre-treated papers, acrylic sheet, clips, exposure card, rinse guide, and a field logbook for first prints.",
-      "tags": ["beginner", "paper", "kit", "botanical"],
-      "featured": true
-    },
-    {
-      "id": "SFD-KIT-002",
-      "name": "Balcony Sunprint Kit",
-      "slug": "balcony-sunprint-kit",
-      "collection": "Starter Kits",
-      "price": 56,
-      "description": "Compact frame, postcard papers, foam board, clips, and shadow timing tips for apartment light.",
-      "tags": ["small-space", "postcards", "kit"]
-    },
-    {
-      "id": "SFD-KIT-003",
-      "name": "Family Nature-Walk Kit",
-      "slug": "family-nature-walk-kit",
-      "collection": "Starter Kits",
-      "price": 72,
-      "description": "Kid-friendly paper packs, specimen envelopes, label tags, rinse bottle, and a four-print scavenger prompt.",
-      "tags": ["family", "homeschool", "nature-walk"]
-    },
-    {
-      "id": "SFD-KIT-004",
-      "name": "Classroom Host Bundle",
-      "slug": "classroom-host-bundle",
-      "collection": "Starter Kits",
-      "price": 168,
-      "description": "Thirty paper sheets, shared exposure frames, gloves, trays, clips, tags, and instructor-ready timing cards.",
-      "tags": ["workshop", "classroom", "bulk"]
-    },
-    {
-      "id": "SFD-SRF-101",
-      "name": "Indigo Paper Pack",
-      "slug": "indigo-paper-pack",
-      "collection": "Print Surfaces",
-      "price": 26,
-      "description": "Twenty 8x10 pre-treated sheets for botanical silhouettes, lace tests, and finished wall studies.",
-      "tags": ["paper", "pre-treated", "8x10"]
-    },
-    {
-      "id": "SFD-SRF-102",
-      "name": "Cotton Fabric Squares",
-      "slug": "cotton-fabric-squares",
-      "collection": "Print Surfaces",
-      "price": 34,
-      "description": "Twelve hemmed cotton squares prepared for quilt blocks, textile studies, and sample swatches.",
-      "tags": ["fabric", "cotton", "textile"]
-    },
-    {
-      "id": "SFD-SRF-103",
-      "name": "Postcard Sunprint Set",
-      "slug": "postcard-sunprint-set",
-      "collection": "Print Surfaces",
-      "price": 22,
-      "description": "Sixteen mailable cyanotype postcards with matching specimen notes for garden correspondence.",
-      "tags": ["postcards", "gift", "mail"]
-    },
-    {
-      "id": "SFD-SRF-104",
-      "name": "Tote Blank Pair",
-      "slug": "tote-blank-pair",
-      "collection": "Print Surfaces",
+      "id": "first-sun-paper-kit",
+      "name": "First Sun Paper Kit",
+      "collection": "starter-kits",
       "price": 38,
-      "description": "Two prepared cotton totes for bold fern, lace, and found-object impressions.",
-      "tags": ["tote", "fabric", "gift"]
+      "summary": "Pre-treated cyanotype paper, acrylic sheet, clips, rinse guide, and a compact log card for first-time printmakers.",
+      "use_case": "Start at home without piecing together chemistry, paper, frames, and drying gear."
     },
     {
-      "id": "SFD-TOL-201",
+      "id": "balcony-sunprint-kit",
+      "name": "Balcony Sunprint Kit",
+      "collection": "starter-kits",
+      "price": 52,
+      "summary": "A compact kit for small outdoor spaces with paper, contact sheet, clips, rinse bottle, and drying twine.",
+      "use_case": "Apartment and porch print sessions using leaves, lace, feathers, and found objects."
+    },
+    {
+      "id": "family-nature-walk-kit",
+      "name": "Family Nature-Walk Kit",
+      "collection": "starter-kits",
+      "price": 68,
+      "summary": "Paper sheets, specimen envelopes, label tags, rinse tools, and simple workflow cards for a group outing.",
+      "use_case": "Homeschool families and nature-journal keepers preserving a walk or garden season."
+    },
+    {
+      "id": "workshop-classroom-bundle",
+      "name": "Workshop-Host Classroom Bundle",
+      "collection": "starter-kits",
+      "price": 146,
+      "summary": "Bulk paper, trays, rinse bottles, gloves, clips, drying line, and participant log cards for a workshop table.",
+      "use_case": "Hands-on cyanotype sessions with reliable materials for multiple participants."
+    },
+    {
+      "id": "indigo-paper-field-pack",
+      "name": "Indigo Paper Field Pack",
+      "collection": "print-surfaces",
+      "price": 24,
+      "summary": "Twenty pre-treated sheets sized for leaves, lace fragments, feathers, and postcard-scale compositions.",
+      "use_case": "Quick botanical studies with immediate deep-blue visual payoff."
+    },
+    {
+      "id": "cotton-square-stack",
+      "name": "Cotton Square Stack",
+      "collection": "print-surfaces",
+      "price": 28,
+      "summary": "Pre-treated cotton fabric squares for soft cyanotype samples, patch studies, and giftable impressions.",
+      "use_case": "Slow-craft artists translating pressed flowers and lace into textile studies."
+    },
+    {
+      "id": "postcard-bookmark-surface-set",
+      "name": "Postcard & Bookmark Surface Set",
+      "collection": "print-surfaces",
+      "price": 20,
+      "summary": "Pre-treated postcard sets and bookmark strips for small finished pieces.",
+      "use_case": "Design-aware gifts, garden notes, and quick seasonal print runs."
+    },
+    {
+      "id": "maple-contact-frame",
+      "name": "Maple Contact Frame",
+      "collection": "exposure-rinse-tools",
+      "price": 46,
+      "summary": "A reusable exposure frame with clear acrylic, brass clips, and a foam board back for crisp specimen edges.",
+      "use_case": "Holding leaves, feathers, and lace flat during sun exposure."
+    },
+    {
+      "id": "rinse-tray-drying-line-set",
+      "name": "Rinse Tray & Drying Line Set",
+      "collection": "exposure-rinse-tools",
+      "price": 34,
+      "summary": "Low-profile tray, rinse bottle, print-safe gloves, clips, and drying twine for the reveal stage.",
+      "use_case": "A tidy rinse-and-dry station for home or workshop tables."
+    },
+    {
+      "id": "pocket-plant-press",
       "name": "Pocket Plant Press",
-      "slug": "pocket-plant-press",
-      "collection": "Botanical Collection Goods",
-      "price": 44,
-      "description": "Portable press with blotters, straps, and reusable field labels for collecting leaves and small flowers.",
-      "tags": ["field", "press", "botanical"]
+      "collection": "botanical-collection-goods",
+      "price": 32,
+      "summary": "A walk-ready press with blotter sheets, specimen envelopes, label tags, and a wax pencil for garden notes.",
+      "use_case": "Collecting and flattening botanical subjects before composing prints."
     },
     {
-      "id": "SFD-TOL-202",
-      "name": "Contact Frame Set",
-      "slug": "contact-frame-set",
-      "collection": "Exposure & Rinse Tools",
+      "id": "brush-on-chemistry-desk-set",
+      "name": "Brush-On Chemistry Desk Set",
+      "collection": "chemistry-finishing",
+      "price": 42,
+      "summary": "Measured cyanotype chemistry, cups, foam brushes, gloves, and toning samples for custom paper or fabric.",
+      "use_case": "Artists who want control over surface size, brush edge, and finishing experiments."
+    },
+    {
+      "id": "print-logbook-archive-sleeves",
+      "name": "Print Logbook & Archive Sleeves",
+      "collection": "chemistry-finishing",
+      "price": 26,
+      "summary": "A structured logbook with archival sleeves for tracking exposure date, subject, light, rinse, and finish.",
+      "use_case": "Nature-journal keepers and collectors preserving print series over a season."
+    },
+    {
+      "id": "forest-floor-archive",
+      "name": "Forest Floor Archive",
+      "collection": "visual-bundles",
       "price": 64,
-      "description": "Wood contact frame with clear acrylic sheet, backing board, and brass clips for crisp silhouettes.",
-      "tags": ["frame", "exposure", "acrylic"]
+      "summary": "Fern motif cards, indigo paper, labeling tags, archival sleeves, and a print logbook for a wall-ready botanical series.",
+      "use_case": "Creating a cohesive fern study set from collection through archive."
     },
     {
-      "id": "SFD-TOL-203",
-      "name": "Rinse Tray Pair",
-      "slug": "rinse-tray-pair",
-      "collection": "Exposure & Rinse Tools",
-      "price": 31,
-      "description": "Nested rinse trays sized for cyanotype paper packs, with a gentle squeeze rinse bottle.",
-      "tags": ["rinse", "tray", "studio"]
-    },
-    {
-      "id": "SFD-FIN-301",
-      "name": "Print Logbook",
-      "slug": "print-logbook",
-      "collection": "Chemistry & Finishing",
-      "price": 18,
-      "description": "Archive dates, plants, exposure times, weather, toning choices, and final print notes.",
-      "tags": ["archive", "logbook", "notes"]
-    },
-    {
-      "id": "SFD-FIN-302",
-      "name": "Brush-On Cyanotype Chemistry",
-      "slug": "brush-on-cyanotype-chemistry",
-      "collection": "Chemistry & Finishing",
-      "price": 29,
-      "description": "Measured two-part brush-on cyanotype chemistry for artists ready to coat custom papers or cloth.",
-      "tags": ["chemistry", "brush-on", "coating"]
-    },
-    {
-      "id": "SFD-FIN-303",
-      "name": "Toning Sample Flight",
-      "slug": "toning-sample-flight",
-      "collection": "Chemistry & Finishing",
-      "price": 17,
-      "description": "Small-batch toning samples for testing warm, smoky, and botanical finish variations.",
-      "tags": ["toning", "finishing", "sample"]
-    },
-    {
-      "id": "SFD-FIN-304",
-      "name": "Archival Sleeve Pack",
-      "slug": "archival-sleeve-pack",
-      "collection": "Chemistry & Finishing",
-      "price": 21,
-      "description": "Clear archival sleeves for storing finished cyanotype studies, postcards, and seasonal series.",
-      "tags": ["archive", "sleeves", "storage"]
-    },
-    {
-      "id": "SFD-BND-401",
-      "name": "Fern Study Set",
-      "slug": "fern-study-set",
-      "collection": "Curated Visual Bundles",
-      "price": 62,
-      "description": "Pressed fern cards, 8x10 paper, archival sleeves, and logbook prompts for a wall-ready plant series.",
-      "tags": ["fern", "bundle", "wall-art"]
-    },
-    {
-      "id": "SFD-BND-402",
-      "name": "Coastal Drift Kit",
-      "slug": "coastal-drift-kit",
-      "collection": "Curated Visual Bundles",
+      "id": "tide-line-shadows",
+      "name": "Tide Line Shadows",
+      "collection": "visual-bundles",
       "price": 58,
-      "description": "Postcards, specimen envelopes, shell-safe layout guides, and rinse tools for beach walk impressions.",
-      "tags": ["coastal", "postcards", "bundle"]
+      "summary": "A coastal drift kit with postcard stock, composition cards, acrylic sheet, clips, rinse bottle, and drying twine.",
+      "use_case": "Turning beach walks and small found objects into compact cyanotype postcards."
     },
     {
-      "id": "SFD-BND-403",
-      "name": "Garden Wedding Place-Card Kit",
-      "slug": "garden-wedding-place-card-kit",
-      "collection": "Curated Visual Bundles",
-      "price": 88,
-      "description": "Archival card stock, pressed motif cards, wax pencils, and drying line for handmade table settings.",
-      "tags": ["wedding", "place-cards", "bundle"]
+      "id": "garden-table-names",
+      "name": "Garden Table Names",
+      "collection": "visual-bundles",
+      "price": 72,
+      "summary": "Archival card stock, wax pencil, botanical motif cards, labeling tags, sleeves, and finishing notes for place cards.",
+      "use_case": "Garden wedding place-card prints with a consistent botanical visual language."
     },
     {
-      "id": "SFD-BND-404",
-      "name": "Winter Lace & Shadow Set",
-      "slug": "winter-lace-shadow-set",
-      "collection": "Curated Visual Bundles",
-      "price": 54,
-      "description": "Lace motif templates, postcard blanks, toning samples, and exposure tips for low-season light.",
-      "tags": ["lace", "winter", "bundle"]
+      "id": "winter-lace-shadow-set",
+      "name": "Winter Lace-and-Shadow Print Set",
+      "collection": "visual-bundles",
+      "price": 60,
+      "summary": "Pre-treated paper, lace composition cards, acrylic sheet, clips, toning samples, and sleeves for crisp winter studies.",
+      "use_case": "Seasonal indoor composition with lace, small found objects, and low-angle winter light."
     }
   ]
 }
