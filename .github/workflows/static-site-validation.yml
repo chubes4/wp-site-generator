@@ -171,7 +171,7 @@ jobs:
         run: |
           set -euo pipefail
           git clone --depth 1 https://github.com/Extra-Chill/homeboy-extensions .homeboy-extensions
-          npm install --no-save --prefix "$PWD" playwright @wp-playground/cli@3.1.20 ./.homeboy-extensions/wordpress
+          npm install --no-save --prefix "$PWD" playwright @wp-playground/cli@latest ./.homeboy-extensions/wordpress
           ./node_modules/.bin/playwright install --with-deps chromium
 
       - name: Capture visual parity screenshots
