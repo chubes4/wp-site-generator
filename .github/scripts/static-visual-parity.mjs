@@ -3,7 +3,7 @@
 import { chromium } from 'playwright';
 import { createServer } from 'node:http';
 import { createReadStream } from 'node:fs';
-import { mkdir, writeFile } from 'node:fs/promises';
+import { mkdir, readFile, writeFile } from 'node:fs/promises';
 import { existsSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
@@ -103,13 +103,101 @@ playground.stderr.on('data', (data) => {
 
 try {
 	await waitForUrl(importedUrl, 120_000, () => playground.exitCode !== null);
+	const importReadiness = await waitForImportedTheme({
+		url: importedUrl,
+		site,
+		indexPath,
+		timeoutMs: 120_000,
+		shouldStop: () => playground.exitCode !== null,
+	});
 	await captureParityScreenshots({ sourceUrl, importedUrl, outputDir });
-	await writeSummary({ site, sourceUrl, importedUrl, outputDir, playgroundOutput });
+	await writeSummary({ site, sourceUrl, importedUrl, outputDir, playgroundOutput, importReadiness });
 } finally {
 	sourceServer.close();
 	if (playground.exitCode === null) {
 		playground.kill('SIGTERM');
 	}
+}
+
+async function waitForImportedTheme({ url, site, indexPath, timeoutMs, shouldStop }) {
+	const started = Date.now();
+	const expectedText = await getExpectedStorefrontText(indexPath, site);
+	const themeMarker = `wp-content/themes/${site}`;
+	let lastError = null;
+
+	while (Date.now() - started < timeoutMs) {
+		if (shouldStop()) {
+			throw new Error(`Playground server exited before the ${site} import became visible`);
+		}
+
+		try {
+			const response = await fetch(`${url}?visual-parity-ready=${Date.now()}`, {
+				headers: { 'cache-control': 'no-cache' },
+			});
+			const html = await response.text();
+			const normalizedHtml = normalizeText(html);
+
+			if (html.includes(themeMarker)) {
+				return { marker: themeMarker, source: 'theme_path' };
+			}
+
+			if (expectedText && normalizedHtml.includes(normalizeText(expectedText))) {
+				return { marker: expectedText, source: 'source_text' };
+			}
+
+			lastError = new Error(`import markers not visible yet; HTTP ${response.status}`);
+		} catch (error) {
+			lastError = error;
+		}
+
+		await new Promise((resolve) => setTimeout(resolve, 1000));
+	}
+
+	throw new Error(
+		`Timed out waiting for imported ${site} theme at ${url}: ${lastError?.message || 'no response'}`
+	);
+}
+
+async function getExpectedStorefrontText(indexPath, site) {
+	const html = await readFile(indexPath, 'utf8');
+	const candidates = [
+		matchTagText(html, 'h1'),
+		matchTagText(html, 'title'),
+		humanizeSlug(site),
+	].filter(Boolean);
+
+	return candidates.find((candidate) => normalizeText(candidate).length >= 6) || '';
+}
+
+function matchTagText(html, tagName) {
+	const match = html.match(new RegExp(`<${tagName}\\b[^>]*>([\\s\\S]*?)<\\/${tagName}>`, 'i'));
+	return match ? stripTags(match[1]) : '';
+}
+
+function stripTags(value) {
+	return decodeHtmlEntities(value.replace(/<[^>]+>/g, ' ')).trim();
+}
+
+function decodeHtmlEntities(value) {
+	return value
+		.replace(/&nbsp;/gi, ' ')
+		.replace(/&amp;/gi, '&')
+		.replace(/&lt;/gi, '<')
+		.replace(/&gt;/gi, '>')
+		.replace(/&quot;/gi, '"')
+		.replace(/&#39;/g, "'");
+}
+
+function humanizeSlug(value) {
+	return value
+		.split('-')
+		.filter(Boolean)
+		.map((part) => part.charAt(0).toUpperCase() + part.slice(1))
+		.join(' ');
+}
+
+function normalizeText(value) {
+	return String(value).replace(/\s+/g, ' ').trim().toLowerCase();
 }
 
 function createStaticServer(root) {
@@ -228,7 +316,7 @@ async function screenshot(browser, url, outputPath) {
 	}
 }
 
-async function writeSummary({ site, sourceUrl, importedUrl, outputDir, playgroundOutput }) {
+async function writeSummary({ site, sourceUrl, importedUrl, outputDir, playgroundOutput, importReadiness }) {
 	const comparisonHtml = `<!doctype html>
 <html lang="en">
 <head>
@@ -267,6 +355,7 @@ code { color: #d1d5db; }
 				site,
 				sourceUrl,
 				importedUrl,
+				importReadiness,
 				viewport,
 				artifacts: ['source.png', 'imported.png', 'comparison.html'],
 				playgroundOutputTail: playgroundOutput.slice(-4000),
