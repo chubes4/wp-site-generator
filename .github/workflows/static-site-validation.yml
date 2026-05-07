@@ -117,6 +117,16 @@ jobs:
                   {
                     "step": "installPlugin",
                     "pluginData": {
+                      "resource": "wordpress.org/plugins",
+                      "slug": "woocommerce"
+                    },
+                    "options": {
+                      "activate": true
+                    }
+                  },
+                  {
+                    "step": "installPlugin",
+                    "pluginData": {
                       "resource": "git:directory",
                       "url": "https://github.com/chubes4/static-site-importer",
                       "ref": "main",
@@ -256,9 +266,19 @@ jobs:
           SOURCE_HEAD_SHA: ${{ github.event.pull_request.head.sha }}
           SOURCE_BRANCH: ${{ github.event.pull_request.head.ref }}
           VALIDATION_RUN_ID: ${{ github.run_id }}
+          DESIGN_JSON_PATH: static-sites/${{ matrix.site }}/design.json
+          DESIGN_DISTRIBUTION_PATH: homeboy-ci-results/design-distribution.json
         run: |
           set -euo pipefail
           node .github/scripts/build-ssi-finding-packets.mjs
+
+      - name: Upload design distribution artifact
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: design-distribution-${{ matrix.site }}
+          path: homeboy-ci-results/design-distribution.json
+          if-no-files-found: ignore
 
       - name: Build Playground preview link
         id: preview
