@@ -400,7 +400,7 @@ $import_start_ns = hrtime(true);
 $import_result = wp_get_ability('datamachine/import-agent')->execute([
     'source' => $bundle_path,
     'slug' => $import_agent_slug,
-    'on_conflict' => 'upgrade',
+    'on_conflict' => 'skip',
 ]);
 $import_elapsed_ms = (hrtime(true) - $import_start_ns) / 1_000_000;
 $metadata['import_result'] = $import_result;
