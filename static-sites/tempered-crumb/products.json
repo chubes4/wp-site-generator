@@ -1,0 +1,145 @@
+{
+  "store": {
+    "name": "Tempered Crumb",
+    "positioning": "Single-origin chocolate baking pantry for home bakers chasing better depth",
+    "customer": [
+      "serious home bakers",
+      "pastry-school hobbyists",
+      "small cottage bakers",
+      "dinner-party dessert people",
+      "coffee-shop bakers"
+    ],
+    "shopping_logic": [
+      "dessert outcome",
+      "cacao percentage",
+      "cacao behavior",
+      "origin profile",
+      "pantry restock rhythm"
+    ]
+  },
+  "collections": [
+    {
+      "name": "Baking Chocolate",
+      "description": "Single-origin bars, semisweet blocks, couverture, white chocolate, ruby-style chocolate, and chopped baking shards.",
+      "use_cases": ["brownies", "ganache", "cookies", "laminated pastry", "drinking chocolate"]
+    },
+    {
+      "name": "Cocoa Foundations",
+      "description": "Dutch-process cocoa, natural cocoa, black cocoa, high-fat cocoa powder, cocoa butter, cacao nibs, and unsweetened chocolate.",
+      "use_cases": ["deep cocoa flavor", "cake structure", "ice cream bases", "finishing texture"]
+    },
+    {
+      "name": "Dessert-Use Bundles",
+      "description": "Outcome-driven sets for brownie depth, ganache and glaze, cookie chocolate, drinking chocolate, ice cream bases, and holiday baking.",
+      "use_cases": ["glossy brownies", "ganache that sets", "cookie puddles", "repeatable dessert testing"]
+    },
+    {
+      "name": "Flavor Pairings",
+      "description": "Cacao nib brittle, chocolate-safe salts, espresso powder, vanilla paste, freeze-dried raspberry, candied orange peel, malt powder, and toasted nut inclusions.",
+      "use_cases": ["bittersweet finish", "fruit contrast", "malt depth", "salt balance"]
+    },
+    {
+      "name": "Learning Goods",
+      "description": "Cacao percentage cards, bake-use comparison charts, tempering troubleshooting sheets, origin tasting notes, and recipe zines.",
+      "use_cases": ["education", "repeatable baking", "format comparison", "tempering troubleshooting"]
+    }
+  ],
+  "products": [
+    {
+      "id": "andean-70-chopping-bar",
+      "name": "Andean 70% Chopping Bar",
+      "category": "Baking Chocolate",
+      "format": "single-origin dark bar",
+      "price": 14.0,
+      "currency": "USD",
+      "cacao_percentage": "70%",
+      "use_case": ["glossy brownies", "cookies", "ganache", "chopped baking shards"],
+      "profile": ["dried cherry", "toasted almond", "bittersweet roast"],
+      "behavior_note": "Chops into uneven shards and melts into a dense bittersweet base."
+    },
+    {
+      "id": "silk-set-milk-couverture",
+      "name": "Silk Set Milk Couverture",
+      "category": "Baking Chocolate",
+      "format": "milk chocolate couverture",
+      "price": 22.0,
+      "currency": "USD",
+      "cacao_percentage": "54%",
+      "use_case": ["ganache", "glaze", "laminated pastry", "dipping"],
+      "profile": ["caramel dairy", "malt", "soft cocoa"],
+      "behavior_note": "Fluid melt for clean ganache texture and polished glaze work."
+    },
+    {
+      "id": "high-fat-dutch-cocoa-tin",
+      "name": "High-Fat Dutch Cocoa Tin",
+      "category": "Cocoa Foundations",
+      "format": "Dutch-process high-fat cocoa powder",
+      "price": 18.0,
+      "currency": "USD",
+      "cacao_percentage": null,
+      "use_case": ["brownies", "cake layers", "ice cream bases", "drinking chocolate"],
+      "profile": ["rounded cocoa", "dark roast", "low acidity"],
+      "behavior_note": "Builds deep cocoa flavor and dark color without relying on extra sweetness."
+    },
+    {
+      "id": "bittersweet-nib-crunch",
+      "name": "Bittersweet Nib Crunch",
+      "category": "Cocoa Foundations",
+      "format": "roasted cacao nibs",
+      "price": 11.0,
+      "currency": "USD",
+      "cacao_percentage": null,
+      "use_case": ["finishing texture", "brittle", "cookie edges", "ice cream garnish"],
+      "profile": ["bitter", "toasted", "nutty snap"],
+      "behavior_note": "Adds bittersweet texture where chocolate flavor should stay crisp."
+    },
+    {
+      "id": "gloss-top-brownie-kit",
+      "name": "Gloss Top Brownie Kit",
+      "category": "Dessert-Use Bundles",
+      "format": "brownie depth set",
+      "price": 42.0,
+      "currency": "USD",
+      "cacao_percentage": "70% plus cocoa powder",
+      "use_case": ["glossy brownies", "dense crumb", "deep cocoa"],
+      "includes": ["dark chopping bar", "high-fat Dutch cocoa", "espresso powder", "chocolate-safe salt", "bake-use comparison card"],
+      "behavior_note": "Designed for shiny tops, dense crumb, and a cocoa profile that reads intentional instead of merely sweet."
+    },
+    {
+      "id": "clean-set-ganache-box",
+      "name": "Clean Set Ganache Box",
+      "category": "Dessert-Use Bundles",
+      "format": "ganache and glaze kit",
+      "price": 58.0,
+      "currency": "USD",
+      "cacao_percentage": "54% and dark couverture",
+      "use_case": ["ganache", "mirror glaze", "sliceable filling", "whipped topping"],
+      "includes": ["milk couverture", "dark couverture", "cocoa butter", "vanilla paste", "tempering troubleshooting sheet"],
+      "behavior_note": "Pairs fluid chocolate formats with ratio guidance for set, pour, whip, and slice applications."
+    },
+    {
+      "id": "puddle-snap-cookie-flight",
+      "name": "Puddle & Snap Cookie Flight",
+      "category": "Dessert-Use Bundles",
+      "format": "cookie chocolate flight",
+      "price": 46.0,
+      "currency": "USD",
+      "cacao_percentage": "64% semisweet plus nibs",
+      "use_case": ["cookies", "puddled chocolate", "bittersweet finishing texture"],
+      "includes": ["semisweet baking block", "chopped baking shards", "cacao nibs", "malt powder", "finishing salt"],
+      "behavior_note": "Lets bakers compare chips versus chopped bars while building texture from shards, nibs, and salt."
+    },
+    {
+      "id": "origin-percentage-card-deck",
+      "name": "Origin & Percentage Card Deck",
+      "category": "Learning Goods",
+      "format": "cacao percentage cards and origin tasting notes",
+      "price": 16.0,
+      "currency": "USD",
+      "cacao_percentage": "54%, 64%, 70%, 100%",
+      "use_case": ["education", "format comparison", "repeatable dessert notes"],
+      "profile": ["fruit", "roast", "nut", "malt", "floral"],
+      "behavior_note": "Helps bakers choose chocolate by percentage, origin profile, and dessert behavior."
+    }
+  ]
+}
