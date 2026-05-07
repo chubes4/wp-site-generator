@@ -82,6 +82,16 @@ jobs:
           SITE: ${{ matrix.site }}
         run: |
           set -euo pipefail
+          # WooCommerce is environment setup, not part of the SSI import
+          # measurement. Install it via the Playground blueprint so the bench
+          # workload only runs the actual SSI import + diagnostic dump. This
+          # also avoids the homeboy-extensions wp-cli workload step type
+          # missing the `plugin` command (`wp-cli/wp-cli` is the only wp-cli
+          # package vendored in the bench runtime — extension/core/option
+          # commands are not registered, so `wp plugin install ...` from a
+          # workload step fails with "'plugin' is not a registered wp
+          # command"). Tracked as a follow-up at homeboy-extensions; the
+          # blueprint path is independently the right factoring regardless.
           workloads=$(jq -nc --arg site "$SITE" '
             [
               {
@@ -121,8 +131,7 @@ jobs:
                       "slug": "woocommerce"
                     },
                     "options": {
-                      "activate": true,
-                      "targetFolderName": "woocommerce"
+                      "activate": true
                     }
                   },
                   {
@@ -177,7 +186,8 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          npm install --no-save --prefix "$PWD" playwright @wp-playground/cli
+          git clone --depth 1 https://github.com/Extra-Chill/homeboy-extensions .homeboy-extensions
+          npm install --no-save --prefix "$PWD" playwright @wp-playground/cli@latest ./.homeboy-extensions/wordpress
           ./node_modules/.bin/playwright install --with-deps chromium
 
       - name: Capture visual parity screenshots
@@ -269,9 +279,14 @@ jobs:
           VALIDATION_RUN_ID: ${{ github.run_id }}
           DESIGN_JSON_PATH: static-sites/${{ matrix.site }}/design.json
           DESIGN_DISTRIBUTION_PATH: homeboy-ci-results/design-distribution.json
+          BENCH_OUTCOME: ${{ steps.homeboy.outcome }}
+          VISUAL_OUTCOME: ${{ steps.visual.outcome }}
         run: |
           set -euo pipefail
           node .github/scripts/build-ssi-finding-packets.mjs
+          packet_count=$(jq 'length' homeboy-ci-results/finding-packets.json)
+          echo "finding-packets emitted: ${packet_count}"
+          jq -r '.[] | "  - kind=\(.kind) candidate_repo=\(.candidate_repo) reason=\(.reason | tostring | .[0:120])"' homeboy-ci-results/finding-packets.json
 
       - name: Upload design distribution artifact
         if: always()
