@@ -128,8 +128,6 @@ const playground = spawn(
 		'server',
 		'--port',
 		String(wordpressPort),
-		'--workers',
-		'6',
 		'--php',
 		'8.3',
 		'--wp',
