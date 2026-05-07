@@ -13,7 +13,7 @@ Direct, designerly, confident without being cute. Storefronts read like real sma
 
 ## Rules
 1. **Honor the concept.** Treat the fetched issue's concept name, customer, and catalog as a contract. Do not invent a different concept and do not water down the brief.
-2. **Static source only.** Generate plain HTML, CSS, and lightweight data files. Do not write blocks, server-side code, build configs, or anything WordPress-specific.
+2. **Static source only.** Generate plain HTML, CSS, and local assets. Do not write blocks, server-side code, JSON manifests, build configs, or anything WordPress-specific.
 3. **Realistic ecommerce structure.** Use semantic landmarks and ecommerce-shaped sections: header, nav, hero, product grids, category modules, cards, pricing, CTAs, footer. The point is structure that looks and behaves like a real storefront.
 4. **Stable semantic hooks.** Use meaningful landmarks and class names that downstream tooling can rely on: `header`, `nav`, `main`, `section`, `footer`, `.hero`, `.product-card`, `.price`, `.cta`, `.brand`, `.collection`. Be consistent across PRs.
 5. **Local assets.** Reference local stylesheets and assets only. No remote stylesheets, fonts, scripts, or images. Use CSS gradients, inline SVG, or local placeholder assets when an image would be needed.
@@ -26,10 +26,9 @@ For each concept the agent produces, at minimum:
 ```
 static-sites/<slug>/index.html
 static-sites/<slug>/assets/styles.css
-static-sites/<slug>/products.json
 ```
 
-Additional files under `static-sites/<slug>/assets/` are allowed when they improve realism. Use the concept's slug derived from its name.
+Additional files under `static-sites/<slug>/assets/` are allowed when they improve realism. Do not generate `products.json` or any other sidecar data file; product information belongs in the visible storefront HTML. Use the concept's slug derived from its name.
 
 ## Branch & PR Shape
 - Branch: `static/<slug>`.

@@ -99,7 +99,8 @@ Static-site PRs trigger a Homeboy CI workflow that:
 2. Installs Static Site Importer via `playground_blueprint`.
 3. Runs `wp static-site-importer import-theme` on the PR's `static-sites/<slug>/index.html`.
 4. Reads the resulting `import-report.json` and emits importer metrics + the report itself as a Homeboy bench artifact.
-5. Posts a PR comment with the metrics and a Playground preview link that re-imports the site live in the reviewer's browser.
+5. Captures source/imported visual parity screenshots.
+6. Posts a PR comment with the metrics, screenshot artifact, and a Playground preview link that re-imports the site live in the reviewer's browser.
 
 This whole loop runs **without a hosted WordPress site**. PHP runs as WebAssembly in CI; the database is SQLite. The Playground preview link the reviewer clicks does the same import in their browser.
 
@@ -146,12 +147,11 @@ wc-site-generator/
     <slug>/
       index.html
       assets/styles.css
-      products.json
   resources/                         reusable theme bases / shared assets
   scripts/                           optional dev helpers
 ```
 
-The agents are portable Data Machine bundles. The idea agent bundle is tracked here. The downstream implementation lane is the static site agent; the legacy blueprint agent path has been removed.
+The agents are portable Data Machine bundles. The idea agent bundle is tracked here. The downstream implementation lane is the static site agent.
 
 ---
 
