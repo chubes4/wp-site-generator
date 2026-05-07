@@ -108,8 +108,8 @@ if (!class_exists(Pipelines::class) || !class_exists(Flows::class) || !class_exi
     ];
 }
 
-if (!class_exists('WC_Store_Blueprints_Stage4_GitHub_Issue_Step')) {
-    class WC_Store_Blueprints_Stage4_GitHub_Issue_Step extends Step {
+if (!class_exists('WC_Site_Generator_Stage4_GitHub_Issue_Step')) {
+    class WC_Site_Generator_Stage4_GitHub_Issue_Step extends Step {
         public function __construct() {
             parent::__construct('stage4_github_issue_publish');
         }
@@ -126,7 +126,7 @@ if (!class_exists('WC_Store_Blueprints_Stage4_GitHub_Issue_Step')) {
                 'This issue was created by the Data Machine Playground Stage 4 proof.',
                 '- Flow path: `datamachine/run-flow` -> Action Scheduler -> `datamachine/drain-job`',
                 '- Publish path: Data Machine Code `github_issue` publish handler',
-                '- Proof branch: https://github.com/chubes4/wc-store-blueprints/tree/feat/playground-ci-proof',
+                '- Proof branch: https://github.com/chubes4/wc-site-generator/tree/feat/playground-ci-proof',
                 '- Tracking issue: https://github.com/Extra-Chill/homeboy-extensions/issues/422',
                 'This is expected CI proof output and can be closed after verification.',
             ]);
@@ -181,7 +181,7 @@ add_filter('datamachine_step_types', static function (array $steps): array {
     $steps['stage4_github_issue_publish'] = [
         'label' => 'Stage 4 GitHub Issue Publish',
         'description' => 'CI proof step that creates a GitHub issue through DMC.',
-        'class' => 'WC_Store_Blueprints_Stage4_GitHub_Issue_Step',
+        'class' => 'WC_Site_Generator_Stage4_GitHub_Issue_Step',
         'position' => 99,
         'uses_handler' => false,
         'multi_handler' => false,

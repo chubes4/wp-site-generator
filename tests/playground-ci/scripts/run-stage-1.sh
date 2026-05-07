@@ -52,7 +52,7 @@ if ! command -v jq >/dev/null 2>&1; then
     exit 1
 fi
 
-RESULTS_TMPFILE=$(mktemp "${TMPDIR:-/tmp}/wc-store-blueprints-stage-1.XXXXXX")
+RESULTS_TMPFILE=$(mktemp "${TMPDIR:-/tmp}/wc-site-generator-stage-1.XXXXXX")
 cleanup() {
     rm -f "$RESULTS_TMPFILE"
 }
@@ -99,7 +99,7 @@ echo ""
 
 HOMEBOY_BENCH_RESULTS_FILE="$RESULTS_TMPFILE" \
 HOMEBOY_BENCH_ITERATIONS=1 \
-HOMEBOY_COMPONENT_ID=wc-store-blueprints-ci-driver \
+HOMEBOY_COMPONENT_ID=wc-site-generator-ci-driver \
 HOMEBOY_COMPONENT_PATH="$COMPONENT_PATH" \
 HOMEBOY_EXTENSION_PATH="$EXTENSION_PATH" \
 HOMEBOY_SETTINGS_JSON="$SETTINGS_JSON" \

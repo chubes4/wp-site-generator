@@ -53,7 +53,7 @@ foreach ($required_abilities as $ability_name) {
     }
 }
 
-$component_path = '/wordpress/wp-content/plugins/wc-store-blueprints-ci-driver';
+$component_path = '/wordpress/wp-content/plugins/wc-site-generator-ci-driver';
 $bundle_path = $component_path . '/bundles/wc-idea-agent';
 
 $metadata['bundle_path'] = $bundle_path;

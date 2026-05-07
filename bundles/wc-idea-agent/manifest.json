@@ -1,7 +1,7 @@
 {
     "agent": {
         "agent_config": {
-            "description": "Generates distinct store concepts and opens them as GitHub issues. Industry/problem space comes from the flow user message; downstream generation target is decided elsewhere.",
+            "description": "Generates distinct store concepts and opens them as GitHub issues for downstream static site generation. Industry/problem space comes from the flow user message.",
             "mode_models": {
                 "chat": {
                     "model": "gpt-5.5",

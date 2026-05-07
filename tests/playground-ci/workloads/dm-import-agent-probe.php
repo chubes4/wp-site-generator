@@ -64,7 +64,7 @@ if (!$import_ability) {
 // The bundle lives in the repo at bundles/wc-idea-agent. The driver script
 // copies it into the component dir before the run so it's reachable inside
 // Playground at the canonical mount path.
-$component_path = '/wordpress/wp-content/plugins/wc-store-blueprints-ci-driver';
+$component_path = '/wordpress/wp-content/plugins/wc-site-generator-ci-driver';
 $bundle_path = $component_path . '/bundles/wc-idea-agent';
 
 $metadata = [

@@ -131,7 +131,7 @@ if (!class_exists(Agents::class) || !class_exists(Pipelines::class) || !class_ex
     ];
 }
 
-$component_path = '/wordpress/wp-content/plugins/wc-store-blueprints-ci-driver';
+$component_path = '/wordpress/wp-content/plugins/wc-site-generator-ci-driver';
 $bundle_path = $component_path . '/bundles/wc-idea-agent';
 $metadata += [
     'bundle_path' => $bundle_path,
@@ -248,8 +248,8 @@ $flows->update_flow($flow_id, [
     'agent_id' => $agent_id,
 ]);
 
-if (!class_exists('WC_Store_Blueprints_Stage5_GitHub_Issue_Tool')) {
-    class WC_Store_Blueprints_Stage5_GitHub_Issue_Tool {
+if (!class_exists('WC_Site_Generator_Stage5_GitHub_Issue_Tool')) {
+    class WC_Site_Generator_Stage5_GitHub_Issue_Tool {
         public function handle_tool_call(array $parameters, array $tool_def = []): array {
             $handler = new GitHubIssuePublish();
             $result = $handler->handle_tool_call($parameters, $tool_def);
@@ -275,7 +275,7 @@ if (!class_exists('WC_Store_Blueprints_Stage5_GitHub_Issue_Tool')) {
 
 add_filter('datamachine_resolved_tools', static function (array $tools): array {
     if (isset($tools['github_issue_publish'])) {
-        $tools['github_issue_publish']['class'] = 'WC_Store_Blueprints_Stage5_GitHub_Issue_Tool';
+        $tools['github_issue_publish']['class'] = 'WC_Site_Generator_Stage5_GitHub_Issue_Tool';
         $tools['github_issue_publish']['method'] = 'handle_tool_call';
     }
     return $tools;

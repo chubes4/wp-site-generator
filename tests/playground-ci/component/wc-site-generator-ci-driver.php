@@ -1,6 +1,6 @@
 <?php
 /**
- * Plugin Name: wc-store-blueprints CI driver
+ * Plugin Name: wc-site-generator CI driver
  * Description: Tiny plugin shell used as the "component under test" for the
  *              Stage 1 Playground proof. Carries no behavior — exists only so
  *              the Homeboy WordPress extension's bench runner can mount this
