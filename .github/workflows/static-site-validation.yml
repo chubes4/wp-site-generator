@@ -153,6 +153,7 @@ jobs:
           extension-source: https://github.com/Extra-Chill/homeboy-extensions
           component: wc-site-generator
           autofix: 'false'
+          pr-comment: 'false'
           app-token: ${{ steps.app-token.outputs.token }}
           args: >-
             --setting-json playground_workloads='${{ steps.settings.outputs.workloads }}'
