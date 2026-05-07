@@ -66,10 +66,19 @@ RESULTS_TMPFILE=$(mktemp "${TMPDIR:-/tmp}/wc-site-generator-php-transformer-iter
 RUNTIME_DIR=$(mktemp -d "${TMPDIR:-/tmp}/wc-site-generator-homeboy-runtime.XXXXXX")
 COMPONENT_WORKLOAD="$COMPONENT_PATH/dm-php-transformer-iterator-probe.php"
 COMPONENT_BUNDLE_DIR="$COMPONENT_PATH/bundles/php-transformer-iterator-agent"
-FINDING_GROUPS_JSON="$(jq -c . "$ITERATOR_FINDING_GROUPS_PATH")"
+COMPONENT_FINDING_GROUPS_FILE="$COMPONENT_PATH/finding-groups.json"
+# COMPONENT_PATH gets mounted into Playground at
+# /wordpress/wp-content/plugins/<component-id>, so the workload reads the
+# grouped finding payload from this guest path via getenv().
+PLAYGROUND_FINDING_GROUPS_PATH="/wordpress/wp-content/plugins/wc-site-generator-ci-driver/finding-groups.json"
+
+# Validate the host-side finding groups payload before forwarding the file
+# into the Playground component mount. Compact-formatting via jq doubles as
+# a JSON syntax check; an invalid payload bails out before bench setup.
+jq -c . "$ITERATOR_FINDING_GROUPS_PATH" > "$COMPONENT_FINDING_GROUPS_FILE"
 
 cleanup() {
-    rm -f "$RESULTS_TMPFILE" "$COMPONENT_WORKLOAD"
+    rm -f "$RESULTS_TMPFILE" "$COMPONENT_WORKLOAD" "$COMPONENT_FINDING_GROUPS_FILE"
     rm -rf "$RUNTIME_DIR"
     rm -rf "$COMPONENT_PATH/bundles"
 }
@@ -135,7 +144,7 @@ SETTINGS_JSON=$(jq -nc \
     --arg sourcePr "$ITERATOR_SOURCE_PR" \
     --arg sourceHeadSha "$ITERATOR_SOURCE_HEAD_SHA" \
     --arg validationRunId "$ITERATOR_VALIDATION_RUN_ID" \
-    --arg findingGroupsJson "$FINDING_GROUPS_JSON" \
+    --arg findingGroupsPath "$PLAYGROUND_FINDING_GROUPS_PATH" \
     '{
         validation_dependencies: [$dm, $dmc, $openaiProvider],
         playground_wordpress_version: "7.0",
@@ -147,7 +156,7 @@ SETTINGS_JSON=$(jq -nc \
             ITERATOR_SOURCE_PR: $sourcePr,
             ITERATOR_SOURCE_HEAD_SHA: $sourceHeadSha,
             ITERATOR_VALIDATION_RUN_ID: $validationRunId,
-            ITERATOR_FINDING_GROUPS_JSON: $findingGroupsJson
+            ITERATOR_FINDING_GROUPS_PATH: $findingGroupsPath
         },
         playground_workloads: [
             {
@@ -176,7 +185,6 @@ ITERATOR_SOURCE_REPO="$ITERATOR_SOURCE_REPO" \
 ITERATOR_SOURCE_PR="$ITERATOR_SOURCE_PR" \
 ITERATOR_SOURCE_HEAD_SHA="$ITERATOR_SOURCE_HEAD_SHA" \
 ITERATOR_VALIDATION_RUN_ID="$ITERATOR_VALIDATION_RUN_ID" \
-ITERATOR_FINDING_GROUPS_JSON="$FINDING_GROUPS_JSON" \
 HOMEBOY_BENCH_RESULTS_FILE="$RESULTS_TMPFILE" \
 HOMEBOY_BENCH_ITERATIONS=1 \
 HOMEBOY_COMPONENT_ID=wc-site-generator-ci-driver \
