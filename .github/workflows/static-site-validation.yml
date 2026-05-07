@@ -121,7 +121,8 @@ jobs:
                       "slug": "woocommerce"
                     },
                     "options": {
-                      "activate": true
+                      "activate": true,
+                      "targetFolderName": "woocommerce"
                     }
                   },
                   {
