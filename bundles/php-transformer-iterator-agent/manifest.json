@@ -1,0 +1,49 @@
+{
+    "agent": {
+        "agent_config": {
+            "description": "Consumes normalized SSI finding groups, routes each actionable group to its owning transformer repository, and opens focused upstream repair pull requests with source validation evidence.",
+            "mode_models": {
+                "chat": {
+                    "model": "gpt-5.5",
+                    "provider": "openai"
+                },
+                "pipeline": {
+                    "model": "gpt-5.5",
+                    "provider": "openai"
+                },
+                "system": {
+                    "model": "gpt-5.5-mini",
+                    "provider": "openai"
+                }
+            }
+        },
+        "description": "",
+        "label": "PHP Transformer Iterator Agent",
+        "slug": "php-transformer-iterator-agent"
+    },
+    "bundle_slug": "php-transformer-iterator-agent",
+    "bundle_version": "1",
+    "exported_at": "2026-05-07T00:00:00+00:00",
+    "exported_by": "data-machine/0.104.0",
+    "included": {
+        "auth_refs": [],
+        "extensions": [],
+        "flows": [
+            "php-transformer-iterator-manual-flow"
+        ],
+        "handler_auth": "refs",
+        "memory": [
+            "agent/SOUL.md"
+        ],
+        "pipelines": [
+            "php-transformer-iterator-pipeline"
+        ],
+        "prompts": [],
+        "rubrics": [],
+        "seed_queues": [],
+        "tool_policies": []
+    },
+    "schema_version": 1,
+    "source_ref": "",
+    "source_revision": ""
+}
