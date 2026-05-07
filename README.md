@@ -10,7 +10,7 @@ Concurrency is the strategy. The system is designed to produce many credible sta
 
 ---
 
-## Two agents, one substrate
+## Three agents, one substrate
 
 ```
                 +---------------------+
@@ -46,6 +46,18 @@ Concurrency is the strategy. The system is designed to produce many credible sta
                     PR comment with metrics
                     + Playground preview link
                     + import-report.json artifact
+                            |
+                            v
+                +-----------+------------+
+                | php-transformer-       |
+                | iterator-agent         |
+                | (upstream repair PRs)  |
+                +-----------+------------+
+                            |
+                            v
+                    focused upstream PR
+                    + regression test
+                    + callback comment
 ```
 
 Every layer is intentionally generic on its own:
@@ -88,6 +100,12 @@ Reads one open `status:idea-ready` issue and authors a static HTML/CSS storefron
 PR title shape: `🧱 <Concept Name> — static storefront`. Branch: `static/<slug>`. Files under `static-sites/<slug>/`.
 
 The static site agent does **not** invent concepts. It only implements existing issues.
+
+### `php-transformer-iterator-agent`
+
+Consumes grouped SSI finding packets from a static-site validation run and turns actionable transformer gaps into focused upstream PRs. It routes each group to `chubes4/static-site-importer`, `chubes4/html-to-blocks-converter`, `chubes4/block-format-bridge`, or `chubes4/wc-site-generator`, uses an isolated DMC worktree for that repo, applies the smallest supported transformer fix, adds or updates regression coverage, runs targeted checks, opens the upstream PR with evidence, and comments back on the source generated-site PR.
+
+Fallback issues are reserved for groups that cannot yet produce a safe patch because the evidence is incomplete, ownership is ambiguous, or targeted verification cannot be established.
 
 ---
 
@@ -140,9 +158,11 @@ wc-site-generator/
   .github/
     workflows/
       static-site-validation.yml     SSI import in Playground for target:static-site PRs
+      php-transformer-iterator.yml   Manual PR-first upstream repair iterator
       playground-stage-5.yml         Data Machine idea-agent proof in Playground CI
   bundles/
     wc-idea-agent/                   Data Machine bundle: concept generation
+    php-transformer-iterator-agent/  Data Machine bundle: upstream transformer repair iteration
   static-sites/                      generated raw HTML/CSS storefronts for SSI validation
     <slug>/
       index.html
