@@ -76,6 +76,11 @@ jobs:
           composer install --no-interaction --no-progress --prefer-dist
           npm install
 
+      - name: Install plugin PHP dependencies
+        run: |
+          composer install --working-dir=.ci/data-machine --no-interaction --no-progress --prefer-dist
+          composer install --working-dir=.ci/data-machine-code --no-interaction --no-progress --prefer-dist
+
       - name: Run Stage 5 Playground proof
         env:
           GITHUB_TOKEN: ${{ github.token }}
