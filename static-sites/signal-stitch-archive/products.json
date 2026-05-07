@@ -1,0 +1,160 @@
+{
+  "store": {
+    "name": "Signal Stitch Archive",
+    "slug": "signal-stitch-archive",
+    "tagline": "Visible mending kits for clothes worth keeping",
+    "customer_groups": [
+      "denim owners",
+      "wool sweater people",
+      "parents rescuing hard-worn kids’ clothes",
+      "slow-fashion shoppers",
+      "beginner menders"
+    ]
+  },
+  "collections": [
+    {
+      "name": "Garment repair kits",
+      "description": "Specific bundles for denim knees, sweater elbows, socks, cuffs, chore coats, and kids’ trousers."
+    },
+    {
+      "name": "Mending materials",
+      "description": "Sashiko thread, wool yarn cards, patch cloth stacks, denim offcuts, backing fabrics, stabilizers, and color-matched thread sets."
+    },
+    {
+      "name": "Tools and instruction goods",
+      "description": "Darning mushrooms, hoops, curved needles, thimbles, snips, seam rippers, fabric pencils, repair rulers, stitch sample cards, repair maps, zines, swatches, and care labels."
+    },
+    {
+      "name": "Archive collections",
+      "description": "Indigo workwear palette, school-uniform survival kit, moth-hole wool refresh, and travel sewing roll."
+    }
+  ],
+  "products": [
+    {
+      "id": "kit-denim-knee-rescue",
+      "name": "Denim Knee Rescue Bundle",
+      "category": "Garment repair kits",
+      "price": 38,
+      "currency": "USD",
+      "description": "Indigo patch cloth, backing fabric, sashiko thread, curved needles, repair ruler, and a knee-map guide.",
+      "tags": ["denim", "sashiko", "patch cloth", "beginner"]
+    },
+    {
+      "id": "kit-sweater-elbow-mend",
+      "name": "Sweater Elbow Mend Set",
+      "category": "Garment repair kits",
+      "price": 34,
+      "currency": "USD",
+      "description": "Soft wool yarn card, stabilizer, rounded needles, sample stitch card, and elbow placement template.",
+      "tags": ["wool", "elbow", "darning", "sweater"]
+    },
+    {
+      "id": "kit-cuff-rebuild",
+      "name": "Cuff Rebuild Packet",
+      "category": "Garment repair kits",
+      "price": 29,
+      "currency": "USD",
+      "description": "Backing tape, sturdy thread, fabric pencil, patch cloth, and a fold-over cuff repair map.",
+      "tags": ["cuff", "workwear", "thread", "repair map"]
+    },
+    {
+      "id": "kit-school-trouser-survival",
+      "name": "School Trouser Survival Kit",
+      "category": "Garment repair kits",
+      "price": 32,
+      "currency": "USD",
+      "description": "Durable patch stack, color-matched thread, care labels, practice swatch, and quick rescue instructions.",
+      "tags": ["kids clothes", "trouser", "patch", "school uniform"]
+    },
+    {
+      "id": "materials-sashiko-thread-color-set",
+      "name": "Sashiko Thread Color Set",
+      "category": "Mending materials",
+      "price": 18,
+      "currency": "USD",
+      "description": "Indigo, natural, rust, and coal thread cards for visible stitch lines.",
+      "tags": ["thread", "sashiko", "color story"]
+    },
+    {
+      "id": "materials-patch-cloth-stack",
+      "name": "Patch Cloth Stack",
+      "category": "Mending materials",
+      "price": 22,
+      "currency": "USD",
+      "description": "Layerable cotton, workwear twill, and denim-weight pieces for reinforcement.",
+      "tags": ["patch cloth", "denim offcuts", "backing fabric"]
+    },
+    {
+      "id": "materials-backing-stabilizer-set",
+      "name": "Backing Fabric & Stabilizer Set",
+      "category": "Mending materials",
+      "price": 16,
+      "currency": "USD",
+      "description": "Support cloth and stabilizers for clean edges under stress points.",
+      "tags": ["stabilizer", "backing", "reinforcement"]
+    },
+    {
+      "id": "tool-darning-mushroom",
+      "name": "Darning Mushroom",
+      "category": "Tools",
+      "price": 24,
+      "currency": "USD",
+      "description": "A shaped support tool for sock heels, sweater holes, and curved fabric tension.",
+      "tags": ["darning", "tools", "socks", "sweater"]
+    },
+    {
+      "id": "tool-curved-needle-set",
+      "name": "Curved Needle Set",
+      "category": "Tools",
+      "price": 9,
+      "currency": "USD",
+      "description": "Needles for cuffs, elbows, knees, and dense fabric layers.",
+      "tags": ["needles", "cuff", "denim", "tools"]
+    },
+    {
+      "id": "tool-repair-ruler",
+      "name": "Repair Ruler",
+      "category": "Tools",
+      "price": 12,
+      "currency": "USD",
+      "description": "A ruler for clean grids, seam distance, and patch margins.",
+      "tags": ["repair ruler", "layout", "stitch grid"]
+    },
+    {
+      "id": "instruction-first-visible-mends-zine",
+      "name": "Technique Zine: First Visible Mends",
+      "category": "Instruction goods",
+      "price": 14,
+      "currency": "USD",
+      "description": "Printed stitch samples, practice swatches, and care notes for first-time visible menders.",
+      "tags": ["zine", "stitch sample", "practice swatch", "care labels"]
+    },
+    {
+      "id": "archive-indigo-workwear-palette",
+      "name": "Indigo Workwear Palette",
+      "category": "Archive collections",
+      "price": 46,
+      "currency": "USD",
+      "description": "Denim offcuts, sashiko thread, chore-coat patch cloth, and repair maps for blue-on-blue reinforcement.",
+      "tags": ["indigo", "workwear", "chore coat", "denim"]
+    },
+    {
+      "id": "archive-moth-hole-wool-refresh",
+      "name": "Moth-Hole Wool Refresh",
+      "category": "Archive collections",
+      "price": 42,
+      "currency": "USD",
+      "description": "Wool yarn cards, darning guidance, stabilizer, and care labels for sweater repairs that blend or bloom.",
+      "tags": ["moth hole", "wool", "sweater", "darning"]
+    },
+    {
+      "id": "archive-travel-sewing-roll",
+      "name": "Travel Sewing Roll",
+      "category": "Archive collections",
+      "price": 58,
+      "currency": "USD",
+      "description": "Snips, thimble, curved needles, fabric pencil, thread cards, and a compact repair map for packed clothes.",
+      "tags": ["travel", "sewing roll", "snips", "thimble"]
+    }
+  ]
+}
