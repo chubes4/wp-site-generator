@@ -144,8 +144,27 @@ Every static site must:
 2. Use stable semantic hooks: `header`, `nav`, `main`, `section`, `footer`, `.hero`, `.product-card`, `.price`, `.cta`, `.brand`, `.collection`.
 3. Use local assets only: no remote stylesheets, fonts, scripts, or images.
 4. Import cleanly through Static Site Importer with low fallback / freeform / invalid-block counts.
+5. Ship `static-sites/<slug>/design.json` describing the design system so finding packets can be correlated with design choices and the corpus can be measured for diversity.
 
-Items 1-3 are prompt rules. Item 4 is enforced by the CI validation lane.
+Items 1-3 and 5 are prompt rules. Item 4 is enforced by the CI validation lane.
+
+### Design metadata (`design.json`)
+
+Every generated site declares its design system in a small JSON sidecar at `static-sites/<slug>/design.json`.
+
+Required fields:
+
+- `schema_version` (integer, currently `1`)
+- `design_system` — short slug for the overall aesthetic (e.g. `editorial-magazine`, `brutalist-grid`, `swiss-minimal`, `y2k-maximalist`)
+- `palette_kind` — one of `monochrome`, `duotone`, `earthy`, `pastel`, `neon`, `jewel-tone`, `high-contrast`, `warm-neutral`, `cool-neutral`, `vibrant`
+- `typography_kind` — one of `serif`, `sans-serif`, `slab-serif`, `display`, `monospace`, `mixed-serif-sans`, `handwritten`, `geometric-sans`
+- `layout_kind` — one of `single-column`, `asymmetric`, `grid-bento`, `magazine`, `split-screen`, `horizontal-scroll`, `masonry`, `hero-stacked`
+- `density` — one of `airy`, `comfortable`, `compact`, `dense`
+- `commerce_pattern` — one of `product-grid`, `editorial-pdp`, `single-product`, `category-led`, `lookbook`, `shoppable-story`, `marketplace`, `subscription-box`
+
+Optional fields: `accent_palette` (array of hex strings), `font_family_primary`, `font_family_secondary`, `notes`.
+
+The static-site validation workflow reads this file, stamps the design fields onto every SSI finding packet for the site (so downstream grouping/iteration can correlate findings with design choices), and uploads a per-run `design-distribution.json` artifact. Sites generated before this contract was introduced — or any PR that omits `design.json` — are treated as `design_system: "unknown"` rather than failing.
 
 ---
 
@@ -167,6 +186,7 @@ wc-site-generator/
     <slug>/
       index.html
       assets/styles.css
+      design.json                    structured design system metadata for the storefront
   resources/                         reusable theme bases / shared assets
   scripts/                           optional dev helpers
 ```
