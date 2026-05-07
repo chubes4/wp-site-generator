@@ -1,0 +1,240 @@
+{
+  "store": "Spore Ledger Field Supply",
+  "slug": "spore-ledger-field-supply",
+  "positioning": "Documentation-first field supplies for cautious wild-food foragers.",
+  "currency": "USD",
+  "collections": [
+    {
+      "name": "Field Collection Kits",
+      "description": "Complete outing systems for mushrooms, berries, seaweeds, wild greens, workshop hosts, and no-eat practice walks."
+    },
+    {
+      "name": "Specimen Handling",
+      "description": "Waxed paper bags, divided collection boxes, breathable harvest bags, trays, envelopes, and cooler inserts."
+    },
+    {
+      "name": "Identification Support",
+      "description": "Hand lenses, folding rulers, color reference cards, spore-print papers, habitat cards, pencils, and notebooks."
+    },
+    {
+      "name": "Carry and Protection",
+      "description": "Belt pouches, map sleeves, permit wallets, tick removers, marker tape, glove packs, first-aid sleeves, and rain covers."
+    },
+    {
+      "name": "Sorting and Follow-Through",
+      "description": "Kitchen-safe sorting trays, quarantine labels, drying rack liners, brushes, harvest log binders, and meeting sample tags."
+    },
+    {
+      "name": "Region and Season Bundles",
+      "description": "Seasonal replenishment for spring morels, autumn mushroom clubs, coastal tide-table gathering, hedgerow berries, and cautious beginners."
+    }
+  ],
+  "products": [
+    {
+      "id": "slfs-first-mushroom-walk-kit",
+      "name": "First Mushroom Walk Kit",
+      "category": "Field Collection Kits",
+      "price": 86,
+      "summary": "Starter kit for separating fragile mushroom finds, documenting habitat, measuring features, and preparing spore prints.",
+      "includes": [
+        "Rigid mushroom tray",
+        "Waxed paper bags",
+        "Spore-print cards",
+        "Folding ruler",
+        "Hand lens",
+        "Waterproof notebook",
+        "Sample tags"
+      ]
+    },
+    {
+      "id": "slfs-berry-bramble-harvest-kit",
+      "name": "Berry & Bramble Harvest Kit",
+      "category": "Field Collection Kits",
+      "price": 72,
+      "summary": "A practical system for berry season with breathable bags, protective accessories, habitat cards, and sorting labels.",
+      "includes": [
+        "Breathable harvest bags",
+        "Nitrile glove pack",
+        "Orange marker tape",
+        "Habitat checklist cards",
+        "Compact first-aid sleeve",
+        "Quarantine labels"
+      ]
+    },
+    {
+      "id": "slfs-coastal-seaweed-outing-kit",
+      "name": "Coastal Seaweed Outing Kit",
+      "category": "Field Collection Kits",
+      "price": 79,
+      "summary": "Weather-aware coastal kit for carrying permits, maps, tide notes, mesh bags, and waterproof field notes.",
+      "includes": [
+        "Map sleeve",
+        "Permit wallet",
+        "Tide-table pouch",
+        "Mesh carry bags",
+        "Waterproof pencil",
+        "Sample envelopes"
+      ]
+    },
+    {
+      "id": "slfs-wild-greens-documentation-kit",
+      "name": "Wild Greens Documentation Kit",
+      "category": "Field Collection Kits",
+      "price": 64,
+      "summary": "Documentation set for edible greens walks, focused on leaves, habitat notes, bag separation, and post-walk review.",
+      "includes": [
+        "Breathable mesh bags",
+        "Color reference cards",
+        "Waterproof notebook",
+        "Folding ruler",
+        "Sample envelopes",
+        "Cleaning brush"
+      ]
+    },
+    {
+      "id": "slfs-workshop-host-loaner-set",
+      "name": "Workshop Host Loaner Set",
+      "category": "Field Collection Kits",
+      "price": 148,
+      "summary": "Shared field supplies for mushroom clubs, wild-food workshops, and instructors who need repeatable loaner systems.",
+      "includes": [
+        "Numbered sample tags",
+        "Loaner hand lenses",
+        "Field cards",
+        "Divided collection boxes",
+        "Waterproof pencils",
+        "Harvest log binder sheets"
+      ]
+    },
+    {
+      "id": "slfs-divided-specimen-box-trio",
+      "name": "Divided Specimen Box Trio",
+      "category": "Specimen Handling",
+      "price": 38,
+      "summary": "Three rigid divided boxes for keeping mushrooms, berries, greens, nuts, and dye plants from mixing in transit.",
+      "includes": [
+        "Three divided boxes",
+        "Reusable compartment labels",
+        "Field card pocket"
+      ]
+    },
+    {
+      "id": "slfs-waxed-paper-bag-refill",
+      "name": "Waxed Paper Bag Refill Pack",
+      "category": "Specimen Handling",
+      "price": 16,
+      "summary": "Individual bags for separating mushroom samples and preserving delicate identifying features.",
+      "includes": [
+        "Forty waxed paper bags",
+        "Pencil-ready label strip",
+        "Flat pack sleeve"
+      ]
+    },
+    {
+      "id": "slfs-spore-habitat-card-pack",
+      "name": "Spore Print & Habitat Card Pack",
+      "category": "Identification Support",
+      "price": 18,
+      "summary": "Cards for spore prints, habitat notes, substrate, nearby trees, weather, and collection time.",
+      "includes": [
+        "Spore-print papers",
+        "Habitat checklist cards",
+        "Color note fields",
+        "Sample number boxes"
+      ]
+    },
+    {
+      "id": "slfs-hand-lens-field-pair",
+      "name": "Hand Lens Field Pair",
+      "category": "Identification Support",
+      "price": 29,
+      "summary": "Two pocket hand lenses with lanyards for cautious checks on gills, pores, stems, leaf edges, berries, and seaweed texture.",
+      "includes": [
+        "Two hand lenses",
+        "Two lanyards",
+        "Field pouch"
+      ]
+    },
+    {
+      "id": "slfs-permit-wallet-map-sleeve",
+      "name": "Permit Wallet + Map Sleeve",
+      "category": "Carry and Protection",
+      "price": 32,
+      "summary": "Weather-resistant organizer for permits, collection limits, maps, tide notes, and workshop handouts.",
+      "includes": [
+        "Permit wallet",
+        "Folded map sleeve",
+        "Pencil loop",
+        "Collection limit card"
+      ]
+    },
+    {
+      "id": "slfs-tick-ready-field-accessory-pack",
+      "name": "Tick-Ready Field Accessory Pack",
+      "category": "Carry and Protection",
+      "price": 24,
+      "summary": "Compact trail pack with tick remover, glove pair, marker tape, and a small first-aid sleeve.",
+      "includes": [
+        "Tick remover",
+        "Nitrile glove pairs",
+        "Orange marker tape",
+        "Compact first-aid sleeve"
+      ]
+    },
+    {
+      "id": "slfs-kitchen-safe-sorting-tray-set",
+      "name": "Kitchen-Safe Sorting Tray Set",
+      "category": "Sorting and Follow-Through",
+      "price": 54,
+      "summary": "Post-walk tray set for separated review, quarantine labels, drying rack liners, and cleaning brushes.",
+      "includes": [
+        "Three sorting trays",
+        "Quarantine labels",
+        "Drying rack liners",
+        "Cleaning brushes"
+      ]
+    },
+    {
+      "id": "slfs-spring-morel-scout-bundle",
+      "name": "Spring Morel Scout Bundle",
+      "category": "Region and Season Bundles",
+      "price": 46,
+      "summary": "Seasonal refill for spring scouting with wax bags, habitat cards, ruler, marker tape, and sorting labels.",
+      "includes": [
+        "Waxed paper bags",
+        "Habitat checklist cards",
+        "Folding ruler",
+        "Orange marker tape",
+        "Sorting labels"
+      ]
+    },
+    {
+      "id": "slfs-autumn-mushroom-club-bundle",
+      "name": "Autumn Mushroom Club Bundle",
+      "category": "Region and Season Bundles",
+      "price": 96,
+      "summary": "Club-meeting replenishment for shared walks, spore prints, sample tags, trays, lenses, and harvest logs.",
+      "includes": [
+        "Loaner hand lenses",
+        "Spore-print papers",
+        "Sample tags",
+        "Rigid trays",
+        "Harvest log binder refills"
+      ]
+    },
+    {
+      "id": "slfs-cautious-beginner-no-eat-kit",
+      "name": "Cautious Beginner No-Eat Practice Kit",
+      "category": "Region and Season Bundles",
+      "price": 58,
+      "summary": "Documentation-only kit for learning habitat, separation, note-taking, and verification habits without consumption pressure.",
+      "includes": [
+        "Field notebook",
+        "Habitat checklist cards",
+        "Sample tags",
+        "Divided box",
+        "Practice-only labels"
+      ]
+    }
+  ]
+}
