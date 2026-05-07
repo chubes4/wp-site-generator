@@ -307,6 +307,24 @@ The workflow checks out Data Machine, Data Machine Code, the Homeboy WordPress e
 
 The probe wraps the publish handler so a successful PR open is recorded into engine data, and the workflow fails closed if the captured URL is empty. The targeted single-issue fetch relies on the GitHub fetch handler's `issue_number` config (Extra-Chill/data-machine-code#279).
 
+### Iterator smoke test
+
+`.github/workflows/php-transformer-iterator-smoke.yml` is a `workflow_dispatch`-only smoke test for the `php-transformer-iterator-agent`. It is a sibling of the production iterator workflow and reuses the same grouping helper, runner script, and Playground probe.
+
+The only difference is the input: instead of downloading a `finding-packets.json` artifact from a real `static-site-validation` run, the smoke workflow stages a committed synthetic fixture from `tests/fixtures/iterator-smoke/finding-packets.json` and feeds it through the same grouping + iterator pipeline.
+
+Use the smoke workflow when:
+
+- The static-site validation lane is regressed and not producing usable finding packets.
+- You need to prove the iterator end-to-end (real upstream PRs + real source-PR callback) without waiting on a green SSI run.
+- You want a deterministic, reproducible packet payload to debug iterator routing or output behavior.
+
+Use the production iterator (`php-transformer-iterator.yml`) for any real iteration work driven by an actual SSI validation run.
+
+Inputs mirror the production iterator (`source_repo`, `source_pr`, `source_head_sha`, `openai_model`, `data_machine_ref`, `data_machine_code_ref`, `homeboy_extensions_ref`). The smoke workflow uses its own `github.run_id` as `validation_run_id` so callback evidence points at a real navigable Actions run on this repo, since the synthetic fixture has no upstream validation run to reference.
+
+The smoke workflow uses the same `actions/create-github-app-token@v1` flow with the `HOMEBOY_APP_ID` / `HOMEBOY_APP_PRIVATE_KEY` repository secrets and **fails closed** if either secret is missing. There is no `github.token` fallback.
+
 ---
 
 ## Future Direction
