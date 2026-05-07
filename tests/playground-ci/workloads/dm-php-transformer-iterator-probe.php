@@ -9,6 +9,7 @@ use DataMachine\Core\Database\Flows\Flows;
 use DataMachine\Core\Database\Jobs\Jobs;
 use DataMachine\Core\PluginSettings;
 use DataMachine\Engine\AI\WpAiClientProviderAdmin;
+use DataMachineCode\Abilities\GitHubAbilities;
 
 if (function_exists('wp_set_current_user')) {
     wp_set_current_user(1);
@@ -114,7 +115,23 @@ update_option('datamachine_settings', $settings, false);
 update_option('connectors_ai_openai_api_key', $openai_api_key, false);
 PluginSettings::clearCache();
 
-foreach (['datamachine/import-agent', 'datamachine/run-flow', 'datamachine/drain-job'] as $ability_name) {
+$required_abilities = [
+    'datamachine/import-agent',
+    'datamachine/run-flow',
+    'datamachine/drain-job',
+    'datamachine/workspace-worktree-add',
+    'datamachine/workspace-read',
+    'datamachine/workspace-write',
+    'datamachine/workspace-edit',
+    'datamachine/workspace-git-status',
+    'datamachine/workspace-git-commit',
+    'datamachine/workspace-git-push',
+    'datamachine/create-github-pull-request',
+    'datamachine/create-github-issue',
+    'datamachine/comment-github-pull-request',
+];
+
+foreach ($required_abilities as $ability_name) {
     if (!wp_get_ability($ability_name)) {
         return [
             'metrics' => ['required_abilities_resolved' => 0],
@@ -129,6 +146,194 @@ if (!class_exists(Agents::class) || !class_exists(Flows::class) || !class_exists
         'metadata' => $metadata + ['error' => 'Required Data Machine classes are not available'],
     ];
 }
+
+if (!class_exists(GitHubAbilities::class)) {
+    return [
+        'metrics' => ['required_classes_available' => 0],
+        'metadata' => $metadata + ['error' => 'Data Machine Code GitHub abilities are not available'],
+    ];
+}
+
+if (!class_exists('WC_Site_Generator_PHP_Transformer_Iterator_Tool_Recorder')) {
+    class WC_Site_Generator_PHP_Transformer_Iterator_Tool_Recorder {
+        private static array $tool_results = [];
+
+        public static function handle_ability_tool_call(array $parameters, array $tool_def = []): array {
+            $ability_name = (string) ($tool_def['ability'] ?? '');
+            $tool_name = (string) ($tool_def['tool_name'] ?? $ability_name);
+            if ($ability_name === '' || !function_exists('wp_get_ability')) {
+                return self::error($tool_name, 'Missing ability contract.');
+            }
+
+            $ability = wp_get_ability($ability_name);
+            if (!$ability) {
+                return self::error($tool_name, $ability_name . ' is not registered.');
+            }
+
+            $result = $ability->execute($parameters);
+            if (function_exists('is_wp_error') && is_wp_error($result)) {
+                $response = self::error($tool_name, $result->get_error_message());
+                self::record($parameters, $tool_name, $response);
+                return $response;
+            }
+
+            $response = is_array($result) ? $result : ['success' => true, 'data' => $result];
+            $response['tool_name'] = $tool_name;
+            self::record($parameters, $tool_name, $response);
+            return $response;
+        }
+
+        public static function handle_pull_request_tool_call(array $parameters, array $tool_def = []): array {
+            $response = self::handle_ability_tool_call($parameters, $tool_def + [
+                'ability' => 'datamachine/create-github-pull-request',
+                'tool_name' => 'create_github_pull_request',
+            ]);
+            if (!empty($response['success'])) {
+                self::record_iterator_event($parameters, 'upstream_action', 'pull_request', self::first_url($response), $response);
+            }
+            return $response;
+        }
+
+        public static function handle_issue_tool_call(array $parameters, array $tool_def = []): array {
+            $response = self::handle_ability_tool_call($parameters, $tool_def + [
+                'ability' => 'datamachine/create-github-issue',
+                'tool_name' => 'create_github_issue',
+            ]);
+            if (!empty($response['success'])) {
+                self::record_iterator_event($parameters, 'upstream_action', 'issue', self::first_url($response), $response);
+            }
+            return $response;
+        }
+
+        public static function handle_comment_tool_call(array $parameters, array $tool_def = []): array {
+            $response = self::handle_ability_tool_call($parameters, $tool_def + [
+                'ability' => 'datamachine/comment-github-pull-request',
+                'tool_name' => 'comment_github_pull_request',
+            ]);
+            if (!empty($response['success'])) {
+                self::record_iterator_event($parameters, 'source_callback', 'pull_request_comment', self::first_url($response), $response);
+            }
+            return $response;
+        }
+
+        private static function error(string $tool_name, string $message): array {
+            return [
+                'success' => false,
+                'error' => $message,
+                'tool_name' => $tool_name,
+            ];
+        }
+
+        private static function record(array $parameters, string $tool_name, array $response): void {
+            self::$tool_results[] = [
+                'tool_name' => $tool_name,
+                'success' => !empty($response['success']),
+                'repo' => (string) ($parameters['repo'] ?? ''),
+                'url' => self::first_url($response),
+            ];
+
+            $job_id = (int) ($parameters['job_id'] ?? 0);
+            if ($job_id > 0 && function_exists('datamachine_merge_engine_data')) {
+                datamachine_merge_engine_data($job_id, [
+                    'php_transformer_iterator' => [
+                        'tool_results' => self::$tool_results,
+                    ],
+                ]);
+            }
+        }
+
+        private static function record_iterator_event(array $parameters, string $key, string $type, string $url, array $response): void {
+            $job_id = (int) ($parameters['job_id'] ?? 0);
+            if ($job_id <= 0 || $url === '' || !function_exists('datamachine_merge_engine_data')) {
+                return;
+            }
+
+            datamachine_merge_engine_data($job_id, [
+                'php_transformer_iterator' => [
+                    $key => [
+                        'type' => $type,
+                        'url' => $url,
+                        'repo' => (string) ($parameters['repo'] ?? ''),
+                        'number' => (int) ($response['pull_number'] ?? $response['issue_number'] ?? $parameters['pull_number'] ?? 0),
+                    ],
+                ],
+            ]);
+        }
+
+        private static function first_url(mixed $value): string {
+            if (is_string($value)) {
+                return preg_match('#https://github\.com/[^\s)]+#', $value, $matches) ? $matches[0] : '';
+            }
+            if (!is_array($value)) {
+                return '';
+            }
+            foreach (['html_url', 'issue_url', 'url'] as $key) {
+                if (!empty($value[$key]) && is_string($value[$key]) && str_starts_with($value[$key], 'https://github.com/')) {
+                    return $value[$key];
+                }
+            }
+            foreach ($value as $child) {
+                $url = self::first_url($child);
+                if ($url !== '') {
+                    return $url;
+                }
+            }
+            return '';
+        }
+    }
+}
+
+add_filter('datamachine_resolved_tools', static function (array $tools): array {
+    $workspace_tools = [
+        'workspace_worktree_add' => 'datamachine/workspace-worktree-add',
+        'workspace_read' => 'datamachine/workspace-read',
+        'workspace_write' => 'datamachine/workspace-write',
+        'workspace_edit' => 'datamachine/workspace-edit',
+        'workspace_git_status' => 'datamachine/workspace-git-status',
+        'workspace_git_commit' => 'datamachine/workspace-git-commit',
+        'workspace_git_push' => 'datamachine/workspace-git-push',
+    ];
+
+    foreach ($workspace_tools as $tool_name => $ability_name) {
+        $ability = function_exists('wp_get_ability') ? wp_get_ability($ability_name) : null;
+        $schema = $ability && method_exists($ability, 'get_input_schema') ? (array) $ability->get_input_schema() : ['type' => 'object'];
+        $tools[$tool_name] = [
+            'class' => 'WC_Site_Generator_PHP_Transformer_Iterator_Tool_Recorder',
+            'method' => 'handle_ability_tool_call',
+            'ability' => $ability_name,
+            'tool_name' => $tool_name,
+            'description' => 'Execute ' . $ability_name . ' for the PR-first PHP transformer iterator.',
+            'parameters' => $schema,
+        ];
+    }
+
+    $tools['create_github_pull_request'] = [
+        'class' => 'WC_Site_Generator_PHP_Transformer_Iterator_Tool_Recorder',
+        'method' => 'handle_pull_request_tool_call',
+        'ability' => 'datamachine/create-github-pull-request',
+        'tool_name' => 'create_github_pull_request',
+        'description' => 'Open the focused upstream transformer repair pull request after pushing the worktree branch.',
+        'parameters' => ['type' => 'object'],
+    ];
+    $tools['create_github_issue'] = [
+        'class' => 'WC_Site_Generator_PHP_Transformer_Iterator_Tool_Recorder',
+        'method' => 'handle_issue_tool_call',
+        'ability' => 'datamachine/create-github-issue',
+        'tool_name' => 'create_github_issue',
+        'description' => 'Fallback only: open a focused issue when no safe upstream patch path exists.',
+        'parameters' => ['type' => 'object'],
+    ];
+    $tools['comment_github_pull_request'] = [
+        'class' => 'WC_Site_Generator_PHP_Transformer_Iterator_Tool_Recorder',
+        'method' => 'handle_comment_tool_call',
+        'ability' => 'datamachine/comment-github-pull-request',
+        'tool_name' => 'comment_github_pull_request',
+        'description' => 'Post the required callback comment on the source generated-site pull request.',
+        'parameters' => ['type' => 'object'],
+    ];
+
+    return $tools;
+}, 100, 1);
 
 $component_path = '/wordpress/wp-content/plugins/wc-site-generator-ci-driver';
 $bundle_path = $component_path . '/bundles/php-transformer-iterator-agent';
@@ -250,6 +455,13 @@ $job = $jobs->get_job($job_id);
 $job_status = is_array($job) ? (string) ($job['status'] ?? '') : '';
 $engine_data = function_exists('datamachine_get_engine_data') ? datamachine_get_engine_data($job_id) : [];
 $token_usage = is_array($engine_data['token_usage'] ?? null) ? $engine_data['token_usage'] : [];
+$iterator_result = is_array($engine_data['php_transformer_iterator'] ?? null) ? $engine_data['php_transformer_iterator'] : [];
+$upstream_action = is_array($iterator_result['upstream_action'] ?? null) ? $iterator_result['upstream_action'] : [];
+$source_callback = is_array($iterator_result['source_callback'] ?? null) ? $iterator_result['source_callback'] : [];
+$upstream_action_url = (string) ($upstream_action['url'] ?? '');
+$source_callback_url = (string) ($source_callback['url'] ?? '');
+$has_upstream_action = $upstream_action_url !== '';
+$has_source_callback = $source_callback_url !== '';
 
 $metadata += [
     'agent_id' => $agent_id,
@@ -257,6 +469,9 @@ $metadata += [
     'job_id' => $job_id,
     'job_status' => $job_status,
     'token_usage' => $token_usage,
+    'iterator_result' => $iterator_result,
+    'upstream_action_url' => $upstream_action_url,
+    'source_callback_url' => $source_callback_url,
     'error_message' => (string) ($engine_data['error_message'] ?? ''),
 ];
 
@@ -280,6 +495,8 @@ return [
         'drain_elapsed_ms' => $drain_elapsed_ms,
         'actions_drained' => is_array($drain_result) ? (int) ($drain_result['actions_drained'] ?? 0) : 0,
         'job_completed' => $job_status === 'completed' ? 1 : 0,
+        'upstream_action_recorded' => $has_upstream_action ? 1 : 0,
+        'source_callback_recorded' => $has_source_callback ? 1 : 0,
         'openai_total_tokens' => (int) ($token_usage['total_tokens'] ?? 0),
     ],
     'metadata' => $metadata,

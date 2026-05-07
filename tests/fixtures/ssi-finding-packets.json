@@ -48,5 +48,20 @@
     "converter": "h2bc-card-converter",
     "stage": "convert",
     "reason": "Card markup escaped"
+  },
+  {
+    "schema_version": 1,
+    "site": "demo-store",
+    "source_repo": "chubes4/wc-site-generator",
+    "source_pr": 77,
+    "source_head_sha": "abc123",
+    "validation_run_id": 12345,
+    "kind": "source_region",
+    "path": "import-report.json",
+    "selector": "header",
+    "source_html_preview": "<header><nav>Shop</nav></header>",
+    "converter": "static-site-importer",
+    "stage": "source-region",
+    "reason": "source region manifest missed header"
   }
 ]

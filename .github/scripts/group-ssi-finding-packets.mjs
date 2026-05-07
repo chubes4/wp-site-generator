@@ -132,7 +132,7 @@ function routeCandidateRepo(packet) {
 	if (haystack.includes('block-format-bridge') || haystack.includes('bfb') || haystack.includes('serialization')) {
 		return 'chubes4/block-format-bridge';
 	}
-	if (haystack.includes('source') || haystack.includes('manifest') || haystack.includes('static-site') || haystack.includes('visual')) {
+	if (haystack.includes('generator') || haystack.includes('static-site-generator') || haystack.includes('visual parity')) {
 		return 'chubes4/wc-site-generator';
 	}
 

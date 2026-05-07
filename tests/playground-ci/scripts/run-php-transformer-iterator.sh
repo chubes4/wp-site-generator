@@ -199,11 +199,15 @@ import_resolved=$(jq -r "$scenario | .metadata.import_result.success // false" "
 run_resolved=$(jq -r "$scenario | .metadata.run_result.success // false" "$RESULTS_TMPFILE")
 drain_resolved=$(jq -r "$scenario | .metadata.drain_result.success // false" "$RESULTS_TMPFILE")
 job_status=$(jq -r "$scenario | .metadata.job_status // \"unknown\"" "$RESULTS_TMPFILE")
+upstream_action_url=$(jq -r "$scenario | .metadata.upstream_action_url // \"\"" "$RESULTS_TMPFILE")
+source_callback_url=$(jq -r "$scenario | .metadata.source_callback_url // \"\"" "$RESULTS_TMPFILE")
 
 if [ "$import_resolved" = "true" ] \
     && [ "$run_resolved" = "true" ] \
     && [ "$drain_resolved" = "true" ] \
-    && [ "$job_status" = "completed" ]; then
+    && [ "$job_status" = "completed" ] \
+    && [ -n "$upstream_action_url" ] \
+    && [ -n "$source_callback_url" ]; then
     echo "PHP transformer iterator PASSED"
     exit 0
 fi

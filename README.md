@@ -105,7 +105,7 @@ The static site agent does **not** invent concepts. It only implements existing 
 
 Consumes grouped SSI finding packets from a static-site validation run and turns actionable transformer gaps into focused upstream PRs. It routes each group to `chubes4/static-site-importer`, `chubes4/html-to-blocks-converter`, `chubes4/block-format-bridge`, or `chubes4/wc-site-generator`, uses an isolated DMC worktree for that repo, applies the smallest supported transformer fix, adds or updates regression coverage, runs targeted checks, opens the upstream PR with evidence, and comments back on the source generated-site PR.
 
-Fallback issues are reserved for findings that lack enough evidence for a safe patch, have ambiguous ownership, or cannot be tied to a targeted verification path.
+Fallback issues are reserved for groups that cannot yet produce a safe patch because the evidence is incomplete, ownership is ambiguous, or targeted verification cannot be established.
 
 ---
 

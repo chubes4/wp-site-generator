@@ -43,6 +43,10 @@ permissions:
   issues: write
   pull-requests: write
 
+env:
+  HOMEBOY_APP_ID: ${{ secrets.HOMEBOY_APP_ID }}
+  HOMEBOY_APP_PRIVATE_KEY: ${{ secrets.HOMEBOY_APP_PRIVATE_KEY }}
+
 jobs:
   iterator:
     name: Run PR-first transformer iterator
@@ -53,22 +57,22 @@ jobs:
       - name: Checkout site generator
         uses: actions/checkout@v4
 
+      - name: Require cross-repo app credentials
+        run: |
+          set -euo pipefail
+          if [ -z "${HOMEBOY_APP_ID:-}" ] || [ -z "${HOMEBOY_APP_PRIVATE_KEY:-}" ]; then
+            echo "HOMEBOY_APP_ID and HOMEBOY_APP_PRIVATE_KEY are required for cross-repo iterator writes." >&2
+            exit 1
+          fi
+
       - name: Generate cross-repo app token
         id: app-token
-        if: env.HOMEBOY_APP_ID != '' && env.HOMEBOY_APP_PRIVATE_KEY != ''
         uses: actions/create-github-app-token@v1
-        env:
-          HOMEBOY_APP_ID: ${{ secrets.HOMEBOY_APP_ID }}
-          HOMEBOY_APP_PRIVATE_KEY: ${{ secrets.HOMEBOY_APP_PRIVATE_KEY }}
         with:
-          app-id: ${{ secrets.HOMEBOY_APP_ID }}
-          private-key: ${{ secrets.HOMEBOY_APP_PRIVATE_KEY }}
+          app-id: ${{ env.HOMEBOY_APP_ID }}
+          private-key: ${{ env.HOMEBOY_APP_PRIVATE_KEY }}
           owner: chubes4
-          repositories: >-
-            wc-site-generator,
-            static-site-importer,
-            html-to-blocks-converter,
-            block-format-bridge
+          repositories: wc-site-generator,static-site-importer,html-to-blocks-converter,block-format-bridge
 
       - name: Checkout Homeboy Extensions
         uses: actions/checkout@v4
@@ -99,7 +103,7 @@ jobs:
 
       - name: Download finding packet artifact
         env:
-          GH_TOKEN: ${{ steps.app-token.outputs.token || github.token }}
+          GH_TOKEN: ${{ steps.app-token.outputs.token }}
           SOURCE_REPO: ${{ inputs.source_repo }}
           VALIDATION_RUN_ID: ${{ inputs.validation_run_id }}
           ARTIFACT_NAME: ${{ inputs.artifact_name }}
@@ -139,7 +143,7 @@ jobs:
 
       - name: Run PHP transformer iterator in Playground
         env:
-          GITHUB_TOKEN: ${{ steps.app-token.outputs.token || github.token }}
+          GITHUB_TOKEN: ${{ steps.app-token.outputs.token }}
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
           HOMEBOY_EXTENSION_PATH: ${{ github.workspace }}/.ci/homeboy-extensions/wordpress
           DM_PATH: ${{ github.workspace }}/.ci/data-machine

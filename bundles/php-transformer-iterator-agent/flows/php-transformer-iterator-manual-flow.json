@@ -12,7 +12,7 @@
             "prompt_queue": [
                 {
                     "added_at": "2026-05-07T00:00:00+00:00",
-                    "prompt": "Run the iterator against the grouped finding packet JSON supplied by the CI workload. Prefer focused upstream PRs with regression coverage; use fallback issues only when evidence cannot support a safe patch."
+                    "prompt": "Run the PR-first iterator against the grouped finding packet JSON supplied by the CI workload. Open focused upstream PRs with regression coverage when a safe patch path exists; use fallback issues only when evidence cannot support a safe patch."
                 }
             ],
             "queue_mode": "static",
