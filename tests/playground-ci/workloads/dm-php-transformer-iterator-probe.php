@@ -210,7 +210,7 @@ if (!class_exists('WC_Site_Generator_PHP_Transformer_Iterator_Tool_Recorder')) {
                 'ability' => 'datamachine/comment-github-pull-request',
                 'tool_name' => 'comment_github_pull_request',
             ]);
-            if (!empty($response['success'])) {
+            if (!empty($response['success']) && self::is_source_pull_request($parameters)) {
                 self::record_iterator_event($parameters, 'source_callback', 'pull_request_comment', self::first_url($response), $response);
             }
             return $response;
@@ -258,6 +258,18 @@ if (!class_exists('WC_Site_Generator_PHP_Transformer_Iterator_Tool_Recorder')) {
                     ],
                 ],
             ]);
+        }
+
+        private static function is_source_pull_request(array $parameters): bool {
+            $source_repo = trim((string) getenv('ITERATOR_SOURCE_REPO'));
+            $source_pr = (int) getenv('ITERATOR_SOURCE_PR');
+            $repo = trim((string) ($parameters['repo'] ?? ''));
+            $pull_number = (int) ($parameters['pull_number'] ?? 0);
+
+            return $source_repo !== ''
+                && $source_pr > 0
+                && $repo === $source_repo
+                && $pull_number === $source_pr;
         }
 
         private static function first_url(mixed $value): string {
