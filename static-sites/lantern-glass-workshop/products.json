@@ -1,0 +1,151 @@
+{
+  "store": "Lantern Glass Workshop",
+  "concept_key": "lantern-glass-workshop",
+  "currency": "USD",
+  "collections": [
+    {
+      "name": "Beginner repair kits",
+      "description": "Focused kits for cracked panes, loose came, transom cleaning, and cabinet-panel refreshes.",
+      "products": [
+        {
+          "name": "Cracked-Pane Patch Kit",
+          "price": 42,
+          "category": "Beginner repair kit",
+          "description": "Small glass sheet, copper foil, patching guide, gloves, and repair labels for a single damaged pane."
+        },
+        {
+          "name": "Loose-Came Stabilizer Kit",
+          "price": 54,
+          "category": "Beginner repair kit",
+          "description": "Lead came sample lengths, flux brush, patina, cleanup cloth, and a guide for tightening small sections."
+        },
+        {
+          "name": "Transom Cleaning Kit",
+          "price": 36,
+          "category": "Beginner repair kit",
+          "description": "Polish, respirator-safe cleanup supplies, soft cloths, repair labels, and a gentle old-glass care card."
+        },
+        {
+          "name": "Cabinet-Panel Refresh Kit",
+          "price": 44,
+          "category": "Beginner repair kit",
+          "description": "Cleaning cloths, polish, glazing compound, color story card, and labels for small leaded cabinet panels."
+        }
+      ]
+    },
+    {
+      "name": "Glass and surface goods",
+      "description": "Small colored glass sheets, textured clear glass, copper foil, lead came sample lengths, patina, glazing compound, and polish.",
+      "products": [
+        {
+          "name": "Jewel-Tone Glass Sheet Trio",
+          "price": 48,
+          "category": "Glass sheet",
+          "description": "Small amber, emerald, and ruby sheets sized for cabinet panels and patch work."
+        },
+        {
+          "name": "Textured Clear Glass Pair",
+          "price": 30,
+          "category": "Glass sheet",
+          "description": "Two textured clear sheets for transoms, window lights, and salvaged-panel repairs."
+        },
+        {
+          "name": "Copper Foil Roll",
+          "price": 14,
+          "category": "Surface supply",
+          "description": "Copper foil for small stained-glass repairs and beginner patch workflows."
+        },
+        {
+          "name": "Patina & Polish Pair",
+          "price": 28,
+          "category": "Surface supply",
+          "description": "Patina bottle with old-glass polish and cloth for cared-for finishing."
+        },
+        {
+          "name": "Glazing Compound Tin",
+          "price": 18,
+          "category": "Surface supply",
+          "description": "Bench-size compound for small transom and window-light maintenance."
+        }
+      ]
+    },
+    {
+      "name": "Tools and safety",
+      "description": "Glass cutters, running pliers, soldering irons, flux brushes, cleanup supplies, gloves, and bench mats.",
+      "products": [
+        {
+          "name": "Glass Cutter & Running Pliers Set",
+          "price": 39,
+          "category": "Cutting tool",
+          "description": "Starter cutting pair for small colored glass and textured clear panes."
+        },
+        {
+          "name": "Small-Repair Soldering Iron",
+          "price": 64,
+          "category": "Soldering",
+          "description": "Compact iron sized for foil repairs, came touch-ups, and bench work."
+        },
+        {
+          "name": "Flux Brush Pack",
+          "price": 9,
+          "category": "Soldering",
+          "description": "Disposable brushes for controlled flux application during small repairs."
+        },
+        {
+          "name": "Cleanup Gloves & Bench Mat",
+          "price": 32,
+          "category": "Safety",
+          "description": "Gloves, mat, and cleanup supplies for safer glass handling."
+        }
+      ]
+    },
+    {
+      "name": "Pattern and planning materials",
+      "description": "Reusable pattern paper, color story cards, repair labels, measurement templates, and restoration logbooks.",
+      "products": [
+        {
+          "name": "Pattern Paper & Template Pack",
+          "price": 24,
+          "category": "Planning",
+          "description": "Reusable paper, measurement templates, color story cards, and repair labels."
+        },
+        {
+          "name": "Restoration Logbook",
+          "price": 16,
+          "category": "Record keeping",
+          "description": "Project notes for old-window measurements, glass choices, repairs, and care dates."
+        },
+        {
+          "name": "Color Story Card Set",
+          "price": 12,
+          "category": "Planning",
+          "description": "Jewel-tone planning cards for matching colored glass to existing panels."
+        }
+      ]
+    },
+    {
+      "name": "Display and finishing bundles",
+      "description": "Salvaged-panel hanging kits, window-light styling kits, and entryway transom care bundles.",
+      "products": [
+        {
+          "name": "Salvaged-Panel Hanging Kit",
+          "price": 34,
+          "category": "Display bundle",
+          "description": "Finishing hardware for making a flea-market panel usable and display-ready."
+        },
+        {
+          "name": "Window-Light Styling Kit",
+          "price": 38,
+          "category": "Finishing bundle",
+          "description": "Care and styling goods for bringing small old-window details back into daily use."
+        },
+        {
+          "name": "Entryway Transom Care Bundle",
+          "price": 58,
+          "category": "Finishing bundle",
+          "description": "Cleaning, polish, labels, and finishing supplies for entryway transom maintenance."
+        }
+      ]
+    }
+  ]
+}
