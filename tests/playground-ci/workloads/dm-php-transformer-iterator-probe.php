@@ -344,30 +344,36 @@ add_filter('datamachine_resolved_tools', static function (array $tools): array {
         ];
     }
 
-    $tools['create_github_pull_request'] = [
-        'class' => 'WC_Site_Generator_PHP_Transformer_Iterator_Tool_Recorder',
-        'method' => 'handle_pull_request_tool_call',
-        'ability' => 'datamachine/create-github-pull-request',
-        'tool_name' => 'create_github_pull_request',
-        'description' => 'Open the focused upstream transformer repair pull request after pushing the worktree branch.',
-        'parameters' => ['type' => 'object'],
+    $github_tools = [
+        'create_github_pull_request' => [
+            'ability' => 'datamachine/create-github-pull-request',
+            'method' => 'handle_pull_request_tool_call',
+            'description' => 'Open the focused upstream transformer repair pull request after pushing the worktree branch.',
+        ],
+        'create_github_issue' => [
+            'ability' => 'datamachine/create-github-issue',
+            'method' => 'handle_issue_tool_call',
+            'description' => 'Fallback only: open a focused issue when no safe upstream patch path exists.',
+        ],
+        'comment_github_pull_request' => [
+            'ability' => 'datamachine/comment-github-pull-request',
+            'method' => 'handle_comment_tool_call',
+            'description' => 'Post the required callback comment on the source generated-site pull request.',
+        ],
     ];
-    $tools['create_github_issue'] = [
-        'class' => 'WC_Site_Generator_PHP_Transformer_Iterator_Tool_Recorder',
-        'method' => 'handle_issue_tool_call',
-        'ability' => 'datamachine/create-github-issue',
-        'tool_name' => 'create_github_issue',
-        'description' => 'Fallback only: open a focused issue when no safe upstream patch path exists.',
-        'parameters' => ['type' => 'object'],
-    ];
-    $tools['comment_github_pull_request'] = [
-        'class' => 'WC_Site_Generator_PHP_Transformer_Iterator_Tool_Recorder',
-        'method' => 'handle_comment_tool_call',
-        'ability' => 'datamachine/comment-github-pull-request',
-        'tool_name' => 'comment_github_pull_request',
-        'description' => 'Post the required callback comment on the source generated-site pull request.',
-        'parameters' => ['type' => 'object'],
-    ];
+
+    foreach ($github_tools as $tool_name => $tool_def) {
+        $ability = function_exists('wp_get_ability') ? wp_get_ability($tool_def['ability']) : null;
+        $schema = $ability && method_exists($ability, 'get_input_schema') ? (array) $ability->get_input_schema() : ['type' => 'object', 'properties' => []];
+        $tools[$tool_name] = [
+            'class' => 'WC_Site_Generator_PHP_Transformer_Iterator_Tool_Recorder',
+            'method' => $tool_def['method'],
+            'ability' => $tool_def['ability'],
+            'tool_name' => $tool_name,
+            'description' => $tool_def['description'],
+            'parameters' => $schema,
+        ];
+    }
 
     return $tools;
 }, 100, 1);
