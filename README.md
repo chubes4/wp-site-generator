@@ -126,6 +126,52 @@ The Homeboy WordPress extension capability that makes this possible (`playground
 
 ---
 
+## Idea Lifecycle Labels
+
+The repo owns three lifecycle labels on idea issues:
+
+- **`status:idea-ready`** — applied by the idea agent. Claimable by the
+  static-site agent.
+- **`status:built`** — a `target:static-site` PR is open that closes this
+  idea. Applied automatically when such a PR opens.
+- **`status:abandoned`** — the most recent `target:static-site` PR for this
+  idea was closed without merging and no other open `target:static-site` PR
+  still claims it. Applied automatically.
+
+Transitions are managed by `.github/workflows/idea-lifecycle-labels.yml`,
+which reacts to:
+
+- **PR opened/reopened** with `target:static-site` — parses `Closes #N` from
+  the PR body, adds `status:built` to that idea, and removes
+  `status:idea-ready`.
+- **PR closed unmerged** with `target:static-site` — removes `status:built`
+  from the linked idea. If no other open `target:static-site` PR closes the
+  same issue, adds `status:abandoned`. If another open static-site PR still
+  claims the idea, the labels are left untouched.
+- **Idea issue reopened** — removes `status:built` and `status:abandoned`
+  and ensures `status:idea-ready` is present, returning the idea to the
+  queue.
+
+The workflow uses `actions/create-github-app-token@v1` with the
+`HOMEBOY_APP_ID` / `HOMEBOY_APP_PRIVATE_KEY` repository secrets and **fails
+closed** if either secret is missing. There is no `github.token` fallback.
+
+### Fetch filter
+
+The `wc-static-site-agent` flow's GitHub fetch handler uses the positive
+filter `labels: status:idea-ready`. Because the lifecycle workflow removes
+`status:idea-ready` from an idea the moment a static-site PR opens against
+it, the positive filter naturally excludes ideas that are
+`status:built` or `status:abandoned`.
+
+DMC's GitHub fetch handler (and GitHub's REST API) does not support negative
+label filters, so the lifecycle workflow is the authoritative mechanism for
+keeping built/abandoned ideas out of the queue. As a defense-in-depth
+measure against label-update races, the static-site agent's AI step also
+inspects each fetched item's `metadata.github_labels` and aborts if it sees
+`status:built` or `status:abandoned`. See
+`bundles/wc-static-site-agent/README.md` for details.
+
 ## How Concepts Stay Distinct
 
 - Before opening an issue, the idea agent reads the recent issue corpus (open + recently-closed).
