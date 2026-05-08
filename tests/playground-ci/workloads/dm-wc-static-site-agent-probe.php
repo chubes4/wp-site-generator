@@ -410,53 +410,55 @@ return [
     'metadata' => $metadata,
 ];
 
-function export_static_site_agent_transcript(int $job_id, array $engine_data, string $transcript_dir): array {
-    $session_id = (string) ($engine_data['transcript_session_id'] ?? '');
-    if ($session_id === '' || $transcript_dir === '') {
-        return [];
+if (!function_exists('export_static_site_agent_transcript')) {
+    function export_static_site_agent_transcript(int $job_id, array $engine_data, string $transcript_dir): array {
+        $session_id = (string) ($engine_data['transcript_session_id'] ?? '');
+        if ($session_id === '' || $transcript_dir === '') {
+            return [];
+        }
+
+        if (!class_exists(ConversationStoreFactory::class)) {
+            return ['error' => 'ConversationStoreFactory unavailable'];
+        }
+
+        $store = ConversationStoreFactory::get();
+        $session = $store->get_session($session_id);
+        if (!$session) {
+            return ['session_id' => $session_id, 'error' => 'Transcript session missing'];
+        }
+
+        if (!is_dir($transcript_dir) && !wp_mkdir_p($transcript_dir)) {
+            return ['session_id' => $session_id, 'error' => 'Transcript directory could not be created'];
+        }
+
+        $messages = is_array($session['messages'] ?? null) ? $session['messages'] : [];
+        $metadata = is_array($session['metadata'] ?? null) ? $session['metadata'] : [];
+        $base_path = rtrim($transcript_dir, '/') . '/job-' . $job_id . '-transcript';
+        $json_path = $base_path . '.json';
+        $summary_path = $base_path . '-summary.json';
+
+        file_put_contents($json_path, wp_json_encode([
+            'job_id' => $job_id,
+            'session_id' => $session_id,
+            'provider' => $session['provider'] ?? null,
+            'model' => $session['model'] ?? null,
+            'metadata' => $metadata,
+            'messages' => $messages,
+        ], JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE));
+
+        file_put_contents($summary_path, wp_json_encode([
+            'job_id' => $job_id,
+            'session_id' => $session_id,
+            'message_count' => count($messages),
+            'roles' => array_count_values(array_map(static fn($message) => (string) ($message['role'] ?? 'unknown'), $messages)),
+            'metadata' => $metadata,
+        ], JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE));
+
+        return [
+            'session_id' => $session_id,
+            'json' => $json_path,
+            'summary' => $summary_path,
+            'message_count' => count($messages),
+        ];
     }
-
-    if (!class_exists(ConversationStoreFactory::class)) {
-        return ['error' => 'ConversationStoreFactory unavailable'];
-    }
-
-    $store = ConversationStoreFactory::get();
-    $session = $store->get_session($session_id);
-    if (!$session) {
-        return ['session_id' => $session_id, 'error' => 'Transcript session missing'];
-    }
-
-    if (!is_dir($transcript_dir) && !wp_mkdir_p($transcript_dir)) {
-        return ['session_id' => $session_id, 'error' => 'Transcript directory could not be created'];
-    }
-
-    $messages = is_array($session['messages'] ?? null) ? $session['messages'] : [];
-    $metadata = is_array($session['metadata'] ?? null) ? $session['metadata'] : [];
-    $base_path = rtrim($transcript_dir, '/') . '/job-' . $job_id . '-transcript';
-    $json_path = $base_path . '.json';
-    $summary_path = $base_path . '-summary.json';
-
-    file_put_contents($json_path, wp_json_encode([
-        'job_id' => $job_id,
-        'session_id' => $session_id,
-        'provider' => $session['provider'] ?? null,
-        'model' => $session['model'] ?? null,
-        'metadata' => $metadata,
-        'messages' => $messages,
-    ], JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE));
-
-    file_put_contents($summary_path, wp_json_encode([
-        'job_id' => $job_id,
-        'session_id' => $session_id,
-        'message_count' => count($messages),
-        'roles' => array_count_values(array_map(static fn($message) => (string) ($message['role'] ?? 'unknown'), $messages)),
-        'metadata' => $metadata,
-    ], JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE));
-
-    return [
-        'session_id' => $session_id,
-        'json' => $json_path,
-        'summary' => $summary_path,
-        'message_count' => count($messages),
-    ];
 }
