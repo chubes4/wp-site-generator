@@ -65,6 +65,7 @@ RESULTS_TMPFILE=$(mktemp "${TMPDIR:-/tmp}/wc-site-generator-static-site-agent.XX
 RUNTIME_DIR=$(mktemp -d "${TMPDIR:-/tmp}/wc-site-generator-homeboy-runtime.XXXXXX")
 COMPONENT_WORKLOAD="$COMPONENT_PATH/dm-wc-static-site-agent-probe.php"
 COMPONENT_BUNDLE_DIR="$COMPONENT_PATH/bundles/wc-static-site-agent"
+TRANSCRIPT_ARTIFACT_DIR="$COMPONENT_PATH/artifacts/wc-static-site-agent"
 
 cleanup() {
     rm -f "$RESULTS_TMPFILE" "$COMPONENT_WORKLOAD"
@@ -72,6 +73,9 @@ cleanup() {
     rm -rf "$COMPONENT_PATH/bundles"
 }
 trap cleanup EXIT
+
+rm -rf "$TRANSCRIPT_ARTIFACT_DIR"
+mkdir -p "$TRANSCRIPT_ARTIFACT_DIR"
 
 cat > "$RUNTIME_DIR/bench-helper.sh" <<'SH'
 #!/usr/bin/env bash
@@ -139,7 +143,8 @@ SETTINGS_JSON=$(jq -nc \
             OPENAI_API_KEY: $openaiKey,
             STATIC_SITE_AGENT_OPENAI_MODEL: $model,
             STATIC_SITE_AGENT_TARGET_REPO: $targetRepo,
-            STATIC_SITE_AGENT_ISSUE_NUMBER: $issueNumber
+            STATIC_SITE_AGENT_ISSUE_NUMBER: $issueNumber,
+            STATIC_SITE_AGENT_TRANSCRIPT_DIR: "/wordpress/wp-content/plugins/wc-site-generator-ci-driver/artifacts/wc-static-site-agent"
         },
         playground_workloads: [
             {
@@ -198,6 +203,8 @@ static_site_pr_url=$(jq -r "$scenario | .metadata.static_site_pr_url // \"\"" "$
 static_site_branch=$(jq -r "$scenario | .metadata.static_site_branch // \"\"" "$RESULTS_TMPFILE")
 static_site_slug=$(jq -r "$scenario | .metadata.static_site_slug // \"\"" "$RESULTS_TMPFILE")
 total_tokens=$(jq -r "$scenario | (.metadata.token_usage | if type == \"object\" then .total_tokens else 0 end) // 0" "$RESULTS_TMPFILE")
+transcript_json_path=$(jq -r "$scenario | .metadata.transcript_artifacts.json // \"\"" "$RESULTS_TMPFILE")
+transcript_summary_path=$(jq -r "$scenario | .metadata.transcript_artifacts.summary // \"\"" "$RESULTS_TMPFILE")
 
 echo "============================================"
 echo "wc-static-site-agent summary"
@@ -210,6 +217,8 @@ printf '%-32s %s\n' "Static-site PR URL:" "$static_site_pr_url"
 printf '%-32s %s\n' "Static-site branch:" "$static_site_branch"
 printf '%-32s %s\n' "Static-site slug:" "$static_site_slug"
 printf '%-32s %s\n' "OpenAI total tokens:" "$total_tokens"
+printf '%-32s %s\n' "Transcript JSON:" "$transcript_json_path"
+printf '%-32s %s\n' "Transcript summary:" "$transcript_summary_path"
 echo ""
 
 if [ -n "${GITHUB_OUTPUT:-}" ]; then
@@ -217,6 +226,8 @@ if [ -n "${GITHUB_OUTPUT:-}" ]; then
         echo "static_site_pr_url=$static_site_pr_url"
         echo "static_site_branch=$static_site_branch"
         echo "static_site_slug=$static_site_slug"
+        echo "transcript_json_path=$transcript_json_path"
+        echo "transcript_summary_path=$transcript_summary_path"
     } >> "$GITHUB_OUTPUT"
 fi
 
