@@ -113,6 +113,7 @@ jobs:
           composer install --working-dir=.ci/data-machine-code --no-interaction --no-progress --prefer-dist
 
       - name: Run wc-static-site-agent in Playground
+        id: static-site-agent
         env:
           GITHUB_TOKEN: ${{ steps.app-token.outputs.token }}
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
@@ -124,3 +125,11 @@ jobs:
           STATIC_SITE_AGENT_TARGET_REPO: ${{ github.repository }}
           STATIC_SITE_AGENT_ISSUE_NUMBER: ${{ inputs.issue_number }}
         run: tests/playground-ci/scripts/run-wc-static-site-agent.sh
+
+      - name: Upload wc-static-site-agent transcript
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: wc-static-site-agent-transcript-${{ github.run_id }}
+          path: tests/playground-ci/component/artifacts/wc-static-site-agent/
+          if-no-files-found: ignore

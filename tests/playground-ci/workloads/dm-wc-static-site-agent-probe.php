@@ -6,6 +6,7 @@
  */
 
 use DataMachine\Core\Database\Agents\Agents;
+use DataMachine\Core\Database\Chat\ConversationStoreFactory;
 use DataMachine\Core\Database\Flows\Flows;
 use DataMachine\Core\Database\Jobs\Jobs;
 use DataMachine\Core\Database\Pipelines\Pipelines;
@@ -50,6 +51,7 @@ $openai_api_key = trim((string) getenv('OPENAI_API_KEY'));
 $openai_model = trim((string) (getenv('STATIC_SITE_AGENT_OPENAI_MODEL') ?: 'gpt-5.5'));
 $target_repo = trim((string) (getenv('STATIC_SITE_AGENT_TARGET_REPO') ?: 'chubes4/wc-site-generator'));
 $issue_number = (int) (getenv('STATIC_SITE_AGENT_ISSUE_NUMBER') ?: 0);
+$transcript_dir = trim((string) getenv('STATIC_SITE_AGENT_TRANSCRIPT_DIR'));
 
 $metadata = [
     'target_repo' => $target_repo,
@@ -108,6 +110,7 @@ $settings['max_turns'] = 12;
 $settings['wp_ai_client_connect_timeout'] = 30;
 update_option('datamachine_settings', $settings, false);
 update_option('connectors_ai_openai_api_key', $openai_api_key, false);
+update_option('datamachine_persist_pipeline_transcripts', true, false);
 PluginSettings::clearCache();
 
 $required_abilities = [
@@ -348,6 +351,7 @@ $job_status = is_array($job) ? (string) ($job['status'] ?? '') : '';
 $engine_data = function_exists('datamachine_get_engine_data') ? datamachine_get_engine_data($job_id) : [];
 $static_site_result = is_array($engine_data['wc_static_site_agent'] ?? null) ? $engine_data['wc_static_site_agent'] : [];
 $token_usage = is_array($engine_data['token_usage'] ?? null) ? $engine_data['token_usage'] : [];
+$transcript_artifacts = export_static_site_agent_transcript($job_id, $engine_data, $transcript_dir);
 
 $static_site_pr_url = (string) ($static_site_result['static_site_pr_url'] ?? '');
 $static_site_branch = (string) ($static_site_result['static_site_branch'] ?? '');
@@ -372,6 +376,8 @@ $metadata += [
     'static_site_branch' => $static_site_branch,
     'static_site_slug' => $static_site_slug,
     'token_usage' => $token_usage,
+    'transcript_session_id' => (string) ($engine_data['transcript_session_id'] ?? ''),
+    'transcript_artifacts' => $transcript_artifacts,
     'error_snapshot' => $error_snapshot,
     'error_message' => (string) ($error_snapshot['error_message'] ?? ''),
 ];
@@ -398,7 +404,59 @@ return [
         'job_completed' => $job_completed ? 1 : 0,
         'publish_succeeded' => $publish_succeeded ? 1 : 0,
         'static_site_pr_url_recorded' => $static_site_pr_url !== '' ? 1 : 0,
+        'transcript_exported' => !empty($transcript_artifacts['json']) ? 1 : 0,
         'openai_total_tokens' => (int) ($token_usage['total_tokens'] ?? 0),
     ],
     'metadata' => $metadata,
 ];
+
+function export_static_site_agent_transcript(int $job_id, array $engine_data, string $transcript_dir): array {
+    $session_id = (string) ($engine_data['transcript_session_id'] ?? '');
+    if ($session_id === '' || $transcript_dir === '') {
+        return [];
+    }
+
+    if (!class_exists(ConversationStoreFactory::class)) {
+        return ['error' => 'ConversationStoreFactory unavailable'];
+    }
+
+    $store = ConversationStoreFactory::get();
+    $session = $store->get_session($session_id);
+    if (!$session) {
+        return ['session_id' => $session_id, 'error' => 'Transcript session missing'];
+    }
+
+    if (!is_dir($transcript_dir) && !wp_mkdir_p($transcript_dir)) {
+        return ['session_id' => $session_id, 'error' => 'Transcript directory could not be created'];
+    }
+
+    $messages = is_array($session['messages'] ?? null) ? $session['messages'] : [];
+    $metadata = is_array($session['metadata'] ?? null) ? $session['metadata'] : [];
+    $base_path = rtrim($transcript_dir, '/') . '/job-' . $job_id . '-transcript';
+    $json_path = $base_path . '.json';
+    $summary_path = $base_path . '-summary.json';
+
+    file_put_contents($json_path, wp_json_encode([
+        'job_id' => $job_id,
+        'session_id' => $session_id,
+        'provider' => $session['provider'] ?? null,
+        'model' => $session['model'] ?? null,
+        'metadata' => $metadata,
+        'messages' => $messages,
+    ], JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE));
+
+    file_put_contents($summary_path, wp_json_encode([
+        'job_id' => $job_id,
+        'session_id' => $session_id,
+        'message_count' => count($messages),
+        'roles' => array_count_values(array_map(static fn($message) => (string) ($message['role'] ?? 'unknown'), $messages)),
+        'metadata' => $metadata,
+    ], JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE));
+
+    return [
+        'session_id' => $session_id,
+        'json' => $json_path,
+        'summary' => $summary_path,
+        'message_count' => count($messages),
+    ];
+}
