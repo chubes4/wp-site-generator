@@ -145,14 +145,9 @@ $required_abilities = [
     'datamachine/import-agent',
     'datamachine/run-flow',
     'datamachine/drain-job',
-    'datamachine/workspace-clone',
-    'datamachine/workspace-worktree-add',
-    'datamachine/workspace-read',
-    'datamachine/workspace-write',
-    'datamachine/workspace-edit',
-    'datamachine/workspace-git-status',
-    'datamachine/workspace-git-commit',
-    'datamachine/workspace-git-push',
+    'datamachine/list-github-tree',
+    'datamachine/get-github-file',
+    'datamachine/create-or-update-github-file',
     'datamachine/create-github-pull-request',
     'datamachine/create-github-issue',
     'datamachine/comment-github-pull-request',
@@ -342,18 +337,13 @@ if (!function_exists('wc_site_generator_iterator_ability_schema')) {
 }
 
 add_filter('datamachine_resolved_tools', static function (array $tools): array {
-    $workspace_tools = [
-        'workspace_clone' => 'datamachine/workspace-clone',
-        'workspace_worktree_add' => 'datamachine/workspace-worktree-add',
-        'workspace_read' => 'datamachine/workspace-read',
-        'workspace_write' => 'datamachine/workspace-write',
-        'workspace_edit' => 'datamachine/workspace-edit',
-        'workspace_git_status' => 'datamachine/workspace-git-status',
-        'workspace_git_commit' => 'datamachine/workspace-git-commit',
-        'workspace_git_push' => 'datamachine/workspace-git-push',
+    $github_file_tools = [
+        'list_github_tree' => 'datamachine/list-github-tree',
+        'get_github_file' => 'datamachine/get-github-file',
+        'create_or_update_github_file' => 'datamachine/create-or-update-github-file',
     ];
 
-    foreach ($workspace_tools as $tool_name => $ability_name) {
+    foreach ($github_file_tools as $tool_name => $ability_name) {
         $ability = function_exists('wp_get_ability') ? wp_get_ability($ability_name) : null;
         $schema = $ability && method_exists($ability, 'get_input_schema') ? (array) $ability->get_input_schema() : ['type' => 'object'];
         $tools[$tool_name] = [
@@ -361,7 +351,7 @@ add_filter('datamachine_resolved_tools', static function (array $tools): array {
             'method' => 'handle_ability_tool_call',
             'ability' => $ability_name,
             'tool_name' => $tool_name,
-            'description' => 'Execute ' . $ability_name . ' for the PR-first PHP transformer iterator.',
+            'description' => 'Execute ' . $ability_name . ' for the GitHub API-based PHP transformer iterator.',
             'parameters' => $schema,
         ];
     }
@@ -371,7 +361,7 @@ add_filter('datamachine_resolved_tools', static function (array $tools): array {
         'method' => 'handle_pull_request_tool_call',
         'ability' => 'datamachine/create-github-pull-request',
         'tool_name' => 'create_github_pull_request',
-        'description' => 'Open the focused upstream transformer repair pull request after pushing the worktree branch.',
+        'description' => 'Open the focused upstream transformer repair pull request after committing the branch through the GitHub API.',
         'parameters' => wc_site_generator_iterator_ability_schema('datamachine/create-github-pull-request'),
     ];
     $tools['create_github_issue'] = [
