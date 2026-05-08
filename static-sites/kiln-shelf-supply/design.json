@@ -1,0 +1,13 @@
+{
+  "schema_version": 1,
+  "design_system": "cottagecore-handcraft",
+  "palette_kind": "earthy",
+  "typography_kind": "slab-serif",
+  "layout_kind": "grid-bento",
+  "density": "comfortable",
+  "commerce_pattern": "category-led",
+  "accent_palette": ["#b66a4a", "#7f3f2d", "#4e6652", "#f6ead7", "#2f2924"],
+  "font_family_primary": "Rockwell, Courier New, Georgia, serif",
+  "font_family_secondary": "Arial, Helvetica, sans-serif",
+  "notes": "Warm clay-dusted bento storefront for kiln shelf care, glaze-test organization, firing consumables, studio workflow tools, and curated firing bundles."
+}
