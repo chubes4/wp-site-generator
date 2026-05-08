@@ -145,6 +145,7 @@ $required_abilities = [
     'datamachine/import-agent',
     'datamachine/run-flow',
     'datamachine/drain-job',
+    'datamachine/workspace-clone',
     'datamachine/workspace-worktree-add',
     'datamachine/workspace-read',
     'datamachine/workspace-write',
@@ -256,6 +257,8 @@ if (!class_exists('WC_Site_Generator_PHP_Transformer_Iterator_Tool_Recorder')) {
                 'success' => !empty($response['success']),
                 'repo' => (string) ($parameters['repo'] ?? ''),
                 'url' => self::first_url($response),
+                'error' => (string) ($response['error'] ?? ''),
+                'message' => (string) ($response['message'] ?? ''),
             ];
 
             $job_id = (int) ($parameters['job_id'] ?? 0);
@@ -340,6 +343,7 @@ if (!function_exists('wc_site_generator_iterator_ability_schema')) {
 
 add_filter('datamachine_resolved_tools', static function (array $tools): array {
     $workspace_tools = [
+        'workspace_clone' => 'datamachine/workspace-clone',
         'workspace_worktree_add' => 'datamachine/workspace-worktree-add',
         'workspace_read' => 'datamachine/workspace-read',
         'workspace_write' => 'datamachine/workspace-write',
