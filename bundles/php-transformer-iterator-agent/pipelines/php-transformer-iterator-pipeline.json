@@ -5,6 +5,12 @@
     "steps": [
         {
             "step_config": {
+                "completion_assertions": {
+                    "required_tool_names": [
+                        "create_github_pull_request",
+                        "comment_github_pull_request"
+                    ]
+                },
                 "execution_order": 0,
                 "label": "Repair transformer findings",
                 "step_type": "ai",
