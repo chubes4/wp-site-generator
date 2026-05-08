@@ -306,7 +306,41 @@ jobs:
           BRANCH: ${{ github.event.pull_request.head.ref }}
         run: |
           set -euo pipefail
-          blueprint=$(jq -nc --arg site "$SITE" --arg branch "$BRANCH" '
+          import_php=$(SITE="$SITE" python3 <<'PY'
+          import os
+
+          site = os.environ['SITE']
+
+          def php_string(value):
+              return "'" + value.replace('\\', '\\\\').replace("'", "\\'") + "'"
+
+          print(f"""<?php
+          require_once '/wordpress/wp-load.php';
+          if ( ! did_action( 'wp_abilities_api_categories_init' ) ) {{
+          	do_action( 'wp_abilities_api_categories_init' );
+          }}
+          if ( ! did_action( 'wp_abilities_api_init' ) ) {{
+          	do_action( 'wp_abilities_api_init' );
+          }}
+          $ability = wp_get_ability( 'static-site-importer/import-theme' );
+          if ( ! $ability ) {{
+          	throw new RuntimeException( 'Static Site Importer import ability is not registered.' );
+          }}
+          $ability_result = $ability->execute( array(
+          	'html_path' => '/tmp/static-site/index.html',
+          	'slug' => {php_string(site)},
+          	'activate' => true,
+          	'overwrite' => true,
+          	'keep_source' => true,
+          ) );
+          if ( empty( $ability_result['success'] ) ) {{
+          	$error = isset( $ability_result['error'] ) && is_array( $ability_result['error'] ) ? $ability_result['error'] : array();
+          	throw new RuntimeException( isset( $error['message'] ) ? (string) $error['message'] : 'Static site import failed.' );
+          }}
+          """)
+          PY
+          )
+          blueprint=$(jq -nc --arg site "$SITE" --arg branch "$BRANCH" --arg import_php "$import_php" '
             {
               "$schema": "https://playground.wordpress.net/blueprint-schema.json",
               "landingPage": "/",
@@ -348,8 +382,8 @@ jobs:
                   }
                 },
                 {
-                  "step": "wp-cli",
-                  "command": ("wp static-site-importer import-theme /tmp/static-site/index.html --slug=" + $site + " --activate --overwrite --keep-source --format=json")
+                  "step": "runPHP",
+                  "code": $import_php
                 },
                 { "step": "login", "username": "admin", "password": "password" }
               ]
