@@ -3,11 +3,11 @@
   "design_system": "cottagecore-handcraft",
   "palette_kind": "earthy",
   "typography_kind": "mixed-serif-sans",
-  "layout_kind": "hero-stacked",
+  "layout_kind": "grid-bento",
   "density": "comfortable",
   "commerce_pattern": "category-led",
-  "accent_palette": ["#14241b", "#6d8d62", "#b8caa3", "#a66f3d", "#f4efe4"],
-  "font_family_primary": "Inter, ui-sans-serif, system-ui, sans-serif",
-  "font_family_secondary": "Georgia, Times New Roman, serif",
-  "notes": "Earthy glass-garden workshop storefront for terrarium maintenance, repair, and styling supplies."
+  "accent_palette": ["#152115", "#2f4c32", "#a4b882", "#b98554", "#f5f0e5"],
+  "font_family_primary": "Georgia",
+  "font_family_secondary": "Inter",
+  "notes": "Earthy glass-garden workshop aesthetic with moss, cork, stone, and condensation motifs for terrarium repair goods."
 }
