@@ -7,6 +7,12 @@
     "slug": "php-transformer-iterator-manual-flow",
     "steps": [
         {
+            "completion_assertions": {
+                "required_tool_names": [
+                    "create_github_pull_request",
+                    "comment_github_pull_request"
+                ]
+            },
             "disabled_tools": [],
             "handler_configs": [],
             "prompt_queue": [
