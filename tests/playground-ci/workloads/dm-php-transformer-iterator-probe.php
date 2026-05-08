@@ -504,6 +504,29 @@ $drain_result = wp_get_ability('datamachine/drain-job')->execute([
 $drain_elapsed_ms = (hrtime(true) - $drain_start_ns) / 1_000_000;
 $metadata['drain_result'] = $drain_result;
 
+if (!function_exists('wc_site_generator_first_github_url')) {
+    function wc_site_generator_first_github_url(mixed $value): string {
+        if (is_string($value)) {
+            return preg_match('#https://github\.com/[^\s)]+#', $value, $matches) ? $matches[0] : '';
+        }
+        if (!is_array($value)) {
+            return '';
+        }
+        foreach (['html_url', 'issue_url', 'url'] as $key) {
+            if (!empty($value[$key]) && is_string($value[$key]) && str_starts_with($value[$key], 'https://github.com/')) {
+                return $value[$key];
+            }
+        }
+        foreach ($value as $child) {
+            $url = wc_site_generator_first_github_url($child);
+            if ($url !== '') {
+                return $url;
+            }
+        }
+        return '';
+    }
+}
+
 $job = $jobs->get_job($job_id);
 $job_status = is_array($job) ? (string) ($job['status'] ?? '') : '';
 $engine_data = function_exists('datamachine_get_engine_data') ? datamachine_get_engine_data($job_id) : [];
@@ -552,29 +575,6 @@ $metadata += [
     'source_callback_url' => $source_callback_url,
     'error_message' => (string) ($engine_data['error_message'] ?? ''),
 ];
-
-if (!function_exists('wc_site_generator_first_github_url')) {
-    function wc_site_generator_first_github_url(mixed $value): string {
-        if (is_string($value)) {
-            return preg_match('#https://github\.com/[^\s)]+#', $value, $matches) ? $matches[0] : '';
-        }
-        if (!is_array($value)) {
-            return '';
-        }
-        foreach (['html_url', 'issue_url', 'url'] as $key) {
-            if (!empty($value[$key]) && is_string($value[$key]) && str_starts_with($value[$key], 'https://github.com/')) {
-                return $value[$key];
-            }
-        }
-        foreach ($value as $child) {
-            $url = wc_site_generator_first_github_url($child);
-            if ($url !== '') {
-                return $url;
-            }
-        }
-        return '';
-    }
-}
 
 return [
     'metrics' => [
