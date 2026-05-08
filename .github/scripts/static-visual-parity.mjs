@@ -35,26 +35,44 @@ const importReadyPath = path.join(outputDir, 'import-ready.json');
 const mountedImportReadyPath = toPosix(
 	path.join('/wordpress/wp-content/plugins/wc-site-generator', path.relative(repoRoot, importReadyPath))
 );
-const importReadyScriptPath = path.join(repoRoot, '.github', `.visual-parity-import-ready-${site}.php`);
-const mountedImportReadyScriptPath = toPosix(
-	path.join('/wordpress/wp-content/plugins/wc-site-generator', path.relative(repoRoot, importReadyScriptPath))
-);
-const importReadyPhp = [
+const importViaAbilityPhp = [
 	'<?php',
+	"require_once '/wordpress/wp-load.php';",
+	"if ( ! did_action( 'wp_abilities_api_categories_init' ) ) {",
+	"\tdo_action( 'wp_abilities_api_categories_init' );",
+	'}',
+	"if ( ! did_action( 'wp_abilities_api_init' ) ) {",
+	"\tdo_action( 'wp_abilities_api_init' );",
+	'}',
+	"$ability = wp_get_ability( 'static-site-importer/import-theme' );",
+	'if ( ! $ability ) {',
+	"\tthrow new RuntimeException( 'Static Site Importer import ability is not registered.' );",
+	'}',
+	'$ability_result = $ability->execute( array(',
+	`\t'html_path' => ${phpString(`/wordpress/wp-content/plugins/wc-site-generator/static-sites/${site}/index.html`)},`,
+	`\t'slug' => ${phpString(site)},`,
+	"\t'activate' => true,",
+	"\t'overwrite' => true,",
+	"\t'keep_source' => true,",
+	') );',
+	"if ( empty( $ability_result['success'] ) ) {",
+	"\t$error = isset( $ability_result['error'] ) && is_array( $ability_result['error'] ) ? $ability_result['error'] : array();",
+	"\tthrow new RuntimeException( isset( $error['message'] ) ? (string) $error['message'] : 'Static site import failed.' );",
+	'}',
 	'$theme = wp_get_theme();',
-	`if ($theme->get_stylesheet() !== ${phpString(site)}) {`,
-	`	fwrite(STDERR, 'Expected active theme ${site}, got ' . $theme->get_stylesheet() . PHP_EOL);`,
-	'\texit(1);',
+	`if ( $theme->get_stylesheet() !== ${phpString(site)} ) {`,
+	`\tthrow new RuntimeException( 'Expected active theme ${site}, got ' . $theme->get_stylesheet() );`,
 	'}',
 	'$payload = array(',
 	`\t'site' => ${phpString(site)},`,
 	"\t'theme' => $theme->get_stylesheet(),",
-	"\t'theme_name' => $theme->get('Name'),",
-	"\t'active_plugins' => get_option('active_plugins'),",
-	"\t'woocommerce_loaded' => class_exists('WooCommerce'),",
+	"\t'theme_name' => $theme->get( 'Name' ),",
+	"\t'active_plugins' => get_option( 'active_plugins' ),",
+	"\t'woocommerce_loaded' => class_exists( 'WooCommerce' ),",
+	"\t'import_result' => isset( $ability_result['result'] ) ? $ability_result['result'] : null,",
 	"\t'time' => time(),",
 	');',
-	`file_put_contents(${phpString(mountedImportReadyPath)}, wp_json_encode($payload));`,
+	`file_put_contents( ${phpString(mountedImportReadyPath)}, wp_json_encode( $payload ) );`,
 ].join('\n');
 const sourceUrl = `http://127.0.0.1:${sourcePort}/index.html`;
 const importedUrl = `http://127.0.0.1:${wordpressPort}/`;
@@ -68,7 +86,6 @@ if (!existsSync(playgroundCli)) {
 
 await mkdir(outputDir, { recursive: true });
 await rm(importReadyPath, { force: true });
-await writeFile(importReadyScriptPath, importReadyPhp);
 
 const sourceServer = createStaticServer(siteRoot);
 await listen(sourceServer, sourcePort);
@@ -104,14 +121,8 @@ const blueprint = {
 			},
 		},
 		{
-			step: 'wp-cli',
-			command:
-				`wp static-site-importer import-theme /wordpress/wp-content/plugins/wc-site-generator/static-sites/${site}/index.html ` +
-				`--slug=${site} --activate --overwrite --keep-source --format=json`,
-		},
-		{
-			step: 'wp-cli',
-			command: `wp eval-file ${mountedImportReadyScriptPath}`,
+			step: 'runPHP',
+			code: importViaAbilityPhp,
 		},
 		{ step: 'login', username: 'admin', password: 'password' },
 	],
@@ -172,7 +183,6 @@ try {
 	throw error;
 } finally {
 	sourceServer.close();
-	await rm(importReadyScriptPath, { force: true });
 	if (playground.exitCode === null) {
 		playground.kill('SIGTERM');
 	}
