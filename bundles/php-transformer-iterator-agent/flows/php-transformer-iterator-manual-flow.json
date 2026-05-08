@@ -7,12 +7,18 @@
     "slug": "php-transformer-iterator-manual-flow",
     "steps": [
         {
+            "completion_assertions": {
+                "required_tool_names": [
+                    "create_github_pull_request",
+                    "comment_github_pull_request"
+                ]
+            },
             "disabled_tools": [],
             "handler_configs": [],
             "prompt_queue": [
                 {
                     "added_at": "2026-05-07T00:00:00+00:00",
-                    "prompt": "Run the PR-first iterator against the grouped finding packet JSON supplied by the CI workload. Open focused upstream PRs with regression coverage when a safe patch path exists; use fallback issues only when evidence cannot support a safe patch."
+                    "prompt": "Run the PR-first iterator against the grouped finding packet JSON supplied by the CI workload. The transformer primary workspaces are preloaded by the bundle; do not call workspace_clone for static-site-importer, html-to-blocks-converter, or block-format-bridge. Start from workspace_worktree_add for the target repository. Open focused upstream PRs with regression coverage when a safe patch path exists; use fallback issues only when evidence cannot support a safe patch. Workspace preparation is not completion: after successful workspace_worktree_add, continue through edit, status, commit, push, upstream PR or fallback issue, and source PR callback."
                 }
             ],
             "queue_mode": "static",

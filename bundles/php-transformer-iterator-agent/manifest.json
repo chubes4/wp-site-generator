@@ -27,7 +27,9 @@
     "exported_by": "data-machine/0.104.0",
     "included": {
         "auth_refs": [],
-        "extensions": [],
+        "extensions": [
+            "extensions/datamachine-code/workspace_preload/transformer-repos.json"
+        ],
         "flows": [
             "php-transformer-iterator-manual-flow"
         ],

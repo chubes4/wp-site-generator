@@ -1,0 +1,20 @@
+{
+    "artifact_id": "transformer-repos",
+    "artifact_type": "datamachine-code/workspace_preload",
+    "payload": {
+        "repositories": [
+            {
+                "name": "static-site-importer",
+                "url": "https://github.com/chubes4/static-site-importer.git"
+            },
+            {
+                "name": "html-to-blocks-converter",
+                "url": "https://github.com/chubes4/html-to-blocks-converter.git"
+            },
+            {
+                "name": "block-format-bridge",
+                "url": "https://github.com/chubes4/block-format-bridge.git"
+            }
+        ]
+    }
+}
