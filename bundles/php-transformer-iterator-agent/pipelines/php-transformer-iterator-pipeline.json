@@ -14,6 +14,10 @@
                         "comment_github_pull_request"
                     ]
                 },
+                "disabled_tools": [
+                    "get_github_file",
+                    "list_github_pulls"
+                ],
                 "execution_order": 0,
                 "label": "Repair transformer findings",
                 "step_type": "ai",

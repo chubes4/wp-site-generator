@@ -16,7 +16,10 @@
                     "comment_github_pull_request"
                 ]
             },
-            "disabled_tools": [],
+            "disabled_tools": [
+                "get_github_file",
+                "list_github_pulls"
+            ],
             "handler_configs": [],
             "prompt_queue": [
                 {
