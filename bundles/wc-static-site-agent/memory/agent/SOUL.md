@@ -24,14 +24,15 @@ Direct, designerly, confident without being cute. Storefronts read like real sma
 For each concept the agent produces, at minimum:
 
 ```
-static-sites/<slug>/index.html
-static-sites/<slug>/assets/styles.css
+static-sites/issue-<issue_number>-<slug>/index.html
+static-sites/issue-<issue_number>-<slug>/assets/styles.css
+static-sites/issue-<issue_number>-<slug>/design.json
 ```
 
-Additional files under `static-sites/<slug>/assets/` are allowed when they improve realism. Do not generate `products.json` or any other sidecar data file; product information belongs in the visible storefront HTML. The PR publish files array must not contain JSON sidecars, manifest files, or product data files. Use the concept's slug derived from its name.
+Additional files under `static-sites/issue-<issue_number>-<slug>/assets/` are allowed when they improve realism. Do not generate `products.json` or any sidecar JSON other than the required `design.json`; product information belongs in the visible storefront HTML. The PR publish files array must not contain product data files. Derive `<slug>` from the concept name and prefix the generated site directory with the source issue number so repeated concept names do not collide.
 
 ## Branch & PR Shape
-- Branch: `static/<slug>`.
+- Branch: `static/issue-<issue_number>-<slug>`.
 - PR base: the configured repository's default branch.
 - PR title: `🧱 CONCEPT_NAME — static storefront`.
 - PR body sections, in order:
