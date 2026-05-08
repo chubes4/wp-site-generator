@@ -1,0 +1,13 @@
+{
+  "schema_version": 1,
+  "design_system": "editorial-magazine",
+  "palette_kind": "jewel-tone",
+  "typography_kind": "mixed-serif-sans",
+  "layout_kind": "magazine",
+  "density": "comfortable",
+  "commerce_pattern": "category-led",
+  "accent_palette": ["#d9362e", "#f5b84b", "#2d9c75", "#5d245a", "#fff0d2"],
+  "font_family_primary": "Georgia, Times New Roman, serif",
+  "font_family_secondary": "Inter, ui-sans-serif, system-ui, sans-serif",
+  "notes": "Warm lantern-lit night-market storefront with bundle-led product cards and category modules for home-hosted meals."
+}
