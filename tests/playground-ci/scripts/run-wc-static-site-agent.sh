@@ -15,6 +15,7 @@ BUNDLE_SOURCE="$REPO_ROOT/bundles/wc-static-site-agent"
 EXTENSION_PATH="${HOMEBOY_EXTENSION_PATH:-/Users/chubes/Developer/homeboy-extensions/wordpress}"
 DM_PATH="${DM_PATH:-/Users/chubes/Developer/data-machine}"
 DMC_PATH="${DMC_PATH:-/Users/chubes/Developer/data-machine-code}"
+AGENTS_API_PATH="${AGENTS_API_PATH:-/Users/chubes/Developer/agents-api}"
 OPENAI_PROVIDER_PATH="${OPENAI_PROVIDER_PATH:-/Users/chubes/Studio/intelligence-chubes4/wp-content/plugins/ai-provider-for-openai}"
 STUDIO_SITE_PATH="${STUDIO_SITE_PATH:-/Users/chubes/Studio/intelligence-chubes4}"
 STATIC_SITE_AGENT_OPENAI_MODEL="${STATIC_SITE_AGENT_OPENAI_MODEL:-gpt-5.5}"
@@ -31,6 +32,10 @@ if [ ! -d "$BUNDLE_SOURCE" ]; then
 fi
 if [ ! -d "$OPENAI_PROVIDER_PATH" ]; then
     echo "ERROR: AI Provider for OpenAI plugin not found at $OPENAI_PROVIDER_PATH" >&2
+    exit 1
+fi
+if [ ! -f "$AGENTS_API_PATH/agents-api.php" ]; then
+    echo "ERROR: Agents API plugin not found at $AGENTS_API_PATH" >&2
     exit 1
 fi
 if ! command -v jq >/dev/null 2>&1; then
@@ -129,6 +134,7 @@ cp -R "$BUNDLE_SOURCE" "$COMPONENT_BUNDLE_DIR"
 SETTINGS_JSON=$(jq -nc \
     --arg dm "$DM_PATH" \
     --arg dmc "$DMC_PATH" \
+    --arg agentsApi "$AGENTS_API_PATH" \
     --arg openaiProvider "$OPENAI_PROVIDER_PATH" \
     --arg githubToken "$GITHUB_TOKEN" \
     --arg openaiKey "$OPENAI_API_KEY" \
@@ -136,7 +142,7 @@ SETTINGS_JSON=$(jq -nc \
     --arg targetRepo "$STATIC_SITE_AGENT_TARGET_REPO" \
     --arg issueNumber "$STATIC_SITE_AGENT_ISSUE_NUMBER" \
     '{
-        validation_dependencies: [$dm, $dmc, $openaiProvider],
+        validation_dependencies: [$agentsApi, $dm, $dmc, $openaiProvider],
         playground_wordpress_version: "7.0",
         bench_env: {
             GITHUB_TOKEN: $githubToken,
@@ -177,6 +183,7 @@ HOMEBOY_COMPONENT_PATH="$COMPONENT_PATH" \
 HOMEBOY_DEPENDENCY_GITHUB_ORG=Extra-Chill \
 HOMEBOY_WORDPRESS_DEPENDENCY_PATHS="$DM_PATH
 $DMC_PATH
+$AGENTS_API_PATH
 $OPENAI_PROVIDER_PATH" \
 HOMEBOY_EXTENSION_PATH="$EXTENSION_PATH" \
 HOMEBOY_RUNTIME_BENCH_HELPER_SH="$RUNTIME_DIR/bench-helper.sh" \
