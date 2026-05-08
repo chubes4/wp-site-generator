@@ -174,4 +174,13 @@ jobs:
           # this keeps the value a real navigable Actions run on this repo.
           ITERATOR_VALIDATION_RUN_ID: ${{ github.run_id }}
           ITERATOR_FINDING_GROUPS_PATH: ${{ github.workspace }}/.ci/php-transformer-iterator-input.json
+          ITERATOR_TRANSCRIPT_DIR: ${{ github.workspace }}/.ci/php-transformer-iterator-transcripts
         run: tests/playground-ci/scripts/run-php-transformer-iterator.sh
+
+      - name: Upload iterator transcripts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: php-transformer-iterator-transcripts
+          path: .ci/php-transformer-iterator-transcripts
+          if-no-files-found: ignore
