@@ -1,0 +1,13 @@
+{
+  "schema_version": 1,
+  "design_system": "editorial-magazine",
+  "palette_kind": "cool-neutral",
+  "typography_kind": "mixed-serif-sans",
+  "layout_kind": "magazine",
+  "density": "comfortable",
+  "commerce_pattern": "category-led",
+  "accent_palette": ["#13222a", "#dce8e7", "#ede4d5", "#5f7662", "#e5c85c"],
+  "font_family_primary": "Georgia, Times New Roman, serif",
+  "font_family_secondary": "Inter, system-ui, sans-serif",
+  "notes": "Editorial seafood-hosting storefront with cool coastal neutrals, briny green accents, product grids, category modules, and bundle merchandising."
+}
