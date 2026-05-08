@@ -138,7 +138,7 @@ $settings['mode_models'] = [
     'chat' => ['provider' => 'openai', 'model' => $openai_model],
     'system' => ['provider' => 'openai', 'model' => $openai_model],
 ];
-$settings['max_turns'] = 12;
+$settings['max_turns'] = 24;
 $settings['wp_ai_client_connect_timeout'] = 30;
 update_option('datamachine_settings', $settings, false);
 update_option('connectors_ai_openai_api_key', $openai_api_key, false);
@@ -623,7 +623,7 @@ $drain_start_ns = hrtime(true);
 $drain_result = wp_get_ability('datamachine/drain-job')->execute([
     'job_id' => $job_id,
     'step_budget' => 20,
-    'time_budget_ms' => 300000,
+    'time_budget_ms' => 600000,
 ]);
 $drain_elapsed_ms = (hrtime(true) - $drain_start_ns) / 1_000_000;
 $metadata['drain_result'] = $drain_result;
