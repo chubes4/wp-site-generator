@@ -316,12 +316,7 @@ jobs:
 
           print(f"""<?php
           require_once '/wordpress/wp-load.php';
-          if ( ! did_action( 'wp_abilities_api_categories_init' ) ) {{
-          	do_action( 'wp_abilities_api_categories_init' );
-          }}
-          if ( ! did_action( 'wp_abilities_api_init' ) ) {{
-          	do_action( 'wp_abilities_api_init' );
-          }}
+          wp_set_current_user( 1 );
           $ability = wp_get_ability( 'static-site-importer/import-theme' );
           if ( ! $ability ) {{
           	throw new RuntimeException( 'Static Site Importer import ability is not registered.' );
@@ -333,6 +328,9 @@ jobs:
           	'overwrite' => true,
           	'keep_source' => true,
           ) );
+          if ( is_wp_error( $ability_result ) ) {{
+          	throw new RuntimeException( $ability_result->get_error_message() );
+          }}
           if ( empty( $ability_result['success'] ) ) {{
           	$error = isset( $ability_result['error'] ) && is_array( $ability_result['error'] ) ? $ability_result['error'] : array();
           	throw new RuntimeException( isset( $error['message'] ) ? (string) $error['message'] : 'Static site import failed.' );
