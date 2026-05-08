@@ -2,12 +2,12 @@
   "schema_version": 1,
   "design_system": "cottagecore-handcraft",
   "palette_kind": "earthy",
-  "typography_kind": "slab-serif",
-  "layout_kind": "grid-bento",
+  "typography_kind": "mixed-serif-sans",
+  "layout_kind": "magazine",
   "density": "comfortable",
   "commerce_pattern": "category-led",
-  "accent_palette": ["#b66a4a", "#7f3f2d", "#4e6652", "#f6ead7", "#2f2924"],
-  "font_family_primary": "Rockwell, Courier New, Georgia, serif",
-  "font_family_secondary": "Arial, Helvetica, sans-serif",
-  "notes": "Warm clay-dusted bento storefront for kiln shelf care, glaze-test organization, firing consumables, studio workflow tools, and curated firing bundles."
+  "accent_palette": ["#b46645", "#7f3729", "#f4ead8", "#d7b98a", "#326d78", "#2c2822"],
+  "font_family_primary": "Georgia, Cambria, Times New Roman, serif",
+  "font_family_secondary": "Inter, ui-sans-serif, system-ui, sans-serif",
+  "notes": "Warm clay-dusted firing-room storefront with shelf geometry, cone shapes, glaze swatches, and category-led ecommerce sections."
 }
