@@ -398,6 +398,57 @@ if (!function_exists('export_php_transformer_iterator_transcript')) {
     }
 }
 
+if (!function_exists('summarize_php_transformer_iterator_transcript')) {
+    function summarize_php_transformer_iterator_transcript(array $transcript_artifacts): array {
+        $json_path = (string) ($transcript_artifacts['json'] ?? '');
+        if ($json_path === '' || !is_file($json_path)) {
+            return [];
+        }
+
+        $transcript = json_decode((string) file_get_contents($json_path), true);
+        $messages = is_array($transcript['messages'] ?? null) ? $transcript['messages'] : [];
+        $summary = [];
+        foreach ($messages as $index => $message) {
+            if (!is_array($message)) {
+                continue;
+            }
+
+            $content = $message['content'] ?? '';
+            if (is_array($content)) {
+                $content = wp_json_encode($content, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
+            }
+            $content = trim((string) $content);
+            if (strlen($content) > 1200) {
+                $content = substr($content, 0, 1197) . '...';
+            }
+
+            $tool_calls = [];
+            if (is_array($message['tool_calls'] ?? null)) {
+                foreach ($message['tool_calls'] as $tool_call) {
+                    if (!is_array($tool_call)) {
+                        continue;
+                    }
+                    $function = is_array($tool_call['function'] ?? null) ? $tool_call['function'] : [];
+                    $tool_calls[] = [
+                        'id' => (string) ($tool_call['id'] ?? ''),
+                        'name' => (string) ($function['name'] ?? $tool_call['name'] ?? ''),
+                    ];
+                }
+            }
+
+            $summary[] = array_filter([
+                'index' => $index,
+                'role' => (string) ($message['role'] ?? ''),
+                'tool_call_id' => (string) ($message['tool_call_id'] ?? ''),
+                'content' => $content,
+                'tool_calls' => $tool_calls,
+            ], static fn($value) => $value !== '' && $value !== []);
+        }
+
+        return $summary;
+    }
+}
+
 add_filter('datamachine_resolved_tools', static function (array $tools): array {
     $workspace_tools = [
         'workspace_clone' => 'datamachine/workspace-clone',
@@ -596,6 +647,7 @@ $error_snapshot = array_filter([
     'error_message' => $engine_data['error_message'] ?? null,
 ], static fn($value) => $value !== null && $value !== '');
 $transcript_artifacts = export_php_transformer_iterator_transcript($job_id, $engine_data, $transcript_dir);
+$transcript_digest = summarize_php_transformer_iterator_transcript($transcript_artifacts);
 $upstream_action = is_array($iterator_result['upstream_action'] ?? null) ? $iterator_result['upstream_action'] : [];
 $source_callback = is_array($iterator_result['source_callback'] ?? null) ? $iterator_result['source_callback'] : [];
 $upstream_action_url = (string) ($upstream_action['url'] ?? '');
@@ -613,6 +665,7 @@ $metadata += [
     'completion_diagnostics' => $completion_diagnostics,
     'transcript_session_id' => (string) ($engine_data['transcript_session_id'] ?? ''),
     'transcript_artifacts' => $transcript_artifacts,
+    'transcript_digest' => $transcript_digest,
     'error_snapshot' => $error_snapshot,
     'upstream_action_url' => $upstream_action_url,
     'source_callback_url' => $source_callback_url,
