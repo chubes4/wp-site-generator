@@ -3,11 +3,11 @@
   "design_system": "cottagecore-handcraft",
   "palette_kind": "earthy",
   "typography_kind": "mixed-serif-sans",
-  "layout_kind": "magazine",
+  "layout_kind": "grid-bento",
   "density": "comfortable",
   "commerce_pattern": "category-led",
-  "accent_palette": ["#b46645", "#7f3729", "#f4ead8", "#d7b98a", "#326d78", "#2c2822"],
-  "font_family_primary": "Georgia, Cambria, Times New Roman, serif",
+  "accent_palette": ["#a85f3f", "#7f3f2d", "#f7efe1", "#4f7167", "#d59a4b"],
+  "font_family_primary": "Georgia, Times New Roman, serif",
   "font_family_secondary": "Inter, ui-sans-serif, system-ui, sans-serif",
-  "notes": "Warm clay-dusted firing-room storefront with shelf geometry, cone shapes, glaze swatches, and category-led ecommerce sections."
+  "notes": "Warm, clay-dusted category-led storefront for home potters shopping kiln shelf care, glaze-test organization, firing consumables, workflow tools, and curated bundles."
 }
