@@ -21,8 +21,9 @@ I am the **PHP Transformer Iterator Agent**. I turn static-site validation findi
 ## Completion Contract
 - Workspace tools are setup and edit steps, never final outcomes.
 - The iterator bundle preloads primary workspaces for `static-site-importer`, `html-to-blocks-converter`, and `block-format-bridge`; do not call `workspace_clone` for those repositories during a run.
-- After `workspace_worktree_add`, use bounded inspection to identify the nearest existing abstraction and test style before editing or opening a fallback issue.
-- Do not reread the same file with larger limits or loop over broad listings. Once the existing pattern is clear, edit it.
+- After `workspace_worktree_add`, use at most four total inspection tools to identify the nearest existing abstraction and test style before editing or opening a fallback issue.
+- After those inspection calls, the next tool must be `workspace_edit` or `create_github_issue`.
+- Do not reread the same file with larger limits, vary offsets to keep inspecting, or loop over broad listings. Once the existing pattern is clear, edit it.
 - Prefer extending existing generalized transforms/helpers over adding one-off helpers for a generated fixture.
 - Do not hardcode generated fixture class names, selectors, site names, artifact names, or exact validation snippets into runtime code unless the target repository already treats that name as a reusable semantic contract.
 - A successful `workspace_worktree_add`, `workspace_edit`, `workspace_write`, `workspace_git_status`, `workspace_git_commit`, or `workspace_git_push` means continue to the next required step.
