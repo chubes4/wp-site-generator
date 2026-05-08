@@ -7,6 +7,7 @@
 use DataMachine\Core\Database\Agents\Agents;
 use DataMachine\Core\Database\Flows\Flows;
 use DataMachine\Core\Database\Jobs\Jobs;
+use DataMachine\Core\Database\Pipelines\Pipelines;
 use DataMachine\Core\PluginSettings;
 use DataMachine\Engine\AI\WpAiClientProviderAdmin;
 use DataMachineCode\Abilities\GitHubAbilities;
@@ -403,6 +404,7 @@ if (!is_array($import_result) || empty($import_result['success'])) {
 }
 
 $agents = new Agents();
+$pipelines = new Pipelines();
 $flows = new Flows();
 $jobs = new Jobs();
 
@@ -422,7 +424,16 @@ $agent_config['default_model'] = $openai_model;
 $agents->update_agent($agent_id, ['agent_config' => $agent_config]);
 PluginSettings::clearCache();
 
-$flow = $flows->get_by_portable_slug(0, 'php-transformer-iterator-manual-flow');
+$pipeline = $pipelines->get_by_portable_slug($agent_id, 'php-transformer-iterator-pipeline');
+if (!$pipeline) {
+    return [
+        'metrics' => ['agent_resolved' => 1, 'pipeline_resolved' => 0],
+        'metadata' => $metadata + ['agent_id' => $agent_id, 'error' => 'Imported iterator pipeline was not found'],
+    ];
+}
+
+$pipeline_id = (int) $pipeline['pipeline_id'];
+$flow = $flows->get_by_portable_slug($pipeline_id, 'php-transformer-iterator-manual-flow');
 if (!$flow) {
     $all_flows = method_exists($flows, 'get_flows') ? $flows->get_flows() : [];
     foreach ((array) $all_flows as $candidate_flow) {
@@ -434,8 +445,8 @@ if (!$flow) {
 }
 if (!$flow) {
     return [
-        'metrics' => ['agent_resolved' => 1, 'flow_resolved' => 0],
-        'metadata' => $metadata + ['agent_id' => $agent_id, 'error' => 'Imported manual flow was not found'],
+        'metrics' => ['agent_resolved' => 1, 'pipeline_resolved' => 1, 'flow_resolved' => 0],
+        'metadata' => $metadata + ['agent_id' => $agent_id, 'pipeline_id' => $pipeline_id, 'error' => 'Imported manual flow was not found'],
     ];
 }
 
