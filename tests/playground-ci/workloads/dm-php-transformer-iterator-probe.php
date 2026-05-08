@@ -5,6 +5,7 @@
  */
 
 use DataMachine\Core\Database\Agents\Agents;
+use DataMachine\Core\Database\Chat\ConversationStoreFactory;
 use DataMachine\Core\Database\Flows\Flows;
 use DataMachine\Core\Database\Jobs\Jobs;
 use DataMachine\Core\Database\Pipelines\Pipelines;
@@ -51,6 +52,7 @@ $source_repo = trim((string) (getenv('ITERATOR_SOURCE_REPO') ?: 'chubes4/wc-site
 $source_pr = trim((string) getenv('ITERATOR_SOURCE_PR'));
 $source_head_sha = trim((string) getenv('ITERATOR_SOURCE_HEAD_SHA'));
 $validation_run_id = trim((string) getenv('ITERATOR_VALIDATION_RUN_ID'));
+$transcript_dir = trim((string) getenv('ITERATOR_TRANSCRIPT_DIR'));
 // Resolve the grouped finding payload. Two transports are accepted:
 //
 // 1. ITERATOR_FINDING_GROUPS_JSON — raw JSON via Homeboy's bench_env.
@@ -79,6 +81,7 @@ $metadata = [
     'source_pr' => $source_pr,
     'source_head_sha' => $source_head_sha,
     'validation_run_id' => $validation_run_id,
+    'transcript_dir' => $transcript_dir,
     'openai_model' => $openai_model,
     'github_token_present' => $github_token !== '',
     'openai_key_present' => $openai_api_key !== '',
@@ -135,10 +138,11 @@ $settings['mode_models'] = [
     'chat' => ['provider' => 'openai', 'model' => $openai_model],
     'system' => ['provider' => 'openai', 'model' => $openai_model],
 ];
-$settings['max_turns'] = 12;
+$settings['max_turns'] = 24;
 $settings['wp_ai_client_connect_timeout'] = 30;
 update_option('datamachine_settings', $settings, false);
 update_option('connectors_ai_openai_api_key', $openai_api_key, false);
+update_option('datamachine_persist_pipeline_transcripts', true, false);
 PluginSettings::clearCache();
 
 $required_abilities = [
@@ -341,6 +345,110 @@ if (!function_exists('wc_site_generator_iterator_ability_schema')) {
     }
 }
 
+if (!function_exists('export_php_transformer_iterator_transcript')) {
+    function export_php_transformer_iterator_transcript(int $job_id, array $engine_data, string $transcript_dir): array {
+        $session_id = (string) ($engine_data['transcript_session_id'] ?? '');
+        if ($session_id === '' || $transcript_dir === '') {
+            return [];
+        }
+
+        if (!class_exists(ConversationStoreFactory::class)) {
+            return ['error' => 'ConversationStoreFactory unavailable'];
+        }
+
+        $store = ConversationStoreFactory::get();
+        $session = $store->get_session($session_id);
+        if (!$session) {
+            return ['session_id' => $session_id, 'error' => 'Transcript session missing'];
+        }
+
+        if (!is_dir($transcript_dir) && !wp_mkdir_p($transcript_dir)) {
+            return ['session_id' => $session_id, 'error' => 'Transcript directory could not be created'];
+        }
+
+        $messages = is_array($session['messages'] ?? null) ? $session['messages'] : [];
+        $session_metadata = is_array($session['metadata'] ?? null) ? $session['metadata'] : [];
+        $base_path = rtrim($transcript_dir, '/') . '/job-' . $job_id . '-transcript';
+        $json_path = $base_path . '.json';
+        $summary_path = $base_path . '-summary.json';
+
+        file_put_contents($json_path, wp_json_encode([
+            'job_id' => $job_id,
+            'session_id' => $session_id,
+            'provider' => $session['provider'] ?? null,
+            'model' => $session['model'] ?? null,
+            'metadata' => $session_metadata,
+            'messages' => $messages,
+        ], JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE));
+
+        file_put_contents($summary_path, wp_json_encode([
+            'job_id' => $job_id,
+            'session_id' => $session_id,
+            'message_count' => count($messages),
+            'roles' => array_count_values(array_map(static fn($message) => (string) ($message['role'] ?? 'unknown'), $messages)),
+            'metadata' => $session_metadata,
+        ], JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE));
+
+        return [
+            'session_id' => $session_id,
+            'json' => $json_path,
+            'summary' => $summary_path,
+            'message_count' => count($messages),
+        ];
+    }
+}
+
+if (!function_exists('summarize_php_transformer_iterator_transcript')) {
+    function summarize_php_transformer_iterator_transcript(array $transcript_artifacts): array {
+        $json_path = (string) ($transcript_artifacts['json'] ?? '');
+        if ($json_path === '' || !is_file($json_path)) {
+            return [];
+        }
+
+        $transcript = json_decode((string) file_get_contents($json_path), true);
+        $messages = is_array($transcript['messages'] ?? null) ? $transcript['messages'] : [];
+        $summary = [];
+        foreach ($messages as $index => $message) {
+            if (!is_array($message)) {
+                continue;
+            }
+
+            $content = $message['content'] ?? '';
+            if (is_array($content)) {
+                $content = wp_json_encode($content, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
+            }
+            $content = trim((string) $content);
+            if (strlen($content) > 1200) {
+                $content = substr($content, 0, 1197) . '...';
+            }
+
+            $tool_calls = [];
+            if (is_array($message['tool_calls'] ?? null)) {
+                foreach ($message['tool_calls'] as $tool_call) {
+                    if (!is_array($tool_call)) {
+                        continue;
+                    }
+                    $function = is_array($tool_call['function'] ?? null) ? $tool_call['function'] : [];
+                    $tool_calls[] = [
+                        'id' => (string) ($tool_call['id'] ?? ''),
+                        'name' => (string) ($function['name'] ?? $tool_call['name'] ?? ''),
+                    ];
+                }
+            }
+
+            $summary[] = array_filter([
+                'index' => $index,
+                'role' => (string) ($message['role'] ?? ''),
+                'tool_call_id' => (string) ($message['tool_call_id'] ?? ''),
+                'content' => $content,
+                'tool_calls' => $tool_calls,
+            ], static fn($value) => $value !== '' && $value !== []);
+        }
+
+        return $summary;
+    }
+}
+
 add_filter('datamachine_resolved_tools', static function (array $tools): array {
     $workspace_tools = [
         'workspace_clone' => 'datamachine/workspace-clone',
@@ -515,7 +623,7 @@ $drain_start_ns = hrtime(true);
 $drain_result = wp_get_ability('datamachine/drain-job')->execute([
     'job_id' => $job_id,
     'step_budget' => 20,
-    'time_budget_ms' => 300000,
+    'time_budget_ms' => 600000,
 ]);
 $drain_elapsed_ms = (hrtime(true) - $drain_start_ns) / 1_000_000;
 $metadata['drain_result'] = $drain_result;
@@ -525,6 +633,21 @@ $job_status = is_array($job) ? (string) ($job['status'] ?? '') : '';
 $engine_data = function_exists('datamachine_get_engine_data') ? datamachine_get_engine_data($job_id) : [];
 $token_usage = is_array($engine_data['token_usage'] ?? null) ? $engine_data['token_usage'] : [];
 $iterator_result = is_array($engine_data['php_transformer_iterator'] ?? null) ? $engine_data['php_transformer_iterator'] : [];
+$completion_diagnostics = array_filter([
+    'completion_nudge_count' => $engine_data['completion_nudge_count'] ?? null,
+    'completion_nudge' => $engine_data['completion_nudge'] ?? null,
+    'completion_assertions_required' => $engine_data['completion_assertions_required'] ?? null,
+    'completion_assertions_missing' => $engine_data['completion_assertions_missing'] ?? null,
+    'completion_assertions_satisfied' => $engine_data['completion_assertions_satisfied'] ?? null,
+    'completion_nudge_last_turn' => $engine_data['completion_nudge_last_turn'] ?? null,
+], static fn($value) => $value !== null && $value !== [] && $value !== '');
+$error_snapshot = array_filter([
+    'error_reason' => $engine_data['error_reason'] ?? null,
+    'error_step_id' => $engine_data['error_step_id'] ?? null,
+    'error_message' => $engine_data['error_message'] ?? null,
+], static fn($value) => $value !== null && $value !== '');
+$transcript_artifacts = export_php_transformer_iterator_transcript($job_id, $engine_data, $transcript_dir);
+$transcript_digest = summarize_php_transformer_iterator_transcript($transcript_artifacts);
 $upstream_action = is_array($iterator_result['upstream_action'] ?? null) ? $iterator_result['upstream_action'] : [];
 $source_callback = is_array($iterator_result['source_callback'] ?? null) ? $iterator_result['source_callback'] : [];
 $upstream_action_url = (string) ($upstream_action['url'] ?? '');
@@ -539,9 +662,14 @@ $metadata += [
     'job_status' => $job_status,
     'token_usage' => $token_usage,
     'iterator_result' => $iterator_result,
+    'completion_diagnostics' => $completion_diagnostics,
+    'transcript_session_id' => (string) ($engine_data['transcript_session_id'] ?? ''),
+    'transcript_artifacts' => $transcript_artifacts,
+    'transcript_digest' => $transcript_digest,
+    'error_snapshot' => $error_snapshot,
     'upstream_action_url' => $upstream_action_url,
     'source_callback_url' => $source_callback_url,
-    'error_message' => (string) ($engine_data['error_message'] ?? ''),
+    'error_message' => (string) ($error_snapshot['error_message'] ?? ''),
 ];
 
 return [
@@ -566,6 +694,8 @@ return [
         'job_completed' => $job_status === 'completed' ? 1 : 0,
         'upstream_action_recorded' => $has_upstream_action ? 1 : 0,
         'source_callback_recorded' => $has_source_callback ? 1 : 0,
+        'completion_nudge_count' => (int) ($completion_diagnostics['completion_nudge_count'] ?? 0),
+        'transcript_exported' => !empty($transcript_artifacts['json']) ? 1 : 0,
         'openai_total_tokens' => (int) ($token_usage['total_tokens'] ?? 0),
     ],
     'metadata' => $metadata,

@@ -66,6 +66,7 @@ RESULTS_TMPFILE=$(mktemp "${TMPDIR:-/tmp}/wc-site-generator-php-transformer-iter
 RUNTIME_DIR=$(mktemp -d "${TMPDIR:-/tmp}/wc-site-generator-homeboy-runtime.XXXXXX")
 COMPONENT_WORKLOAD="$COMPONENT_PATH/dm-php-transformer-iterator-probe.php"
 COMPONENT_BUNDLE_DIR="$COMPONENT_PATH/bundles/php-transformer-iterator-agent"
+ITERATOR_TRANSCRIPT_DIR="${ITERATOR_TRANSCRIPT_DIR:-$REPO_ROOT/.ci/php-transformer-iterator-transcripts}"
 
 # Validate the host-side finding groups payload (compact via jq doubles as
 # a JSON syntax check) before forwarding it through Homeboy's bench_env
@@ -129,6 +130,7 @@ PHP
 
 cp "$WORKLOAD_PATH" "$COMPONENT_WORKLOAD"
 mkdir -p "$COMPONENT_PATH/bundles"
+mkdir -p "$ITERATOR_TRANSCRIPT_DIR"
 cp -R "$BUNDLE_SOURCE" "$COMPONENT_BUNDLE_DIR"
 
 SETTINGS_JSON=$(jq -nc \
@@ -143,6 +145,7 @@ SETTINGS_JSON=$(jq -nc \
     --arg sourceHeadSha "$ITERATOR_SOURCE_HEAD_SHA" \
     --arg validationRunId "$ITERATOR_VALIDATION_RUN_ID" \
     --arg findingGroupsJson "$FINDING_GROUPS_JSON" \
+    --arg transcriptDir "$ITERATOR_TRANSCRIPT_DIR" \
     '{
         validation_dependencies: [$dm, $dmc, $openaiProvider],
         playground_wordpress_version: "7.0",
@@ -155,7 +158,8 @@ SETTINGS_JSON=$(jq -nc \
             ITERATOR_SOURCE_PR: $sourcePr,
             ITERATOR_SOURCE_HEAD_SHA: $sourceHeadSha,
             ITERATOR_VALIDATION_RUN_ID: $validationRunId,
-            ITERATOR_FINDING_GROUPS_JSON: $findingGroupsJson
+            ITERATOR_FINDING_GROUPS_JSON: $findingGroupsJson,
+            ITERATOR_TRANSCRIPT_DIR: $transcriptDir
         },
         playground_workloads: [
             {
@@ -186,6 +190,7 @@ ITERATOR_SOURCE_HEAD_SHA="$ITERATOR_SOURCE_HEAD_SHA" \
 ITERATOR_VALIDATION_RUN_ID="$ITERATOR_VALIDATION_RUN_ID" \
 ITERATOR_FINDING_GROUPS_JSON="$FINDING_GROUPS_JSON" \
 ITERATOR_FINDING_GROUPS_PATH="$ITERATOR_FINDING_GROUPS_PATH" \
+ITERATOR_TRANSCRIPT_DIR="$ITERATOR_TRANSCRIPT_DIR" \
 HOMEBOY_BENCH_RESULTS_FILE="$RESULTS_TMPFILE" \
 HOMEBOY_BENCH_ITERATIONS=1 \
 HOMEBOY_COMPONENT_ID=wc-site-generator-ci-driver \

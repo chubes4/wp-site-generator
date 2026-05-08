@@ -9,6 +9,9 @@
         {
             "completion_assertions": {
                 "required_tool_names": [
+                    "workspace_edit",
+                    "workspace_git_commit",
+                    "workspace_git_push",
                     "create_github_pull_request",
                     "comment_github_pull_request"
                 ]
@@ -18,7 +21,7 @@
             "prompt_queue": [
                 {
                     "added_at": "2026-05-07T00:00:00+00:00",
-                    "prompt": "Run the PR-first iterator against the grouped finding packet JSON supplied by the CI workload. The transformer primary workspaces are preloaded by the bundle; do not call workspace_clone for static-site-importer, html-to-blocks-converter, or block-format-bridge. Start from workspace_worktree_add for the target repository. Open focused upstream PRs with regression coverage when a safe patch path exists; use fallback issues only when evidence cannot support a safe patch. Workspace preparation is not completion: after successful workspace_worktree_add, continue through edit, status, commit, push, upstream PR or fallback issue, and source PR callback."
+                    "prompt": "Run the PR-first iterator against the grouped finding packet JSON supplied by the CI workload. The transformer primary workspaces are preloaded by the bundle; do not call workspace_clone for static-site-importer, html-to-blocks-converter, or block-format-bridge. Start from workspace_worktree_add for the target repository. Open focused upstream PRs with regression coverage when a safe generalized patch path exists; use fallback issues only when evidence cannot support a safe patch. Workspace preparation is not completion: after successful workspace_worktree_add, use bounded inspection to identify the nearest existing transform family and regression-test style, then continue through workspace_edit, status, commit, push, upstream PR or fallback issue, and source PR callback. Do not hardcode generated fixture class names or artifact-specific selectors into runtime code unless they already represent a reusable semantic contract in the target repository."
                 }
             ],
             "queue_mode": "static",
