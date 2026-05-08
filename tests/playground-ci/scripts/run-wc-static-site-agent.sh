@@ -169,6 +169,10 @@ HOMEBOY_BENCH_RESULTS_FILE="$RESULTS_TMPFILE" \
 HOMEBOY_BENCH_ITERATIONS=1 \
 HOMEBOY_COMPONENT_ID=wc-site-generator-ci-driver \
 HOMEBOY_COMPONENT_PATH="$COMPONENT_PATH" \
+HOMEBOY_DEPENDENCY_GITHUB_ORG=Extra-Chill \
+HOMEBOY_WORDPRESS_DEPENDENCY_PATHS="$DM_PATH
+$DMC_PATH
+$OPENAI_PROVIDER_PATH" \
 HOMEBOY_EXTENSION_PATH="$EXTENSION_PATH" \
 HOMEBOY_RUNTIME_BENCH_HELPER_SH="$RUNTIME_DIR/bench-helper.sh" \
 HOMEBOY_RUNTIME_BENCH_HELPER_PHP="$RUNTIME_DIR/bench-helper.php" \
@@ -193,7 +197,7 @@ job_status=$(jq -r "$scenario | .metadata.job_status // \"unknown\"" "$RESULTS_T
 static_site_pr_url=$(jq -r "$scenario | .metadata.static_site_pr_url // \"\"" "$RESULTS_TMPFILE")
 static_site_branch=$(jq -r "$scenario | .metadata.static_site_branch // \"\"" "$RESULTS_TMPFILE")
 static_site_slug=$(jq -r "$scenario | .metadata.static_site_slug // \"\"" "$RESULTS_TMPFILE")
-total_tokens=$(jq -r "$scenario | .metadata.token_usage.total_tokens // 0" "$RESULTS_TMPFILE")
+total_tokens=$(jq -r "$scenario | (.metadata.token_usage | if type == \"object\" then .total_tokens else 0 end) // 0" "$RESULTS_TMPFILE")
 
 echo "============================================"
 echo "wc-static-site-agent summary"
