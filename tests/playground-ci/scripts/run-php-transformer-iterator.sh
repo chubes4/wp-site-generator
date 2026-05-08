@@ -146,6 +146,7 @@ SETTINGS_JSON=$(jq -nc \
     '{
         validation_dependencies: [$dm, $dmc, $openaiProvider],
         playground_wordpress_version: "7.0",
+        bench_warmup_iterations: 0,
         bench_env: {
             GITHUB_TOKEN: $githubToken,
             OPENAI_API_KEY: $openaiKey,

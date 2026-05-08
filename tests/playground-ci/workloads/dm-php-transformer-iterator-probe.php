@@ -321,6 +321,23 @@ if (!class_exists('WC_Site_Generator_PHP_Transformer_Iterator_Tool_Recorder')) {
     }
 }
 
+if (!function_exists('wc_site_generator_iterator_ability_schema')) {
+    function wc_site_generator_iterator_ability_schema(string $ability_name): array {
+        $ability = function_exists('wp_get_ability') ? wp_get_ability($ability_name) : null;
+        if ($ability && method_exists($ability, 'get_input_schema')) {
+            $schema = (array) $ability->get_input_schema();
+            if (!empty($schema['properties']) && is_array($schema['properties'])) {
+                return $schema;
+            }
+        }
+
+        return [
+            'type' => 'object',
+            'properties' => [],
+        ];
+    }
+}
+
 add_filter('datamachine_resolved_tools', static function (array $tools): array {
     $workspace_tools = [
         'workspace_worktree_add' => 'datamachine/workspace-worktree-add',
@@ -351,7 +368,7 @@ add_filter('datamachine_resolved_tools', static function (array $tools): array {
         'ability' => 'datamachine/create-github-pull-request',
         'tool_name' => 'create_github_pull_request',
         'description' => 'Open the focused upstream transformer repair pull request after pushing the worktree branch.',
-        'parameters' => ['type' => 'object'],
+        'parameters' => wc_site_generator_iterator_ability_schema('datamachine/create-github-pull-request'),
     ];
     $tools['create_github_issue'] = [
         'class' => 'WC_Site_Generator_PHP_Transformer_Iterator_Tool_Recorder',
@@ -359,7 +376,7 @@ add_filter('datamachine_resolved_tools', static function (array $tools): array {
         'ability' => 'datamachine/create-github-issue',
         'tool_name' => 'create_github_issue',
         'description' => 'Fallback only: open a focused issue when no safe upstream patch path exists.',
-        'parameters' => ['type' => 'object'],
+        'parameters' => wc_site_generator_iterator_ability_schema('datamachine/create-github-issue'),
     ];
     $tools['comment_github_pull_request'] = [
         'class' => 'WC_Site_Generator_PHP_Transformer_Iterator_Tool_Recorder',
@@ -367,7 +384,7 @@ add_filter('datamachine_resolved_tools', static function (array $tools): array {
         'ability' => 'datamachine/comment-github-pull-request',
         'tool_name' => 'comment_github_pull_request',
         'description' => 'Post the required callback comment on the source generated-site pull request.',
-        'parameters' => ['type' => 'object'],
+        'parameters' => wc_site_generator_iterator_ability_schema('datamachine/comment-github-pull-request'),
     ];
 
     return $tools;
