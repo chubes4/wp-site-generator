@@ -14,7 +14,7 @@ set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(cd "$SCRIPT_DIR/../../.." && pwd)"
 COMPONENT_PATH="$REPO_ROOT/tests/playground-ci/component"
-WORKLOAD_PATH="$REPO_ROOT/tests/playground-ci/workloads/dm-openai-issue-flow-probe.php"
+BOOTSTRAP_WORKLOAD_PATH="$REPO_ROOT/tests/playground-ci/workloads/wc-idea-agent-bootstrap.php"
 BUNDLE_SOURCE="$REPO_ROOT/bundles/wc-idea-agent"
 
 EXTENSION_PATH="${HOMEBOY_EXTENSION_PATH:-/Users/chubes/Developer/homeboy-extensions/wordpress}"
@@ -26,7 +26,7 @@ STUDIO_SITE_PATH="${STUDIO_SITE_PATH:-/Users/chubes/Studio/intelligence-chubes4}
 STAGE5_GITHUB_REPO="${STAGE5_GITHUB_REPO:-chubes4/wc-site-generator}"
 STAGE5_OPENAI_MODEL="${STAGE5_OPENAI_MODEL:-gpt-5.5}"
 
-if [ ! -f "$EXTENSION_PATH/scripts/bench/bench-runner.sh" ]; then
+if [ ! -f "$EXTENSION_PATH/scripts/agent/run-datamachine-agent.sh" ]; then
     echo "ERROR: Homeboy WordPress extension not found at $EXTENSION_PATH" >&2
     exit 1
 fi
@@ -65,83 +65,34 @@ if [ -z "$OPENAI_API_KEY" ]; then
     exit 1
 fi
 
-RESULTS_TMPFILE=$(mktemp "${TMPDIR:-/tmp}/wc-site-generator-stage-5.XXXXXX")
-RUNTIME_DIR=$(mktemp -d "${TMPDIR:-/tmp}/wc-site-generator-homeboy-runtime.XXXXXX")
-COMPONENT_WORKLOAD="$COMPONENT_PATH/dm-openai-issue-flow-probe.php"
+CONFIG_TMPFILE=$(mktemp "${TMPDIR:-/tmp}/wc-site-generator-stage-5-config.XXXXXX.json")
+RESULTS_TMPFILE=$(mktemp "${TMPDIR:-/tmp}/wc-site-generator-stage-5-results.XXXXXX.json")
+COMPONENT_BOOTSTRAP_WORKLOAD="$COMPONENT_PATH/wc-idea-agent-bootstrap.php"
 COMPONENT_BUNDLE_DIR="$COMPONENT_PATH/bundles/wc-idea-agent"
 
 cleanup() {
-    rm -f "$RESULTS_TMPFILE" "$COMPONENT_WORKLOAD"
-    rm -rf "$RUNTIME_DIR"
+    rm -f "$CONFIG_TMPFILE" "$RESULTS_TMPFILE" "$COMPONENT_BOOTSTRAP_WORKLOAD"
     rm -rf "$COMPONENT_PATH/bundles"
 }
 trap cleanup EXIT
 
-cat > "$RUNTIME_DIR/bench-helper.sh" <<'SH'
-#!/usr/bin/env bash
-homeboy_write_empty_bench_results() {
-    printf '{"component":"%s","iterations":%s,"scenarios":[]}' "$1" "$2" > "$3"
-}
-SH
-
-cat > "$RUNTIME_DIR/bench-helper.php" <<'PHP'
-<?php
-function homeboy_bench_percentile(array $sorted_values, float $p): float {
-    $n = count($sorted_values);
-    if ($n === 0) {
-        return 0.0;
-    }
-    if ($n === 1) {
-        return (float) $sorted_values[0];
-    }
-
-    $rank = $p * ($n - 1);
-    $lo = (int) floor($rank);
-    $hi = (int) ceil($rank);
-    if ($lo === $hi) {
-        return (float) $sorted_values[$lo];
-    }
-
-    $frac = $rank - $lo;
-    return (float) ($sorted_values[$lo] * (1 - $frac) + $sorted_values[$hi] * $frac);
-}
-
-function homeboy_bench_scenario_id(string $basename): string {
-    $name = preg_replace('/\.[^.]+$/', '', $basename);
-    $name = preg_replace('/([a-z0-9])([A-Z])/', '$1-$2', $name);
-    $name = strtolower($name);
-    $name = preg_replace('/[^a-z0-9]+/', '-', $name);
-    return trim($name, '-');
-}
-
-function homeboy_bench_results_envelope(string $component_id, int $iterations, array $scenarios): array {
-    return [
-        'component_id' => $component_id,
-        'iterations' => $iterations,
-        'scenarios' => $scenarios,
-    ];
-}
-
-function homeboy_write_bench_results(string $results_path, string $component_id, int $iterations, array $scenarios): void {
-    $json = json_encode(homeboy_bench_results_envelope($component_id, $iterations, $scenarios), JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES);
-    if ($json === false) {
-        throw new RuntimeException('json_encode failed: ' . json_last_error_msg());
-    }
-    if (file_put_contents($results_path, $json) === false) {
-        throw new RuntimeException("failed to write $results_path");
-    }
-}
-
-function homeboy_write_empty_bench_results(string $results_path, string $component_id, int $iterations = 0): void {
-    homeboy_write_bench_results($results_path, $component_id, $iterations, []);
-}
-PHP
-
-cp "$WORKLOAD_PATH" "$COMPONENT_WORKLOAD"
+cp "$BOOTSTRAP_WORKLOAD_PATH" "$COMPONENT_BOOTSTRAP_WORKLOAD"
 mkdir -p "$COMPONENT_PATH/bundles"
 cp -R "$BUNDLE_SOURCE" "$COMPONENT_BUNDLE_DIR"
 
-SETTINGS_JSON=$(jq -nc \
+STAGE5_RUN_ID="$(date -u +%Y%m%d%H%M%S)-$RANDOM"
+STAGE5_SYSTEM_PROMPT="You are running a CI proof inside WordPress Playground.
+
+Call the github_issue_publish tool exactly once. Do not call any other tools. Do not mention secrets.
+
+Create a concise GitHub issue in ${STAGE5_GITHUB_REPO} proving the imported Data Machine agent used a real OpenAI request from Playground.
+
+Title must start with: [Playground proof] Stage 5 OpenAI issue ${STAGE5_RUN_ID}
+
+Body must include these sections: Proof Path, Runtime, Verification, Cleanup. Say this issue can be closed after verification."
+
+jq -n \
+    --arg componentPath "$COMPONENT_PATH" \
     --arg agentsApi "$AGENTS_API_PATH" \
     --arg dm "$DM_PATH" \
     --arg dmc "$DMC_PATH" \
@@ -150,25 +101,63 @@ SETTINGS_JSON=$(jq -nc \
     --arg openaiKey "$OPENAI_API_KEY" \
     --arg stage5Repo "$STAGE5_GITHUB_REPO" \
     --arg stage5Model "$STAGE5_OPENAI_MODEL" \
+    --arg systemPrompt "$STAGE5_SYSTEM_PROMPT" \
     '{
+        component_id: "wc-site-generator-ci-driver",
+        component_path: $componentPath,
+        workload_id: "dm-openai-issue-flow",
+        workload_label: "Run imported DM agent with OpenAI and publish a GitHub issue",
         validation_dependencies: [$agentsApi, $dm, $dmc, $openaiProvider],
         playground_wordpress_version: "7.0",
+        bundle_path: "/wordpress/wp-content/plugins/wc-site-generator-ci-driver/bundles/wc-idea-agent",
+        agent_slug: "wc-idea-agent",
+        pipeline_slug: "wc-idea-pipeline",
+        flow_slug: "wc-idea-manual-flow",
+        provider: "openai",
+        model: $stage5Model,
+        provider_register_function: "WordPress\\OpenAiAiProvider\\register_provider",
+        provider_credentials: { connectors_ai_openai_api_key: "OPENAI_API_KEY" },
+        github_token_env: "GITHUB_TOKEN",
+        github_profile_id: "stage5-ci",
+        target_repo: $stage5Repo,
+        allowed_repos: [$stage5Repo],
+        max_turns: 3,
+        prompt: "Run Stage 5 now. Publish one CI proof issue to the configured GitHub issue publish tool.",
+        step_budget: 8,
+        time_budget_ms: 120000,
+        pipeline_step_patches: [
+            { step_type: "ai", set: { system_prompt: $systemPrompt } }
+        ],
+        flow_step_patches: [
+            { step_type: "publish", set: { handler_slugs: ["github_issue"] }, merge: { handler_configs: { github_issue: { repo: $stage5Repo, labels: "status:idea-ready" } } } }
+        ],
+        tool_recorders: [
+            {
+                tool: "github_issue_publish",
+                record: {
+                    engine_key: "stage5_github_issue_publish",
+                    fields: {
+                        success: ["response.success"],
+                        repo: ["data.repo"],
+                        issue_url: ["data.issue_url"],
+                        html_url: ["data.html_url"],
+                        issue_number: ["data.issue_number"],
+                        title: ["data.title"],
+                        error: ["response.error"]
+                    }
+                }
+            }
+        ],
         bench_env: {
             GITHUB_TOKEN: $githubToken,
             OPENAI_API_KEY: $openaiKey,
             STAGE5_GITHUB_REPO: $stage5Repo,
             STAGE5_OPENAI_MODEL: $stage5Model
         },
-        playground_workloads: [
-            {
-                id: "dm-openai-issue-flow",
-                label: "Run imported DM agent with OpenAI and publish a GitHub issue",
-                run: [
-                    { type: "php", file: "dm-openai-issue-flow-probe.php" }
-                ]
-            }
+        workload_run_before: [
+            { type: "php", file: "wc-idea-agent-bootstrap.php" }
         ]
-    }')
+    }' > "$CONFIG_TMPFILE"
 
 echo "============================================"
 echo "Stage 5: run imported DM agent with OpenAI"
@@ -189,14 +178,8 @@ OPENAI_API_KEY="$OPENAI_API_KEY" \
 STAGE5_GITHUB_REPO="$STAGE5_GITHUB_REPO" \
 STAGE5_OPENAI_MODEL="$STAGE5_OPENAI_MODEL" \
 HOMEBOY_BENCH_RESULTS_FILE="$RESULTS_TMPFILE" \
-HOMEBOY_BENCH_ITERATIONS=1 \
-HOMEBOY_COMPONENT_ID=wc-site-generator-ci-driver \
-HOMEBOY_COMPONENT_PATH="$COMPONENT_PATH" \
 HOMEBOY_EXTENSION_PATH="$EXTENSION_PATH" \
-HOMEBOY_RUNTIME_BENCH_HELPER_SH="$RUNTIME_DIR/bench-helper.sh" \
-HOMEBOY_RUNTIME_BENCH_HELPER_PHP="$RUNTIME_DIR/bench-helper.php" \
-HOMEBOY_SETTINGS_JSON="$SETTINGS_JSON" \
-    bash "$EXTENSION_PATH/scripts/bench/bench-runner.sh"
+    bash "$EXTENSION_PATH/scripts/agent/run-datamachine-agent.sh" "$CONFIG_TMPFILE"
 
 if [ ! -s "$RESULTS_TMPFILE" ]; then
     echo "ERROR: results file empty or missing at $RESULTS_TMPFILE" >&2
@@ -213,12 +196,12 @@ scenario='.scenarios[] | select(.id == "dm-openai-issue-flow")'
 import_resolved=$(jq -r "$scenario | .metadata.import_result.success // false" "$RESULTS_TMPFILE")
 run_resolved=$(jq -r "$scenario | .metadata.run_result.success // false" "$RESULTS_TMPFILE")
 drain_resolved=$(jq -r "$scenario | .metadata.drain_result.success // false" "$RESULTS_TMPFILE")
-publish_resolved=$(jq -r "$scenario | if (.metadata.publish_result | type) == \"object\" then (.metadata.publish_result.success // false) else false end" "$RESULTS_TMPFILE")
-issue_url=$(jq -r "$scenario | .metadata.issue_url // \"\"" "$RESULTS_TMPFILE")
+publish_resolved=$(jq -r "$scenario | .metadata.engine_data.stage5_github_issue_publish.success // false" "$RESULTS_TMPFILE")
+issue_url=$(jq -r "$scenario | (.metadata.engine_data.stage5_github_issue_publish.html_url // .metadata.engine_data.stage5_github_issue_publish.issue_url // \"\")" "$RESULTS_TMPFILE")
 job_status=$(jq -r "$scenario | .metadata.job_status // \"unknown\"" "$RESULTS_TMPFILE")
 actions_drained=$(jq -r "$scenario | .metadata.drain_result.actions_drained // 0" "$RESULTS_TMPFILE")
-total_tokens=$(jq -r "$scenario | .metadata.token_usage.total_tokens // 0" "$RESULTS_TMPFILE")
-err=$(jq -r "$scenario | if (.metadata.publish_result | type) == \"object\" then (.metadata.publish_result.error // .metadata.error // \"\") else (.metadata.error_message // .metadata.error // \"\") end" "$RESULTS_TMPFILE")
+total_tokens=$(jq -r "$scenario | (.metadata.token_usage | if type == \"object\" then .total_tokens else 0 end) // 0" "$RESULTS_TMPFILE")
+err=$(jq -r "$scenario | .metadata.error_message // .metadata.error // \"\"" "$RESULTS_TMPFILE")
 
 echo "============================================"
 echo "Stage 5 summary"

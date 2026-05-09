@@ -155,6 +155,51 @@ jq -n \
         step_budget: 20,
         time_budget_ms: 600000,
         transcript_dir: $transcriptDir,
+        ability_tools: [
+            { name: "workspace_clone", ability: "datamachine/workspace-clone", record: { engine_key: "php_transformer_iterator", tool_results_key: "tool_results" } },
+            { name: "workspace_worktree_add", ability: "datamachine/workspace-worktree-add", record: { engine_key: "php_transformer_iterator", tool_results_key: "tool_results" } },
+            { name: "workspace_read", ability: "datamachine/workspace-read", record: { engine_key: "php_transformer_iterator", tool_results_key: "tool_results" } },
+            { name: "workspace_write", ability: "datamachine/workspace-write", record: { engine_key: "php_transformer_iterator", tool_results_key: "tool_results" } },
+            { name: "workspace_edit", ability: "datamachine/workspace-edit", record: { engine_key: "php_transformer_iterator", tool_results_key: "tool_results" } },
+            { name: "workspace_git_status", ability: "datamachine/workspace-git-status", record: { engine_key: "php_transformer_iterator", tool_results_key: "tool_results" } },
+            { name: "workspace_git_commit", ability: "datamachine/workspace-git-commit", record: { engine_key: "php_transformer_iterator", tool_results_key: "tool_results" } },
+            { name: "workspace_git_push", ability: "datamachine/workspace-git-push", record: { engine_key: "php_transformer_iterator", tool_results_key: "tool_results" } },
+            {
+                name: "create_github_pull_request",
+                ability: "datamachine/create-github-pull-request",
+                description: "Open the focused upstream transformer repair pull request after pushing the worktree branch.",
+                record: {
+                    engine_key: "php_transformer_iterator",
+                    tool_results_key: "tool_results",
+                    event: { key: "upstream_action", type: "pull_request", only_if_success: true }
+                }
+            },
+            {
+                name: "create_github_issue",
+                ability: "datamachine/create-github-issue",
+                description: "Fallback only: open a focused issue when no safe upstream patch path exists.",
+                record: {
+                    engine_key: "php_transformer_iterator",
+                    tool_results_key: "tool_results",
+                    event: { key: "upstream_action", type: "issue", only_if_success: true }
+                }
+            },
+            {
+                name: "comment_github_pull_request",
+                ability: "datamachine/comment-github-pull-request",
+                description: "Post the required callback comment on the source generated-site pull request.",
+                record: {
+                    engine_key: "php_transformer_iterator",
+                    tool_results_key: "tool_results",
+                    event: {
+                        key: "source_callback",
+                        type: "pull_request_comment",
+                        only_if_success: true,
+                        match: { repo: "ITERATOR_SOURCE_REPO", pull_number: "ITERATOR_SOURCE_PR" }
+                    }
+                }
+            }
+        ],
         required_abilities: [
             "datamachine/import-agent",
             "datamachine/run-flow",

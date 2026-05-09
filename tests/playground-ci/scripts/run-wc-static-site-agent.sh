@@ -9,7 +9,7 @@ set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(cd "$SCRIPT_DIR/../../.." && pwd)"
 COMPONENT_PATH="$REPO_ROOT/tests/playground-ci/component"
-WORKLOAD_PATH="$REPO_ROOT/tests/playground-ci/workloads/dm-wc-static-site-agent-probe.php"
+BOOTSTRAP_WORKLOAD_PATH="$REPO_ROOT/tests/playground-ci/workloads/wc-static-site-agent-bootstrap.php"
 BUNDLE_SOURCE="$REPO_ROOT/bundles/wc-static-site-agent"
 
 EXTENSION_PATH="${HOMEBOY_EXTENSION_PATH:-/Users/chubes/Developer/homeboy-extensions/wordpress}"
@@ -22,7 +22,7 @@ STATIC_SITE_AGENT_OPENAI_MODEL="${STATIC_SITE_AGENT_OPENAI_MODEL:-gpt-5.5}"
 STATIC_SITE_AGENT_TARGET_REPO="${STATIC_SITE_AGENT_TARGET_REPO:-chubes4/wc-site-generator}"
 STATIC_SITE_AGENT_ISSUE_NUMBER="${STATIC_SITE_AGENT_ISSUE_NUMBER:-}"
 
-if [ ! -f "$EXTENSION_PATH/scripts/bench/bench-runner.sh" ]; then
+if [ ! -f "$EXTENSION_PATH/scripts/agent/run-datamachine-agent.sh" ]; then
     echo "ERROR: Homeboy WordPress extension not found at $EXTENSION_PATH" >&2
     exit 1
 fi
@@ -66,15 +66,14 @@ if [ -z "$OPENAI_API_KEY" ]; then
     exit 1
 fi
 
-RESULTS_TMPFILE=$(mktemp "${TMPDIR:-/tmp}/wc-site-generator-static-site-agent.XXXXXX")
-RUNTIME_DIR=$(mktemp -d "${TMPDIR:-/tmp}/wc-site-generator-homeboy-runtime.XXXXXX")
-COMPONENT_WORKLOAD="$COMPONENT_PATH/dm-wc-static-site-agent-probe.php"
+CONFIG_TMPFILE=$(mktemp "${TMPDIR:-/tmp}/wc-site-generator-static-site-agent-config.XXXXXX.json")
+RESULTS_TMPFILE=$(mktemp "${TMPDIR:-/tmp}/wc-site-generator-static-site-agent-results.XXXXXX.json")
+COMPONENT_BOOTSTRAP_WORKLOAD="$COMPONENT_PATH/wc-static-site-agent-bootstrap.php"
 COMPONENT_BUNDLE_DIR="$COMPONENT_PATH/bundles/wc-static-site-agent"
 TRANSCRIPT_ARTIFACT_DIR="$COMPONENT_PATH/artifacts/wc-static-site-agent"
 
 cleanup() {
-    rm -f "$RESULTS_TMPFILE" "$COMPONENT_WORKLOAD"
-    rm -rf "$RUNTIME_DIR"
+    rm -f "$CONFIG_TMPFILE" "$RESULTS_TMPFILE" "$COMPONENT_BOOTSTRAP_WORKLOAD"
     rm -rf "$COMPONENT_PATH/bundles"
 }
 trap cleanup EXIT
@@ -82,56 +81,12 @@ trap cleanup EXIT
 rm -rf "$TRANSCRIPT_ARTIFACT_DIR"
 mkdir -p "$TRANSCRIPT_ARTIFACT_DIR"
 
-cat > "$RUNTIME_DIR/bench-helper.sh" <<'SH'
-#!/usr/bin/env bash
-homeboy_write_empty_bench_results() {
-    printf '{"component":"%s","iterations":%s,"scenarios":[]}' "$1" "$2" > "$3"
-}
-SH
-
-cat > "$RUNTIME_DIR/bench-helper.php" <<'PHP'
-<?php
-function homeboy_bench_percentile(array $sorted_values, float $p): float {
-    $n = count($sorted_values);
-    if ($n === 0) {
-        return 0.0;
-    }
-    if ($n === 1) {
-        return (float) $sorted_values[0];
-    }
-    $rank = $p * ($n - 1);
-    $lo = (int) floor($rank);
-    $hi = (int) ceil($rank);
-    if ($lo === $hi) {
-        return (float) $sorted_values[$lo];
-    }
-    $frac = $rank - $lo;
-    return (float) ($sorted_values[$lo] * (1 - $frac) + $sorted_values[$hi] * $frac);
-}
-function homeboy_bench_scenario_id(string $basename): string {
-    $name = preg_replace('/\.[^.]+$/', '', $basename);
-    $name = preg_replace('/([a-z0-9])([A-Z])/', '$1-$2', $name);
-    $name = strtolower($name);
-    $name = preg_replace('/[^a-z0-9]+/', '-', $name);
-    return trim($name, '-');
-}
-function homeboy_write_bench_results(string $results_path, string $component_id, int $iterations, array $scenarios): void {
-    file_put_contents($results_path, json_encode([
-        'component_id' => $component_id,
-        'iterations' => $iterations,
-        'scenarios' => $scenarios,
-    ], JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES));
-}
-function homeboy_write_empty_bench_results(string $results_path, string $component_id, int $iterations = 0): void {
-    homeboy_write_bench_results($results_path, $component_id, $iterations, []);
-}
-PHP
-
-cp "$WORKLOAD_PATH" "$COMPONENT_WORKLOAD"
+cp "$BOOTSTRAP_WORKLOAD_PATH" "$COMPONENT_BOOTSTRAP_WORKLOAD"
 mkdir -p "$COMPONENT_PATH/bundles"
 cp -R "$BUNDLE_SOURCE" "$COMPONENT_BUNDLE_DIR"
 
-SETTINGS_JSON=$(jq -nc \
+jq -n \
+    --arg componentPath "$COMPONENT_PATH" \
     --arg agentsApi "$AGENTS_API_PATH" \
     --arg dm "$DM_PATH" \
     --arg dmc "$DMC_PATH" \
@@ -142,9 +97,62 @@ SETTINGS_JSON=$(jq -nc \
     --arg targetRepo "$STATIC_SITE_AGENT_TARGET_REPO" \
     --arg issueNumber "$STATIC_SITE_AGENT_ISSUE_NUMBER" \
     '{
+        component_id: "wc-site-generator-ci-driver",
+        component_path: $componentPath,
+        workload_id: "dm-wc-static-site-agent",
+        workload_label: "Run imported wc-static-site-agent for one supplied issue",
         validation_dependencies: [$agentsApi, $dm, $dmc, $openaiProvider],
         playground_wordpress_version: "7.0",
         bench_warmup_iterations: 0,
+        bundle_path: "/wordpress/wp-content/plugins/wc-site-generator-ci-driver/bundles/wc-static-site-agent",
+        agent_slug: "wc-static-site-agent",
+        pipeline_slug: "wc-static-site-pipeline",
+        flow_slug: "wc-static-site-manual-flow",
+        provider: "openai",
+        model: $model,
+        provider_register_function: "WordPress\\OpenAiAiProvider\\register_provider",
+        provider_credentials: { connectors_ai_openai_api_key: "OPENAI_API_KEY" },
+        github_token_env: "GITHUB_TOKEN",
+        github_profile_id: "wc-static-site-agent-ci",
+        target_repo: $targetRepo,
+        allowed_repos: [$targetRepo],
+        max_turns: 12,
+        prompt: "Run the static site agent for the supplied issue.",
+        step_budget: 20,
+        time_budget_ms: 600000,
+        transcript_dir: "/wordpress/wp-content/plugins/wc-site-generator-ci-driver/artifacts/wc-static-site-agent",
+        flow_step_patches: [
+            {
+                step_type: "fetch",
+                merge: {
+                    handler_config: { data_source: "issues", repo: $targetRepo, state: "open", issue_number: $issueNumber, max_items: 1 },
+                    handler_configs: { github: { data_source: "issues", repo: $targetRepo, state: "open", issue_number: $issueNumber, max_items: 1 } }
+                }
+            },
+            {
+                step_type: "publish",
+                set: { handler_slugs: ["github_pull_request"] },
+                merge: { handler_configs: { github_pull_request: { base: "main", draft: false, labels: "target:static-site", maintainer_can_modify: false, repo: $targetRepo } } }
+            }
+        ],
+        tool_recorders: [
+            {
+                tool: "github_pull_request_publish",
+                record: {
+                    engine_key: "wc_static_site_agent",
+                    fields: {
+                        success: ["response.success"],
+                        static_site_pr_url: ["data.html_url"],
+                        static_site_branch: ["data.head", "parameters.head"],
+                        static_site_slug: { paths: ["data.head", "parameters.head"], strip_prefix: "static/" },
+                        repo: ["data.repo", "parameters.repo"],
+                        pull_number: ["data.pull_number"],
+                        title: ["data.title", "parameters.title"],
+                        error: ["response.error"]
+                    }
+                }
+            }
+        ],
         bench_env: {
             GITHUB_TOKEN: $githubToken,
             OPENAI_API_KEY: $openaiKey,
@@ -153,16 +161,10 @@ SETTINGS_JSON=$(jq -nc \
             STATIC_SITE_AGENT_ISSUE_NUMBER: $issueNumber,
             STATIC_SITE_AGENT_TRANSCRIPT_DIR: "/wordpress/wp-content/plugins/wc-site-generator-ci-driver/artifacts/wc-static-site-agent"
         },
-        playground_workloads: [
-            {
-                id: "dm-wc-static-site-agent",
-                label: "Run imported wc-static-site-agent for one supplied issue",
-                run: [
-                    { type: "php", file: "dm-wc-static-site-agent-probe.php" }
-                ]
-            }
+        workload_run_before: [
+            { type: "php", file: "wc-static-site-agent-bootstrap.php" }
         ]
-    }')
+    }' > "$CONFIG_TMPFILE"
 
 echo "============================================"
 echo "wc-static-site-agent CI"
@@ -179,19 +181,9 @@ STATIC_SITE_AGENT_OPENAI_MODEL="$STATIC_SITE_AGENT_OPENAI_MODEL" \
 STATIC_SITE_AGENT_TARGET_REPO="$STATIC_SITE_AGENT_TARGET_REPO" \
 STATIC_SITE_AGENT_ISSUE_NUMBER="$STATIC_SITE_AGENT_ISSUE_NUMBER" \
 HOMEBOY_BENCH_RESULTS_FILE="$RESULTS_TMPFILE" \
-HOMEBOY_BENCH_ITERATIONS=1 \
-HOMEBOY_COMPONENT_ID=wc-site-generator-ci-driver \
-HOMEBOY_COMPONENT_PATH="$COMPONENT_PATH" \
 HOMEBOY_DEPENDENCY_GITHUB_ORG=Extra-Chill \
-HOMEBOY_WORDPRESS_DEPENDENCY_PATHS="$AGENTS_API_PATH
-$DM_PATH
-$DMC_PATH
-$OPENAI_PROVIDER_PATH" \
 HOMEBOY_EXTENSION_PATH="$EXTENSION_PATH" \
-HOMEBOY_RUNTIME_BENCH_HELPER_SH="$RUNTIME_DIR/bench-helper.sh" \
-HOMEBOY_RUNTIME_BENCH_HELPER_PHP="$RUNTIME_DIR/bench-helper.php" \
-HOMEBOY_SETTINGS_JSON="$SETTINGS_JSON" \
-    bash "$EXTENSION_PATH/scripts/bench/bench-runner.sh"
+    bash "$EXTENSION_PATH/scripts/agent/run-datamachine-agent.sh" "$CONFIG_TMPFILE"
 
 if [ ! -s "$RESULTS_TMPFILE" ]; then
     echo "ERROR: results file empty or missing at $RESULTS_TMPFILE" >&2
@@ -208,12 +200,12 @@ import_resolved=$(jq -r "$scenario | .metadata.import_result.success // false" "
 run_resolved=$(jq -r "$scenario | .metadata.run_result.success // false" "$RESULTS_TMPFILE")
 drain_resolved=$(jq -r "$scenario | .metadata.drain_result.success // false" "$RESULTS_TMPFILE")
 job_status=$(jq -r "$scenario | .metadata.job_status // \"unknown\"" "$RESULTS_TMPFILE")
-static_site_pr_url=$(jq -r "$scenario | .metadata.static_site_pr_url // \"\"" "$RESULTS_TMPFILE")
-static_site_branch=$(jq -r "$scenario | .metadata.static_site_branch // \"\"" "$RESULTS_TMPFILE")
-static_site_slug=$(jq -r "$scenario | .metadata.static_site_slug // \"\"" "$RESULTS_TMPFILE")
+static_site_pr_url=$(jq -r "$scenario | .metadata.engine_data.wc_static_site_agent.static_site_pr_url // \"\"" "$RESULTS_TMPFILE")
+static_site_branch=$(jq -r "$scenario | .metadata.engine_data.wc_static_site_agent.static_site_branch // \"\"" "$RESULTS_TMPFILE")
+static_site_slug=$(jq -r "$scenario | .metadata.engine_data.wc_static_site_agent.static_site_slug // \"\"" "$RESULTS_TMPFILE")
 total_tokens=$(jq -r "$scenario | (.metadata.token_usage | if type == \"object\" then .total_tokens else 0 end) // 0" "$RESULTS_TMPFILE")
-transcript_json_path=$(jq -r "$scenario | .metadata.transcript_artifacts.json // \"\"" "$RESULTS_TMPFILE")
-transcript_summary_path=$(jq -r "$scenario | .metadata.transcript_artifacts.summary // \"\"" "$RESULTS_TMPFILE")
+transcript_json_path=$(jq -r "$scenario | .metadata.transcript_artifacts | if type == \"object\" then (.json // \"\") else \"\" end" "$RESULTS_TMPFILE")
+transcript_summary_path=""
 
 echo "============================================"
 echo "wc-static-site-agent summary"
