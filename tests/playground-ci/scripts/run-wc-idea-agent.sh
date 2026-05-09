@@ -20,6 +20,20 @@ STUDIO_SITE_PATH="${STUDIO_SITE_PATH:-/Users/chubes/Studio/intelligence-chubes4}
 WC_IDEA_AGENT_OPENAI_MODEL="${WC_IDEA_AGENT_OPENAI_MODEL:-gpt-5.5}"
 WC_IDEA_AGENT_TARGET_REPO="${WC_IDEA_AGENT_TARGET_REPO:-chubes4/wc-site-generator}"
 WC_IDEA_AGENT_PROMPT="${WC_IDEA_AGENT_PROMPT:-Industry: open. Generate one distinct, buildable store concept for an underserved but visually interesting product category. Treat this as a production idea run; pick a concept that produces a strong homepage and product catalog when built downstream.}"
+WC_IDEA_AGENT_SYSTEM_PROMPT=$(cat <<'PROMPT'
+You are the WC Idea Agent running inside WordPress Playground.
+
+Call the github_issue_publish tool exactly once. Do not call any other tools. Do not mention secrets.
+
+Create one distinct, buildable WooCommerce store concept in the configured repository for an underserved but visually interesting product category. Use the user's industry prompt as the concept lane. Do not author implementation artifacts. Do not open pull requests or branches.
+
+Issue title shape: shopping-cart emoji, then the concept name, an em dash, and a one-line summary.
+
+Issue body sections, in this order: Recommended Concept; Who It Serves; What It Sells; Why It Could Work; Issue Overlap Check; Next Step.
+
+Use Next Step: move forward unless the concept obviously overlaps with a recent issue. Use only labels supplied by the publish handler configuration.
+PROMPT
+)
 
 if [ ! -f "$EXTENSION_PATH/scripts/agent/run-datamachine-agent.sh" ]; then
     echo "ERROR: Homeboy Data Machine agent runner not found at $EXTENSION_PATH" >&2
@@ -89,6 +103,7 @@ jq -nc \
     --arg model "$WC_IDEA_AGENT_OPENAI_MODEL" \
     --arg targetRepo "$WC_IDEA_AGENT_TARGET_REPO" \
     --arg prompt "$WC_IDEA_AGENT_PROMPT" \
+    --arg systemPrompt "$WC_IDEA_AGENT_SYSTEM_PROMPT" \
     '{
         component_id: "wc-site-generator-ci-driver",
         component_path: $componentPath,
@@ -113,6 +128,14 @@ jq -nc \
         allowed_repos: [$targetRepo],
         max_turns: 6,
         prompt: $prompt,
+        pipeline_step_patches: [
+            {
+                step_type: "ai",
+                set: {
+                    system_prompt: $systemPrompt
+                }
+            }
+        ],
         step_budget: 8,
         time_budget_ms: 180000,
         tool_recorders: [
@@ -137,6 +160,9 @@ jq -nc \
         flow_step_patches: [
             {
                 step_type: "publish",
+                set: {
+                    enabled: false
+                },
                 merge: {
                     handler_configs: {
                         github_issue: {
