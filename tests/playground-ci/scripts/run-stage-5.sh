@@ -25,6 +25,7 @@ OPENAI_PROVIDER_PATH="${OPENAI_PROVIDER_PATH:-/Users/chubes/Studio/intelligence-
 STUDIO_SITE_PATH="${STUDIO_SITE_PATH:-/Users/chubes/Studio/intelligence-chubes4}"
 STAGE5_GITHUB_REPO="${STAGE5_GITHUB_REPO:-chubes4/wc-site-generator}"
 STAGE5_OPENAI_MODEL="${STAGE5_OPENAI_MODEL:-gpt-5.5}"
+STAGE5_PROOF_MODE="${STAGE5_PROOF_MODE:-true}"
 
 if [ ! -f "$EXTENSION_PATH/scripts/bench/bench-runner.sh" ]; then
     echo "ERROR: Homeboy WordPress extension not found at $EXTENSION_PATH" >&2
@@ -150,14 +151,17 @@ SETTINGS_JSON=$(jq -nc \
     --arg openaiKey "$OPENAI_API_KEY" \
     --arg stage5Repo "$STAGE5_GITHUB_REPO" \
     --arg stage5Model "$STAGE5_OPENAI_MODEL" \
+    --arg stage5ProofMode "$STAGE5_PROOF_MODE" \
     '{
         validation_dependencies: [$agentsApi, $dm, $dmc, $openaiProvider],
         playground_wordpress_version: "7.0",
+        bench_warmup_iterations: 0,
         bench_env: {
             GITHUB_TOKEN: $githubToken,
             OPENAI_API_KEY: $openaiKey,
             STAGE5_GITHUB_REPO: $stage5Repo,
-            STAGE5_OPENAI_MODEL: $stage5Model
+            STAGE5_OPENAI_MODEL: $stage5Model,
+            STAGE5_PROOF_MODE: $stage5ProofMode
         },
         playground_workloads: [
             {
@@ -177,6 +181,7 @@ echo "Repo:         $REPO_ROOT"
 echo "Driver:       $COMPONENT_PATH"
 echo "Target repo:  $STAGE5_GITHUB_REPO"
 echo "OpenAI model: $STAGE5_OPENAI_MODEL"
+echo "Proof mode:   $STAGE5_PROOF_MODE"
 echo "Agents API:   $AGENTS_API_PATH"
 echo "DM:           $DM_PATH"
 echo "DMC:          $DMC_PATH"
@@ -188,6 +193,7 @@ GITHUB_TOKEN="$GITHUB_TOKEN" \
 OPENAI_API_KEY="$OPENAI_API_KEY" \
 STAGE5_GITHUB_REPO="$STAGE5_GITHUB_REPO" \
 STAGE5_OPENAI_MODEL="$STAGE5_OPENAI_MODEL" \
+STAGE5_PROOF_MODE="$STAGE5_PROOF_MODE" \
 HOMEBOY_BENCH_RESULTS_FILE="$RESULTS_TMPFILE" \
 HOMEBOY_BENCH_ITERATIONS=1 \
 HOMEBOY_COMPONENT_ID=wc-site-generator-ci-driver \

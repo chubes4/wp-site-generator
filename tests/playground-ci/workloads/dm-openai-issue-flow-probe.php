@@ -58,10 +58,13 @@ $github_token = trim((string) (getenv('GITHUB_TOKEN') ?: getenv('GH_TOKEN') ?: '
 $openai_api_key = trim((string) getenv('OPENAI_API_KEY'));
 $target_repo = trim((string) (getenv('STAGE5_GITHUB_REPO') ?: 'chubes4/wc-site-generator'));
 $openai_model = trim((string) (getenv('STAGE5_OPENAI_MODEL') ?: 'gpt-4o-mini'));
+$proof_mode_raw = strtolower(trim((string) (getenv('STAGE5_PROOF_MODE') ?: 'true')));
+$proof_mode = !in_array($proof_mode_raw, ['0', 'false', 'no', 'off'], true);
 
 $metadata = [
     'target_repo' => $target_repo,
     'openai_model' => $openai_model,
+    'proof_mode' => $proof_mode,
     'github_token_present' => $github_token !== '',
     'openai_key_present' => $openai_api_key !== '',
     'openai_provider_registered' => $openai_provider_registered,
@@ -199,21 +202,23 @@ if (!$pipeline) {
 
 $pipeline_id = (int) $pipeline['pipeline_id'];
 $pipeline_config = is_array($pipeline['pipeline_config'] ?? null) ? $pipeline['pipeline_config'] : [];
-$stage5_run_id = gmdate('YmdHis') . '-' . substr(md5((string) microtime(true)), 0, 6);
-$stage5_system_prompt = implode("\n\n", [
-    'You are running a CI proof inside WordPress Playground.',
-    'Call the github_issue_publish tool exactly once. Do not call any other tools. Do not mention secrets.',
-    'Create a concise GitHub issue in ' . $target_repo . ' proving the imported Data Machine agent used a real OpenAI request from Playground.',
-    'Title must start with: [Playground proof] Stage 5 OpenAI issue ' . $stage5_run_id,
-    'Body must include these sections: Proof Path, Runtime, Verification, Cleanup. Say this issue can be closed after verification.',
-]);
+if ($proof_mode) {
+    $stage5_run_id = gmdate('YmdHis') . '-' . substr(md5((string) microtime(true)), 0, 6);
+    $stage5_system_prompt = implode("\n\n", [
+        'You are running a CI proof inside WordPress Playground.',
+        'Call the github_issue_publish tool exactly once. Do not call any other tools. Do not mention secrets.',
+        'Create a concise GitHub issue in ' . $target_repo . ' proving the imported Data Machine agent used a real OpenAI request from Playground.',
+        'Title must start with: [Playground proof] Stage 5 OpenAI issue ' . $stage5_run_id,
+        'Body must include these sections: Proof Path, Runtime, Verification, Cleanup. Say this issue can be closed after verification.',
+    ]);
 
-foreach ($pipeline_config as &$pipeline_step_config) {
-    if (($pipeline_step_config['step_type'] ?? '') === 'ai') {
-        $pipeline_step_config['system_prompt'] = $stage5_system_prompt;
+    foreach ($pipeline_config as &$pipeline_step_config) {
+        if (($pipeline_step_config['step_type'] ?? '') === 'ai') {
+            $pipeline_step_config['system_prompt'] = $stage5_system_prompt;
+        }
     }
+    unset($pipeline_step_config);
 }
-unset($pipeline_step_config);
 $pipelines->update_pipeline($pipeline_id, ['pipeline_config' => $pipeline_config]);
 
 $flow = $flows->get_by_portable_slug($pipeline_id, 'wc-idea-manual-flow');
@@ -227,7 +232,7 @@ if (!$flow) {
 $flow_id = (int) $flow['flow_id'];
 $flow_config = is_array($flow['flow_config'] ?? null) ? $flow['flow_config'] : [];
 foreach ($flow_config as &$flow_step_config) {
-    if (($flow_step_config['step_type'] ?? '') === 'ai') {
+    if ($proof_mode && ($flow_step_config['step_type'] ?? '') === 'ai') {
         $flow_step_config['queue_mode'] = 'static';
         $flow_step_config['prompt_queue'] = [
             [
