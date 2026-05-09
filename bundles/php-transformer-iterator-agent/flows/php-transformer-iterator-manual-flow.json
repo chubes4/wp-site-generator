@@ -35,7 +35,10 @@
                     "after_tool": "workspace_worktree_add",
                     "id": "iterator-inspection-budget",
                     "limited_tools": [
+                        "workspace_ls",
                         "workspace_read",
+                        "workspace_list",
+                        "workspace_show",
                         "workspace_git_status"
                     ],
                     "max_calls": 4,
