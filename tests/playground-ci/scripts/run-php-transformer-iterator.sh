@@ -8,7 +8,7 @@ set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(cd "$SCRIPT_DIR/../../.." && pwd)"
 COMPONENT_PATH="$REPO_ROOT/tests/playground-ci/component"
-WORKLOAD_PATH="$REPO_ROOT/tests/playground-ci/workloads/dm-php-transformer-iterator-probe.php"
+BOOTSTRAP_WORKLOAD_PATH="$REPO_ROOT/tests/playground-ci/workloads/php-transformer-iterator-bootstrap.php"
 BUNDLE_SOURCE="$REPO_ROOT/bundles/php-transformer-iterator-agent"
 
 EXTENSION_PATH="${HOMEBOY_EXTENSION_PATH:-/Users/chubes/Developer/homeboy-extensions/wordpress}"
@@ -24,7 +24,7 @@ ITERATOR_SOURCE_HEAD_SHA="${ITERATOR_SOURCE_HEAD_SHA:-}"
 ITERATOR_VALIDATION_RUN_ID="${ITERATOR_VALIDATION_RUN_ID:-}"
 ITERATOR_FINDING_GROUPS_PATH="${ITERATOR_FINDING_GROUPS_PATH:-}"
 
-if [ ! -f "$EXTENSION_PATH/scripts/bench/bench-runner.sh" ]; then
+if [ ! -f "$EXTENSION_PATH/scripts/agent/run-datamachine-agent.sh" ]; then
     echo "ERROR: Homeboy WordPress extension not found at $EXTENSION_PATH" >&2
     exit 1
 fi
@@ -67,9 +67,9 @@ if [ -z "$OPENAI_API_KEY" ]; then
     exit 1
 fi
 
-RESULTS_TMPFILE=$(mktemp "${TMPDIR:-/tmp}/wc-site-generator-php-transformer-iterator.XXXXXX")
-RUNTIME_DIR=$(mktemp -d "${TMPDIR:-/tmp}/wc-site-generator-homeboy-runtime.XXXXXX")
-COMPONENT_WORKLOAD="$COMPONENT_PATH/dm-php-transformer-iterator-probe.php"
+CONFIG_TMPFILE=$(mktemp "${TMPDIR:-/tmp}/wc-site-generator-php-transformer-iterator-config.XXXXXX.json")
+RESULTS_TMPFILE=$(mktemp "${TMPDIR:-/tmp}/wc-site-generator-php-transformer-iterator-results.XXXXXX.json")
+COMPONENT_BOOTSTRAP_WORKLOAD="$COMPONENT_PATH/php-transformer-iterator-bootstrap.php"
 COMPONENT_BUNDLE_DIR="$COMPONENT_PATH/bundles/php-transformer-iterator-agent"
 ITERATOR_TRANSCRIPT_DIR="${ITERATOR_TRANSCRIPT_DIR:-$REPO_ROOT/.ci/php-transformer-iterator-transcripts}"
 
@@ -82,63 +82,32 @@ ITERATOR_TRANSCRIPT_DIR="${ITERATOR_TRANSCRIPT_DIR:-$REPO_ROOT/.ci/php-transform
 FINDING_GROUPS_JSON="$(jq -c . "$ITERATOR_FINDING_GROUPS_PATH")"
 
 cleanup() {
-    rm -f "$RESULTS_TMPFILE" "$COMPONENT_WORKLOAD"
-    rm -rf "$RUNTIME_DIR"
+    rm -f "$CONFIG_TMPFILE" "$RESULTS_TMPFILE" "$COMPONENT_BOOTSTRAP_WORKLOAD"
     rm -rf "$COMPONENT_PATH/bundles"
 }
 trap cleanup EXIT
 
-cat > "$RUNTIME_DIR/bench-helper.sh" <<'SH'
-#!/usr/bin/env bash
-homeboy_write_empty_bench_results() {
-    printf '{"component":"%s","iterations":%s,"scenarios":[]}' "$1" "$2" > "$3"
-}
-SH
-
-cat > "$RUNTIME_DIR/bench-helper.php" <<'PHP'
-<?php
-function homeboy_bench_percentile(array $sorted_values, float $p): float {
-    $n = count($sorted_values);
-    if ($n === 0) {
-        return 0.0;
-    }
-    if ($n === 1) {
-        return (float) $sorted_values[0];
-    }
-    $rank = $p * ($n - 1);
-    $lo = (int) floor($rank);
-    $hi = (int) ceil($rank);
-    if ($lo === $hi) {
-        return (float) $sorted_values[$lo];
-    }
-    $frac = $rank - $lo;
-    return (float) ($sorted_values[$lo] * (1 - $frac) + $sorted_values[$hi] * $frac);
-}
-function homeboy_bench_scenario_id(string $basename): string {
-    $name = preg_replace('/\.[^.]+$/', '', $basename);
-    $name = preg_replace('/([a-z0-9])([A-Z])/', '$1-$2', $name);
-    $name = strtolower($name);
-    $name = preg_replace('/[^a-z0-9]+/', '-', $name);
-    return trim($name, '-');
-}
-function homeboy_write_bench_results(string $results_path, string $component_id, int $iterations, array $scenarios): void {
-    file_put_contents($results_path, json_encode([
-        'component_id' => $component_id,
-        'iterations' => $iterations,
-        'scenarios' => $scenarios,
-    ], JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES));
-}
-function homeboy_write_empty_bench_results(string $results_path, string $component_id, int $iterations = 0): void {
-    homeboy_write_bench_results($results_path, $component_id, $iterations, []);
-}
-PHP
-
-cp "$WORKLOAD_PATH" "$COMPONENT_WORKLOAD"
+cp "$BOOTSTRAP_WORKLOAD_PATH" "$COMPONENT_BOOTSTRAP_WORKLOAD"
 mkdir -p "$COMPONENT_PATH/bundles"
 mkdir -p "$ITERATOR_TRANSCRIPT_DIR"
 cp -R "$BUNDLE_SOURCE" "$COMPONENT_BUNDLE_DIR"
 
-SETTINGS_JSON=$(jq -nc \
+ITERATOR_PROMPT=$(jq -n \
+    --arg sourceRepo "$ITERATOR_SOURCE_REPO" \
+    --arg sourcePr "$ITERATOR_SOURCE_PR" \
+    --arg sourceHeadSha "$ITERATOR_SOURCE_HEAD_SHA" \
+    --arg validationRunId "$ITERATOR_VALIDATION_RUN_ID" \
+    --argjson findingGroups "$FINDING_GROUPS_JSON" \
+    '{
+        source_repo: $sourceRepo,
+        source_pr: $sourcePr,
+        source_head_sha: $sourceHeadSha,
+        validation_run_id: $validationRunId,
+        finding_groups: $findingGroups
+    }' | sed '1s/^/Run the PHP transformer iterator now.\n\n/')
+
+jq -n \
+    --arg componentPath "$COMPONENT_PATH" \
     --arg agentsApi "$AGENTS_API_PATH" \
     --arg dm "$DM_PATH" \
     --arg dmc "$DMC_PATH" \
@@ -152,10 +121,56 @@ SETTINGS_JSON=$(jq -nc \
     --arg validationRunId "$ITERATOR_VALIDATION_RUN_ID" \
     --arg findingGroupsJson "$FINDING_GROUPS_JSON" \
     --arg transcriptDir "$ITERATOR_TRANSCRIPT_DIR" \
+    --arg prompt "$ITERATOR_PROMPT" \
     '{
+        component_id: "wc-site-generator-ci-driver",
+        component_path: $componentPath,
+        workload_id: "dm-php-transformer-iterator",
+        workload_label: "Run imported PHP transformer iterator agent",
         validation_dependencies: [$agentsApi, $dm, $dmc, $openaiProvider],
         playground_wordpress_version: "7.0",
         bench_warmup_iterations: 0,
+        bundle_path: "/wordpress/wp-content/plugins/wc-site-generator-ci-driver/bundles/php-transformer-iterator-agent",
+        agent_slug: "php-transformer-iterator-agent",
+        pipeline_slug: "php-transformer-iterator-pipeline",
+        flow_slug: "php-transformer-iterator-manual-flow",
+        provider: "openai",
+        model: $model,
+        provider_register_function: "WordPress\\OpenAiAiProvider\\register_provider",
+        provider_credentials: {
+            connectors_ai_openai_api_key: "OPENAI_API_KEY"
+        },
+        github_token_env: "GITHUB_TOKEN",
+        github_profile_id: "php-transformer-iterator-ci",
+        target_repo: $sourceRepo,
+        allowed_repos: [
+            $sourceRepo,
+            "chubes4/static-site-importer",
+            "chubes4/html-to-blocks-converter",
+            "chubes4/block-format-bridge",
+            "chubes4/wc-site-generator"
+        ],
+        max_turns: 24,
+        prompt: $prompt,
+        step_budget: 20,
+        time_budget_ms: 600000,
+        transcript_dir: $transcriptDir,
+        required_abilities: [
+            "datamachine/import-agent",
+            "datamachine/run-flow",
+            "datamachine/drain-job",
+            "datamachine/workspace-clone",
+            "datamachine/workspace-worktree-add",
+            "datamachine/workspace-read",
+            "datamachine/workspace-write",
+            "datamachine/workspace-edit",
+            "datamachine/workspace-git-status",
+            "datamachine/workspace-git-commit",
+            "datamachine/workspace-git-push",
+            "datamachine/create-github-pull-request",
+            "datamachine/create-github-issue",
+            "datamachine/comment-github-pull-request"
+        ],
         bench_env: {
             GITHUB_TOKEN: $githubToken,
             OPENAI_API_KEY: $openaiKey,
@@ -167,16 +182,10 @@ SETTINGS_JSON=$(jq -nc \
             ITERATOR_FINDING_GROUPS_JSON: $findingGroupsJson,
             ITERATOR_TRANSCRIPT_DIR: $transcriptDir
         },
-        playground_workloads: [
-            {
-                id: "dm-php-transformer-iterator",
-                label: "Run imported PHP transformer iterator agent",
-                run: [
-                    { type: "php", file: "dm-php-transformer-iterator-probe.php" }
-                ]
-            }
+        workload_run_before: [
+            { type: "php", file: "php-transformer-iterator-bootstrap.php" }
         ]
-    }')
+    }' > "$CONFIG_TMPFILE"
 
 echo "============================================"
 echo "PHP transformer iterator: run imported agent"
@@ -199,19 +208,9 @@ ITERATOR_FINDING_GROUPS_JSON="$FINDING_GROUPS_JSON" \
 ITERATOR_FINDING_GROUPS_PATH="$ITERATOR_FINDING_GROUPS_PATH" \
 ITERATOR_TRANSCRIPT_DIR="$ITERATOR_TRANSCRIPT_DIR" \
 HOMEBOY_BENCH_RESULTS_FILE="$RESULTS_TMPFILE" \
-HOMEBOY_BENCH_ITERATIONS=1 \
-HOMEBOY_COMPONENT_ID=wc-site-generator-ci-driver \
-HOMEBOY_COMPONENT_PATH="$COMPONENT_PATH" \
 HOMEBOY_DEPENDENCY_GITHUB_ORG=Extra-Chill \
-HOMEBOY_WORDPRESS_DEPENDENCY_PATHS="$AGENTS_API_PATH
-$DM_PATH
-$DMC_PATH
-$OPENAI_PROVIDER_PATH" \
 HOMEBOY_EXTENSION_PATH="$EXTENSION_PATH" \
-HOMEBOY_RUNTIME_BENCH_HELPER_SH="$RUNTIME_DIR/bench-helper.sh" \
-HOMEBOY_RUNTIME_BENCH_HELPER_PHP="$RUNTIME_DIR/bench-helper.php" \
-HOMEBOY_SETTINGS_JSON="$SETTINGS_JSON" \
-    bash "$EXTENSION_PATH/scripts/bench/bench-runner.sh"
+    bash "$EXTENSION_PATH/scripts/agent/run-datamachine-agent.sh" "$CONFIG_TMPFILE"
 
 if [ ! -s "$RESULTS_TMPFILE" ]; then
     echo "ERROR: results file empty or missing at $RESULTS_TMPFILE" >&2
@@ -225,8 +224,8 @@ import_resolved=$(jq -r "$scenario | .metadata.import_result.success // false" "
 run_resolved=$(jq -r "$scenario | .metadata.run_result.success // false" "$RESULTS_TMPFILE")
 drain_resolved=$(jq -r "$scenario | .metadata.drain_result.success // false" "$RESULTS_TMPFILE")
 job_status=$(jq -r "$scenario | .metadata.job_status // \"unknown\"" "$RESULTS_TMPFILE")
-upstream_action_url=$(jq -r "$scenario | .metadata.upstream_action_url // \"\"" "$RESULTS_TMPFILE")
-source_callback_url=$(jq -r "$scenario | .metadata.source_callback_url // \"\"" "$RESULTS_TMPFILE")
+upstream_action_url=$(jq -r "$scenario | .metadata.engine_data.php_transformer_iterator.upstream_action.url // \"\"" "$RESULTS_TMPFILE")
+source_callback_url=$(jq -r "$scenario | .metadata.engine_data.php_transformer_iterator.source_callback.url // \"\"" "$RESULTS_TMPFILE")
 
 if [ "$import_resolved" = "true" ] \
     && [ "$run_resolved" = "true" ] \
