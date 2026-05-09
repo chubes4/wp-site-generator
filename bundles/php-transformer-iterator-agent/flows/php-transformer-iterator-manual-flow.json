@@ -29,7 +29,22 @@
             ],
             "queue_mode": "static",
             "step_position": 0,
-            "step_type": "ai"
+            "step_type": "ai",
+            "tool_runtime_rules": [
+                {
+                    "after_tool": "workspace_worktree_add",
+                    "id": "iterator-inspection-budget",
+                    "limited_tools": [
+                        "workspace_read",
+                        "workspace_git_status"
+                    ],
+                    "max_calls": 4,
+                    "then_require_one_of": [
+                        "workspace_edit",
+                        "create_github_issue"
+                    ]
+                }
+            ]
         }
     ]
 }
