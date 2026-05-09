@@ -90,6 +90,12 @@ jobs:
           ref: ${{ inputs.data_machine_code_ref }}
           path: .ci/data-machine-code
 
+      - name: Checkout Agents API
+        uses: actions/checkout@v4
+        with:
+          repository: Automattic/agents-api
+          path: .ci/agents-api
+
       - name: Checkout OpenAI provider
         uses: actions/checkout@v4
         with:
@@ -118,6 +124,7 @@ jobs:
           GITHUB_TOKEN: ${{ steps.app-token.outputs.token }}
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
           HOMEBOY_EXTENSION_PATH: ${{ github.workspace }}/.ci/homeboy-extensions/wordpress
+          AGENTS_API_PATH: ${{ github.workspace }}/.ci/agents-api
           DM_PATH: ${{ github.workspace }}/.ci/data-machine
           DMC_PATH: ${{ github.workspace }}/.ci/data-machine-code
           OPENAI_PROVIDER_PATH: ${{ github.workspace }}/.ci/ai-provider-for-openai

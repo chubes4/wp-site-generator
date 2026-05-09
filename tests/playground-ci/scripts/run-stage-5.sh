@@ -18,6 +18,7 @@ WORKLOAD_PATH="$REPO_ROOT/tests/playground-ci/workloads/dm-openai-issue-flow-pro
 BUNDLE_SOURCE="$REPO_ROOT/bundles/wc-idea-agent"
 
 EXTENSION_PATH="${HOMEBOY_EXTENSION_PATH:-/Users/chubes/Developer/homeboy-extensions/wordpress}"
+AGENTS_API_PATH="${AGENTS_API_PATH:-/Users/chubes/Developer/agents-api}"
 DM_PATH="${DM_PATH:-/Users/chubes/Developer/data-machine}"
 DMC_PATH="${DMC_PATH:-/Users/chubes/Developer/data-machine-code}"
 OPENAI_PROVIDER_PATH="${OPENAI_PROVIDER_PATH:-/Users/chubes/Studio/intelligence-chubes4/wp-content/plugins/ai-provider-for-openai}"
@@ -35,6 +36,10 @@ if [ ! -d "$BUNDLE_SOURCE" ]; then
 fi
 if [ ! -d "$OPENAI_PROVIDER_PATH" ]; then
     echo "ERROR: AI Provider for OpenAI plugin not found at $OPENAI_PROVIDER_PATH" >&2
+    exit 1
+fi
+if [ ! -f "$AGENTS_API_PATH/agents-api.php" ]; then
+    echo "ERROR: Agents API plugin not found at $AGENTS_API_PATH" >&2
     exit 1
 fi
 if ! command -v jq >/dev/null 2>&1; then
@@ -137,6 +142,7 @@ mkdir -p "$COMPONENT_PATH/bundles"
 cp -R "$BUNDLE_SOURCE" "$COMPONENT_BUNDLE_DIR"
 
 SETTINGS_JSON=$(jq -nc \
+    --arg agentsApi "$AGENTS_API_PATH" \
     --arg dm "$DM_PATH" \
     --arg dmc "$DMC_PATH" \
     --arg openaiProvider "$OPENAI_PROVIDER_PATH" \
@@ -145,7 +151,7 @@ SETTINGS_JSON=$(jq -nc \
     --arg stage5Repo "$STAGE5_GITHUB_REPO" \
     --arg stage5Model "$STAGE5_OPENAI_MODEL" \
     '{
-        validation_dependencies: [$dm, $dmc, $openaiProvider],
+        validation_dependencies: [$agentsApi, $dm, $dmc, $openaiProvider],
         playground_wordpress_version: "7.0",
         bench_env: {
             GITHUB_TOKEN: $githubToken,
@@ -171,6 +177,7 @@ echo "Repo:         $REPO_ROOT"
 echo "Driver:       $COMPONENT_PATH"
 echo "Target repo:  $STAGE5_GITHUB_REPO"
 echo "OpenAI model: $STAGE5_OPENAI_MODEL"
+echo "Agents API:   $AGENTS_API_PATH"
 echo "DM:           $DM_PATH"
 echo "DMC:          $DMC_PATH"
 echo "OpenAI:       $OPENAI_PROVIDER_PATH"
