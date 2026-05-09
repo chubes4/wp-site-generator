@@ -11,6 +11,10 @@ on:
         description: Repository that receives the proof issue. Defaults to the current repository.
         required: false
         default: ''
+      proof_mode:
+        description: Whether to override the idea agent with the Stage 5 proof prompt.
+        required: true
+        default: 'true'
       data_machine_ref:
         description: Data Machine ref.
         required: true
@@ -98,4 +102,5 @@ jobs:
           OPENAI_PROVIDER_PATH: ${{ github.workspace }}/.ci/ai-provider-for-openai
           STAGE5_GITHUB_REPO: ${{ inputs.target_repo || github.repository }}
           STAGE5_OPENAI_MODEL: ${{ inputs.openai_model }}
+          STAGE5_PROOF_MODE: ${{ inputs.proof_mode }}
         run: tests/playground-ci/scripts/run-stage-5.sh
