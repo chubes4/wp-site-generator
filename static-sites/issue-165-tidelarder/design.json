@@ -1,0 +1,13 @@
+{
+  "schema_version": 1,
+  "design_system": "editorial-magazine",
+  "palette_kind": "jewel-tone",
+  "typography_kind": "mixed-serif-sans",
+  "layout_kind": "magazine",
+  "density": "comfortable",
+  "commerce_pattern": "category-led",
+  "accent_palette": ["#10251f", "#294f3e", "#b9d7c7", "#6a2f54", "#cf9c45"],
+  "font_family_primary": "Inter, ui-sans-serif, system-ui, sans-serif",
+  "font_family_secondary": "Georgia, Times New Roman, serif",
+  "notes": "Magazine-style coastal pantry storefront with use-case-led categories, jewel seaweed tones, and guided product cards for whole-leaf seaweeds, finishing blends, kits, and snacks."
+}
