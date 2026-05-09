@@ -1,0 +1,13 @@
+{
+  "schema_version": 1,
+  "design_system": "editorial-magazine",
+  "palette_kind": "warm-neutral",
+  "typography_kind": "mixed-serif-sans",
+  "layout_kind": "grid-bento",
+  "density": "comfortable",
+  "commerce_pattern": "category-led",
+  "accent_palette": ["#2f211b", "#d29a5f", "#f6efe4", "#9da4a2", "#59615f"],
+  "font_family_primary": "Inter, ui-sans-serif, system-ui, sans-serif",
+  "font_family_secondary": "Georgia, Times New Roman, serif",
+  "notes": "Warm bench-light storefront with crema, stainless, paper-log, glass-jar, and espresso-machine shadow cues."
+}
