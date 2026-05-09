@@ -218,6 +218,23 @@ if ($proof_mode) {
         }
     }
     unset($pipeline_step_config);
+} else {
+    $real_idea_system_prompt = implode("\n\n", [
+        'You are the WC Idea Agent running inside WordPress Playground.',
+        'Call the github_issue_publish tool exactly once. Do not call any other tools. Do not mention secrets.',
+        'Create one distinct, buildable WooCommerce store concept in ' . $target_repo . ' for an underserved but visually interesting product category.',
+        'Do not author implementation artifacts. Do not open pull requests or branches.',
+        'Issue title shape: shopping-cart emoji, then the concept name, an em dash, and a one-line summary.',
+        'Issue body sections, in this order: Recommended Concept; Who It Serves; What It Sells; Why It Could Work; Issue Overlap Check; Next Step.',
+        'Use Next Step: move forward unless the recent issue corpus shows material overlap.',
+    ]);
+
+    foreach ($pipeline_config as &$pipeline_step_config) {
+        if (($pipeline_step_config['step_type'] ?? '') === 'ai') {
+            $pipeline_step_config['system_prompt'] = $real_idea_system_prompt;
+        }
+    }
+    unset($pipeline_step_config);
 }
 $pipelines->update_pipeline($pipeline_id, ['pipeline_config' => $pipeline_config]);
 
@@ -232,12 +249,14 @@ if (!$flow) {
 $flow_id = (int) $flow['flow_id'];
 $flow_config = is_array($flow['flow_config'] ?? null) ? $flow['flow_config'] : [];
 foreach ($flow_config as &$flow_step_config) {
-    if ($proof_mode && ($flow_step_config['step_type'] ?? '') === 'ai') {
+    if (($flow_step_config['step_type'] ?? '') === 'ai') {
         $flow_step_config['queue_mode'] = 'static';
         $flow_step_config['prompt_queue'] = [
             [
                 'added_at' => gmdate('c'),
-                'prompt' => 'Run Stage 5 now. Publish one CI proof issue to ' . $target_repo . ' using the configured GitHub issue publish tool.',
+                'prompt' => $proof_mode
+                    ? 'Run Stage 5 now. Publish one CI proof issue to ' . $target_repo . ' using the configured GitHub issue publish tool.'
+                    : 'Generate and publish one real, buildable store concept issue to ' . $target_repo . '. Pick a visually interesting underserved category and use the required issue shape.',
             ],
         ];
     }
