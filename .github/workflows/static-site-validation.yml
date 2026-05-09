@@ -223,48 +223,11 @@ jobs:
             echo "metrics_md=_No bench artifact found._" >> "$GITHUB_OUTPUT"
             exit 0
           fi
-          ssi=$(jq -r --arg site "$SITE" '
-            .data.results.scenarios[]? | select(.id == "ssi-import")
-          ' "$report" || echo '{}')
-          if [ -z "$ssi" ] || [ "$ssi" = "null" ]; then
-            echo "metrics_md=_SSI workload did not run._" >> "$GITHUB_OUTPUT"
-            exit 0
-          fi
-          metrics=$(printf '%s' "$ssi" | jq -r '
-            .metrics // {} | to_entries
-            | (if length == 0 then "_No SSI metrics emitted yet._" else
-                "| Metric | Value |\n| --- | --- |\n" +
-                ([ .[] | "| `\(.key)` | \(.value) |" ] | join("\n"))
-              end)
-          ')
-          diagnostics=$(printf '%s' "$ssi" | jq -r --arg site "$SITE" '
-            def cell: (. // "") | tostring | gsub("\\n"; " ") | gsub("\\|"; "\\\\|");
-            .metadata.import_report_summary as $summary
-            | if $summary == null then "" else
-                "\n\n### SSI Import Report\n" +
-                "- **Report path:** `\($summary.path // "unknown")`\n" +
-                "- **Readable:** `\($summary.readable // false)`\n" +
-                "- **Top-level keys:** `\((($summary.top_level_keys // []) | join(", ")) // "")`\n" +
-                (if (($summary.fallback_diagnostics // []) | length) > 0 then
-                  "\n| Site | Selector | Excerpt | Source HTML | Block | Converter | Stage | Reason |\n| --- | --- | --- | --- | --- | --- | --- | --- |\n" +
-                  ([ ($summary.fallback_diagnostics // [])[]
-                    | "| `\($site)` | \(.selector | cell) | \(.excerpt | cell) | \(.source_html_preview | cell) | `\(.block_name | cell)` | `\(.converter | cell)` | `\(.stage | cell)` | \(.reason | cell) |"
-                  ] | join("\n"))
-                elif (($summary.findings // []) | length) == 0 then
-                  "\n_No classified validation signals found in the import report._"
-                else
-                  "\n| Kind | Path | Preview |\n| --- | --- | --- |\n" +
-                  ([ ($summary.findings // [])[]
-                    | "| `\(.kind)` | `\(.path)` | \(.preview | cell) |"
-                  ] | join("\n"))
-                end)
-              end
-          ')
+          metrics=$(SITE="$SITE" BENCH_PATH="$report" node .github/scripts/render-ssi-validation-report.mjs)
           delim="EOF_$(openssl rand -hex 8)"
           {
             echo "metrics_md<<$delim"
             printf '%s\n' "$metrics"
-            printf '%s\n' "$diagnostics"
             echo "$delim"
           } >> "$GITHUB_OUTPUT"
 
