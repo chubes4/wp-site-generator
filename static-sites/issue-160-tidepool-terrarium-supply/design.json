@@ -1,0 +1,13 @@
+{
+  "schema_version": 1,
+  "design_system": "glassmorphism-luxury",
+  "palette_kind": "cool-neutral",
+  "typography_kind": "mixed-serif-sans",
+  "layout_kind": "grid-bento",
+  "density": "comfortable",
+  "commerce_pattern": "category-led",
+  "accent_palette": ["#0d2326", "#2f7780", "#75b8bd", "#dcc9aa", "#f5dccd"],
+  "font_family_primary": "Inter, ui-sans-serif, system-ui, sans-serif",
+  "font_family_secondary": "Georgia, Times New Roman, serif",
+  "notes": "Coastal glass-and-mineral storefront for modular tidepool-inspired terrarium kits, plant bundles, hardscape packs, care tools, and gift builds."
+}
