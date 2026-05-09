@@ -12,6 +12,7 @@ WORKLOAD_PATH="$REPO_ROOT/tests/playground-ci/workloads/dm-php-transformer-itera
 BUNDLE_SOURCE="$REPO_ROOT/bundles/php-transformer-iterator-agent"
 
 EXTENSION_PATH="${HOMEBOY_EXTENSION_PATH:-/Users/chubes/Developer/homeboy-extensions/wordpress}"
+AGENTS_API_PATH="${AGENTS_API_PATH:-/Users/chubes/Developer/agents-api}"
 DM_PATH="${DM_PATH:-/Users/chubes/Developer/data-machine}"
 DMC_PATH="${DMC_PATH:-/Users/chubes/Developer/data-machine-code}"
 OPENAI_PROVIDER_PATH="${OPENAI_PROVIDER_PATH:-/Users/chubes/Studio/intelligence-chubes4/wp-content/plugins/ai-provider-for-openai}"
@@ -33,6 +34,10 @@ if [ ! -d "$BUNDLE_SOURCE" ]; then
 fi
 if [ ! -d "$OPENAI_PROVIDER_PATH" ]; then
     echo "ERROR: AI Provider for OpenAI plugin not found at $OPENAI_PROVIDER_PATH" >&2
+    exit 1
+fi
+if [ ! -f "$AGENTS_API_PATH/agents-api.php" ]; then
+    echo "ERROR: Agents API plugin not found at $AGENTS_API_PATH" >&2
     exit 1
 fi
 if [ -z "$ITERATOR_FINDING_GROUPS_PATH" ] || [ ! -s "$ITERATOR_FINDING_GROUPS_PATH" ]; then
@@ -134,6 +139,7 @@ mkdir -p "$ITERATOR_TRANSCRIPT_DIR"
 cp -R "$BUNDLE_SOURCE" "$COMPONENT_BUNDLE_DIR"
 
 SETTINGS_JSON=$(jq -nc \
+    --arg agentsApi "$AGENTS_API_PATH" \
     --arg dm "$DM_PATH" \
     --arg dmc "$DMC_PATH" \
     --arg openaiProvider "$OPENAI_PROVIDER_PATH" \
@@ -147,7 +153,7 @@ SETTINGS_JSON=$(jq -nc \
     --arg findingGroupsJson "$FINDING_GROUPS_JSON" \
     --arg transcriptDir "$ITERATOR_TRANSCRIPT_DIR" \
     '{
-        validation_dependencies: [$dm, $dmc, $openaiProvider],
+        validation_dependencies: [$agentsApi, $dm, $dmc, $openaiProvider],
         playground_wordpress_version: "7.0",
         bench_warmup_iterations: 0,
         bench_env: {
@@ -179,6 +185,7 @@ echo "Source repo:       $ITERATOR_SOURCE_REPO"
 echo "Source PR:         $ITERATOR_SOURCE_PR"
 echo "Validation run ID: $ITERATOR_VALIDATION_RUN_ID"
 echo "OpenAI model:      $ITERATOR_OPENAI_MODEL"
+echo "Agents API:        $AGENTS_API_PATH"
 echo ""
 
 GITHUB_TOKEN="$GITHUB_TOKEN" \
@@ -196,7 +203,8 @@ HOMEBOY_BENCH_ITERATIONS=1 \
 HOMEBOY_COMPONENT_ID=wc-site-generator-ci-driver \
 HOMEBOY_COMPONENT_PATH="$COMPONENT_PATH" \
 HOMEBOY_DEPENDENCY_GITHUB_ORG=Extra-Chill \
-HOMEBOY_WORDPRESS_DEPENDENCY_PATHS="$DM_PATH
+HOMEBOY_WORDPRESS_DEPENDENCY_PATHS="$AGENTS_API_PATH
+$DM_PATH
 $DMC_PATH
 $OPENAI_PROVIDER_PATH" \
 HOMEBOY_EXTENSION_PATH="$EXTENSION_PATH" \
