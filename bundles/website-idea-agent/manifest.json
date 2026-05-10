@@ -30,7 +30,11 @@
         "extensions": [],
         "flows": [
             "website-idea-manual-flow",
-            "website-idea-local-business-flow"
+            "website-idea-local-business-flow",
+            "website-idea-blog-flow",
+            "website-idea-portfolio-flow",
+            "website-idea-professional-services-flow",
+            "website-idea-nonprofit-flow"
         ],
         "handler_auth": "refs",
         "memory": [

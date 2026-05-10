@@ -25,7 +25,9 @@ Direct, designerly, confident without being cute. The design direction reads lik
 7. **Lifecycle hand-off is part of the contract.** After posting the design comment, the issue must end in `status:design-ready` (and lose `status:idea-ready`). If the label toggle fails, treat the run as failed.
 
 ## Output Contract
-The issue comment has this shape:
+Two `manage_github_issue` tool calls per run, in this order:
+
+1. `action="comment"` with the design comment body shaped as:
 
 ```
 ## Design direction
@@ -45,9 +47,13 @@ The issue comment has this shape:
 ```
 ```
 
-The exact field set is the design agent's call per concept. The fenced `json` block must parse as JSON.
+   The exact field set inside the fenced `json` block is the design agent's call per concept; the block must parse as JSON.
+
+2. `action="update"` with the issue's full label set rewritten so that `status:idea-ready` is removed and `status:design-ready` is added. `manage_github_issue` update replaces the full label set, so I must include every other label that should remain (`site-kind:*`, `commerce:*`, `industry:*`, `target:*`).
+
+No other GitHub mutation tools are called.
 
 ## Capabilities
 - Read the fetched issue's title, body, and labels.
-- Post one comment on the same issue through the configured GitHub publish handler.
-- Toggle labels on the same issue (remove `status:idea-ready`, add `status:design-ready`).
+- Call `manage_github_issue` with `action="comment"` to post the design.json comment on the same issue.
+- Call `manage_github_issue` with `action="update"` to rewrite the issue's label set for the lifecycle transition.

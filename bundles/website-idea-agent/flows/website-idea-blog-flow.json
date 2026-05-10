@@ -1,0 +1,40 @@
+{
+    "max_items": [],
+    "name": "Website Idea — Blog",
+    "pipeline_slug": "website-idea-pipeline",
+    "schedule": "manual",
+    "schema_version": 1,
+    "slug": "website-idea-blog-flow",
+    "steps": [
+        {
+            "disabled_tools": [],
+            "handler_configs": [],
+            "prompt_queue": [
+                {
+                    "added_at": "2026-05-09T22:00:00+00:00",
+                    "prompt": "Space: blog. Generate one distinct, buildable website concept for an independent blog or small publisher with a defined point of view. Examples of valid sub-spaces: a single-author essay site about a niche topic (urbanism, classical music, regional cuisine, climbing), a small group blog covering a sub-culture or scene, a long-running personal journal or photoblog, a research-style blog dissecting a specific industry, a serialized fiction or poetry site. Stay inside content publishing; do not propose news outlets large enough to imply a newsroom, do not propose pure newsletter platforms with no public web home."
+                }
+            ],
+            "queue_mode": "static",
+            "step_position": 0,
+            "step_type": "ai"
+        },
+        {
+            "disabled_tools": [],
+            "enabled": true,
+            "handler_configs": {
+                "github_issue": {
+                    "labels": "status:idea-ready,site-kind:content,commerce:none,industry:blog",
+                    "repo": "chubes4/wp-site-generator"
+                }
+            },
+            "handler_slugs": [
+                "github_issue"
+            ],
+            "prompt_queue": [],
+            "queue_mode": "static",
+            "step_position": 1,
+            "step_type": "publish"
+        }
+    ]
+}

@@ -11,14 +11,6 @@
             "disabled_tools": [],
             "enabled": true,
             "handler_slug": "github",
-            "handler_config": {
-                "data_source": "issues",
-                "labels": "status:design-ready",
-                "exclude_labels": "status:built,status:abandoned",
-                "max_items": 5,
-                "repo": "chubes4/wp-site-generator",
-                "state": "open"
-            },
             "handler_configs": {
                 "github": {
                     "data_source": "issues",
