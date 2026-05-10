@@ -29,7 +29,7 @@ on:
         default: main
 
 permissions:
-  contents: read
+  contents: write
   issues: write
 
 jobs:

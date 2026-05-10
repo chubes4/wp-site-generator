@@ -39,7 +39,7 @@ on:
 
 permissions:
   actions: read
-  contents: read
+  contents: write
   issues: write
   pull-requests: write
 
