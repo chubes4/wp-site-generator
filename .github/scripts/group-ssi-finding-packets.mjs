@@ -138,8 +138,11 @@ function routeCandidateRepo(packet) {
 	}
 
 	const kind = text(packet.kind).toLowerCase();
-	if (kind === 'bench_failure' || kind === 'visual_parity_outcome') {
+	if (kind === 'bench_failure') {
 		return 'chubes4/wc-site-generator';
+	}
+	if (kind === 'visual_parity_outcome' || kind === 'visual_parity_mismatch') {
+		return 'chubes4/static-site-importer';
 	}
 	if (kind === 'report_missing' || kind === 'import_clean') {
 		return 'chubes4/static-site-importer';
