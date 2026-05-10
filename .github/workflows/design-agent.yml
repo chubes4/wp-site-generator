@@ -1,0 +1,76 @@
+name: Design Agent
+
+on:
+  workflow_dispatch:
+    inputs:
+      issue_number:
+        description: status:idea-ready issue number to attach a design direction to.
+        required: true
+      openai_model:
+        description: OpenAI model to use for the imported agent flow.
+        required: true
+        default: gpt-5.5
+      data_machine_ref:
+        description: Data Machine ref.
+        required: true
+        default: main
+      data_machine_code_ref:
+        description: Data Machine Code ref.
+        required: true
+        default: main
+      homeboy_extensions_ref:
+        description: Homeboy Extensions ref (for input compatibility; reusable workflow itself pins @main).
+        required: true
+        default: main
+
+permissions:
+  contents: read
+  pull-requests: read
+  issues: write
+
+jobs:
+  prepare:
+    name: Prepare design-agent prompt
+    runs-on: ubuntu-latest
+    outputs:
+      prompt: ${{ steps.prompt.outputs.prompt }}
+    steps:
+      - name: Validate issue_number input
+        env:
+          ISSUE_NUMBER: ${{ inputs.issue_number }}
+        run: |
+          set -euo pipefail
+          if ! [[ "$ISSUE_NUMBER" =~ ^[1-9][0-9]*$ ]]; then
+            echo "issue_number must be a positive integer (got: '$ISSUE_NUMBER')." >&2
+            exit 1
+          fi
+
+      - name: Build agent prompt
+        id: prompt
+        env:
+          ISSUE_NUMBER: ${{ inputs.issue_number }}
+        run: |
+          set -euo pipefail
+          {
+            printf 'prompt<<EOF\n'
+            printf 'Decide one visual design direction for GitHub issue #%s. Read the concept body, post the design.json fenced JSON block as a comment, and toggle the issue label from status:idea-ready to status:design-ready using surgical add_label_to_issue and remove_label_from_issue tool calls. Preserve every other label.\n' "$ISSUE_NUMBER"
+            printf 'EOF\n'
+          } >> "$GITHUB_OUTPUT"
+
+  design-agent:
+    name: Run design-agent in Playground
+    needs: prepare
+    uses: Extra-Chill/homeboy-extensions/.github/workflows/datamachine-agent-ci.yml@main
+    with:
+      bundle_path: bundles/design-agent
+      agent_slug: design-agent
+      pipeline_slug: design-pipeline
+      flow_slug: design-manual-flow
+      target_repo: chubes4/wp-site-generator
+      prompt: ${{ needs.prepare.outputs.prompt }}
+      model: ${{ inputs.openai_model }}
+      validation_dependencies: Automattic/agents-api@main,Extra-Chill/data-machine@${{ inputs.data_machine_ref }},Extra-Chill/data-machine-code@${{ inputs.data_machine_code_ref }},WordPress/ai-provider-for-openai@main
+      success_requires_pr: false
+      transcript_artifact_name: design-agent-transcript-${{ github.run_id }}
+      comment_pr_summary: false
+    secrets: inherit
