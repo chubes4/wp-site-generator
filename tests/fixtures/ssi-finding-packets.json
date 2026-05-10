@@ -81,5 +81,50 @@
     "converter": "static-site-importer",
     "stage": "source-region",
     "reason": "source region manifest missed header"
+  },
+  {
+    "schema_version": 2,
+    "site": "demo-store",
+    "source_repo": "chubes4/wc-site-generator",
+    "source_pr": 77,
+    "source_head_sha": "abc123",
+    "validation_run_id": 12345,
+    "candidate_repo": "chubes4/static-site-importer",
+    "kind": "ignored_region",
+    "path": "$.source_region_selection.intentionally_ignored_regions",
+    "selector": "html > body > a.skip-link",
+    "source_html_preview": "<a class=\"skip-link\">Skip to content</a>",
+    "converter": "static-site-importer",
+    "stage": "source-region",
+    "reason": "intentional_accessibility_chrome"
+  },
+  {
+    "schema_version": 2,
+    "site": "demo-store",
+    "source_repo": "chubes4/wc-site-generator",
+    "source_pr": 77,
+    "source_head_sha": "abc123",
+    "validation_run_id": 12345,
+    "candidate_repo": "chubes4/static-site-importer",
+    "kind": "import_clean",
+    "path": "/wordpress/wp-content/themes/demo-store/import-report.json",
+    "converter": "static-site-importer",
+    "stage": "baseline",
+    "reason": "import_report present, no fallbacks or findings recorded."
+  },
+  {
+    "schema_version": 2,
+    "site": "demo-store",
+    "source_repo": "chubes4/wc-site-generator",
+    "source_pr": 77,
+    "source_head_sha": "abc123",
+    "validation_run_id": 12345,
+    "candidate_repo": "chubes4/static-site-importer",
+    "kind": "visual_parity_mismatch",
+    "path": "visual-parity-artifacts/demo-store/visual-diff.json",
+    "preview": "source=1280x5076 imported=1280x7450 mismatch=56.31%",
+    "converter": "visual-parity",
+    "stage": "screenshot_diff",
+    "reason": "Imported WordPress screenshot differs from source static HTML screenshot: mismatch=56.31%, threshold=1.50%."
   }
 ]

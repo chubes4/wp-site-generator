@@ -24,7 +24,8 @@ await writeFile(outputPath, `${JSON.stringify(grouped, null, 2)}\n`);
 
 function groupPackets(rawPackets) {
 	const normalized = rawPackets.map(normalizePacket).filter((packet) => packet.kind || packet.reason || packet.preview);
-	const deduped = dedupe(normalized);
+	const actionable = normalized.filter(isActionablePacket);
+	const deduped = dedupe(actionable);
 	const groupMap = new Map();
 
 	for (const packet of deduped) {
@@ -57,11 +58,20 @@ function groupPackets(rawPackets) {
 	return {
 		schema_version: 2,
 		packet_count: normalized.length,
+		actionable_packet_count: actionable.length,
 		deduped_packet_count: deduped.length,
 		group_count: groupMap.size,
 		candidate_repos: [...new Set([...groupMap.values()].map((group) => group.candidate_repo))],
 		groups: [...groupMap.values()].sort((a, b) => b.count - a.count || a.candidate_repo.localeCompare(b.candidate_repo)),
 	};
+}
+
+function isActionablePacket(packet) {
+	if (text(packet.actionable).toLowerCase() === 'false') {
+		return false;
+	}
+
+	return !['import_clean', 'ignored_region'].includes(text(packet.kind).toLowerCase());
 }
 
 function normalizePacket(packet) {
@@ -84,6 +94,7 @@ function normalizePacket(packet) {
 		converter: text(packet.converter),
 		stage: text(packet.stage),
 		reason: text(packet.reason),
+		actionable: packet.actionable,
 		artifact_names: packet.artifact_names && typeof packet.artifact_names === 'object' ? packet.artifact_names : {},
 		bench_outcome: text(packet.bench_outcome),
 		visual_outcome: text(packet.visual_outcome),

@@ -22,9 +22,10 @@ assert.equal(result.status, 0, result.stderr || result.stdout);
 
 const grouped = JSON.parse(await readFile(outputPath, 'utf8'));
 assert.equal(grouped.schema_version, 2);
-assert.equal(grouped.packet_count, 4);
-assert.equal(grouped.deduped_packet_count, 3);
-assert.equal(grouped.group_count, 3);
+assert.equal(grouped.packet_count, 7);
+assert.equal(grouped.actionable_packet_count, 5);
+assert.equal(grouped.deduped_packet_count, 4);
+assert.equal(grouped.group_count, 4);
 assert.deepEqual(grouped.candidate_repos.sort(), [
 	'chubes4/html-to-blocks-converter',
 	'chubes4/static-site-importer',
@@ -39,6 +40,14 @@ assert.equal(ssiGroup.count, 1);
 
 const sourceRegionGroup = grouped.groups.find((group) => group.kind === 'source_region');
 assert.equal(sourceRegionGroup.candidate_repo, 'chubes4/static-site-importer');
+
+const visualGroup = grouped.groups.find((group) => group.kind === 'visual_parity_mismatch');
+assert.equal(visualGroup.candidate_repo, 'chubes4/static-site-importer');
+assert.equal(visualGroup.count, 1);
+
+const nonActionableKinds = grouped.groups.flatMap((group) => group.packets).map((packet) => packet.kind);
+assert.ok(!nonActionableKinds.includes('ignored_region'), 'Ignored regions must not reach the iterator groups');
+assert.ok(!nonActionableKinds.includes('import_clean'), 'Clean-import baseline packets must not reach the iterator groups');
 
 // Design metadata must flow through grouping without changing routing keys.
 const designFields = [
