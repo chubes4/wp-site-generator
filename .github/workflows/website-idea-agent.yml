@@ -40,7 +40,7 @@ on:
         default: main
 
 permissions:
-  contents: read
+  contents: write
   pull-requests: read
   issues: write
 
