@@ -35,78 +35,20 @@ permissions:
 jobs:
   idea-agent:
     name: Run store-idea-agent in Playground
-    runs-on: ubuntu-latest
-    timeout-minutes: 25
-
-    steps:
-      - name: Checkout site generator
-        uses: actions/checkout@v4
-
-      - name: Checkout Homeboy Extensions
-        uses: actions/checkout@v4
-        with:
-          repository: Extra-Chill/homeboy-extensions
-          ref: ${{ inputs.homeboy_extensions_ref }}
-          path: .ci/homeboy-extensions
-
-      - name: Checkout Data Machine
-        uses: actions/checkout@v4
-        with:
-          repository: Extra-Chill/data-machine
-          ref: ${{ inputs.data_machine_ref }}
-          path: .ci/data-machine
-
-      - name: Checkout Data Machine Code
-        uses: actions/checkout@v4
-        with:
-          repository: Extra-Chill/data-machine-code
-          ref: ${{ inputs.data_machine_code_ref }}
-          path: .ci/data-machine-code
-
-      - name: Checkout Agents API
-        uses: actions/checkout@v4
-        with:
-          repository: Automattic/agents-api
-          path: .ci/agents-api
-
-      - name: Checkout OpenAI provider
-        uses: actions/checkout@v4
-        with:
-          repository: WordPress/ai-provider-for-openai
-          path: .ci/ai-provider-for-openai
-
-      - name: Set up Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: 24
-
-      - name: Install Homeboy WordPress extension dependencies
-        working-directory: .ci/homeboy-extensions/wordpress
-        run: |
-          composer install --no-interaction --no-progress --prefer-dist
-          npm install
-
-      - name: Install plugin PHP dependencies
-        run: |
-          composer install --working-dir=.ci/data-machine --no-interaction --no-progress --prefer-dist
-          composer install --working-dir=.ci/data-machine-code --no-interaction --no-progress --prefer-dist
-
-      - name: Run store-idea-agent in Playground
-        id: idea-agent
-        env:
-          GITHUB_TOKEN: ${{ github.token }}
-          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
-          HOMEBOY_EXTENSION_PATH: ${{ github.workspace }}/.ci/homeboy-extensions/wordpress
-          AGENTS_API_PATH: ${{ github.workspace }}/.ci/agents-api
-          DM_PATH: ${{ github.workspace }}/.ci/data-machine
-          DMC_PATH: ${{ github.workspace }}/.ci/data-machine-code
-          OPENAI_PROVIDER_PATH: ${{ github.workspace }}/.ci/ai-provider-for-openai
-          WC_IDEA_AGENT_OPENAI_MODEL: ${{ inputs.openai_model }}
-          WC_IDEA_AGENT_TARGET_REPO: ${{ inputs.target_repo || github.repository }}
-          WC_IDEA_AGENT_PROMPT: ${{ inputs.concept_prompt }}
-        run: tests/playground-ci/scripts/run-store-idea-agent.sh
-
-      - name: Summarize idea issue
-        if: always()
-        run: |
-          echo "Idea issue: ${{ steps.idea-agent.outputs.idea_issue_url }}" >> "$GITHUB_STEP_SUMMARY"
+    uses: Extra-Chill/homeboy-extensions/.github/workflows/datamachine-agent-ci.yml@main
+    with:
+      bundle_path: bundles/store-idea-agent
+      agent_slug: store-idea-agent
+      pipeline_slug: store-idea-pipeline
+      flow_slug: store-idea-manual-flow
+      target_repo: ${{ inputs.target_repo || github.repository }}
+      prompt: ${{ inputs.concept_prompt }}
+      model: ${{ inputs.openai_model }}
+      validation_dependencies: Automattic/agents-api@main,Extra-Chill/data-machine@${{ inputs.data_machine_ref }},Extra-Chill/data-machine-code@${{ inputs.data_machine_code_ref }},WordPress/ai-provider-for-openai@main
+      success_requires_pr: false
+      max_turns: 6
+      step_budget: 8
+      time_budget_ms: 180000
+      engine_data_outputs: '{"issue_url":"metadata.engine_data.store_idea_agent.issue_url","issue_number":"metadata.engine_data.store_idea_agent.issue_number"}'
+      transcript_artifact_name: store-idea-agent-transcript-${{ github.run_id }}
+    secrets: inherit
