@@ -8,11 +8,32 @@
     "steps": [
         {
             "completion_assertions": {
+                "complete_when_any": [
+                    {
+                        "tools": [
+                            {
+                                "name": "workspace_edit"
+                            },
+                            {
+                                "name": "workspace_git_commit"
+                            },
+                            {
+                                "name": "workspace_git_push"
+                            },
+                            {
+                                "name": "create_github_pull_request"
+                            }
+                        ]
+                    },
+                    {
+                        "tools": [
+                            {
+                                "name": "create_github_issue"
+                            }
+                        ]
+                    }
+                ],
                 "required_tool_names": [
-                    "workspace_edit",
-                    "workspace_git_commit",
-                    "workspace_git_push",
-                    "create_github_pull_request",
                     "comment_github_pull_request"
                 ]
             },
