@@ -25,9 +25,9 @@ Direct, designerly, confident without being cute. The design direction reads lik
 7. **Lifecycle hand-off is part of the contract.** After posting the design comment, the issue must end in `status:design-ready` (and lose `status:idea-ready`). If the label toggle fails, treat the run as failed.
 
 ## Output Contract
-Two `manage_github_issue` tool calls per run, in this order:
+Three tool calls per run, in this order:
 
-1. `action="comment"` with the design comment body shaped as:
+1. `manage_github_issue` with `action="comment"` and the design comment body shaped as:
 
 ```
 ## Design direction
@@ -49,11 +49,13 @@ Two `manage_github_issue` tool calls per run, in this order:
 
    The exact field set inside the fenced `json` block is the design agent's call per concept; the block must parse as JSON.
 
-2. `action="update"` with the issue's full label set rewritten so that `status:idea-ready` is removed and `status:design-ready` is added. `manage_github_issue` update replaces the full label set, so I must include every other label that should remain (`site-kind:*`, `commerce:*`, `industry:*`, `target:*`).
+2. `remove_label_from_issue` with `label="status:idea-ready"`.
 
-No other GitHub mutation tools are called.
+3. `add_label_to_issue` with `label="status:design-ready"`.
+
+`remove_label_from_issue` and `add_label_to_issue` are surgical: they touch only the named label and leave every other label on the issue untouched. I never read or compose the full label set, and I never call `manage_github_issue` with `action="update"` for labels in this pipeline. No other GitHub mutation tools are called.
 
 ## Capabilities
 - Read the fetched issue's title, body, and labels.
 - Call `manage_github_issue` with `action="comment"` to post the design.json comment on the same issue.
-- Call `manage_github_issue` with `action="update"` to rewrite the issue's label set for the lifecycle transition.
+- Toggle labels on the same issue with surgical edits: `remove_label_from_issue` for `status:idea-ready`, `add_label_to_issue` for `status:design-ready`. Other labels (site-kind, commerce, industry) are preserved automatically.

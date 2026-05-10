@@ -32,7 +32,7 @@
             "prompt_queue": [
                 {
                     "added_at": "2026-05-09T22:00:00+00:00",
-                    "prompt": "Decide one design direction for the fetched concept. Honor the concept's audience, offer, and angle. Post the design.json comment using manage_github_issue with action=comment, then transition the issue labels using manage_github_issue with action=update (preserving existing labels except for the lifecycle swap from status:idea-ready to status:design-ready)."
+                    "prompt": "Decide one design direction for the fetched concept. Honor the concept's audience, offer, and angle. Post the design.json comment using manage_github_issue with action=comment, then transition the lifecycle by calling remove_label_from_issue with label=\"status:idea-ready\" and add_label_to_issue with label=\"status:design-ready\"."
                 }
             ],
             "queue_mode": "static",
