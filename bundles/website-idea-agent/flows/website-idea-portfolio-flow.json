@@ -1,0 +1,40 @@
+{
+    "max_items": [],
+    "name": "Website Idea — Portfolio",
+    "pipeline_slug": "website-idea-pipeline",
+    "schedule": "manual",
+    "schema_version": 1,
+    "slug": "website-idea-portfolio-flow",
+    "steps": [
+        {
+            "disabled_tools": [],
+            "handler_configs": [],
+            "prompt_queue": [
+                {
+                    "added_at": "2026-05-09T22:00:00+00:00",
+                    "prompt": "Space: portfolio. Generate one distinct, buildable website concept for a personal or studio portfolio site for an individual practitioner. Examples of valid sub-spaces: an architect or interior designer with project case studies, a director or editor with a reel and selected work, a graphic designer or illustrator with a curated case-study set, a developer or technical writer with selected projects, a chef with a tasting-menu and press section, a dancer or choreographer with film and performance archive, a small fine-art studio practice. Stay inside personal/studio practice; do not propose marketplace-style listings of many practitioners."
+                }
+            ],
+            "queue_mode": "static",
+            "step_position": 0,
+            "step_type": "ai"
+        },
+        {
+            "disabled_tools": [],
+            "enabled": true,
+            "handler_configs": {
+                "github_issue": {
+                    "labels": "status:idea-ready,site-kind:content,commerce:none,industry:portfolio",
+                    "repo": "chubes4/wp-site-generator"
+                }
+            },
+            "handler_slugs": [
+                "github_issue"
+            ],
+            "prompt_queue": [],
+            "queue_mode": "static",
+            "step_position": 1,
+            "step_type": "publish"
+        }
+    ]
+}

@@ -1,0 +1,40 @@
+{
+    "max_items": [],
+    "name": "Store Idea — Home & Craft",
+    "pipeline_slug": "store-idea-pipeline",
+    "schedule": "manual",
+    "schema_version": 1,
+    "slug": "store-idea-home-and-craft-flow",
+    "steps": [
+        {
+            "disabled_tools": [],
+            "handler_configs": [],
+            "prompt_queue": [
+                {
+                    "added_at": "2026-05-09T22:00:00+00:00",
+                    "prompt": "Industry: home goods and craft. Generate one distinct, buildable store concept for the home goods and craft industry. Examples of valid sub-spaces: ceramics and tableware, textiles and bedding, lighting, woodworking supplies, leatherwork, fiber arts and yarn, marbling and bookbinding, candles and soap, small-batch furniture, restoration tooling. Stay inside home and craft; do not drift into general apparel, food, or pure decor without a craft angle."
+                }
+            ],
+            "queue_mode": "static",
+            "step_position": 0,
+            "step_type": "ai"
+        },
+        {
+            "disabled_tools": [],
+            "enabled": true,
+            "handler_configs": {
+                "github_issue": {
+                    "labels": "status:idea-ready,site-kind:commerce,commerce:woocommerce,industry:home-craft",
+                    "repo": "chubes4/wp-site-generator"
+                }
+            },
+            "handler_slugs": [
+                "github_issue"
+            ],
+            "prompt_queue": [],
+            "queue_mode": "static",
+            "step_position": 1,
+            "step_type": "publish"
+        }
+    ]
+}

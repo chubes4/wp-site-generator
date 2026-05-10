@@ -1,0 +1,40 @@
+{
+    "max_items": [],
+    "name": "Store Idea — Food & Beverage",
+    "pipeline_slug": "store-idea-pipeline",
+    "schedule": "manual",
+    "schema_version": 1,
+    "slug": "store-idea-food-and-beverage-flow",
+    "steps": [
+        {
+            "disabled_tools": [],
+            "handler_configs": [],
+            "prompt_queue": [
+                {
+                    "added_at": "2026-05-09T22:00:00+00:00",
+                    "prompt": "Industry: food and beverage. Generate one distinct, buildable store concept inside the food and beverage industry. Examples of valid sub-spaces: small-batch pantry, fermented goods, single-origin coffee, regional snack imports, sauces and condiments, baking supplies, non-alcoholic spirits, tea, specialty meat or seafood, cheese, candy, restaurant retail extensions. Stay inside food and beverage; do not drift into general gifts, kitchenware-only, or wellness."
+                }
+            ],
+            "queue_mode": "static",
+            "step_position": 0,
+            "step_type": "ai"
+        },
+        {
+            "disabled_tools": [],
+            "enabled": true,
+            "handler_configs": {
+                "github_issue": {
+                    "labels": "status:idea-ready,site-kind:commerce,commerce:woocommerce,industry:food-beverage",
+                    "repo": "chubes4/wp-site-generator"
+                }
+            },
+            "handler_slugs": [
+                "github_issue"
+            ],
+            "prompt_queue": [],
+            "queue_mode": "static",
+            "step_position": 1,
+            "step_type": "publish"
+        }
+    ]
+}

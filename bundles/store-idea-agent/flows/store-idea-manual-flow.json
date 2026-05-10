@@ -1,0 +1,40 @@
+{
+    "max_items": [],
+    "name": "Store Idea — Manual Validation",
+    "pipeline_slug": "store-idea-pipeline",
+    "schedule": "manual",
+    "schema_version": 1,
+    "slug": "store-idea-manual-flow",
+    "steps": [
+        {
+            "disabled_tools": [],
+            "handler_configs": [],
+            "prompt_queue": [
+                {
+                    "added_at": "2026-05-09T22:00:00+00:00",
+                    "prompt": "Industry: open. Generate one distinct, buildable store concept for an underserved but visually interesting product category. Treat this as a manual validation run; pick a concept that produces a strong homepage and product catalog when built downstream."
+                }
+            ],
+            "queue_mode": "static",
+            "step_position": 0,
+            "step_type": "ai"
+        },
+        {
+            "disabled_tools": [],
+            "enabled": true,
+            "handler_configs": {
+                "github_issue": {
+                    "labels": "status:idea-ready,site-kind:commerce,commerce:woocommerce",
+                    "repo": "chubes4/wp-site-generator"
+                }
+            },
+            "handler_slugs": [
+                "github_issue"
+            ],
+            "prompt_queue": [],
+            "queue_mode": "static",
+            "step_position": 1,
+            "step_type": "publish"
+        }
+    ]
+}

@@ -2,7 +2,7 @@
 #
 # Stage 3: execute a CI-safe Data Machine flow inside Playground.
 #
-# Imports the wc-idea-agent bundle, creates a one-step no-op fetch flow, runs it
+# Imports the store-idea-agent bundle, creates a one-step no-op fetch flow, runs it
 # via datamachine/run-flow, drains Action Scheduler with datamachine/drain-job,
 # and asserts the job reaches a terminal state. The fetch returns no items by
 # design, avoiding AI token spend and GitHub writes while proving the execution
@@ -16,7 +16,7 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(cd "$SCRIPT_DIR/../../.." && pwd)"
 COMPONENT_PATH="$REPO_ROOT/tests/playground-ci/component"
 WORKLOAD_PATH="$REPO_ROOT/tests/playground-ci/workloads/dm-run-flow-probe.php"
-BUNDLE_SOURCE="$REPO_ROOT/bundles/wc-idea-agent"
+BUNDLE_SOURCE="$REPO_ROOT/bundles/store-idea-agent"
 
 EXTENSION_PATH="${HOMEBOY_EXTENSION_PATH:-/Users/chubes/Developer/homeboy-extensions/wordpress}"
 DM_PATH="${DM_PATH:-/Users/chubes/Developer/data-machine}"
@@ -27,7 +27,7 @@ if [ ! -f "$EXTENSION_PATH/scripts/bench/bench-runner.sh" ]; then
     exit 1
 fi
 if [ ! -d "$BUNDLE_SOURCE" ]; then
-    echo "ERROR: wc-idea-agent bundle not found at $BUNDLE_SOURCE" >&2
+    echo "ERROR: store-idea-agent bundle not found at $BUNDLE_SOURCE" >&2
     exit 1
 fi
 if ! command -v jq >/dev/null 2>&1; then
@@ -35,9 +35,9 @@ if ! command -v jq >/dev/null 2>&1; then
     exit 1
 fi
 
-RESULTS_TMPFILE=$(mktemp "${TMPDIR:-/tmp}/wc-site-generator-stage-3.XXXXXX")
+RESULTS_TMPFILE=$(mktemp "${TMPDIR:-/tmp}/wp-site-generator-stage-3.XXXXXX")
 COMPONENT_WORKLOAD="$COMPONENT_PATH/dm-run-flow-probe.php"
-COMPONENT_BUNDLE_DIR="$COMPONENT_PATH/bundles/wc-idea-agent"
+COMPONENT_BUNDLE_DIR="$COMPONENT_PATH/bundles/store-idea-agent"
 
 cleanup() {
     rm -f "$RESULTS_TMPFILE" "$COMPONENT_WORKLOAD"
@@ -79,7 +79,7 @@ echo ""
 
 HOMEBOY_BENCH_RESULTS_FILE="$RESULTS_TMPFILE" \
 HOMEBOY_BENCH_ITERATIONS=1 \
-HOMEBOY_COMPONENT_ID=wc-site-generator-ci-driver \
+HOMEBOY_COMPONENT_ID=wp-site-generator-ci-driver \
 HOMEBOY_COMPONENT_PATH="$COMPONENT_PATH" \
 HOMEBOY_EXTENSION_PATH="$EXTENSION_PATH" \
 HOMEBOY_SETTINGS_JSON="$SETTINGS_JSON" \

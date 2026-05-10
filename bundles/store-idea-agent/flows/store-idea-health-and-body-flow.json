@@ -1,0 +1,40 @@
+{
+    "max_items": [],
+    "name": "Store Idea — Health & Body",
+    "pipeline_slug": "store-idea-pipeline",
+    "schedule": "manual",
+    "schema_version": 1,
+    "slug": "store-idea-health-and-body-flow",
+    "steps": [
+        {
+            "disabled_tools": [],
+            "handler_configs": [],
+            "prompt_queue": [
+                {
+                    "added_at": "2026-05-09T22:00:00+00:00",
+                    "prompt": "Industry: health and body. Generate one distinct, buildable store concept for health and body care. Examples of valid sub-spaces: skincare for a specific climate or condition, herbal apothecary, dental and oral care, sleep and recovery tools, mobility and rehab aids, post-surgical care, menstrual and reproductive health, men's grooming, pregnancy and postpartum, sun and skin protection. Stay inside health and body; avoid generic wellness, supplements with bold medical claims, and pure cosmetics-only."
+                }
+            ],
+            "queue_mode": "static",
+            "step_position": 0,
+            "step_type": "ai"
+        },
+        {
+            "disabled_tools": [],
+            "enabled": true,
+            "handler_configs": {
+                "github_issue": {
+                    "labels": "status:idea-ready,site-kind:commerce,commerce:woocommerce,industry:health-body",
+                    "repo": "chubes4/wp-site-generator"
+                }
+            },
+            "handler_slugs": [
+                "github_issue"
+            ],
+            "prompt_queue": [],
+            "queue_mode": "static",
+            "step_position": 1,
+            "step_type": "publish"
+        }
+    ]
+}

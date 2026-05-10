@@ -1,0 +1,40 @@
+{
+    "max_items": [],
+    "name": "Website Idea — Professional Services",
+    "pipeline_slug": "website-idea-pipeline",
+    "schedule": "manual",
+    "schema_version": 1,
+    "slug": "website-idea-professional-services-flow",
+    "steps": [
+        {
+            "disabled_tools": [],
+            "handler_configs": [],
+            "prompt_queue": [
+                {
+                    "added_at": "2026-05-09T22:00:00+00:00",
+                    "prompt": "Space: professional services. Generate one distinct, buildable website concept for a service-based small business where the website's job is to convert visitors into clients for a defined service. Examples of valid sub-spaces: a CPA or tax-prep firm, a small law practice with a clear specialty (immigration, trusts and estates, IP), a residential real-estate agent with a regional focus, a financial-planning solo practice, a niche consultancy (sustainability reporting, fractional CTO, voice and dialect coaching), a therapy or counseling practice, a translation or localization shop. Stay inside professional services; do not drift into pure SaaS, pure ecommerce, or franchise-style chains."
+                }
+            ],
+            "queue_mode": "static",
+            "step_position": 0,
+            "step_type": "ai"
+        },
+        {
+            "disabled_tools": [],
+            "enabled": true,
+            "handler_configs": {
+                "github_issue": {
+                    "labels": "status:idea-ready,site-kind:content,commerce:none,industry:professional-services",
+                    "repo": "chubes4/wp-site-generator"
+                }
+            },
+            "handler_slugs": [
+                "github_issue"
+            ],
+            "prompt_queue": [],
+            "queue_mode": "static",
+            "step_position": 1,
+            "step_type": "publish"
+        }
+    ]
+}

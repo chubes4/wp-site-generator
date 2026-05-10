@@ -1,0 +1,57 @@
+{
+    "agent": {
+        "agent_config": {
+            "description": "Generates distinct commerce store concepts and opens them as GitHub issues for downstream design and implementation. Industry/problem space comes from the flow user message.",
+            "mode_models": {
+                "chat": {
+                    "model": "gpt-5.5",
+                    "provider": "openai"
+                },
+                "pipeline": {
+                    "model": "gpt-5.5",
+                    "provider": "openai"
+                },
+                "system": {
+                    "model": "gpt-5.5-mini",
+                    "provider": "openai"
+                }
+            }
+        },
+        "description": "",
+        "label": "Store Idea Agent",
+        "slug": "store-idea-agent"
+    },
+    "bundle_slug": "store-idea-agent",
+    "bundle_version": "1",
+    "exported_at": "2026-05-09T22:00:00+00:00",
+    "exported_by": "data-machine/0.104.0",
+    "included": {
+        "auth_refs": [],
+        "extensions": [],
+        "flows": [
+            "store-idea-manual-flow",
+            "store-idea-food-and-beverage-flow",
+            "store-idea-home-and-craft-flow",
+            "store-idea-outdoors-and-field-flow",
+            "store-idea-apparel-and-accessories-flow",
+            "store-idea-music-and-audio-flow",
+            "store-idea-health-and-body-flow",
+            "store-idea-pet-and-animal-flow",
+            "store-idea-print-paper-and-stationery-flow"
+        ],
+        "handler_auth": "refs",
+        "memory": [
+            "agent/SOUL.md"
+        ],
+        "pipelines": [
+            "store-idea-pipeline"
+        ],
+        "prompts": [],
+        "rubrics": [],
+        "seed_queues": [],
+        "tool_policies": []
+    },
+    "schema_version": 1,
+    "source_ref": "",
+    "source_revision": ""
+}

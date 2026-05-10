@@ -18,7 +18,7 @@ DMC_PATH="${DMC_PATH:-/Users/chubes/Developer/data-machine-code}"
 OPENAI_PROVIDER_PATH="${OPENAI_PROVIDER_PATH:-/Users/chubes/Studio/intelligence-chubes4/wp-content/plugins/ai-provider-for-openai}"
 STUDIO_SITE_PATH="${STUDIO_SITE_PATH:-/Users/chubes/Studio/intelligence-chubes4}"
 ITERATOR_OPENAI_MODEL="${ITERATOR_OPENAI_MODEL:-gpt-5.5}"
-ITERATOR_SOURCE_REPO="${ITERATOR_SOURCE_REPO:-chubes4/wc-site-generator}"
+ITERATOR_SOURCE_REPO="${ITERATOR_SOURCE_REPO:-chubes4/wp-site-generator}"
 ITERATOR_SOURCE_PR="${ITERATOR_SOURCE_PR:-}"
 ITERATOR_SOURCE_HEAD_SHA="${ITERATOR_SOURCE_HEAD_SHA:-}"
 ITERATOR_VALIDATION_RUN_ID="${ITERATOR_VALIDATION_RUN_ID:-}"
@@ -67,8 +67,8 @@ if [ -z "$OPENAI_API_KEY" ]; then
     exit 1
 fi
 
-CONFIG_TMPFILE=$(mktemp "${TMPDIR:-/tmp}/wc-site-generator-php-transformer-iterator-config.XXXXXX.json")
-RESULTS_TMPFILE=$(mktemp "${TMPDIR:-/tmp}/wc-site-generator-php-transformer-iterator-results.XXXXXX.json")
+CONFIG_TMPFILE=$(mktemp "${TMPDIR:-/tmp}/wp-site-generator-php-transformer-iterator-config.XXXXXX.json")
+RESULTS_TMPFILE=$(mktemp "${TMPDIR:-/tmp}/wp-site-generator-php-transformer-iterator-results.XXXXXX.json")
 COMPONENT_BOOTSTRAP_WORKLOAD="$COMPONENT_PATH/php-transformer-iterator-bootstrap.php"
 COMPONENT_BUNDLE_DIR="$COMPONENT_PATH/bundles/php-transformer-iterator-agent"
 ITERATOR_TRANSCRIPT_DIR="${ITERATOR_TRANSCRIPT_DIR:-$REPO_ROOT/.ci/php-transformer-iterator-transcripts}"
@@ -123,14 +123,14 @@ jq -n \
     --arg transcriptDir "$ITERATOR_TRANSCRIPT_DIR" \
     --arg prompt "$ITERATOR_PROMPT" \
     '{
-        component_id: "wc-site-generator-ci-driver",
+        component_id: "wp-site-generator-ci-driver",
         component_path: $componentPath,
         workload_id: "dm-php-transformer-iterator",
         workload_label: "Run imported PHP transformer iterator agent",
         validation_dependencies: [$agentsApi, $dm, $dmc, $openaiProvider],
         playground_wordpress_version: "7.0",
         bench_warmup_iterations: 0,
-        bundle_path: "/wordpress/wp-content/plugins/wc-site-generator-ci-driver/bundles/php-transformer-iterator-agent",
+        bundle_path: "/wordpress/wp-content/plugins/wp-site-generator-ci-driver/bundles/php-transformer-iterator-agent",
         agent_slug: "php-transformer-iterator-agent",
         pipeline_slug: "php-transformer-iterator-pipeline",
         flow_slug: "php-transformer-iterator-manual-flow",
@@ -148,7 +148,7 @@ jq -n \
             "chubes4/static-site-importer",
             "chubes4/html-to-blocks-converter",
             "chubes4/block-format-bridge",
-            "chubes4/wc-site-generator"
+            "chubes4/wp-site-generator"
         ],
         max_turns: 24,
         prompt: $prompt,

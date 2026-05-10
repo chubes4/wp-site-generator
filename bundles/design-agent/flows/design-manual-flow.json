@@ -1,0 +1,43 @@
+{
+    "max_items": [],
+    "name": "Design — Manual",
+    "pipeline_slug": "design-pipeline",
+    "schedule": "manual",
+    "schema_version": 1,
+    "slug": "design-manual-flow",
+    "steps": [
+        {
+            "config_patch_queue": [],
+            "disabled_tools": [],
+            "enabled": true,
+            "handler_slug": "github",
+            "handler_configs": {
+                "github": {
+                    "data_source": "issues",
+                    "labels": "status:idea-ready",
+                    "exclude_labels": "status:design-ready,status:built,status:abandoned",
+                    "max_items": 5,
+                    "repo": "chubes4/wp-site-generator",
+                    "state": "open"
+                }
+            },
+            "prompt_queue": [],
+            "queue_mode": "static",
+            "step_position": 0,
+            "step_type": "fetch"
+        },
+        {
+            "disabled_tools": [],
+            "handler_configs": [],
+            "prompt_queue": [
+                {
+                    "added_at": "2026-05-09T22:00:00+00:00",
+                    "prompt": "Decide one design direction for the fetched concept. Honor the concept's audience, offer, and angle. Post the design.json comment using manage_github_issue with action=comment, then transition the lifecycle by calling remove_label_from_issue with label=\"status:idea-ready\" and add_label_to_issue with label=\"status:design-ready\"."
+                }
+            ],
+            "queue_mode": "static",
+            "step_position": 1,
+            "step_type": "ai"
+        }
+    ]
+}

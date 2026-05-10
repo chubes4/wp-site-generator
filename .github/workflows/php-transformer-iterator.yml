@@ -6,7 +6,7 @@ on:
       source_repo:
         description: Repository that owns the generated-site PR.
         required: true
-        default: chubes4/wc-site-generator
+        default: chubes4/wp-site-generator
       source_pr:
         description: Generated-site PR number to report back to.
         required: true
@@ -72,7 +72,7 @@ jobs:
           app-id: ${{ env.HOMEBOY_APP_ID }}
           private-key: ${{ env.HOMEBOY_APP_PRIVATE_KEY }}
           owner: chubes4
-          repositories: wc-site-generator,static-site-importer,html-to-blocks-converter,block-format-bridge
+          repositories: wp-site-generator,static-site-importer,html-to-blocks-converter,block-format-bridge
 
       - name: Checkout Homeboy Extensions
         uses: actions/checkout@v4
