@@ -28,20 +28,13 @@ permissions:
   pull-requests: read
   issues: read
 
-env:
-  HOMEBOY_APP_ID: ${{ secrets.HOMEBOY_APP_ID }}
-  HOMEBOY_APP_PRIVATE_KEY: ${{ secrets.HOMEBOY_APP_PRIVATE_KEY }}
-
 jobs:
-  static-site-agent:
-    name: Run static-site-agent in Playground
+  prepare:
+    name: Prepare static-site-agent prompt
     runs-on: ubuntu-latest
-    timeout-minutes: 45
-
+    outputs:
+      prompt: ${{ steps.prompt.outputs.prompt }}
     steps:
-      - name: Checkout site generator
-        uses: actions/checkout@v4
-
       - name: Validate issue_number input
         env:
           ISSUE_NUMBER: ${{ inputs.issue_number }}
@@ -52,91 +45,33 @@ jobs:
             exit 1
           fi
 
-      - name: Require cross-repo app credentials
+      - name: Build agent prompt
+        id: prompt
+        env:
+          ISSUE_NUMBER: ${{ inputs.issue_number }}
         run: |
           set -euo pipefail
-          if [ -z "${HOMEBOY_APP_ID:-}" ] || [ -z "${HOMEBOY_APP_PRIVATE_KEY:-}" ]; then
-            echo "HOMEBOY_APP_ID and HOMEBOY_APP_PRIVATE_KEY are required for static-site PR writes." >&2
-            exit 1
-          fi
+          {
+            printf 'prompt<<EOF\n'
+            printf 'Implement GitHub issue #%s as a static site. Read the issue body and the design agent comment, honor both, and open exactly one static-site PR for that issue.\n' "$ISSUE_NUMBER"
+            printf 'EOF\n'
+          } >> "$GITHUB_OUTPUT"
 
-      - name: Generate cross-repo app token
-        id: app-token
-        uses: actions/create-github-app-token@v1
-        with:
-          app-id: ${{ env.HOMEBOY_APP_ID }}
-          private-key: ${{ env.HOMEBOY_APP_PRIVATE_KEY }}
-          owner: chubes4
-          repositories: wp-site-generator
-
-      - name: Checkout Homeboy Extensions
-        uses: actions/checkout@v4
-        with:
-          repository: Extra-Chill/homeboy-extensions
-          ref: ${{ inputs.homeboy_extensions_ref }}
-          path: .ci/homeboy-extensions
-
-      - name: Checkout Data Machine
-        uses: actions/checkout@v4
-        with:
-          repository: Extra-Chill/data-machine
-          ref: ${{ inputs.data_machine_ref }}
-          path: .ci/data-machine
-
-      - name: Checkout Data Machine Code
-        uses: actions/checkout@v4
-        with:
-          repository: Extra-Chill/data-machine-code
-          ref: ${{ inputs.data_machine_code_ref }}
-          path: .ci/data-machine-code
-
-      - name: Checkout Agents API
-        uses: actions/checkout@v4
-        with:
-          repository: Automattic/agents-api
-          path: .ci/agents-api
-
-      - name: Checkout OpenAI provider
-        uses: actions/checkout@v4
-        with:
-          repository: WordPress/ai-provider-for-openai
-          path: .ci/ai-provider-for-openai
-
-      - name: Set up Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: 24
-
-      - name: Install Homeboy WordPress extension dependencies
-        working-directory: .ci/homeboy-extensions/wordpress
-        run: |
-          composer install --no-interaction --no-progress --prefer-dist
-          npm install
-
-      - name: Install plugin PHP dependencies
-        run: |
-          composer install --working-dir=.ci/data-machine --no-interaction --no-progress --prefer-dist
-          composer install --working-dir=.ci/data-machine-code --no-interaction --no-progress --prefer-dist
-
-      - name: Run static-site-agent in Playground
-        id: static-site-agent
-        env:
-          GITHUB_TOKEN: ${{ steps.app-token.outputs.token }}
-          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
-          HOMEBOY_EXTENSION_PATH: ${{ github.workspace }}/.ci/homeboy-extensions/wordpress
-          AGENTS_API_PATH: ${{ github.workspace }}/.ci/agents-api
-          DM_PATH: ${{ github.workspace }}/.ci/data-machine
-          DMC_PATH: ${{ github.workspace }}/.ci/data-machine-code
-          OPENAI_PROVIDER_PATH: ${{ github.workspace }}/.ci/ai-provider-for-openai
-          STATIC_SITE_AGENT_OPENAI_MODEL: ${{ inputs.openai_model }}
-          STATIC_SITE_AGENT_TARGET_REPO: ${{ github.repository }}
-          STATIC_SITE_AGENT_ISSUE_NUMBER: ${{ inputs.issue_number }}
-        run: tests/playground-ci/scripts/run-static-site-agent.sh
-
-      - name: Upload static-site-agent transcript
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: static-site-agent-transcript-${{ github.run_id }}
-          path: tests/playground-ci/component/artifacts/static-site-agent/
-          if-no-files-found: ignore
+  static-site-agent:
+    name: Run static-site-agent in Playground
+    needs: prepare
+    uses: Extra-Chill/homeboy-extensions/.github/workflows/datamachine-agent-ci.yml@main
+    with:
+      bundle_path: bundles/static-site-agent
+      agent_slug: static-site-agent
+      pipeline_slug: static-site-pipeline
+      flow_slug: static-site-manual-flow
+      target_repo: chubes4/wp-site-generator
+      prompt: ${{ needs.prepare.outputs.prompt }}
+      model: ${{ inputs.openai_model }}
+      validation_dependencies: Automattic/agents-api@main,Extra-Chill/data-machine@${{ inputs.data_machine_ref }},Extra-Chill/data-machine-code@${{ inputs.data_machine_code_ref }},WordPress/ai-provider-for-openai@main
+      success_requires_pr: true
+      engine_data_outputs: '{"static_site_pr_url":"metadata.engine_data.static_site_agent.pr_url","static_site_branch":"metadata.engine_data.static_site_agent.branch","static_site_slug":"metadata.engine_data.static_site_agent.slug"}'
+      transcript_artifact_name: static-site-agent-transcript-${{ github.run_id }}
+      comment_pr_summary: false
+    secrets: inherit

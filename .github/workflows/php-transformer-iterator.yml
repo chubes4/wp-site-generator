@@ -39,73 +39,28 @@ on:
 
 permissions:
   actions: read
-  contents: write
+  contents: read
   issues: write
   pull-requests: write
 
-env:
-  HOMEBOY_APP_ID: ${{ secrets.HOMEBOY_APP_ID }}
-  HOMEBOY_APP_PRIVATE_KEY: ${{ secrets.HOMEBOY_APP_PRIVATE_KEY }}
-
 jobs:
-  iterator:
-    name: Run PR-first transformer iterator
+  prepare:
+    name: Build iterator prompt
     runs-on: ubuntu-latest
-    timeout-minutes: 45
-
+    outputs:
+      prompt: ${{ steps.prompt.outputs.prompt }}
     steps:
       - name: Checkout site generator
         uses: actions/checkout@v4
 
-      - name: Require cross-repo app credentials
-        run: |
-          set -euo pipefail
-          if [ -z "${HOMEBOY_APP_ID:-}" ] || [ -z "${HOMEBOY_APP_PRIVATE_KEY:-}" ]; then
-            echo "HOMEBOY_APP_ID and HOMEBOY_APP_PRIVATE_KEY are required for cross-repo iterator writes." >&2
-            exit 1
-          fi
-
-      - name: Generate cross-repo app token
+      - name: Generate Homeboy app token
         id: app-token
         uses: actions/create-github-app-token@v1
         with:
-          app-id: ${{ env.HOMEBOY_APP_ID }}
-          private-key: ${{ env.HOMEBOY_APP_PRIVATE_KEY }}
+          app-id: ${{ secrets.HOMEBOY_APP_ID }}
+          private-key: ${{ secrets.HOMEBOY_APP_PRIVATE_KEY }}
           owner: chubes4
           repositories: wp-site-generator,static-site-importer,html-to-blocks-converter,block-format-bridge
-
-      - name: Checkout Homeboy Extensions
-        uses: actions/checkout@v4
-        with:
-          repository: Extra-Chill/homeboy-extensions
-          ref: ${{ inputs.homeboy_extensions_ref }}
-          path: .ci/homeboy-extensions
-
-      - name: Checkout Data Machine
-        uses: actions/checkout@v4
-        with:
-          repository: Extra-Chill/data-machine
-          ref: ${{ inputs.data_machine_ref }}
-          path: .ci/data-machine
-
-      - name: Checkout Data Machine Code
-        uses: actions/checkout@v4
-        with:
-          repository: Extra-Chill/data-machine-code
-          ref: ${{ inputs.data_machine_code_ref }}
-          path: .ci/data-machine-code
-
-      - name: Checkout Agents API
-        uses: actions/checkout@v4
-        with:
-          repository: Automattic/agents-api
-          path: .ci/agents-api
-
-      - name: Checkout OpenAI provider
-        uses: actions/checkout@v4
-        with:
-          repository: WordPress/ai-provider-for-openai
-          path: .ci/ai-provider-for-openai
 
       - name: Download finding packet artifact
         env:
@@ -136,30 +91,53 @@ jobs:
           node .github/scripts/group-ssi-finding-packets.mjs "${packets[@]}"
           jq '.group_count, .candidate_repos' "$FINDING_GROUPS_PATH"
 
-      - name: Install Homeboy WordPress extension dependencies
-        working-directory: .ci/homeboy-extensions/wordpress
-        run: |
-          composer install --no-interaction --no-progress --prefer-dist
-          npm install
-
-      - name: Install plugin PHP dependencies
-        run: |
-          composer install --working-dir=.ci/data-machine --no-interaction --no-progress --prefer-dist
-          composer install --working-dir=.ci/data-machine-code --no-interaction --no-progress --prefer-dist
-
-      - name: Run PHP transformer iterator in Playground
+      - name: Build iterator prompt
+        id: prompt
         env:
-          GITHUB_TOKEN: ${{ steps.app-token.outputs.token }}
-          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
-          HOMEBOY_EXTENSION_PATH: ${{ github.workspace }}/.ci/homeboy-extensions/wordpress
-          AGENTS_API_PATH: ${{ github.workspace }}/.ci/agents-api
-          DM_PATH: ${{ github.workspace }}/.ci/data-machine
-          DMC_PATH: ${{ github.workspace }}/.ci/data-machine-code
-          OPENAI_PROVIDER_PATH: ${{ github.workspace }}/.ci/ai-provider-for-openai
-          ITERATOR_OPENAI_MODEL: ${{ inputs.openai_model }}
-          ITERATOR_SOURCE_REPO: ${{ inputs.source_repo }}
-          ITERATOR_SOURCE_PR: ${{ inputs.source_pr }}
-          ITERATOR_SOURCE_HEAD_SHA: ${{ inputs.source_head_sha }}
-          ITERATOR_VALIDATION_RUN_ID: ${{ inputs.validation_run_id }}
-          ITERATOR_FINDING_GROUPS_PATH: ${{ github.workspace }}/.ci/php-transformer-iterator-input.json
-        run: tests/playground-ci/scripts/run-php-transformer-iterator.sh
+          FINDING_GROUPS_PATH: .ci/php-transformer-iterator-input.json
+          SOURCE_REPO: ${{ inputs.source_repo }}
+          SOURCE_PR: ${{ inputs.source_pr }}
+          SOURCE_HEAD_SHA: ${{ inputs.source_head_sha }}
+          VALIDATION_RUN_ID: ${{ inputs.validation_run_id }}
+        run: |
+          set -euo pipefail
+          prompt=$(jq -n \
+            --arg sourceRepo "$SOURCE_REPO" \
+            --arg sourcePr "$SOURCE_PR" \
+            --arg sourceHeadSha "$SOURCE_HEAD_SHA" \
+            --arg validationRunId "$VALIDATION_RUN_ID" \
+            --slurpfile findingGroups "$FINDING_GROUPS_PATH" \
+            '{
+              source_repo: $sourceRepo,
+              source_pr: $sourcePr,
+              source_head_sha: $sourceHeadSha,
+              validation_run_id: $validationRunId,
+              finding_groups: $findingGroups[0]
+            }' | sed '1s/^/Run the PHP transformer iterator now.\n\n/')
+          {
+            printf 'prompt<<EOF\n'
+            printf '%s\n' "$prompt"
+            printf 'EOF\n'
+          } >> "$GITHUB_OUTPUT"
+
+  iterator:
+    name: Run PR-first transformer iterator
+    needs: prepare
+    uses: Extra-Chill/homeboy-extensions/.github/workflows/datamachine-agent-ci.yml@main
+    with:
+      bundle_path: bundles/php-transformer-iterator-agent
+      agent_slug: php-transformer-iterator-agent
+      pipeline_slug: php-transformer-iterator-pipeline
+      flow_slug: php-transformer-iterator-manual-flow
+      target_repo: ${{ inputs.source_repo }}
+      prompt: ${{ needs.prepare.outputs.prompt }}
+      model: ${{ inputs.openai_model }}
+      app_token_repos: chubes4/wp-site-generator,chubes4/static-site-importer,chubes4/html-to-blocks-converter,chubes4/block-format-bridge
+      validation_dependencies: Automattic/agents-api@main,Extra-Chill/data-machine@${{ inputs.data_machine_ref }},Extra-Chill/data-machine-code@${{ inputs.data_machine_code_ref }},WordPress/ai-provider-for-openai@main
+      success_requires_pr: true
+      max_turns: 24
+      step_budget: 20
+      time_budget_ms: 600000
+      engine_data_outputs: '{"upstream_action_url":"metadata.engine_data.php_transformer_iterator.upstream_action_url","source_callback_url":"metadata.engine_data.php_transformer_iterator.source_callback_url"}'
+      transcript_artifact_name: php-transformer-iterator-transcript-${{ github.run_id }}
+    secrets: inherit
