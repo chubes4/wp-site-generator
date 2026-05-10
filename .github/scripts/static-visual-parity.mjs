@@ -9,6 +9,8 @@ import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { spawn } from 'node:child_process';
 import { createRequire } from 'node:module';
+import pixelmatch from 'pixelmatch';
+import { PNG } from 'pngjs';
 
 const require = createRequire(import.meta.url);
 const { waitForWordPressReady } = require('homeboy-extension-wordpress/playground-readiness');
@@ -23,6 +25,7 @@ const viewport = {
 	width: Number(process.env.VISUAL_PARITY_WIDTH || 1280),
 	height: Number(process.env.VISUAL_PARITY_HEIGHT || 1600),
 };
+const maxMismatchRatio = Number(process.env.VISUAL_PARITY_MAX_MISMATCH_RATIO || 0.015);
 
 if (!site) {
 	throw new Error('Usage: SITE=<slug> node .github/scripts/static-visual-parity.mjs');
@@ -172,8 +175,13 @@ try {
 	if (wordpressReadiness.status === 'process_exited') {
 		throw new Error(`Playground server exited before WordPress became available: ${importedUrl}`);
 	}
-	await captureParityScreenshots({ sourceUrl, importedUrl, outputDir });
-	await writeSummary({ site, sourceUrl, importedUrl, outputDir, playgroundOutput, importReadiness });
+	const visualDiff = await captureParityScreenshots({ sourceUrl, importedUrl, outputDir });
+	await writeSummary({ site, sourceUrl, importedUrl, outputDir, playgroundOutput, importReadiness, visualDiff });
+	if (!visualDiff.pass) {
+		throw new Error(
+			`Visual parity mismatch ${formatPercent(visualDiff.mismatchRatio)} exceeds threshold ${formatPercent(visualDiff.threshold)}`
+		);
+	}
 } catch (error) {
 	if (error?.diagnostics) {
 		await writeFile(path.join(outputDir, 'frontend-readiness-error.json'), JSON.stringify(error.diagnostics, null, 2));
@@ -250,11 +258,82 @@ function listen(server, port) {
 async function captureParityScreenshots({ sourceUrl, importedUrl, outputDir }) {
 	const browser = await chromium.launch();
 	try {
-		await screenshot(browser, sourceUrl, path.join(outputDir, 'source.png'));
-		await screenshot(browser, importedUrl, path.join(outputDir, 'imported.png'));
+		const sourcePath = path.join(outputDir, 'source.png');
+		const importedPath = path.join(outputDir, 'imported.png');
+		const diffPath = path.join(outputDir, 'diff.png');
+		await screenshot(browser, sourceUrl, sourcePath);
+		await screenshot(browser, importedUrl, importedPath);
+		return await writeVisualDiff({ sourcePath, importedPath, diffPath, outputDir });
 	} finally {
 		await browser.close();
 	}
+}
+
+async function writeVisualDiff({ sourcePath, importedPath, diffPath, outputDir }) {
+	const source = PNG.sync.read(await readFile(sourcePath));
+	const imported = PNG.sync.read(await readFile(importedPath));
+	const width = Math.max(source.width, imported.width);
+	const height = Math.max(source.height, imported.height);
+	const normalizedSource = normalizePng(source, width, height);
+	const normalizedImported = normalizePng(imported, width, height);
+	const diff = new PNG({ width, height });
+	const mismatchPixels = pixelmatch(normalizedSource.data, normalizedImported.data, diff.data, width, height, {
+		threshold: 0.1,
+		includeAA: true,
+	});
+	const totalPixels = width * height;
+	const mismatchRatio = totalPixels > 0 ? mismatchPixels / totalPixels : 0;
+	const dimensionMismatch = source.width !== imported.width || source.height !== imported.height;
+	const result = {
+		pass: mismatchRatio <= maxMismatchRatio && !dimensionMismatch,
+		threshold: maxMismatchRatio,
+		mismatchPixels,
+		totalPixels,
+		mismatchRatio,
+		dimensionMismatch,
+		source: {
+			path: path.basename(sourcePath),
+			width: source.width,
+			height: source.height,
+		},
+		imported: {
+			path: path.basename(importedPath),
+			width: imported.width,
+			height: imported.height,
+		},
+		diff: {
+			path: path.basename(diffPath),
+			width,
+			height,
+		},
+	};
+
+	await writeFile(diffPath, PNG.sync.write(diff));
+	await writeFile(path.join(outputDir, 'visual-diff.json'), `${JSON.stringify(result, null, 2)}\n`);
+	return result;
+}
+
+function normalizePng(image, width, height) {
+	const normalized = new PNG({ width, height });
+	for (let offset = 0; offset < normalized.data.length; offset += 4) {
+		normalized.data[offset] = 255;
+		normalized.data[offset + 1] = 255;
+		normalized.data[offset + 2] = 255;
+		normalized.data[offset + 3] = 255;
+	}
+
+	for (let y = 0; y < image.height; y += 1) {
+		for (let x = 0; x < image.width; x += 1) {
+			const sourceOffset = (y * image.width + x) * 4;
+			const targetOffset = (y * width + x) * 4;
+			normalized.data[targetOffset] = image.data[sourceOffset];
+			normalized.data[targetOffset + 1] = image.data[sourceOffset + 1];
+			normalized.data[targetOffset + 2] = image.data[sourceOffset + 2];
+			normalized.data[targetOffset + 3] = image.data[sourceOffset + 3];
+		}
+	}
+
+	return normalized;
 }
 
 async function screenshot(browser, url, outputPath) {
@@ -300,7 +379,7 @@ async function screenshot(browser, url, outputPath) {
 	}
 }
 
-async function writeSummary({ site, sourceUrl, importedUrl, outputDir, playgroundOutput, importReadiness }) {
+async function writeSummary({ site, sourceUrl, importedUrl, outputDir, playgroundOutput, importReadiness, visualDiff }) {
 	const comparisonHtml = `<!doctype html>
 <html lang="en">
 <head>
@@ -327,6 +406,7 @@ code { color: #d1d5db; }
 <main>
 <section><h2>Source static HTML</h2><img src="source.png" alt="Source static storefront screenshot"></section>
 <section><h2>Imported WordPress / Static Site Importer</h2><img src="imported.png" alt="Imported WordPress storefront screenshot"></section>
+<section><h2>Pixel diff</h2><img src="diff.png" alt="Visual parity diff screenshot"></section>
 </main>
 </body>
 </html>
@@ -341,13 +421,18 @@ code { color: #d1d5db; }
 				importedUrl,
 				importReadiness,
 				viewport,
-				artifacts: ['source.png', 'imported.png', 'comparison.html'],
+				visualDiff,
+				artifacts: ['source.png', 'imported.png', 'diff.png', 'visual-diff.json', 'comparison.html'],
 				playgroundOutputTail: playgroundOutput.slice(-4000),
 			},
 			null,
 			2
 		)
 	);
+}
+
+function formatPercent(value) {
+	return `${(Number(value || 0) * 100).toFixed(2)}%`;
 }
 
 function escapeHtml(value) {

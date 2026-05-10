@@ -15,6 +15,7 @@ const outputPath = process.env.FINDING_PACKETS_PATH || 'homeboy-ci-results/findi
 const candidateRepo = process.env.CANDIDATE_REPO || 'chubes4/static-site-importer';
 const designPath = process.env.DESIGN_JSON_PATH || `static-sites/${site}/design.json`;
 const designDistributionPath = process.env.DESIGN_DISTRIBUTION_PATH || 'homeboy-ci-results/design-distribution.json';
+const visualDiffPath = process.env.VISUAL_DIFF_PATH || `visual-parity-artifacts/${site}/visual-diff.json`;
 const benchOutcome = (process.env.BENCH_OUTCOME || '').toLowerCase();
 const visualOutcome = (process.env.VISUAL_OUTCOME || '').toLowerCase();
 const generatorRepo = 'chubes4/wc-site-generator';
@@ -81,7 +82,20 @@ async function buildPackets() {
 		packets.push(packetFromVisualOutcome(visualOutcome));
 	}
 
+	const visualDiff = await loadVisualDiff(visualDiffPath);
+	if (visualDiff && visualDiff.pass === false) {
+		packets.push(packetFromVisualDiff(visualDiff));
+	}
+
 	return dedupePackets(packets);
+}
+
+async function loadVisualDiff(inputPath) {
+	try {
+		return JSON.parse(await readFile(inputPath, 'utf8'));
+	} catch {
+		return null;
+	}
 }
 
 function findSsiSummary(bench) {
@@ -258,7 +272,7 @@ function packetFromCleanImport(summary) {
 
 function packetFromVisualOutcome(outcome) {
 	return {
-		...packetBase(generatorRepo),
+		...packetBase(),
 		kind: 'visual_parity_outcome',
 		path: '.github/scripts/static-visual-parity.mjs',
 		preview: `visual parity step outcome=${outcome}`,
@@ -269,6 +283,26 @@ function packetFromVisualOutcome(outcome) {
 		converter: 'visual-parity',
 		stage: 'screenshots',
 		reason: `Static visual parity capture reported outcome=${outcome}; decoupled from packet emission.`,
+	};
+}
+
+function packetFromVisualDiff(diff) {
+	const mismatchPercent = `${(Number(diff.mismatchRatio || 0) * 100).toFixed(2)}%`;
+	const thresholdPercent = `${(Number(diff.threshold || 0) * 100).toFixed(2)}%`;
+	const sourceSize = `${diff.source?.width || 0}x${diff.source?.height || 0}`;
+	const importedSize = `${diff.imported?.width || 0}x${diff.imported?.height || 0}`;
+	return {
+		...packetBase(),
+		kind: 'visual_parity_mismatch',
+		path: visualDiffPath,
+		preview: `source=${sourceSize} imported=${importedSize} mismatch=${mismatchPercent}`,
+		selector: '',
+		excerpt: '',
+		source_html_preview: '',
+		block_name: '',
+		converter: 'visual-parity',
+		stage: 'screenshot_diff',
+		reason: `Imported WordPress screenshot differs from source static HTML screenshot: mismatch=${mismatchPercent}, threshold=${thresholdPercent}, mismatched_pixels=${diff.mismatchPixels || 0}, total_pixels=${diff.totalPixels || 0}, dimension_mismatch=${diff.dimensionMismatch ? 'yes' : 'no'}. See visual-parity artifact files source.png, imported.png, diff.png, and visual-diff.json.`,
 	};
 }
 
