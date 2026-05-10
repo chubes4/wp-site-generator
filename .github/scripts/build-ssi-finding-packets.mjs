@@ -78,13 +78,11 @@ async function buildPackets() {
 		}
 	}
 
-	if (visualOutcome && visualOutcome !== 'success' && visualOutcome !== 'skipped') {
-		packets.push(packetFromVisualOutcome(visualOutcome));
-	}
-
 	const visualDiff = await loadVisualDiff(visualDiffPath);
 	if (visualDiff && visualDiff.pass === false) {
 		packets.push(packetFromVisualDiff(visualDiff));
+	} else if (visualOutcome && visualOutcome !== 'success' && visualOutcome !== 'skipped') {
+		packets.push(packetFromVisualOutcome(visualOutcome));
 	}
 
 	return dedupePackets(packets);
