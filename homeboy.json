@@ -1,6 +1,6 @@
 {
-    "id": "wc-site-generator",
-    "name": "WC Site Generator",
+    "id": "wp-site-generator",
+    "name": "WP Site Generator",
     "extensions": {
         "wordpress": {
             "settings": {

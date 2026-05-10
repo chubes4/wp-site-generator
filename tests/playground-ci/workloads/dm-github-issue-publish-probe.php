@@ -41,7 +41,7 @@ if (!function_exists('wp_get_ability')) {
 }
 
 $github_token = trim((string) (getenv('GITHUB_TOKEN') ?: getenv('GH_TOKEN') ?: ''));
-$target_repo = trim((string) (getenv('STAGE4_GITHUB_REPO') ?: 'chubes4/wc-site-generator'));
+$target_repo = trim((string) (getenv('STAGE4_GITHUB_REPO') ?: 'chubes4/wp-site-generator'));
 
 $metadata = [
     'target_repo' => $target_repo,
@@ -119,14 +119,14 @@ if (!class_exists('WC_Site_Generator_Stage4_GitHub_Issue_Step')) {
         }
 
         protected function executeStep(): array {
-            $repo = (string) ($this->flow_step_config['target_repo'] ?? 'chubes4/wc-site-generator');
+            $repo = (string) ($this->flow_step_config['target_repo'] ?? 'chubes4/wp-site-generator');
             $run_id = (string) ($this->flow_step_config['stage4_run_id'] ?? gmdate('YmdHis'));
             $title = '[Playground proof] Stage 4 GitHub issue publish ' . $run_id;
             $body = implode("\n\n", [
                 'This issue was created by the Data Machine Playground Stage 4 proof.',
                 '- Flow path: `datamachine/run-flow` -> Action Scheduler -> `datamachine/drain-job`',
                 '- Publish path: Data Machine Code `github_issue` publish handler',
-                '- Proof branch: https://github.com/chubes4/wc-site-generator/tree/feat/playground-ci-proof',
+                '- Proof branch: https://github.com/chubes4/wp-site-generator/tree/feat/playground-ci-proof',
                 '- Tracking issue: https://github.com/Extra-Chill/homeboy-extensions/issues/422',
                 'This is expected CI proof output and can be closed after verification.',
             ]);

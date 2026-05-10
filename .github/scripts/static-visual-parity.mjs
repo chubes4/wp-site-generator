@@ -36,7 +36,7 @@ const indexPath = path.join(siteRoot, 'index.html');
 const outputDir = path.join(repoRoot, outputRoot, site);
 const importReadyPath = path.join(outputDir, 'import-ready.json');
 const mountedImportReadyPath = toPosix(
-	path.join('/wordpress/wp-content/plugins/wc-site-generator', path.relative(repoRoot, importReadyPath))
+	path.join('/wordpress/wp-content/plugins/wp-site-generator', path.relative(repoRoot, importReadyPath))
 );
 const importViaAbilityPhp = [
 	'<?php',
@@ -47,7 +47,7 @@ const importViaAbilityPhp = [
 	"\tthrow new RuntimeException( 'Static Site Importer import ability is not registered.' );",
 	'}',
 	'$ability_result = $ability->execute( array(',
-	`\t'html_path' => ${phpString(`/wordpress/wp-content/plugins/wc-site-generator/static-sites/${site}/index.html`)},`,
+	`\t'html_path' => ${phpString(`/wordpress/wp-content/plugins/wp-site-generator/static-sites/${site}/index.html`)},`,
 	`\t'slug' => ${phpString(site)},`,
 	"\t'activate' => true,",
 	"\t'overwrite' => true,",
@@ -91,7 +91,7 @@ await rm(importReadyPath, { force: true });
 const sourceServer = createStaticServer(siteRoot);
 await listen(sourceServer, sourcePort);
 
-const blueprintPath = path.join(tmpdir(), `wc-static-visual-parity-${site}-${Date.now()}.json`);
+const blueprintPath = path.join(tmpdir(), `wp-static-visual-parity-${site}-${Date.now()}.json`);
 const blueprint = {
 	$schema: 'https://playground.wordpress.net/blueprint-schema.json',
 	landingPage: '/',
@@ -145,7 +145,7 @@ const playground = spawn(
 		'--blueprint',
 		blueprintPath,
 		'--mount',
-		`${repoRoot}:/wordpress/wp-content/plugins/wc-site-generator`,
+		`${repoRoot}:/wordpress/wp-content/plugins/wp-site-generator`,
 		'--login',
 	],
 	{ stdio: ['ignore', 'pipe', 'pipe'] }

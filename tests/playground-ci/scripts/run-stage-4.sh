@@ -15,19 +15,19 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(cd "$SCRIPT_DIR/../../.." && pwd)"
 COMPONENT_PATH="$REPO_ROOT/tests/playground-ci/component"
 WORKLOAD_PATH="$REPO_ROOT/tests/playground-ci/workloads/dm-github-issue-publish-probe.php"
-BUNDLE_SOURCE="$REPO_ROOT/bundles/wc-idea-agent"
+BUNDLE_SOURCE="$REPO_ROOT/bundles/store-idea-agent"
 
 EXTENSION_PATH="${HOMEBOY_EXTENSION_PATH:-/Users/chubes/Developer/homeboy-extensions/wordpress}"
 DM_PATH="${DM_PATH:-/Users/chubes/Developer/data-machine}"
 DMC_PATH="${DMC_PATH:-/Users/chubes/Developer/data-machine-code}"
-STAGE4_GITHUB_REPO="${STAGE4_GITHUB_REPO:-chubes4/wc-site-generator}"
+STAGE4_GITHUB_REPO="${STAGE4_GITHUB_REPO:-chubes4/wp-site-generator}"
 
 if [ ! -f "$EXTENSION_PATH/scripts/bench/bench-runner.sh" ]; then
     echo "ERROR: Homeboy WordPress extension not found at $EXTENSION_PATH" >&2
     exit 1
 fi
 if [ ! -d "$BUNDLE_SOURCE" ]; then
-    echo "ERROR: wc-idea-agent bundle not found at $BUNDLE_SOURCE" >&2
+    echo "ERROR: store-idea-agent bundle not found at $BUNDLE_SOURCE" >&2
     exit 1
 fi
 if ! command -v jq >/dev/null 2>&1; then
@@ -44,9 +44,9 @@ if [ -z "$GITHUB_TOKEN" ]; then
     exit 1
 fi
 
-RESULTS_TMPFILE=$(mktemp "${TMPDIR:-/tmp}/wc-site-generator-stage-4.XXXXXX")
+RESULTS_TMPFILE=$(mktemp "${TMPDIR:-/tmp}/wp-site-generator-stage-4.XXXXXX")
 COMPONENT_WORKLOAD="$COMPONENT_PATH/dm-github-issue-publish-probe.php"
-COMPONENT_BUNDLE_DIR="$COMPONENT_PATH/bundles/wc-idea-agent"
+COMPONENT_BUNDLE_DIR="$COMPONENT_PATH/bundles/store-idea-agent"
 
 cleanup() {
     rm -f "$RESULTS_TMPFILE" "$COMPONENT_WORKLOAD"
@@ -95,7 +95,7 @@ GITHUB_TOKEN="$GITHUB_TOKEN" \
 STAGE4_GITHUB_REPO="$STAGE4_GITHUB_REPO" \
 HOMEBOY_BENCH_RESULTS_FILE="$RESULTS_TMPFILE" \
 HOMEBOY_BENCH_ITERATIONS=1 \
-HOMEBOY_COMPONENT_ID=wc-site-generator-ci-driver \
+HOMEBOY_COMPONENT_ID=wp-site-generator-ci-driver \
 HOMEBOY_COMPONENT_PATH="$COMPONENT_PATH" \
 HOMEBOY_EXTENSION_PATH="$EXTENSION_PATH" \
 HOMEBOY_SETTINGS_JSON="$SETTINGS_JSON" \

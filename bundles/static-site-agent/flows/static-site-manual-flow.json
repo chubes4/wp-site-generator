@@ -1,0 +1,71 @@
+{
+    "max_items": [],
+    "name": "Static Site — Manual",
+    "pipeline_slug": "static-site-pipeline",
+    "schedule": "manual",
+    "schema_version": 1,
+    "slug": "static-site-manual-flow",
+    "steps": [
+        {
+            "config_patch_queue": [],
+            "disabled_tools": [],
+            "enabled": true,
+            "handler_slug": "github",
+            "handler_config": {
+                "data_source": "issues",
+                "labels": "status:design-ready",
+                "exclude_labels": "status:built,status:abandoned",
+                "max_items": 5,
+                "repo": "chubes4/wp-site-generator",
+                "state": "open"
+            },
+            "handler_configs": {
+                "github": {
+                    "data_source": "issues",
+                    "labels": "status:design-ready",
+                    "exclude_labels": "status:built,status:abandoned",
+                    "max_items": 5,
+                    "repo": "chubes4/wp-site-generator",
+                    "state": "open"
+                }
+            },
+            "prompt_queue": [],
+            "queue_mode": "static",
+            "step_position": 0,
+            "step_type": "fetch"
+        },
+        {
+            "disabled_tools": [],
+            "handler_configs": [],
+            "prompt_queue": [
+                {
+                    "added_at": "2026-05-09T22:00:00+00:00",
+                    "prompt": "Implement the fetched concept as a static site. Read both the issue body (concept) and the design agent's most recent comment (design direction) — both are sources of truth. Honor them. Do not invent a different concept and do not override the design."
+                }
+            ],
+            "queue_mode": "static",
+            "step_position": 1,
+            "step_type": "ai"
+        },
+        {
+            "disabled_tools": [],
+            "enabled": true,
+            "handler_configs": {
+                "github_pull_request": {
+                    "base": "main",
+                    "draft": false,
+                    "labels": "target:static-site",
+                    "maintainer_can_modify": false,
+                    "repo": "chubes4/wp-site-generator"
+                }
+            },
+            "handler_slugs": [
+                "github_pull_request"
+            ],
+            "prompt_queue": [],
+            "queue_mode": "static",
+            "step_position": 2,
+            "step_type": "publish"
+        }
+    ]
+}

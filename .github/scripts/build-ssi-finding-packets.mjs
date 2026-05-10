@@ -18,7 +18,7 @@ const designDistributionPath = process.env.DESIGN_DISTRIBUTION_PATH || 'homeboy-
 const visualDiffPath = process.env.VISUAL_DIFF_PATH || `visual-parity-artifacts/${site}/visual-diff.json`;
 const benchOutcome = (process.env.BENCH_OUTCOME || '').toLowerCase();
 const visualOutcome = (process.env.VISUAL_OUTCOME || '').toLowerCase();
-const generatorRepo = 'chubes4/wc-site-generator';
+const generatorRepo = 'chubes4/wp-site-generator';
 
 const designFields = await loadDesignFields(designPath);
 

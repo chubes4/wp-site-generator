@@ -2,7 +2,7 @@
 /**
  * Stage 5 OpenAI issue flow probe.
  *
- * Imports the wc-idea-agent bundle, configures OpenAI + GitHub credentials from
+ * Imports the store-idea-agent bundle, configures OpenAI + GitHub credentials from
  * bench_env, runs a real AI pipeline step, and captures the GitHub issue URL
  * produced by the AI-visible publish handler tool.
  */
@@ -56,7 +56,7 @@ if (!function_exists('wp_get_ability')) {
 
 $github_token = trim((string) (getenv('GITHUB_TOKEN') ?: getenv('GH_TOKEN') ?: ''));
 $openai_api_key = trim((string) getenv('OPENAI_API_KEY'));
-$target_repo = trim((string) (getenv('STAGE5_GITHUB_REPO') ?: 'chubes4/wc-site-generator'));
+$target_repo = trim((string) (getenv('STAGE5_GITHUB_REPO') ?: 'chubes4/wp-site-generator'));
 $openai_model = trim((string) (getenv('STAGE5_OPENAI_MODEL') ?: 'gpt-4o-mini'));
 $proof_mode_raw = strtolower(trim((string) (getenv('STAGE5_PROOF_MODE') ?: 'true')));
 $proof_mode = !in_array($proof_mode_raw, ['0', 'false', 'no', 'off'], true);
@@ -134,8 +134,8 @@ if (!class_exists(Agents::class) || !class_exists(Pipelines::class) || !class_ex
     ];
 }
 
-$component_path = '/wordpress/wp-content/plugins/wc-site-generator-ci-driver';
-$bundle_path = $component_path . '/bundles/wc-idea-agent';
+$component_path = '/wordpress/wp-content/plugins/wp-site-generator-ci-driver';
+$bundle_path = $component_path . '/bundles/store-idea-agent';
 $metadata += [
     'bundle_path' => $bundle_path,
     'bundle_exists' => is_dir($bundle_path),
@@ -176,11 +176,11 @@ $pipelines = new Pipelines();
 $flows = new Flows();
 $jobs = new Jobs();
 
-$agent = $agents->get_by_slug('wc-idea-agent');
+$agent = $agents->get_by_slug('store-idea-agent');
 if (!$agent) {
     return [
         'metrics' => ['import_succeeded' => 1, 'agent_resolved' => 0],
-        'metadata' => $metadata + ['error' => 'Imported agent wc-idea-agent was not found'],
+        'metadata' => $metadata + ['error' => 'Imported agent store-idea-agent was not found'],
     ];
 }
 
@@ -192,11 +192,11 @@ $agent_config['default_model'] = $openai_model;
 $agents->update_agent($agent_id, ['agent_config' => $agent_config]);
 PluginSettings::clearCache();
 
-$pipeline = $pipelines->get_by_portable_slug($agent_id, 'wc-idea-pipeline');
+$pipeline = $pipelines->get_by_portable_slug($agent_id, 'store-idea-pipeline');
 if (!$pipeline) {
     return [
         'metrics' => ['agent_resolved' => 1, 'pipeline_resolved' => 0],
-        'metadata' => $metadata + ['agent_id' => $agent_id, 'error' => 'Imported pipeline wc-idea-pipeline was not found'],
+        'metadata' => $metadata + ['agent_id' => $agent_id, 'error' => 'Imported pipeline store-idea-pipeline was not found'],
     ];
 }
 
@@ -220,7 +220,7 @@ if ($proof_mode) {
     unset($pipeline_step_config);
 } else {
     $real_idea_system_prompt = implode("\n\n", [
-        'You are the WC Idea Agent running inside WordPress Playground.',
+        'You are the Store Idea Agent running inside WordPress Playground.',
         'Call the github_issue_publish tool exactly once. Do not call any other tools. Do not mention secrets.',
         'Create one distinct, buildable WooCommerce store concept in ' . $target_repo . ' for an underserved but visually interesting product category.',
         'Do not author implementation artifacts. Do not open pull requests or branches.',
@@ -238,11 +238,11 @@ if ($proof_mode) {
 }
 $pipelines->update_pipeline($pipeline_id, ['pipeline_config' => $pipeline_config]);
 
-$flow = $flows->get_by_portable_slug($pipeline_id, 'wc-idea-manual-flow');
+$flow = $flows->get_by_portable_slug($pipeline_id, 'store-idea-manual-flow');
 if (!$flow) {
     return [
         'metrics' => ['pipeline_resolved' => 1, 'flow_resolved' => 0],
-        'metadata' => $metadata + ['agent_id' => $agent_id, 'pipeline_id' => $pipeline_id, 'error' => 'Imported flow wc-idea-manual-flow was not found'],
+        'metadata' => $metadata + ['agent_id' => $agent_id, 'pipeline_id' => $pipeline_id, 'error' => 'Imported flow store-idea-manual-flow was not found'],
     ];
 }
 

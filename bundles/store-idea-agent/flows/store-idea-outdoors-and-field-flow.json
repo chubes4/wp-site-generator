@@ -1,0 +1,40 @@
+{
+    "max_items": [],
+    "name": "Store Idea — Outdoors & Field",
+    "pipeline_slug": "store-idea-pipeline",
+    "schedule": "manual",
+    "schema_version": 1,
+    "slug": "store-idea-outdoors-and-field-flow",
+    "steps": [
+        {
+            "disabled_tools": [],
+            "handler_configs": [],
+            "prompt_queue": [
+                {
+                    "added_at": "2026-05-09T22:00:00+00:00",
+                    "prompt": "Industry: outdoors and field. Generate one distinct, buildable store concept for outdoors and field-use products. Examples of valid sub-spaces: backpacking and camping, fly-fishing, foraging and field naturalism, cyanotype and field photography kits, bird and wildlife observation, cycling and ultra-cycling, climbing or canyoneering specialty, beekeeping, gardening for harsh climates, overlanding. Stay inside outdoors and field-use; do not drift into pure apparel or pure home goods."
+                }
+            ],
+            "queue_mode": "static",
+            "step_position": 0,
+            "step_type": "ai"
+        },
+        {
+            "disabled_tools": [],
+            "enabled": true,
+            "handler_configs": {
+                "github_issue": {
+                    "labels": "status:idea-ready,site-kind:commerce,commerce:woocommerce,industry:outdoors-field",
+                    "repo": "chubes4/wp-site-generator"
+                }
+            },
+            "handler_slugs": [
+                "github_issue"
+            ],
+            "prompt_queue": [],
+            "queue_mode": "static",
+            "step_position": 1,
+            "step_type": "publish"
+        }
+    ]
+}

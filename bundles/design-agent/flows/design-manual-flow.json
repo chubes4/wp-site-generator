@@ -1,0 +1,69 @@
+{
+    "max_items": [],
+    "name": "Design — Manual",
+    "pipeline_slug": "design-pipeline",
+    "schedule": "manual",
+    "schema_version": 1,
+    "slug": "design-manual-flow",
+    "steps": [
+        {
+            "config_patch_queue": [],
+            "disabled_tools": [],
+            "enabled": true,
+            "handler_slug": "github",
+            "handler_config": {
+                "data_source": "issues",
+                "labels": "status:idea-ready",
+                "exclude_labels": "status:design-ready,status:built,status:abandoned",
+                "max_items": 5,
+                "repo": "chubes4/wp-site-generator",
+                "state": "open"
+            },
+            "handler_configs": {
+                "github": {
+                    "data_source": "issues",
+                    "labels": "status:idea-ready",
+                    "exclude_labels": "status:design-ready,status:built,status:abandoned",
+                    "max_items": 5,
+                    "repo": "chubes4/wp-site-generator",
+                    "state": "open"
+                }
+            },
+            "prompt_queue": [],
+            "queue_mode": "static",
+            "step_position": 0,
+            "step_type": "fetch"
+        },
+        {
+            "disabled_tools": [],
+            "handler_configs": [],
+            "prompt_queue": [
+                {
+                    "added_at": "2026-05-09T22:00:00+00:00",
+                    "prompt": "Decide one design direction for the fetched concept. Honor the concept's audience, offer, and angle. Post the design.json comment and transition the issue from status:idea-ready to status:design-ready."
+                }
+            ],
+            "queue_mode": "static",
+            "step_position": 1,
+            "step_type": "ai"
+        },
+        {
+            "disabled_tools": [],
+            "enabled": true,
+            "handler_configs": {
+                "github_issue_comment": {
+                    "repo": "chubes4/wp-site-generator",
+                    "add_labels": "status:design-ready",
+                    "remove_labels": "status:idea-ready"
+                }
+            },
+            "handler_slugs": [
+                "github_issue_comment"
+            ],
+            "prompt_queue": [],
+            "queue_mode": "static",
+            "step_position": 2,
+            "step_type": "publish"
+        }
+    ]
+}

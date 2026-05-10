@@ -2,7 +2,7 @@
 /**
  * Stage 2 import-agent probe.
  *
- * Imports the wc-idea-agent bundle through the canonical Abilities API surface
+ * Imports the store-idea-agent bundle through the canonical Abilities API surface
  * (`datamachine/import-agent`) and verifies the agent is registered by calling
  * `datamachine/get-agent`. Returns the canonical { metrics, artifacts, metadata }
  * shape so the Playground bench runner folds the result into BenchResults.
@@ -61,11 +61,11 @@ if (!$import_ability) {
     ];
 }
 
-// The bundle lives in the repo at bundles/wc-idea-agent. The driver script
+// The bundle lives in the repo at bundles/store-idea-agent. The driver script
 // copies it into the component dir before the run so it's reachable inside
 // Playground at the canonical mount path.
-$component_path = '/wordpress/wp-content/plugins/wc-site-generator-ci-driver';
-$bundle_path = $component_path . '/bundles/wc-idea-agent';
+$component_path = '/wordpress/wp-content/plugins/wp-site-generator-ci-driver';
+$bundle_path = $component_path . '/bundles/store-idea-agent';
 
 $metadata = [
     'bundle_path' => $bundle_path,
@@ -115,7 +115,7 @@ if (function_exists('is_wp_error') && is_wp_error($import_result)) {
 
 $metadata['import_result'] = $import_result;
 
-$agent_slug = $import_result['agent_slug'] ?? 'wc-idea-agent';
+$agent_slug = $import_result['agent_slug'] ?? 'store-idea-agent';
 
 // Verify the agent is actually queryable through datamachine/get-agent — same
 // path any consumer would use.

@@ -2,7 +2,7 @@
 /**
  * Stage 3 run-flow probe.
  *
- * Imports the wc-idea-agent bundle, creates a CI-safe one-step fetch flow, runs
+ * Imports the store-idea-agent bundle, creates a CI-safe one-step fetch flow, runs
  * it through `datamachine/run-flow`, and drains the queued Action Scheduler
  * work through `datamachine/drain-job`. The flow intentionally returns no
  * items, so it proves the execution loop without AI token spend or GitHub I/O.
@@ -53,8 +53,8 @@ foreach ($required_abilities as $ability_name) {
     }
 }
 
-$component_path = '/wordpress/wp-content/plugins/wc-site-generator-ci-driver';
-$bundle_path = $component_path . '/bundles/wc-idea-agent';
+$component_path = '/wordpress/wp-content/plugins/wp-site-generator-ci-driver';
+$bundle_path = $component_path . '/bundles/store-idea-agent';
 
 $metadata['bundle_path'] = $bundle_path;
 $metadata['bundle_exists'] = is_dir($bundle_path);

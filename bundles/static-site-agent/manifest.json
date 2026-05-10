@@ -1,0 +1,49 @@
+{
+    "agent": {
+        "agent_config": {
+            "description": "Reads a design-ready concept issue (concept body + design.json comment) and authors a pull request containing a static HTML/CSS site that faithfully implements the design. Does not invent concepts. Does not invent designs. Does not know what happens to its output.",
+            "mode_models": {
+                "chat": {
+                    "model": "gpt-5.5",
+                    "provider": "openai"
+                },
+                "pipeline": {
+                    "model": "gpt-5.5",
+                    "provider": "openai"
+                },
+                "system": {
+                    "model": "gpt-5.5-mini",
+                    "provider": "openai"
+                }
+            }
+        },
+        "description": "",
+        "label": "Static Site Agent",
+        "slug": "static-site-agent"
+    },
+    "bundle_slug": "static-site-agent",
+    "bundle_version": "1",
+    "exported_at": "2026-05-09T22:00:00+00:00",
+    "exported_by": "data-machine/0.104.0",
+    "included": {
+        "auth_refs": [],
+        "extensions": [],
+        "flows": [
+            "static-site-manual-flow"
+        ],
+        "handler_auth": "refs",
+        "memory": [
+            "agent/SOUL.md"
+        ],
+        "pipelines": [
+            "static-site-pipeline"
+        ],
+        "prompts": [],
+        "rubrics": [],
+        "seed_queues": [],
+        "tool_policies": []
+    },
+    "schema_version": 1,
+    "source_ref": "",
+    "source_revision": ""
+}

@@ -1,0 +1,40 @@
+{
+    "max_items": [],
+    "name": "Store Idea — Apparel & Accessories",
+    "pipeline_slug": "store-idea-pipeline",
+    "schedule": "manual",
+    "schema_version": 1,
+    "slug": "store-idea-apparel-and-accessories-flow",
+    "steps": [
+        {
+            "disabled_tools": [],
+            "handler_configs": [],
+            "prompt_queue": [
+                {
+                    "added_at": "2026-05-09T22:00:00+00:00",
+                    "prompt": "Industry: apparel and accessories. Generate one distinct, buildable store concept for apparel and accessories. Examples of valid sub-spaces: workwear for a specific trade, technical outdoor apparel for a niche, heritage menswear, slow-fashion womenswear, modular accessories (bags, belts, leather), eyewear, footwear for a specific use case, hand-knit or hand-loomed pieces. Stay inside apparel and accessories; do not drift into pure home goods or pure outdoors gear."
+                }
+            ],
+            "queue_mode": "static",
+            "step_position": 0,
+            "step_type": "ai"
+        },
+        {
+            "disabled_tools": [],
+            "enabled": true,
+            "handler_configs": {
+                "github_issue": {
+                    "labels": "status:idea-ready,site-kind:commerce,commerce:woocommerce,industry:apparel-accessories",
+                    "repo": "chubes4/wp-site-generator"
+                }
+            },
+            "handler_slugs": [
+                "github_issue"
+            ],
+            "prompt_queue": [],
+            "queue_mode": "static",
+            "step_position": 1,
+            "step_type": "publish"
+        }
+    ]
+}

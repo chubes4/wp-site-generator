@@ -150,7 +150,7 @@ function routeCandidateRepo(packet) {
 
 	const kind = text(packet.kind).toLowerCase();
 	if (kind === 'bench_failure') {
-		return 'chubes4/wc-site-generator';
+		return 'chubes4/wp-site-generator';
 	}
 	if (kind === 'visual_parity_outcome' || kind === 'visual_parity_mismatch') {
 		return 'chubes4/static-site-importer';
@@ -168,7 +168,7 @@ function routeCandidateRepo(packet) {
 		return 'chubes4/block-format-bridge';
 	}
 	if (haystack.includes('generator') || haystack.includes('static-site-generator') || haystack.includes('visual parity') || haystack.includes('homeboy-bench')) {
-		return 'chubes4/wc-site-generator';
+		return 'chubes4/wp-site-generator';
 	}
 
 	return 'chubes4/static-site-importer';
@@ -179,7 +179,7 @@ function isCandidateRepo(value) {
 		'chubes4/static-site-importer',
 		'chubes4/html-to-blocks-converter',
 		'chubes4/block-format-bridge',
-		'chubes4/wc-site-generator',
+		'chubes4/wp-site-generator',
 	].includes(value);
 }
 

@@ -1,0 +1,40 @@
+{
+    "max_items": [],
+    "name": "Website Idea — Local Business",
+    "pipeline_slug": "website-idea-pipeline",
+    "schedule": "manual",
+    "schema_version": 1,
+    "slug": "website-idea-local-business-flow",
+    "steps": [
+        {
+            "disabled_tools": [],
+            "handler_configs": [],
+            "prompt_queue": [
+                {
+                    "added_at": "2026-05-09T22:00:00+00:00",
+                    "prompt": "Space: local business. Generate one distinct, buildable website concept for a real-feeling neighborhood business that needs a presence on the web but does not run an online storefront as its core. Examples of valid sub-spaces: independent cafes and coffee bars, neighborhood bookstores, all-ages music venues, climbing gyms, makerspaces, tattoo and piercing studios, record stores, community theaters, dog daycares, board game cafes, hair salons or barbershops with a defined clientele, neighborhood restaurants with a strong identity. The concept should imply a content-shaped site: hours, location, about, services or menu highlights, events or calendar, gallery, contact. Stay inside local business; do not propose a national ecommerce brand and do not propose pure SaaS or pure publishing."
+                }
+            ],
+            "queue_mode": "static",
+            "step_position": 0,
+            "step_type": "ai"
+        },
+        {
+            "disabled_tools": [],
+            "enabled": true,
+            "handler_configs": {
+                "github_issue": {
+                    "labels": "status:idea-ready,site-kind:content,commerce:none,industry:local-business",
+                    "repo": "chubes4/wp-site-generator"
+                }
+            },
+            "handler_slugs": [
+                "github_issue"
+            ],
+            "prompt_queue": [],
+            "queue_mode": "static",
+            "step_position": 1,
+            "step_type": "publish"
+        }
+    ]
+}

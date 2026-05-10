@@ -2,7 +2,7 @@
   {
     "schema_version": 2,
     "site": "iterator-smoke-fixture",
-    "source_repo": "chubes4/wc-site-generator",
+    "source_repo": "chubes4/wp-site-generator",
     "source_pr": 0,
     "source_head_sha": "",
     "source_branch": "static/iterator-smoke-fixture",

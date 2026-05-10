@@ -101,7 +101,7 @@ jobs:
                 "run": [
                   {
                     "type": "wp-cli",
-                    "command": ("wp static-site-importer import-theme /wordpress/wp-content/plugins/wc-site-generator/static-sites/" + $site + "/index.html --slug=" + $site + " --activate --overwrite --keep-source --format=json"),
+                    "command": ("wp static-site-importer import-theme /wordpress/wp-content/plugins/wp-site-generator/static-sites/" + $site + "/index.html --slug=" + $site + " --activate --overwrite --keep-source --format=json"),
                     "parse": "json"
                   },
                   {
@@ -173,7 +173,7 @@ jobs:
         with:
           commands: bench
           extension-source: https://github.com/Extra-Chill/homeboy-extensions
-          component: wc-site-generator
+          component: wp-site-generator
           autofix: 'false'
           pr-comment: 'false'
           app-token: ${{ steps.app-token.outputs.token }}
@@ -342,7 +342,7 @@ jobs:
                   "writeToPath": "/tmp/static-site",
                   "filesTree": {
                     "resource": "git:directory",
-                    "url": "https://github.com/chubes4/wc-site-generator",
+                    "url": "https://github.com/chubes4/wp-site-generator",
                     "ref": $branch,
                     "refType": "branch",
                     "path": ("static-sites/" + $site)

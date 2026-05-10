@@ -1,0 +1,40 @@
+{
+    "max_items": [],
+    "name": "Website Idea — Manual Validation",
+    "pipeline_slug": "website-idea-pipeline",
+    "schedule": "manual",
+    "schema_version": 1,
+    "slug": "website-idea-manual-flow",
+    "steps": [
+        {
+            "disabled_tools": [],
+            "handler_configs": [],
+            "prompt_queue": [
+                {
+                    "added_at": "2026-05-09T22:00:00+00:00",
+                    "prompt": "Space: open (non-commerce). Generate one distinct, buildable website concept for an underserved but visually interesting non-commerce lane — blog, local business, portfolio, professional services, nonprofit, or community project. Treat this as a manual validation run; pick a concept that produces a strong homepage and supporting sections when built downstream. Do not propose a concept whose core is an online storefront."
+                }
+            ],
+            "queue_mode": "static",
+            "step_position": 0,
+            "step_type": "ai"
+        },
+        {
+            "disabled_tools": [],
+            "enabled": true,
+            "handler_configs": {
+                "github_issue": {
+                    "labels": "status:idea-ready,site-kind:content,commerce:none",
+                    "repo": "chubes4/wp-site-generator"
+                }
+            },
+            "handler_slugs": [
+                "github_issue"
+            ],
+            "prompt_queue": [],
+            "queue_mode": "static",
+            "step_position": 1,
+            "step_type": "publish"
+        }
+    ]
+}

@@ -2,7 +2,7 @@
   {
     "schema_version": 2,
     "site": "demo-store",
-    "source_repo": "chubes4/wc-site-generator",
+    "source_repo": "chubes4/wp-site-generator",
     "source_pr": 77,
     "source_head_sha": "abc123",
     "validation_run_id": 12345,
@@ -25,7 +25,7 @@
   {
     "schema_version": 2,
     "site": "demo-store",
-    "source_repo": "chubes4/wc-site-generator",
+    "source_repo": "chubes4/wp-site-generator",
     "source_pr": 77,
     "source_head_sha": "abc123",
     "validation_run_id": 12345,
@@ -48,7 +48,7 @@
   {
     "schema_version": 2,
     "site": "demo-store",
-    "source_repo": "chubes4/wc-site-generator",
+    "source_repo": "chubes4/wp-site-generator",
     "source_pr": 77,
     "source_head_sha": "abc123",
     "validation_run_id": 12345,
@@ -70,7 +70,7 @@
   {
     "schema_version": 1,
     "site": "demo-store",
-    "source_repo": "chubes4/wc-site-generator",
+    "source_repo": "chubes4/wp-site-generator",
     "source_pr": 77,
     "source_head_sha": "abc123",
     "validation_run_id": 12345,
@@ -85,7 +85,7 @@
   {
     "schema_version": 2,
     "site": "demo-store",
-    "source_repo": "chubes4/wc-site-generator",
+    "source_repo": "chubes4/wp-site-generator",
     "source_pr": 77,
     "source_head_sha": "abc123",
     "validation_run_id": 12345,
@@ -101,7 +101,7 @@
   {
     "schema_version": 2,
     "site": "demo-store",
-    "source_repo": "chubes4/wc-site-generator",
+    "source_repo": "chubes4/wp-site-generator",
     "source_pr": 77,
     "source_head_sha": "abc123",
     "validation_run_id": 12345,
@@ -115,7 +115,7 @@
   {
     "schema_version": 2,
     "site": "demo-store",
-    "source_repo": "chubes4/wc-site-generator",
+    "source_repo": "chubes4/wp-site-generator",
     "source_pr": 77,
     "source_head_sha": "abc123",
     "validation_run_id": 12345,
