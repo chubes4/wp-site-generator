@@ -11,6 +11,7 @@ on:
       - '.github/workflows/static-site-validation.yml'
 
 permissions:
+  actions: write
   contents: read
   pull-requests: write
   issues: write
@@ -232,6 +233,7 @@ jobs:
           } >> "$GITHUB_OUTPUT"
 
       - name: Build SSI finding packets
+        id: finding-packets
         if: always()
         shell: bash
         env:
@@ -249,7 +251,11 @@ jobs:
           set -euo pipefail
           node .github/scripts/build-ssi-finding-packets.mjs
           packet_count=$(jq 'length' homeboy-ci-results/finding-packets.json)
+          actionable_count=$(jq '[ .[] | select(.kind != "import_clean") ] | length' homeboy-ci-results/finding-packets.json)
           echo "finding-packets emitted: ${packet_count}"
+          echo "actionable finding-packets emitted: ${actionable_count}"
+          echo "packet_count=${packet_count}" >> "$GITHUB_OUTPUT"
+          echo "actionable_count=${actionable_count}" >> "$GITHUB_OUTPUT"
           jq -r '.[] | "  - kind=\(.kind) candidate_repo=\(.candidate_repo) reason=\(.reason | tostring | .[0:120])"' homeboy-ci-results/finding-packets.json
 
       - name: Upload design distribution artifact
@@ -385,9 +391,34 @@ jobs:
           gh pr comment "$PR" --body "$body"
 
       - name: Upload bench artifact
+        id: upload-ssi-validation
         if: always()
         uses: actions/upload-artifact@v4
         with:
           name: ssi-validation-${{ matrix.site }}
           path: homeboy-ci-results/
           if-no-files-found: ignore
+
+      - name: Dispatch PHP transformer iterator
+        if: always() && github.event.pull_request != null && steps.finding-packets.outputs.actionable_count != '' && steps.finding-packets.outputs.actionable_count != '0'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          SOURCE_REPO: ${{ github.repository }}
+          SOURCE_PR: ${{ github.event.pull_request.number }}
+          SOURCE_HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+          VALIDATION_RUN_ID: ${{ github.run_id }}
+          ARTIFACT_NAME: ssi-validation-${{ matrix.site }}
+        run: |
+          set -euo pipefail
+          gh workflow run php-transformer-iterator.yml \
+            --repo "$SOURCE_REPO" \
+            --ref main \
+            -f source_repo="$SOURCE_REPO" \
+            -f source_pr="$SOURCE_PR" \
+            -f source_head_sha="$SOURCE_HEAD_SHA" \
+            -f validation_run_id="$VALIDATION_RUN_ID" \
+            -f artifact_name="$ARTIFACT_NAME" \
+            -f openai_model="gpt-5.5" \
+            -f data_machine_ref="main" \
+            -f data_machine_code_ref="main" \
+            -f homeboy_extensions_ref="main"
