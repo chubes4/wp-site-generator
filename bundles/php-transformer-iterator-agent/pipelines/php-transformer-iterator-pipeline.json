@@ -26,7 +26,17 @@
                         {
                             "tools": [
                                 {
+                                    "name": "list_github_issues"
+                                },
+                                {
                                     "name": "create_github_issue"
+                                }
+                            ]
+                        },
+                        {
+                            "tools": [
+                                {
+                                    "name": "list_github_issues"
                                 }
                             ]
                         }
@@ -54,6 +64,7 @@
                         "max_calls": 4,
                         "then_require_one_of": [
                             "workspace_edit",
+                            "list_github_issues",
                             "create_github_issue"
                         ]
                     }
