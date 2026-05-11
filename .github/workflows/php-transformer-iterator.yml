@@ -41,10 +41,10 @@ permissions:
 
 jobs:
   prepare:
-    name: Build iterator prompt
+    name: Build iterator fan-out items
     runs-on: ubuntu-latest
     outputs:
-      prompt: ${{ steps.prompt.outputs.prompt }}
+      fanout_items: ${{ steps.fanout.outputs.fanout_items }}
     steps:
       - name: Checkout site generator
         uses: actions/checkout@v4
@@ -87,46 +87,37 @@ jobs:
           node .github/scripts/group-ssi-finding-packets.mjs "${packets[@]}"
           jq '.group_count, .candidate_repos' "$FINDING_GROUPS_PATH"
 
-      - name: Build iterator prompt
-        id: prompt
+      - name: Build fan-out item prompts
+        id: fanout
         env:
           FINDING_GROUPS_PATH: .ci/php-transformer-iterator-input.json
+          FANOUT_ITEMS_PATH: .ci/php-transformer-iterator-fanout-items.json
           SOURCE_REPO: ${{ inputs.source_repo }}
           SOURCE_PR: ${{ inputs.source_pr }}
           SOURCE_HEAD_SHA: ${{ inputs.source_head_sha }}
           VALIDATION_RUN_ID: ${{ inputs.validation_run_id }}
         run: |
           set -euo pipefail
-          prompt=$(jq -n \
-            --arg sourceRepo "$SOURCE_REPO" \
-            --arg sourcePr "$SOURCE_PR" \
-            --arg sourceHeadSha "$SOURCE_HEAD_SHA" \
-            --arg validationRunId "$VALIDATION_RUN_ID" \
-            --slurpfile findingGroups "$FINDING_GROUPS_PATH" \
-            '{
-              source_repo: $sourceRepo,
-              source_pr: $sourcePr,
-              source_head_sha: $sourceHeadSha,
-              validation_run_id: $validationRunId,
-              finding_groups: $findingGroups[0]
-            }' | sed '1s/^/Run the PHP transformer iterator now.\n\n/')
+          node .github/scripts/build-php-transformer-fanout-items.mjs
+          fanout_items=$(jq -c . "$FANOUT_ITEMS_PATH")
+          jq 'map({id, candidate_repo, kind})' "$FANOUT_ITEMS_PATH"
           {
-            printf 'prompt<<EOF\n'
-            printf '%s\n' "$prompt"
+            printf 'fanout_items<<EOF\n'
+            printf '%s\n' "$fanout_items"
             printf 'EOF\n'
           } >> "$GITHUB_OUTPUT"
 
   iterator:
-    name: Run PR-first transformer iterator
+    name: Run PR-first transformer iterator fan-out
     needs: prepare
-    uses: Extra-Chill/homeboy-extensions/.github/workflows/datamachine-agent-ci.yml@main
+    uses: Extra-Chill/homeboy-extensions/.github/workflows/datamachine-agent-fanout-ci.yml@main
     with:
+      fanout_items: ${{ needs.prepare.outputs.fanout_items }}
       bundle_path: bundles/php-transformer-iterator-agent
       agent_slug: php-transformer-iterator-agent
       pipeline_slug: php-transformer-iterator-pipeline
       flow_slug: php-transformer-iterator-manual-flow
       target_repo: ${{ inputs.source_repo }}
-      prompt: ${{ needs.prepare.outputs.prompt }}
       model: ${{ inputs.openai_model }}
       app_token_repos: chubes4/wp-site-generator,chubes4/static-site-importer,chubes4/html-to-blocks-converter,chubes4/block-format-bridge
       data_machine_ref: ${{ inputs.data_machine_ref }}
@@ -136,7 +127,7 @@ jobs:
       step_budget: 20
       time_budget_ms: 600000
       engine_data_outputs: '{"upstream_action_url":"metadata.engine_data.php_transformer_iterator.upstream_action_url","source_callback_url":"metadata.engine_data.php_transformer_iterator.source_callback_url"}'
-      transcript_artifact_name: php-transformer-iterator-transcript-${{ github.run_id }}
+      transcript_artifact_prefix: php-transformer-iterator-transcript-${{ github.run_id }}
     secrets:
       HOMEBOY_APP_ID: ${{ secrets.HOMEBOY_APP_ID }}
       HOMEBOY_APP_PRIVATE_KEY: ${{ secrets.HOMEBOY_APP_PRIVATE_KEY }}
