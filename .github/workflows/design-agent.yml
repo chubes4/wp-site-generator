@@ -68,6 +68,7 @@ jobs:
       data_machine_ref: ${{ inputs.data_machine_ref }}
       data_machine_code_ref: ${{ inputs.data_machine_code_ref }}
       success_requires_pr: false
+      success_completion_outcomes: '["design_comment_and_labels"]'
       transcript_artifact_name: design-agent-transcript-${{ github.run_id }}
       comment_pr_summary: false
     secrets:

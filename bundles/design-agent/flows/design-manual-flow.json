@@ -27,7 +27,34 @@
             "step_type": "fetch"
         },
         {
-            "disabled_tools": [],
+            "completion_assertions": {
+                "complete_when_any": [
+                    {
+                        "name": "design_comment_and_labels",
+                        "tools": [
+                            {
+                                "name": "manage_github_issue",
+                                "required_parameters": {
+                                    "action": "comment"
+                                },
+                                "required_output": "comment.html_url"
+                            },
+                            {
+                                "name": "remove_label_from_issue",
+                                "success": true
+                            },
+                            {
+                                "name": "add_label_to_issue",
+                                "success": true
+                            }
+                        ]
+                    }
+                ]
+            },
+            "disabled_tools": [
+                "reject_source",
+                "defer_item"
+            ],
             "handler_configs": [],
             "prompt_queue": [
                 {
