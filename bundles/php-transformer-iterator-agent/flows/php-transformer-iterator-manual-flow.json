@@ -7,6 +7,26 @@
     "slug": "php-transformer-iterator-manual-flow",
     "steps": [
         {
+            "enabled_tools": [
+                "workspace_worktree_add",
+                "workspace_show",
+                "workspace_ls",
+                "workspace_read",
+                "workspace_grep",
+                "workspace_write",
+                "workspace_edit",
+                "workspace_apply_patch",
+                "workspace_git_status",
+                "workspace_git_diff",
+                "workspace_git_add",
+                "workspace_git_commit",
+                "workspace_git_push",
+                "list_github_issues",
+                "get_github_issue",
+                "create_github_issue",
+                "create_github_pull_request",
+                "comment_github_pull_request"
+            ],
             "completion_assertions": {
                 "complete_when_any": [
                     {
