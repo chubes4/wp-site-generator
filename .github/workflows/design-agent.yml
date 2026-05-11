@@ -56,7 +56,7 @@ jobs:
   design-agent:
     name: Run design-agent in Playground
     needs: prepare
-    uses: Extra-Chill/homeboy-extensions/.github/workflows/datamachine-agent-ci.yml@feat/agent-ci-runtime-dependencies
+    uses: Extra-Chill/homeboy-extensions/.github/workflows/datamachine-agent-ci.yml@main
     with:
       bundle_path: bundles/design-agent
       agent_slug: design-agent

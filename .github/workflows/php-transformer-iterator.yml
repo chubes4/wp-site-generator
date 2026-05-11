@@ -119,7 +119,7 @@ jobs:
   iterator:
     name: Run PR-first transformer iterator
     needs: prepare
-    uses: Extra-Chill/homeboy-extensions/.github/workflows/datamachine-agent-ci.yml@feat/agent-ci-runtime-dependencies
+    uses: Extra-Chill/homeboy-extensions/.github/workflows/datamachine-agent-ci.yml@main
     with:
       bundle_path: bundles/php-transformer-iterator-agent
       agent_slug: php-transformer-iterator-agent

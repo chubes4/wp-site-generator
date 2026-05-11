@@ -43,7 +43,7 @@ permissions:
 jobs:
   website-idea-agent:
     name: Run website-idea-agent in Playground
-    uses: Extra-Chill/homeboy-extensions/.github/workflows/datamachine-agent-ci.yml@feat/agent-ci-runtime-dependencies
+    uses: Extra-Chill/homeboy-extensions/.github/workflows/datamachine-agent-ci.yml@main
     with:
       bundle_path: bundles/website-idea-agent
       agent_slug: website-idea-agent
