@@ -73,4 +73,7 @@ jobs:
       success_requires_pr: false
       transcript_artifact_name: design-agent-transcript-${{ github.run_id }}
       comment_pr_summary: false
-    secrets: inherit
+    secrets:
+      HOMEBOY_APP_ID: ${{ secrets.HOMEBOY_APP_ID }}
+      HOMEBOY_APP_PRIVATE_KEY: ${{ secrets.HOMEBOY_APP_PRIVATE_KEY }}
+      OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}

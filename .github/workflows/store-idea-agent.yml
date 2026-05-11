@@ -52,4 +52,7 @@ jobs:
       time_budget_ms: 180000
       engine_data_outputs: '{"issue_url":"metadata.engine_data.store_idea_agent.issue_url","issue_number":"metadata.engine_data.store_idea_agent.issue_number"}'
       transcript_artifact_name: store-idea-agent-transcript-${{ github.run_id }}
-    secrets: inherit
+    secrets:
+      HOMEBOY_APP_ID: ${{ secrets.HOMEBOY_APP_ID }}
+      HOMEBOY_APP_PRIVATE_KEY: ${{ secrets.HOMEBOY_APP_PRIVATE_KEY }}
+      OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
