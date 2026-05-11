@@ -7,6 +7,24 @@
     "slug": "php-transformer-iterator-manual-flow",
     "steps": [
         {
+            "config_patch_queue": [],
+            "disabled_tools": [],
+            "enabled": true,
+            "handler_slug": "github",
+            "handler_configs": {
+                "github": {
+                    "data_source": "actions_artifact_items",
+                    "json_file": "finding-packets.json",
+                    "max_artifact_bytes": 4000000,
+                    "repo": "chubes4/wp-site-generator"
+                }
+            },
+            "prompt_queue": [],
+            "queue_mode": "static",
+            "step_position": 0,
+            "step_type": "fetch"
+        },
+        {
             "enabled_tools": [
                 "workspace_worktree_add",
                 "workspace_show",
@@ -75,7 +93,7 @@
             "prompt_queue": [
                 {
                     "added_at": "2026-05-07T00:00:00+00:00",
-                    "prompt": "Run the PR-first iterator against the grouped finding packet JSON supplied by the CI workload. The transformer primary workspaces are preloaded by the bundle; do not call workspace_clone for static-site-importer, html-to-blocks-converter, or block-format-bridge. First classify the root owner repo: DOM-to-block output signals such as core/html, core/freeform, fallback block output, unsupported wrapper conversion, and invalid block serialization usually belong to html-to-blocks-converter, not static-site-importer. Use static-site-importer only for document selection, region/report generation, asset/theme writing, or validation artifact behavior. Before creating a worktree, inspect the preloaded primary handle with read-only tools; prefer workspace_grep to find exact architecture anchors and nearby smoke tests, then workspace_read the matched path/offset. Call workspace_worktree_add only after you have a grounded patch path and exact source anchor. Open focused upstream PRs with regression coverage when a safe generalized patch path exists; use fallback issues when evidence cannot support a grounded patch. Workspace preparation is not completion: after successful workspace_worktree_add, use at most four inspection tools including workspace_grep to identify the nearest existing transform family and regression-test style, then the next tool must be workspace_edit or create_github_issue. For html-to-blocks-converter transform behavior, grep/read includes/class-transform-registry.php and tests/smoke-*.php before raw-handler pipeline mechanics. Do not invent files, methods, or classes. Never add standalone global helper functions to plugin bootstrap files as transformer fixes. If two workspace_edit attempts fail with old_string not found, or if no exact architecture anchor is found, stop the PR path and open a focused issue. Continue through status, commit, push, upstream PR or fallback issue, and source PR callback. Do not hardcode generated fixture class names or artifact-specific selectors into runtime code unless they already represent a reusable semantic contract in the target repository."
+                    "prompt": "Run the PR-first iterator against the fetched finding packet item supplied by the fetch step. The transformer primary workspaces are preloaded by the bundle; do not call workspace_clone for static-site-importer, html-to-blocks-converter, or block-format-bridge. First classify the root owner repo: DOM-to-block output signals such as core/html, core/freeform, fallback block output, unsupported wrapper conversion, and invalid block serialization usually belong to html-to-blocks-converter, not static-site-importer. Use static-site-importer only for document selection, region/report generation, asset/theme writing, or validation artifact behavior. Before creating a worktree, inspect the preloaded primary handle with read-only tools; prefer workspace_grep to find exact architecture anchors and nearby smoke tests, then workspace_read the matched path/offset. Call workspace_worktree_add only after you have a grounded patch path and exact source anchor. Open a focused upstream PR with regression coverage when a safe generalized patch path exists; use a fallback issue when evidence cannot support a grounded patch. Workspace preparation is not completion: after successful workspace_worktree_add, use at most four inspection tools including workspace_grep to identify the nearest existing transform family and regression-test style, then the next tool must be workspace_edit or create_github_issue. For html-to-blocks-converter transform behavior, grep/read includes/class-transform-registry.php and tests/smoke-*.php before raw-handler pipeline mechanics. Do not invent files, methods, or classes. Never add standalone global helper functions to plugin bootstrap files as transformer fixes. If two workspace_edit attempts fail with old_string not found, or if no exact architecture anchor is found, stop the PR path and open a focused issue. Continue through status, commit, push, upstream PR or fallback issue, and source PR callback. Do not hardcode generated fixture class names or artifact-specific selectors into runtime code unless they already represent a reusable semantic contract in the target repository."
                 },
                 {
                     "added_at": "2026-05-10T01:20:00+00:00",
@@ -83,7 +101,7 @@
                 }
             ],
             "queue_mode": "static",
-            "step_position": 0,
+            "step_position": 1,
             "step_type": "ai",
             "tool_runtime_rules": [
                 {
