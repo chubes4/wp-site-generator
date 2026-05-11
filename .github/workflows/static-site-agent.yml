@@ -69,7 +69,7 @@ jobs:
       target_repo: chubes4/wp-site-generator
       prompt: ${{ needs.prepare.outputs.prompt }}
       model: ${{ inputs.openai_model }}
-      validation_dependencies: Automattic/agents-api@main,Extra-Chill/data-machine@${{ inputs.data_machine_ref }},Extra-Chill/data-machine-code@${{ inputs.data_machine_code_ref }},WordPress/ai-provider-for-openai@main
+      validation_dependencies: Automattic/agents-api@main,Extra-Chill/data-machine@${{ inputs.data_machine_ref }},Extra-Chill/data-machine-code@${{ inputs.data_machine_code_ref }},WordPress/ai-provider-for-openai
       success_requires_pr: true
       engine_data_outputs: '{"static_site_pr_url":"metadata.engine_data.static_site_agent.pr_url","static_site_branch":"metadata.engine_data.static_site_agent.branch","static_site_slug":"metadata.engine_data.static_site_agent.slug"}'
       transcript_artifact_name: static-site-agent-transcript-${{ github.run_id }}

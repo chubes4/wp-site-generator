@@ -56,7 +56,7 @@ jobs:
       target_repo: ${{ inputs.target_repo }}
       prompt: ${{ inputs.concept_prompt }}
       model: ${{ inputs.openai_model }}
-      validation_dependencies: Automattic/agents-api@main,Extra-Chill/data-machine@${{ inputs.data_machine_ref }},Extra-Chill/data-machine-code@${{ inputs.data_machine_code_ref }},WordPress/ai-provider-for-openai@main
+      validation_dependencies: Automattic/agents-api@main,Extra-Chill/data-machine@${{ inputs.data_machine_ref }},Extra-Chill/data-machine-code@${{ inputs.data_machine_code_ref }},WordPress/ai-provider-for-openai
       success_requires_pr: false
       transcript_artifact_name: website-idea-agent-transcript-${{ github.run_id }}
       comment_pr_summary: false

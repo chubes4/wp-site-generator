@@ -45,7 +45,7 @@ jobs:
       target_repo: ${{ inputs.target_repo || github.repository }}
       prompt: ${{ inputs.concept_prompt }}
       model: ${{ inputs.openai_model }}
-      validation_dependencies: Automattic/agents-api@main,Extra-Chill/data-machine@${{ inputs.data_machine_ref }},Extra-Chill/data-machine-code@${{ inputs.data_machine_code_ref }},WordPress/ai-provider-for-openai@main
+      validation_dependencies: Automattic/agents-api@main,Extra-Chill/data-machine@${{ inputs.data_machine_ref }},Extra-Chill/data-machine-code@${{ inputs.data_machine_code_ref }},WordPress/ai-provider-for-openai
       success_requires_pr: false
       max_turns: 6
       step_budget: 8

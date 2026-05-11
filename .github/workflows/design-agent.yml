@@ -69,7 +69,7 @@ jobs:
       target_repo: chubes4/wp-site-generator
       prompt: ${{ needs.prepare.outputs.prompt }}
       model: ${{ inputs.openai_model }}
-      validation_dependencies: Automattic/agents-api@main,Extra-Chill/data-machine@${{ inputs.data_machine_ref }},Extra-Chill/data-machine-code@${{ inputs.data_machine_code_ref }},WordPress/ai-provider-for-openai@main
+      validation_dependencies: Automattic/agents-api@main,Extra-Chill/data-machine@${{ inputs.data_machine_ref }},Extra-Chill/data-machine-code@${{ inputs.data_machine_code_ref }},WordPress/ai-provider-for-openai
       success_requires_pr: false
       transcript_artifact_name: design-agent-transcript-${{ github.run_id }}
       comment_pr_summary: false
