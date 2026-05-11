@@ -32,10 +32,6 @@ on:
         description: Data Machine Code ref.
         required: true
         default: main
-      homeboy_extensions_ref:
-        description: Homeboy Extensions ref.
-        required: true
-        default: main
 
 permissions:
   actions: read
@@ -123,7 +119,7 @@ jobs:
   iterator:
     name: Run PR-first transformer iterator
     needs: prepare
-    uses: Extra-Chill/homeboy-extensions/.github/workflows/datamachine-agent-ci.yml@main
+    uses: Extra-Chill/homeboy-extensions/.github/workflows/datamachine-agent-ci.yml@feat/agent-ci-runtime-dependencies
     with:
       bundle_path: bundles/php-transformer-iterator-agent
       agent_slug: php-transformer-iterator-agent
@@ -133,7 +129,8 @@ jobs:
       prompt: ${{ needs.prepare.outputs.prompt }}
       model: ${{ inputs.openai_model }}
       app_token_repos: chubes4/wp-site-generator,chubes4/static-site-importer,chubes4/html-to-blocks-converter,chubes4/block-format-bridge
-      validation_dependencies: Automattic/agents-api@main,Extra-Chill/data-machine@${{ inputs.data_machine_ref }},Extra-Chill/data-machine-code@${{ inputs.data_machine_code_ref }},WordPress/ai-provider-for-openai@main
+      data_machine_ref: ${{ inputs.data_machine_ref }}
+      data_machine_code_ref: ${{ inputs.data_machine_code_ref }}
       success_requires_pr: true
       max_turns: 24
       step_budget: 20
