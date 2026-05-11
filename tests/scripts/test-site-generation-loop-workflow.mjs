@@ -8,6 +8,8 @@ const workflow = await readFile(path.join(repoRoot, '.github/workflows/site-gene
 assert.match(workflow, /name: Site Generation Loop/, 'workflow has the expected name');
 assert.match(workflow, /store-idea-agent:/, 'workflow runs store idea lane');
 assert.match(workflow, /website-idea-agent:/, 'workflow runs website idea lane');
+assert.match(workflow, /flow_slug: store-idea-home-and-craft-flow/, 'store lane runs the home/craft idea flow');
+assert.match(workflow, /flow_slug: website-idea-local-business-flow/, 'website lane runs the local business idea flow');
 assert.match(workflow, /needs:\n      - store-idea-agent\n      - website-idea-agent/, 'workflow waits for both idea lanes before collecting issues');
 assert.match(workflow, /matrix:\n        issue_number: \$\{\{ fromJSON\(needs\.collect-issues\.outputs\.issue_numbers\) \}\}/, 'design/static stages fan out over collected issues');
 assert.match(workflow, /agent_slug: design-agent/, 'workflow runs design agent');

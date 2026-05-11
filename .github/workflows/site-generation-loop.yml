@@ -3,25 +3,6 @@ name: Site Generation Loop
 on:
   workflow_dispatch:
     inputs:
-      store_concept_prompt:
-        description: Store-concept prompt for store-idea-agent.
-        required: true
-        default: 'Industry: open. Generate one distinct, buildable store concept for an underserved but visually interesting product category.'
-      website_flow_slug:
-        description: Which website-idea flow to run.
-        type: choice
-        options:
-          - website-idea-manual-flow
-          - website-idea-local-business-flow
-          - website-idea-blog-flow
-          - website-idea-portfolio-flow
-          - website-idea-professional-services-flow
-          - website-idea-nonprofit-flow
-        default: website-idea-local-business-flow
-      website_concept_prompt:
-        description: Override the bundled website prompt (optional).
-        required: false
-        default: ''
       openai_model:
         description: OpenAI model to use for imported agent flows.
         required: true
@@ -52,9 +33,9 @@ jobs:
       bundle_path: bundles/store-idea-agent
       agent_slug: store-idea-agent
       pipeline_slug: store-idea-pipeline
-      flow_slug: store-idea-manual-flow
+      flow_slug: store-idea-home-and-craft-flow
       target_repo: ${{ github.repository }}
-      prompt: ${{ inputs.store_concept_prompt }}
+      prompt: ''
       model: ${{ inputs.openai_model }}
       data_machine_ref: ${{ inputs.data_machine_ref }}
       data_machine_code_ref: ${{ inputs.data_machine_code_ref }}
@@ -77,9 +58,9 @@ jobs:
       bundle_path: bundles/website-idea-agent
       agent_slug: website-idea-agent
       pipeline_slug: website-idea-pipeline
-      flow_slug: ${{ inputs.website_flow_slug }}
+      flow_slug: website-idea-local-business-flow
       target_repo: ${{ github.repository }}
-      prompt: ${{ inputs.website_concept_prompt }}
+      prompt: ''
       model: ${{ inputs.openai_model }}
       data_machine_ref: ${{ inputs.data_machine_ref }}
       data_machine_code_ref: ${{ inputs.data_machine_code_ref }}
