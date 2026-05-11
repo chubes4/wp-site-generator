@@ -140,4 +140,7 @@ jobs:
       time_budget_ms: 600000
       engine_data_outputs: '{"upstream_action_url":"metadata.engine_data.php_transformer_iterator.upstream_action_url","source_callback_url":"metadata.engine_data.php_transformer_iterator.source_callback_url"}'
       transcript_artifact_name: php-transformer-iterator-transcript-${{ github.run_id }}
-    secrets: inherit
+    secrets:
+      HOMEBOY_APP_ID: ${{ secrets.HOMEBOY_APP_ID }}
+      HOMEBOY_APP_PRIVATE_KEY: ${{ secrets.HOMEBOY_APP_PRIVATE_KEY }}
+      OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
