@@ -47,6 +47,7 @@ jobs:
     runs-on: ubuntu-latest
     outputs:
       prompt: ${{ steps.prompt.outputs.prompt }}
+      should_run_iterator: ${{ steps.prompt.outputs.should_run_iterator }}
     steps:
       - name: Checkout site generator
         uses: actions/checkout@v4
@@ -99,7 +100,9 @@ jobs:
               validation_run_id: $validationRunId,
               finding_groups: $findingGroups[0]
             }' | sed '1s/^/Run the PHP transformer iterator now.\n\n/')
+          group_count=$(jq -r '.group_count' "$FINDING_GROUPS_PATH")
           {
+            printf 'should_run_iterator=%s\n' "$([ "$group_count" -gt 0 ] && printf true || printf false)"
             printf 'prompt<<EOF\n'
             printf '%s\n' "$prompt"
             printf 'EOF\n'
@@ -116,6 +119,7 @@ jobs:
       flow_slug: php-transformer-iterator-manual-flow
       target_repo: ${{ inputs.source_repo }}
       prompt: ${{ needs.prepare.outputs.prompt }}
+      run_agent: ${{ needs.prepare.outputs.should_run_iterator == 'true' }}
       model: ${{ inputs.openai_model }}
       app_token_repos: chubes4/wp-site-generator,chubes4/static-site-importer,chubes4/html-to-blocks-converter,chubes4/block-format-bridge
       validation_dependencies: Automattic/agents-api@main,Extra-Chill/data-machine@${{ inputs.data_machine_ref }},Extra-Chill/data-machine-code@${{ inputs.data_machine_code_ref }},WordPress/ai-provider-for-openai@main
