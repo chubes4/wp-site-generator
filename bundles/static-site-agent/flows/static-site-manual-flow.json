@@ -27,7 +27,24 @@
             "step_type": "fetch"
         },
         {
-            "disabled_tools": [],
+            "completion_assertions": {
+                "complete_when_any": [
+                    {
+                        "name": "static_site_pr",
+                        "tools": [
+                            {
+                                "name": "github_pull_request_publish",
+                                "required_output": "data.html_url",
+                                "success": true
+                            }
+                        ]
+                    }
+                ]
+            },
+            "disabled_tools": [
+                "reject_source",
+                "defer_item"
+            ],
             "handler_configs": [],
             "prompt_queue": [
                 {
