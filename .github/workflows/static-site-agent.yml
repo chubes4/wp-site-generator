@@ -56,7 +56,7 @@ jobs:
   static-site-agent:
     name: Run static-site-agent in Playground
     needs: prepare
-    uses: Extra-Chill/homeboy-extensions/.github/workflows/datamachine-agent-ci.yml@feat/agent-ci-runtime-dependencies
+    uses: Extra-Chill/homeboy-extensions/.github/workflows/datamachine-agent-ci.yml@main
     with:
       bundle_path: bundles/static-site-agent
       agent_slug: static-site-agent
