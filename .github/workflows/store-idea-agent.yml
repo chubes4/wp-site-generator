@@ -23,10 +23,6 @@ on:
         description: Data Machine Code ref.
         required: true
         default: main
-      homeboy_extensions_ref:
-        description: Homeboy Extensions ref.
-        required: true
-        default: main
 
 permissions:
   contents: write
@@ -36,7 +32,7 @@ permissions:
 jobs:
   idea-agent:
     name: Run store-idea-agent in Playground
-    uses: Extra-Chill/homeboy-extensions/.github/workflows/datamachine-agent-ci.yml@main
+    uses: Extra-Chill/homeboy-extensions/.github/workflows/datamachine-agent-ci.yml@feat/agent-ci-runtime-dependencies
     with:
       bundle_path: bundles/store-idea-agent
       agent_slug: store-idea-agent
@@ -45,7 +41,8 @@ jobs:
       target_repo: ${{ inputs.target_repo || github.repository }}
       prompt: ${{ inputs.concept_prompt }}
       model: ${{ inputs.openai_model }}
-      validation_dependencies: Automattic/agents-api@main,Extra-Chill/data-machine@${{ inputs.data_machine_ref }},Extra-Chill/data-machine-code@${{ inputs.data_machine_code_ref }},WordPress/ai-provider-for-openai@main
+      data_machine_ref: ${{ inputs.data_machine_ref }}
+      data_machine_code_ref: ${{ inputs.data_machine_code_ref }}
       success_requires_pr: false
       max_turns: 6
       step_budget: 8

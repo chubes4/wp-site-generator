@@ -420,5 +420,4 @@ jobs:
             -f artifact_name="$ARTIFACT_NAME" \
             -f openai_model="gpt-5.5" \
             -f data_machine_ref="main" \
-            -f data_machine_code_ref="main" \
-            -f homeboy_extensions_ref="main"
+            -f data_machine_code_ref="main"
