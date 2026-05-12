@@ -63,20 +63,53 @@ return static function (): array {
 		);
 	};
 
-	$record_fallback_diagnostic = static function ( array $diagnostic ) use ( &$fallback_diagnostics, &$seen_fallback_diagnostics, $preview_value ): void {
-		$fields = array(
-			'selector' => 160,
-			'excerpt' => 220,
-			'source_html_preview' => 220,
-			'block_name' => 80,
-			'converter' => 80,
-			'stage' => 80,
-			'reason' => 220,
-		);
-		$row = array();
+	$first_scalar_path = static function ( array $value, array $paths ): string {
+		foreach ( $paths as $path ) {
+			$cursor = $value;
+			foreach ( $path as $key ) {
+				if ( ! is_array( $cursor ) || ! array_key_exists( $key, $cursor ) ) {
+					continue 2;
+				}
+				$cursor = $cursor[ $key ];
+			}
 
-		foreach ( $fields as $field => $length ) {
-			$row[ $field ] = isset( $diagnostic[ $field ] ) ? $preview_value( $diagnostic[ $field ], $length ) : '';
+			if ( is_scalar( $cursor ) && '' !== (string) $cursor ) {
+				return (string) $cursor;
+			}
+		}
+
+		return '';
+	};
+
+	$record_fallback_diagnostic = static function ( array $diagnostic ) use ( &$fallback_diagnostics, &$seen_fallback_diagnostics, $preview_value, $first_scalar_path ): void {
+		$row = array(
+			'path' => $first_scalar_path(
+				$diagnostic,
+				array( array( 'path' ), array( 'source' ), array( 'scope', 'source_id' ), array( 'details', 'scope', 'source_id' ) )
+			),
+			'selector' => $first_scalar_path(
+				$diagnostic,
+				array( array( 'selector' ), array( 'source_selector' ), array( 'scope', 'source_selector' ), array( 'details', 'scope', 'source_selector' ) )
+			),
+			'excerpt' => $first_scalar_path(
+				$diagnostic,
+				array( array( 'excerpt' ), array( 'html_excerpt' ), array( 'message' ) )
+			),
+			'source_html_preview' => $first_scalar_path(
+				$diagnostic,
+				array( array( 'source_html_preview' ), array( 'html_excerpt' ), array( 'source_html' ) )
+			),
+			'block_name' => $first_scalar_path( $diagnostic, array( array( 'block_name' ) ) ),
+			'converter' => $first_scalar_path( $diagnostic, array( array( 'converter' ) ) ),
+			'stage' => $first_scalar_path( $diagnostic, array( array( 'stage' ), array( 'type' ), array( 'code' ) ) ),
+			'reason' => $first_scalar_path( $diagnostic, array( array( 'reason' ), array( 'type' ), array( 'code' ), array( 'message' ) ) ),
+		);
+
+		foreach ( $row as $field => $value ) {
+			$row[ $field ] = $preview_value( $value, in_array( $field, array( 'excerpt', 'source_html_preview', 'reason' ), true ) ? 220 : 160 );
+		}
+		if ( '' === $row['converter'] ) {
+			$row['converter'] = 'static-site-importer';
 		}
 
 		$key = wp_json_encode( $row );
@@ -110,7 +143,7 @@ return static function (): array {
 		return empty( $value ) ? 0 : 1;
 	};
 
-	$set_metric = static function ( string $metric, string $kind, string $path, $value, ?int $count = null ) use ( &$metrics, $count_value, $record_finding ): void {
+	$set_metric = static function ( string $metric, string $kind, string $path, $value, ?int $count = null, bool $record = true ) use ( &$metrics, $count_value, $record_finding ): void {
 		$count = null === $count ? $count_value( $value ) : $count;
 		if ( $count <= 0 ) {
 			return;
@@ -120,7 +153,9 @@ return static function (): array {
 		if ( 'ssi_ignored_region_count' !== $metric ) {
 			$metrics['ssi_signal_total_count'] += $count;
 		}
-		$record_finding( $kind, $path, $value );
+		if ( $record ) {
+			$record_finding( $kind, $path, $value );
+		}
 	};
 
 	$sum_named_counts = static function ( array $value, string $key ): int {
@@ -156,14 +191,27 @@ return static function (): array {
 			return;
 		}
 
-		$fallback_fields = array( 'selector', 'excerpt', 'source_html_preview', 'block_name', 'converter', 'stage', 'reason' );
+		$fallback_fields = array(
+			'selector',
+			'source_selector',
+			'excerpt',
+			'html_excerpt',
+			'source_html_preview',
+			'source_html',
+			'block_name',
+			'converter',
+			'stage',
+			'reason',
+			'type',
+			'code',
+		);
 		foreach ( $diagnostics as $diagnostic ) {
 			if ( ! is_array( $diagnostic ) || ! array_intersect_key( $diagnostic, array_flip( $fallback_fields ) ) ) {
 				continue;
 			}
 
 			$diagnostic_values = array();
-			foreach ( array( 'type', 'block_name', 'converter', 'stage', 'reason' ) as $field ) {
+			foreach ( array( 'type', 'code', 'message', 'block_name', 'converter', 'stage', 'reason' ) as $field ) {
 				if ( isset( $diagnostic[ $field ] ) && is_scalar( $diagnostic[ $field ] ) ) {
 					$diagnostic_values[] = (string) $diagnostic[ $field ];
 				}
@@ -221,13 +269,13 @@ return static function (): array {
 				static fn ( array $diagnostic ): bool => isset( $diagnostic['type'] ) && false !== strpos( strtolower( (string) $diagnostic['type'] ), 'fallback' )
 			);
 		}
-		$set_metric( 'ssi_fallback_count', 'fallback', '$.quality.fallback_count', $fallback_count );
+		$set_metric( 'ssi_fallback_count', 'fallback', '$.quality.fallback_count', $fallback_count, null, 0 === count( $fallback_diagnostics ) );
 
 		$core_html_count = $count_diagnostics(
 			$report,
 			static fn ( array $diagnostic ): bool => isset( $diagnostic['block_name'] ) && 'core/html' === strtolower( (string) $diagnostic['block_name'] )
 		);
-		$set_metric( 'ssi_core_html_count', 'core_html', '$.diagnostics[*].block_name', $core_html_count );
+		$set_metric( 'ssi_core_html_count', 'core_html', '$.diagnostics[*].block_name', $core_html_count, null, 0 === count( $fallback_diagnostics ) );
 
 		$invalid_block_count = $get_path( $report, array( 'quality', 'invalid_block_count' ) );
 		if ( null === $invalid_block_count ) {
