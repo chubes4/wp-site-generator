@@ -73,43 +73,60 @@ jobs:
       HOMEBOY_APP_PRIVATE_KEY: ${{ secrets.HOMEBOY_APP_PRIVATE_KEY }}
       OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
 
-  collect-issues:
-    name: Collect generated ideas
-    needs:
-      - store-idea-agent
-      - website-idea-agent
+  collect-store-issue:
+    name: Collect store idea
+    needs: store-idea-agent
+    if: always()
     runs-on: ubuntu-latest
     outputs:
-      issue_numbers: ${{ steps.collect.outputs.issue_numbers }}
-      has_issues: ${{ steps.collect.outputs.has_issues }}
+      issue_number: ${{ steps.collect.outputs.issue_number }}
+      has_issue: ${{ steps.collect.outputs.has_issue }}
     steps:
-      - name: Collect issue numbers
+      - name: Collect issue number
         id: collect
         env:
           STORE_ENGINE_DATA: ${{ needs.store-idea-agent.outputs.engine_data_json }}
+        run: |
+          set -euo pipefail
+          issue_number="$(jq -nr --argjson data "${STORE_ENGINE_DATA:-{}}" '$data.issue_number | tonumber? // empty')"
+          if [ -n "$issue_number" ]; then
+            echo "has_issue=true" >> "$GITHUB_OUTPUT"
+            echo "issue_number=$issue_number" >> "$GITHUB_OUTPUT"
+          else
+            echo "has_issue=false" >> "$GITHUB_OUTPUT"
+            echo "issue_number=" >> "$GITHUB_OUTPUT"
+          fi
+          echo "Generated store issue: ${issue_number:-none}"
+
+  collect-website-issue:
+    name: Collect website idea
+    needs: website-idea-agent
+    if: always()
+    runs-on: ubuntu-latest
+    outputs:
+      issue_number: ${{ steps.collect.outputs.issue_number }}
+      has_issue: ${{ steps.collect.outputs.has_issue }}
+    steps:
+      - name: Collect issue number
+        id: collect
+        env:
           WEBSITE_ENGINE_DATA: ${{ needs.website-idea-agent.outputs.engine_data_json }}
         run: |
           set -euo pipefail
-          issue_numbers="$(jq -cn \
-            --argjson store "${STORE_ENGINE_DATA:-{}}" \
-            --argjson website "${WEBSITE_ENGINE_DATA:-{}}" \
-            '[ $store.issue_number, $website.issue_number ] | map(tonumber? // empty) | unique')"
-          if [ "$(jq 'length' <<< "$issue_numbers")" -gt 0 ]; then
-            echo "has_issues=true" >> "$GITHUB_OUTPUT"
+          issue_number="$(jq -nr --argjson data "${WEBSITE_ENGINE_DATA:-{}}" '$data.issue_number | tonumber? // empty')"
+          if [ -n "$issue_number" ]; then
+            echo "has_issue=true" >> "$GITHUB_OUTPUT"
+            echo "issue_number=$issue_number" >> "$GITHUB_OUTPUT"
           else
-            echo "has_issues=false" >> "$GITHUB_OUTPUT"
+            echo "has_issue=false" >> "$GITHUB_OUTPUT"
+            echo "issue_number=" >> "$GITHUB_OUTPUT"
           fi
-          echo "issue_numbers=$issue_numbers" >> "$GITHUB_OUTPUT"
-          echo "Generated idea issues: $issue_numbers"
+          echo "Generated website issue: ${issue_number:-none}"
 
-  design-agent:
-    name: Design issue #${{ matrix.issue_number }}
-    needs: collect-issues
-    if: needs.collect-issues.outputs.has_issues == 'true'
-    strategy:
-      fail-fast: false
-      matrix:
-        issue_number: ${{ fromJSON(needs.collect-issues.outputs.issue_numbers) }}
+  design-store-issue:
+    name: Design store issue #${{ needs.collect-store-issue.outputs.issue_number }}
+    needs: collect-store-issue
+    if: needs.collect-store-issue.outputs.has_issue == 'true'
     uses: Extra-Chill/homeboy-extensions/.github/workflows/datamachine-agent-ci.yml@main
     with:
       bundle_path: bundles/design-agent
@@ -117,29 +134,49 @@ jobs:
       pipeline_slug: design-pipeline
       flow_slug: design-manual-flow
       target_repo: ${{ github.repository }}
-      prompt: Decide one visual design direction for GitHub issue #${{ matrix.issue_number }}. Read the concept body, post the design.json fenced JSON block as a comment, and toggle the issue label from status:idea-ready to status:design-ready using surgical add_label_to_issue and remove_label_from_issue tool calls. Preserve every other label.
+      prompt: Decide one visual design direction for GitHub issue #${{ needs.collect-store-issue.outputs.issue_number }}. Read the concept body, post the design.json fenced JSON block as a comment, and toggle the issue label from status:idea-ready to status:design-ready using surgical add_label_to_issue and remove_label_from_issue tool calls. Preserve every other label.
       model: ${{ inputs.openai_model }}
       data_machine_ref: ${{ inputs.data_machine_ref }}
       data_machine_code_ref: ${{ inputs.data_machine_code_ref }}
       success_requires_pr: false
       success_completion_outcomes: '["design_comment_and_labels"]'
-      transcript_artifact_name: design-agent-${{ matrix.issue_number }}-transcript-${{ github.run_id }}
+      transcript_artifact_name: design-agent-store-${{ needs.collect-store-issue.outputs.issue_number }}-transcript-${{ github.run_id }}
       comment_pr_summary: false
     secrets:
       HOMEBOY_APP_ID: ${{ secrets.HOMEBOY_APP_ID }}
       HOMEBOY_APP_PRIVATE_KEY: ${{ secrets.HOMEBOY_APP_PRIVATE_KEY }}
       OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
 
-  static-site-agent:
-    name: Build static site for issue #${{ matrix.issue_number }}
+  design-website-issue:
+    name: Design website issue #${{ needs.collect-website-issue.outputs.issue_number }}
+    needs: collect-website-issue
+    if: needs.collect-website-issue.outputs.has_issue == 'true'
+    uses: Extra-Chill/homeboy-extensions/.github/workflows/datamachine-agent-ci.yml@main
+    with:
+      bundle_path: bundles/design-agent
+      agent_slug: design-agent
+      pipeline_slug: design-pipeline
+      flow_slug: design-manual-flow
+      target_repo: ${{ github.repository }}
+      prompt: Decide one visual design direction for GitHub issue #${{ needs.collect-website-issue.outputs.issue_number }}. Read the concept body, post the design.json fenced JSON block as a comment, and toggle the issue label from status:idea-ready to status:design-ready using surgical add_label_to_issue and remove_label_from_issue tool calls. Preserve every other label.
+      model: ${{ inputs.openai_model }}
+      data_machine_ref: ${{ inputs.data_machine_ref }}
+      data_machine_code_ref: ${{ inputs.data_machine_code_ref }}
+      success_requires_pr: false
+      success_completion_outcomes: '["design_comment_and_labels"]'
+      transcript_artifact_name: design-agent-website-${{ needs.collect-website-issue.outputs.issue_number }}-transcript-${{ github.run_id }}
+      comment_pr_summary: false
+    secrets:
+      HOMEBOY_APP_ID: ${{ secrets.HOMEBOY_APP_ID }}
+      HOMEBOY_APP_PRIVATE_KEY: ${{ secrets.HOMEBOY_APP_PRIVATE_KEY }}
+      OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+
+  static-store-site:
+    name: Build store site for issue #${{ needs.collect-store-issue.outputs.issue_number }}
     needs:
-      - collect-issues
-      - design-agent
-    if: needs.collect-issues.outputs.has_issues == 'true'
-    strategy:
-      fail-fast: false
-      matrix:
-        issue_number: ${{ fromJSON(needs.collect-issues.outputs.issue_numbers) }}
+      - collect-store-issue
+      - design-store-issue
+    if: always() && needs.collect-store-issue.outputs.has_issue == 'true' && needs.design-store-issue.result == 'success'
     uses: Extra-Chill/homeboy-extensions/.github/workflows/datamachine-agent-ci.yml@main
     with:
       bundle_path: bundles/static-site-agent
@@ -147,14 +184,41 @@ jobs:
       pipeline_slug: static-site-pipeline
       flow_slug: static-site-manual-flow
       target_repo: ${{ github.repository }}
-      prompt: Implement GitHub issue #${{ matrix.issue_number }} as a static site. Read the issue body and the design agent comment, honor both, and open exactly one static-site PR for that issue.
+      prompt: Implement GitHub issue #${{ needs.collect-store-issue.outputs.issue_number }} as a static site. Read the issue body and the design agent comment, honor both, and open exactly one static-site PR for that issue.
       model: ${{ inputs.openai_model }}
       data_machine_ref: ${{ inputs.data_machine_ref }}
       data_machine_code_ref: ${{ inputs.data_machine_code_ref }}
       success_requires_pr: true
       success_completion_outcomes: '["static_site_pr"]'
       engine_data_outputs: '{"static_site_pr_url":"metadata.engine_data.static_site_agent.pr_url","static_site_branch":"metadata.engine_data.static_site_agent.branch","static_site_slug":"metadata.engine_data.static_site_agent.slug"}'
-      transcript_artifact_name: static-site-agent-${{ matrix.issue_number }}-transcript-${{ github.run_id }}
+      transcript_artifact_name: static-site-agent-store-${{ needs.collect-store-issue.outputs.issue_number }}-transcript-${{ github.run_id }}
+      comment_pr_summary: false
+    secrets:
+      HOMEBOY_APP_ID: ${{ secrets.HOMEBOY_APP_ID }}
+      HOMEBOY_APP_PRIVATE_KEY: ${{ secrets.HOMEBOY_APP_PRIVATE_KEY }}
+      OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+
+  static-website-site:
+    name: Build website site for issue #${{ needs.collect-website-issue.outputs.issue_number }}
+    needs:
+      - collect-website-issue
+      - design-website-issue
+    if: always() && needs.collect-website-issue.outputs.has_issue == 'true' && needs.design-website-issue.result == 'success'
+    uses: Extra-Chill/homeboy-extensions/.github/workflows/datamachine-agent-ci.yml@main
+    with:
+      bundle_path: bundles/static-site-agent
+      agent_slug: static-site-agent
+      pipeline_slug: static-site-pipeline
+      flow_slug: static-site-manual-flow
+      target_repo: ${{ github.repository }}
+      prompt: Implement GitHub issue #${{ needs.collect-website-issue.outputs.issue_number }} as a static site. Read the issue body and the design agent comment, honor both, and open exactly one static-site PR for that issue.
+      model: ${{ inputs.openai_model }}
+      data_machine_ref: ${{ inputs.data_machine_ref }}
+      data_machine_code_ref: ${{ inputs.data_machine_code_ref }}
+      success_requires_pr: true
+      success_completion_outcomes: '["static_site_pr"]'
+      engine_data_outputs: '{"static_site_pr_url":"metadata.engine_data.static_site_agent.pr_url","static_site_branch":"metadata.engine_data.static_site_agent.branch","static_site_slug":"metadata.engine_data.static_site_agent.slug"}'
+      transcript_artifact_name: static-site-agent-website-${{ needs.collect-website-issue.outputs.issue_number }}-transcript-${{ github.run_id }}
       comment_pr_summary: false
     secrets:
       HOMEBOY_APP_ID: ${{ secrets.HOMEBOY_APP_ID }}
