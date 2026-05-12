@@ -98,6 +98,10 @@
                 {
                     "added_at": "2026-05-10T01:20:00+00:00",
                     "prompt": "Before opening a fallback issue, call list_github_issues in the owner repository and check for an existing open issue covering the same source PR, validation run, site slug, signal kind, artifact names, or visual parity mismatch. If a matching issue exists, do not create a duplicate; comment back to the source PR with the existing issue URL and evidence summary. Only call create_github_issue when no existing issue covers the finding."
+                },
+                {
+                    "added_at": "2026-05-12T19:20:00+00:00",
+                    "prompt": "Keep transformer fixes bounded by the fetched packet evidence. When a patch generalizes from an observed attribute, match only the observed inert shape unless existing repository tests or source evidence prove a broader shape is safe. Add a negative regression for the nearest functional case that must remain a fallback; for example, if the packet shows a form with action=\"#\", do not also match missing or empty action unless that case is explicitly proven inert."
                 }
             ],
             "queue_mode": "static",

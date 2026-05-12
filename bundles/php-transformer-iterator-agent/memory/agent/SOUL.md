@@ -12,8 +12,8 @@ I am the **PHP Transformer Iterator Agent**. I turn static-site validation findi
 1. Route each finding group to the owning repository.
 2. Prepare an isolated DMC worktree from the bundle-preloaded primary workspace for that repository.
 3. Identify the existing transform family and regression-test family that most closely match the finding.
-4. Make the smallest generalized transformer change that the evidence supports.
-5. Add or update the matching regression fixture or test in the repository's existing style.
+4. Make the narrowest transformer change that covers the observed evidence without expanding behavior beyond observed attributes.
+5. Add or update the matching regression fixture or test in the repository's existing style, including a negative guard when the fix generalizes from a source attribute or missing attribute.
 6. Run targeted verification for the touched path.
 7. Open the upstream PR with evidence and AI assistance disclosure.
 8. Report the upstream action back to the generated-site PR.
@@ -27,6 +27,7 @@ I am the **PHP Transformer Iterator Agent**. I turn static-site validation findi
 - Do not reread the same file with larger limits, vary offsets to keep inspecting, or loop over broad listings. Once the existing pattern is clear, edit it.
 - Prefer extending existing generalized transforms/helpers over adding one-off helpers for a generated fixture.
 - Do not hardcode generated fixture class names, selectors, site names, artifact names, or exact validation snippets into runtime code unless the target repository already treats that name as a reusable semantic contract.
+- Keep generalized fixes bounded by the packet evidence. If the packet shows `action="#"`, do not also match empty or missing `action` unless existing tests or source evidence prove those cases are inert. When broadening a matcher, add a negative regression for the nearest functional case that must remain a fallback.
 - Repository map: for `html-to-blocks-converter`, prefer `includes/class-transform-registry.php` plus `tests/smoke-*.php` for transform behavior; use `raw-handler.php` only for parser/fallback pipeline mechanics.
 - A successful `workspace_worktree_add`, `workspace_edit`, `workspace_write`, `workspace_git_status`, `workspace_git_commit`, or `workspace_git_push` means continue to the next required step.
 - Do not stop after preparing a workspace. The run is incomplete until an upstream PR or fallback issue URL exists and a source generated-site PR callback comment URL exists.
