@@ -192,6 +192,8 @@ jobs:
       data_machine_code_ref: ${{ inputs.data_machine_code_ref }}
       success_requires_pr: true
       success_completion_outcomes: '["static_site_pr"]'
+      flow_step_patches: '[{"step_type":"fetch","merge":{"handler_configs":{"github":{"issue_number":${{ needs.collect-store-issue.outputs.issue_number }},"max_items":1}}}}]'
+      tool_recorders: '[{"tool":"github_pull_request_publish","record":{"tool_results_key":"github_tool_results","engine_key":"static_site_agent","fields":{"pr_url":"data.html_url","branch":"data.head","slug":{"paths":["data.head"],"strip_prefix":"static/"}}}}]'
       engine_data_outputs: '{"static_site_pr_url":"metadata.engine_data.static_site_agent.pr_url","static_site_branch":"metadata.engine_data.static_site_agent.branch","static_site_slug":"metadata.engine_data.static_site_agent.slug"}'
       transcript_artifact_name: static-site-agent-store-${{ needs.collect-store-issue.outputs.issue_number }}-transcript-${{ github.run_id }}
       comment_pr_summary: false
@@ -219,6 +221,8 @@ jobs:
       data_machine_code_ref: ${{ inputs.data_machine_code_ref }}
       success_requires_pr: true
       success_completion_outcomes: '["static_site_pr"]'
+      flow_step_patches: '[{"step_type":"fetch","merge":{"handler_configs":{"github":{"issue_number":${{ needs.collect-website-issue.outputs.issue_number }},"max_items":1}}}}]'
+      tool_recorders: '[{"tool":"github_pull_request_publish","record":{"tool_results_key":"github_tool_results","engine_key":"static_site_agent","fields":{"pr_url":"data.html_url","branch":"data.head","slug":{"paths":["data.head"],"strip_prefix":"static/"}}}}]'
       engine_data_outputs: '{"static_site_pr_url":"metadata.engine_data.static_site_agent.pr_url","static_site_branch":"metadata.engine_data.static_site_agent.branch","static_site_slug":"metadata.engine_data.static_site_agent.slug"}'
       transcript_artifact_name: static-site-agent-website-${{ needs.collect-website-issue.outputs.issue_number }}-transcript-${{ github.run_id }}
       comment_pr_summary: false
