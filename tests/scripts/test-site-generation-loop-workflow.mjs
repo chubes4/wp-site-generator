@@ -24,6 +24,9 @@ assert.match(workflow, /design-store-issue:[\s\S]*needs: collect-store-issue/, '
 assert.match(workflow, /design-website-issue:[\s\S]*needs: collect-website-issue/, 'website design depends only on website issue collection');
 assert.match(workflow, /static-store-site:[\s\S]*needs:[\s\S]*collect-store-issue[\s\S]*design-store-issue/, 'store static build depends only on store lane');
 assert.match(workflow, /static-website-site:[\s\S]*needs:[\s\S]*collect-website-issue[\s\S]*design-website-issue/, 'website static build depends only on website lane');
+assert.match(workflow, /flow_step_patches: '\[\{"step_type":"fetch","merge":\{"handler_configs":\{"github":\{"issue_number":\$\{\{ needs\.collect-store-issue\.outputs\.issue_number \}\},"max_items":1/, 'store static fetch is scoped to the store issue');
+assert.match(workflow, /flow_step_patches: '\[\{"step_type":"fetch","merge":\{"handler_configs":\{"github":\{"issue_number":\$\{\{ needs\.collect-website-issue\.outputs\.issue_number \}\},"max_items":1/, 'website static fetch is scoped to the website issue');
+assert.match(workflow, /"tool":"github_pull_request_publish","record":\{"tool_results_key":"github_tool_results","engine_key":"static_site_agent"/, 'static publish PR output is recorded for runner success detection');
 assert.match(workflow, /data_machine_ref:\n        description: Data Machine ref\.[\s\S]*default: main/, 'workflow defaults Data Machine to main');
 assert.match(workflow, /data_machine_code_ref:\n        description: Data Machine Code ref\.[\s\S]*default: main/, 'workflow defaults Data Machine Code to main');
 assert.doesNotMatch(workflow, /feat\/|TODO|temporary|temp ref/i, 'workflow does not contain temporary refs or TODO placeholders');
