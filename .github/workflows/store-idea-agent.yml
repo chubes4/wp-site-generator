@@ -47,6 +47,7 @@ jobs:
       max_turns: 6
       step_budget: 8
       time_budget_ms: 180000
+      tool_recorders: '[{"tool":"github_issue_publish","record":{"engine_key":"store_idea_agent","fields":{"issue_url":"data.issue_url","issue_number":"data.issue_number"}}}]'
       engine_data_outputs: '{"issue_url":"metadata.engine_data.store_idea_agent.issue_url","issue_number":"metadata.engine_data.store_idea_agent.issue_number"}'
       transcript_artifact_name: store-idea-agent-transcript-${{ github.run_id }}
     secrets:

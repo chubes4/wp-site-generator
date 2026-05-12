@@ -10,6 +10,8 @@ assert.match(workflow, /store-idea-agent:/, 'workflow runs store idea lane');
 assert.match(workflow, /website-idea-agent:/, 'workflow runs website idea lane');
 assert.match(workflow, /flow_slug: store-idea-home-and-craft-flow/, 'store lane runs the home/craft idea flow');
 assert.match(workflow, /flow_slug: website-idea-local-business-flow/, 'website lane runs the local business idea flow');
+assert.match(workflow, /"tool":"github_issue_publish","record":\{"engine_key":"store_idea_agent","fields":\{"issue_url":"data\.issue_url","issue_number":"data\.issue_number"/, 'store lane records published issue outputs');
+assert.match(workflow, /"tool":"github_issue_publish","record":\{"engine_key":"website_idea_agent","fields":\{"issue_url":"data\.issue_url","issue_number":"data\.issue_number"/, 'website lane records published issue outputs');
 assert.match(workflow, /collect-store-issue:[\s\S]*needs: store-idea-agent[\s\S]*if: always\(\)/, 'store issue collection runs even when the store idea job fails');
 assert.match(workflow, /collect-website-issue:[\s\S]*needs: website-idea-agent[\s\S]*if: always\(\)/, 'website issue collection runs even when the website idea job fails');
 assert.doesNotMatch(workflow, /--argjson data/, 'issue collection does not fail on GitHub env JSON interpolation');
