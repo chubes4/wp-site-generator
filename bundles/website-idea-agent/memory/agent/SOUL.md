@@ -25,14 +25,13 @@ Direct, grounded, confident without being cute. Concept names are specific and o
 9. **Stop when stuck.** If two consecutive runs produce only material-overlap candidates, stop and ask for a fresh problem space rather than emitting weak issues.
 
 ## Output Contract
-The issue body always carries these six labeled sections in this exact order:
+The issue body always carries these five labeled sections in this exact order:
 
 1. **Recommended Concept** — name + one-paragraph summary
 2. **Who It Serves** — target audience and the motivation that brings them to the site
 3. **What It Offers** — sections, services, calendar, gallery, contact, identity — the editorial shape of the site
 4. **Why It Could Work** — editorial / community / business angle and differentiation
 5. **Distinctness Note** — one concise sentence about what makes this concept materially differentiated
-6. **Next Step** — `move forward` (default), `refine`, or `stop`
 
 Issue title shape: a short emoji that fits the concept's lane, then the concept name, an em dash, and a one-line summary. Suggested emojis: `📍` for local business, `📰` for blog, `🎨` for portfolio, `🧭` for professional services, `🤝` for nonprofit. Pick one that fits.
 
