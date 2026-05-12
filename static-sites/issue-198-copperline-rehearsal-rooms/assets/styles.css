@@ -1,0 +1,178 @@
+:root {
+  --copperline: #B8653B;
+  --oxidized-teal: #2F6F6A;
+  --charcoal-amp: #1F2326;
+  --warm-paper: #F4E9D8;
+  --garage-concrete: #B9B2A6;
+  --signal-amber: #F3B23F;
+  --muted-brick: #8F3F32;
+  --paper-dark: #E5D2B7;
+  --ink-muted: #5C5852;
+  --whitewash: #FFF9EE;
+  --shadow: 0 24px 60px rgba(31, 35, 38, 0.18);
+  --border: 2px solid rgba(31, 35, 38, 0.18);
+}
+
+* { box-sizing: border-box; }
+html { scroll-behavior: smooth; }
+body {
+  margin: 0;
+  color: var(--charcoal-amp);
+  background:
+    radial-gradient(circle at top left, rgba(184, 101, 59, 0.24), transparent 34rem),
+    linear-gradient(90deg, rgba(31, 35, 38, 0.035) 1px, transparent 1px),
+    linear-gradient(0deg, rgba(31, 35, 38, 0.03) 1px, transparent 1px),
+    var(--warm-paper);
+  background-size: auto, 34px 34px, 34px 34px, auto;
+  font-family: "Avenir Next", "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  line-height: 1.55;
+}
+body::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  opacity: 0.17;
+  background-image:
+    linear-gradient(100deg, transparent 0 48%, rgba(31, 35, 38, 0.12) 49%, transparent 51% 100%),
+    radial-gradient(circle at 15% 20%, rgba(31, 35, 38, 0.08) 0 1px, transparent 1px),
+    radial-gradient(circle at 78% 64%, rgba(31, 35, 38, 0.08) 0 1px, transparent 1px);
+  background-size: 260px 260px, 18px 18px, 22px 22px;
+}
+a { color: inherit; }
+.skip-link { position: absolute; left: 1rem; top: -10rem; z-index: 20; padding: 0.75rem 1rem; background: var(--signal-amber); color: var(--charcoal-amp); font-weight: 800; }
+.skip-link:focus { top: 1rem; }
+.site-header { position: sticky; top: 0; z-index: 10; background: rgba(244, 233, 216, 0.92); backdrop-filter: blur(14px); border-bottom: var(--border); }
+.nav { width: min(1180px, calc(100% - 2rem)); margin: 0 auto; min-height: 76px; display: flex; align-items: center; justify-content: space-between; gap: 1.25rem; }
+.brand { display: inline-flex; align-items: center; gap: 0.8rem; text-decoration: none; text-transform: uppercase; letter-spacing: 0.04em; }
+.brand strong, .brand small { display: block; line-height: 1; }
+.brand strong { font-family: Impact, "Arial Narrow", "Franklin Gothic Condensed", sans-serif; font-size: 1.25rem; letter-spacing: 0.075em; }
+.brand small { margin-top: 0.25rem; color: var(--ink-muted); font-size: 0.72rem; font-weight: 800; }
+.brand-mark { display: grid; place-items: center; width: 48px; height: 48px; color: var(--warm-paper); background: var(--charcoal-amp); border: 3px solid var(--copperline); border-radius: 50%; font-family: Georgia, "Times New Roman", serif; font-weight: 900; }
+.nav-links { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 0.35rem; }
+.nav-links a { padding: 0.55rem 0.7rem; border-radius: 999px; color: var(--charcoal-amp); text-decoration: none; font-weight: 800; font-size: 0.9rem; }
+.nav-links a:hover, .nav-links a:focus { background: rgba(184, 101, 59, 0.15); }
+.hero, .section, .bulletin-strip, .site-footer { width: min(1180px, calc(100% - 2rem)); margin-inline: auto; }
+.hero { display: grid; grid-template-columns: minmax(0, 1.3fr) minmax(300px, 0.7fr); gap: 2rem; align-items: stretch; padding: 5rem 0 3rem; }
+.hero-copy { position: relative; padding: clamp(2rem, 5vw, 4rem); color: var(--whitewash); background: linear-gradient(135deg, rgba(143, 63, 50, 0.92), rgba(31, 35, 38, 0.94)), repeating-linear-gradient(-8deg, rgba(255, 255, 255, 0.045) 0 2px, transparent 2px 12px); border: 3px solid var(--charcoal-amp); box-shadow: var(--shadow); overflow: hidden; }
+.hero-copy::after { content: "ROOMS • BACKLINE • ALL-AGES"; position: absolute; right: -4rem; bottom: 1.8rem; transform: rotate(-8deg); padding: 0.55rem 4.5rem; color: var(--charcoal-amp); background: var(--signal-amber); font-family: Georgia, "Times New Roman", serif; font-weight: 900; letter-spacing: 0.12em; box-shadow: 0 10px 24px rgba(31, 35, 38, 0.24); }
+.eyebrow, .tape-label, .room-code, .date span, .contact-method span { margin: 0 0 0.65rem; color: var(--copperline); font-family: "Courier New", Courier, monospace; font-weight: 900; letter-spacing: 0.13em; text-transform: uppercase; font-size: 0.78rem; }
+.hero-copy .eyebrow { color: var(--signal-amber); }
+h1, h2, h3, p { margin-top: 0; }
+h1, h2, h3 { line-height: 0.98; letter-spacing: 0.005em; }
+h1, h2 { font-family: Impact, "Arial Narrow", "Franklin Gothic Condensed", sans-serif; text-transform: uppercase; }
+h1 { max-width: 13ch; margin-bottom: 1.25rem; font-size: clamp(3.4rem, 8vw, 7.4rem); }
+h2 { margin-bottom: 1rem; font-size: clamp(2.35rem, 5vw, 4.7rem); }
+h3 { margin-bottom: 0.75rem; font-family: "Arial Narrow", "Franklin Gothic Condensed", Arial, sans-serif; font-size: clamp(1.4rem, 2.4vw, 2rem); text-transform: uppercase; }
+.hero-lede { max-width: 54rem; color: rgba(255, 249, 238, 0.88); font-size: clamp(1.05rem, 1.8vw, 1.25rem); }
+.cta-row { position: relative; z-index: 1; display: flex; flex-wrap: wrap; gap: 0.8rem; margin-top: 2rem; }
+.button { display: inline-flex; align-items: center; justify-content: center; min-height: 48px; padding: 0.85rem 1.1rem; border: 2px solid var(--signal-amber); color: var(--charcoal-amp); background: var(--signal-amber); text-decoration: none; font-weight: 950; text-transform: uppercase; letter-spacing: 0.05em; }
+.button.secondary { color: var(--whitewash); background: transparent; border-color: rgba(255, 249, 238, 0.75); }
+.front-desk-card, .policy-panel, .gear-panel, .visit-card, .contact-board, .room-card, .service-grid article, .event-card, .photo-card { border: 2px solid var(--charcoal-amp); box-shadow: 8px 8px 0 rgba(31, 35, 38, 0.14); }
+.front-desk-card { position: relative; align-self: start; padding: 1.5rem; background: var(--whitewash); transform: rotate(1.5deg); }
+.front-desk-card::before, .front-desk-card::after, .event-card::before, .photo-card::before { content: ""; position: absolute; width: 72px; height: 22px; background: rgba(243, 178, 63, 0.65); border: 1px solid rgba(31, 35, 38, 0.15); transform: rotate(-5deg); }
+.front-desk-card::before { top: -13px; left: 1.4rem; }
+.front-desk-card::after { right: 1.2rem; bottom: -12px; transform: rotate(7deg); }
+.quick-list { display: grid; gap: 1rem; margin: 0; }
+.quick-list div, .hours-list div { display: grid; grid-template-columns: 5.5rem 1fr; gap: 0.75rem; padding-bottom: 0.8rem; border-bottom: 1px dashed rgba(31, 35, 38, 0.32); }
+.quick-list dt, .hours-list dt { font-family: "Courier New", Courier, monospace; font-weight: 900; text-transform: uppercase; font-size: 0.78rem; }
+.quick-list dd, .hours-list dd { margin: 0; color: var(--ink-muted); font-weight: 700; }
+.bulletin-strip { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1rem; padding: 0 0 4rem; }
+.bulletin-strip article { padding: 1.2rem; color: var(--whitewash); background: var(--oxidized-teal); border-left: 0.6rem solid var(--copperline); }
+.bulletin-strip article:nth-child(2) { background: var(--charcoal-amp); border-left-color: var(--signal-amber); }
+.bulletin-strip article:nth-child(3) { background: var(--muted-brick); border-left-color: var(--garage-concrete); }
+.bulletin-strip span { display: inline-block; margin-bottom: 0.4rem; font-family: "Courier New", Courier, monospace; font-weight: 900; letter-spacing: 0.13em; }
+.bulletin-strip strong { display: block; margin-bottom: 0.4rem; font-size: 1.08rem; }
+.bulletin-strip p { margin: 0; color: rgba(255, 249, 238, 0.82); }
+.section { padding: 4.5rem 0; }
+.section + .section { border-top: 2px dashed rgba(31, 35, 38, 0.22); }
+.section-heading { display: grid; grid-template-columns: minmax(0, 0.95fr) minmax(280px, 0.55fr); gap: 2rem; align-items: end; margin-bottom: 2rem; }
+.section-heading .eyebrow { grid-column: 1 / -1; margin-bottom: -1.25rem; }
+.section-heading p:not(.eyebrow) { color: var(--ink-muted); font-size: 1.05rem; font-weight: 650; }
+.section-heading.compact { display: block; max-width: 760px; }
+.room-grid { display: grid; grid-template-columns: repeat(6, 1fr); gap: 1rem; }
+.room-card { grid-column: span 2; padding: 1.35rem; background: var(--whitewash); }
+.room-card.feature { grid-column: span 4; color: var(--whitewash); background: var(--charcoal-amp); box-shadow: 8px 8px 0 rgba(184, 101, 59, 0.38); }
+.room-card:nth-child(3) { background: #EFE2CC; }
+.room-card:nth-child(4) { background: #E7D7BD; }
+.room-card:nth-child(5) { background: #F7EFD8; }
+.capacity { margin-bottom: 1rem; color: var(--oxidized-teal); font-family: "Courier New", Courier, monospace; font-weight: 900; }
+.room-card.feature .capacity, .room-card.feature .room-code { color: var(--signal-amber); }
+.room-card ul, .gear-columns ul, .policy-list { padding-left: 1.2rem; margin: 0; }
+.room-card li + li, .gear-columns li + li, .policy-list li + li { margin-top: 0.45rem; }
+.split-section, .visit-section, .contact-section { display: grid; grid-template-columns: minmax(0, 1fr) minmax(300px, 0.8fr); gap: 1.25rem; align-items: stretch; }
+.gear-panel, .policy-panel, .visit-card, .contact-board { padding: clamp(1.4rem, 3vw, 2rem); background: var(--whitewash); }
+.gear-panel { background: linear-gradient(135deg, rgba(244, 233, 216, 0.94), rgba(255, 249, 238, 0.96)), repeating-linear-gradient(90deg, transparent 0 26px, rgba(47, 111, 106, 0.13) 26px 28px); }
+.gear-columns { display: grid; grid-template-columns: repeat(2, 1fr); gap: 1rem; margin: 1.5rem 0; font-weight: 800; }
+.note { margin: 0; padding: 1rem; background: rgba(243, 178, 63, 0.2); border-left: 5px solid var(--signal-amber); font-weight: 750; }
+.policy-panel { color: var(--whitewash); background: var(--oxidized-teal); transform: rotate(-1deg); }
+.policy-panel .tape-label { color: var(--signal-amber); }
+.policy-list { color: rgba(255, 249, 238, 0.9); }
+.service-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1rem; }
+.service-grid article { padding: 1.3rem; background: var(--paper-dark); }
+.service-grid article:nth-child(even) { background: var(--whitewash); }
+.service-grid p { margin-bottom: 0; color: var(--ink-muted); font-weight: 650; }
+.calendar-section { padding-bottom: 5.5rem; }
+.event-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 1rem; align-items: start; }
+.event-card { position: relative; min-height: 260px; padding: 1.25rem; background: var(--whitewash); }
+.event-card::before { top: -11px; left: 50%; transform: translateX(-50%) rotate(3deg); }
+.event-card.tilted { transform: rotate(1.7deg); }
+.flyer-card { color: var(--whitewash); background: var(--muted-brick); }
+.amber-flyer { color: var(--charcoal-amp); background: var(--signal-amber); }
+.date { display: inline-grid; place-items: center; min-width: 70px; min-height: 70px; margin: 0 0 1rem; border: 2px solid currentColor; border-radius: 50%; font-family: Impact, "Arial Narrow", sans-serif; font-size: 2rem; line-height: 1; }
+.date span { display: block; margin: 0 0 0.1rem; color: currentColor; font-size: 0.72rem; }
+.event-card p:last-child { margin-bottom: 0; font-weight: 650; }
+.gallery-grid { display: grid; grid-template-columns: repeat(6, 1fr); gap: 1rem; }
+.photo-card { position: relative; grid-column: span 2; margin: 0; padding: 0.65rem; background: var(--whitewash); }
+.photo-card::before { top: -10px; right: 1rem; width: 58px; height: 18px; transform: rotate(8deg); }
+.photo-illustration { min-height: 210px; border: 2px solid rgba(31, 35, 38, 0.75); background-color: var(--garage-concrete); overflow: hidden; }
+.storefront .photo-illustration { background: linear-gradient(90deg, transparent 0 43%, rgba(31,35,38,0.88) 43% 58%, transparent 58%), linear-gradient(0deg, rgba(243,178,63,0.85) 0 12%, transparent 12%), repeating-linear-gradient(90deg, #8F3F32 0 28px, #7E372D 28px 56px); }
+.loadin .photo-illustration { background: linear-gradient(145deg, transparent 0 47%, rgba(47,111,106,0.75) 48% 56%, transparent 57%), linear-gradient(0deg, #6D6860 0 28%, transparent 28%), repeating-linear-gradient(90deg, #A94F3E 0 36px, #8F3F32 36px 72px); }
+.amps .photo-illustration { background: radial-gradient(circle at 24% 60%, #1F2326 0 35px, transparent 36px), radial-gradient(circle at 52% 60%, #1F2326 0 35px, transparent 36px), radial-gradient(circle at 80% 60%, #1F2326 0 35px, transparent 36px), linear-gradient(0deg, #2F6F6A 0 48%, #B8653B 48% 64%, #D7C7AD 64%); }
+.drums .photo-illustration { background: radial-gradient(circle at 52% 57%, transparent 0 32px, #1F2326 33px 36px, transparent 37px), radial-gradient(circle at 31% 72%, #F3B23F 0 29px, #1F2326 30px 34px, transparent 35px), radial-gradient(circle at 68% 70%, #F4E9D8 0 27px, #1F2326 28px 32px, transparent 33px), linear-gradient(125deg, #806C5C, #B8653B); }
+.lounge .photo-illustration { background: linear-gradient(0deg, #1F2326 0 20%, transparent 20%), linear-gradient(90deg, transparent 0 12%, #2F6F6A 12% 44%, transparent 44% 100%), radial-gradient(circle at 76% 38%, #F3B23F 0 24px, transparent 25px), #D9C7AB; }
+.showcase .photo-illustration { background: radial-gradient(circle at 28% 35%, rgba(243,178,63,0.95) 0 28px, transparent 29px), radial-gradient(circle at 66% 32%, rgba(243,178,63,0.85) 0 22px, transparent 23px), linear-gradient(0deg, #1F2326 0 34%, transparent 34%), linear-gradient(120deg, #2F6F6A, #8F3F32); }
+.photo-card figcaption { padding: 0.65rem 0.2rem 0.2rem; font-family: "Courier New", Courier, monospace; font-weight: 900; text-transform: uppercase; font-size: 0.78rem; }
+.visit-card address { margin-bottom: 1.25rem; font-style: normal; font-weight: 800; }
+.hours-list { margin: 0; }
+.map-card { position: relative; min-height: 370px; border: 3px solid var(--charcoal-amp); background: linear-gradient(90deg, rgba(31, 35, 38, 0.08) 1px, transparent 1px), linear-gradient(0deg, rgba(31, 35, 38, 0.08) 1px, transparent 1px), #D8CBB8; background-size: 42px 42px; overflow: hidden; }
+.street { position: absolute; display: block; background: rgba(31, 35, 38, 0.72); }
+.street.horizontal { left: 0; right: 0; height: 30px; }
+.street.vertical { top: 0; bottom: 0; width: 30px; }
+.street.horizontal.one { top: 31%; }
+.street.horizontal.two { bottom: 23%; }
+.street.vertical.one { left: 26%; }
+.street.vertical.two { right: 30%; }
+.map-pin, .bus-note, .parking-note { position: absolute; padding: 0.55rem 0.7rem; border: 2px solid var(--charcoal-amp); background: var(--signal-amber); font-family: "Courier New", Courier, monospace; font-weight: 900; text-transform: uppercase; box-shadow: 5px 5px 0 rgba(31, 35, 38, 0.18); }
+.map-pin { left: 38%; top: 42%; background: var(--copperline); color: var(--whitewash); }
+.bus-note { left: 6%; bottom: 10%; background: var(--whitewash); }
+.parking-note { right: 6%; top: 12%; background: var(--oxidized-teal); color: var(--whitewash); }
+.contact-section { padding-bottom: 5.5rem; }
+.contact-copy p:not(.eyebrow) { max-width: 56rem; color: var(--ink-muted); font-size: 1.08rem; font-weight: 650; }
+.contact-board { display: grid; gap: 0.8rem; background: var(--charcoal-amp); }
+.contact-method { display: block; margin: 0; padding: 1rem; color: var(--whitewash); background: rgba(255, 249, 238, 0.08); border: 1px dashed rgba(255, 249, 238, 0.35); text-decoration: none; font-weight: 800; }
+.contact-method span { display: block; color: var(--signal-amber); }
+.site-footer { display: flex; justify-content: space-between; gap: 1rem; padding: 2rem 0 3rem; border-top: 3px solid var(--charcoal-amp); }
+.site-footer p { margin: 0; }
+.site-footer a { font-weight: 900; text-transform: uppercase; }
+@media (max-width: 980px) {
+  .hero, .split-section, .visit-section, .contact-section, .section-heading { grid-template-columns: 1fr; }
+  .front-desk-card, .policy-panel { transform: none; }
+  .bulletin-strip, .service-grid { grid-template-columns: 1fr; }
+  .room-card, .room-card.feature { grid-column: span 3; }
+  .event-grid { grid-template-columns: repeat(2, 1fr); }
+  .photo-card { grid-column: span 3; }
+}
+@media (max-width: 680px) {
+  .nav { align-items: flex-start; flex-direction: column; padding: 0.8rem 0; }
+  .nav-links { justify-content: flex-start; }
+  .hero { padding-top: 2rem; }
+  .hero-copy::after { display: none; }
+  h1 { font-size: clamp(3rem, 18vw, 4.6rem); }
+  .quick-list div, .hours-list div, .gear-columns { grid-template-columns: 1fr; }
+  .room-grid, .event-grid, .gallery-grid { display: block; }
+  .room-card, .event-card, .photo-card { margin-bottom: 1rem; }
+  .event-card { min-height: auto; }
+  .site-footer { display: block; }
+  .site-footer a { display: inline-block; margin-top: 1rem; }
+}
