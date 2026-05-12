@@ -17,6 +17,7 @@
                 "completion_assertions": {
                     "complete_when_any": [
                         {
+                            "name": "pull_request_path",
                             "tools": [
                                 {
                                     "name": "workspace_edit"
@@ -33,6 +34,7 @@
                             ]
                         },
                         {
+                            "name": "issue_fallback_path",
                             "tools": [
                                 {
                                     "name": "list_github_issues"
@@ -43,6 +45,7 @@
                             ]
                         },
                         {
+                            "name": "existing_issue_path",
                             "tools": [
                                 {
                                     "name": "list_github_issues"
