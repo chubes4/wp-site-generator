@@ -12,6 +12,8 @@ assert.match(workflow, /flow_slug: store-idea-home-and-craft-flow/, 'store lane 
 assert.match(workflow, /flow_slug: website-idea-local-business-flow/, 'website lane runs the local business idea flow');
 assert.match(workflow, /collect-store-issue:[\s\S]*needs: store-idea-agent[\s\S]*if: always\(\)/, 'store issue collection runs even when the store idea job fails');
 assert.match(workflow, /collect-website-issue:[\s\S]*needs: website-idea-agent[\s\S]*if: always\(\)/, 'website issue collection runs even when the website idea job fails');
+assert.doesNotMatch(workflow, /--argjson data/, 'issue collection does not fail on GitHub env JSON interpolation');
+assert.match(workflow, /jq -r '\.issue_number \| tonumber\? \/\/ empty' 2>\/dev\/null \|\| true/, 'issue collection tolerates empty or invalid engine data');
 assert.doesNotMatch(workflow, /collect-issues:/, 'workflow has no shared issue collection gate');
 assert.doesNotMatch(workflow, /needs:\n      - store-idea-agent\n      - website-idea-agent/, 'workflow does not couple lanes behind both idea jobs');
 assert.match(workflow, /agent_slug: design-agent/, 'workflow runs design agent');

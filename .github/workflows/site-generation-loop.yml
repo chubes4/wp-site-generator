@@ -88,7 +88,7 @@ jobs:
           STORE_ENGINE_DATA: ${{ needs.store-idea-agent.outputs.engine_data_json }}
         run: |
           set -euo pipefail
-          issue_number="$(jq -nr --argjson data "${STORE_ENGINE_DATA:-{}}" '$data.issue_number | tonumber? // empty')"
+          issue_number="$(printf '%s' "${STORE_ENGINE_DATA:-{}}" | jq -r '.issue_number | tonumber? // empty' 2>/dev/null || true)"
           if [ -n "$issue_number" ]; then
             echo "has_issue=true" >> "$GITHUB_OUTPUT"
             echo "issue_number=$issue_number" >> "$GITHUB_OUTPUT"
@@ -113,7 +113,7 @@ jobs:
           WEBSITE_ENGINE_DATA: ${{ needs.website-idea-agent.outputs.engine_data_json }}
         run: |
           set -euo pipefail
-          issue_number="$(jq -nr --argjson data "${WEBSITE_ENGINE_DATA:-{}}" '$data.issue_number | tonumber? // empty')"
+          issue_number="$(printf '%s' "${WEBSITE_ENGINE_DATA:-{}}" | jq -r '.issue_number | tonumber? // empty' 2>/dev/null || true)"
           if [ -n "$issue_number" ]; then
             echo "has_issue=true" >> "$GITHUB_OUTPUT"
             echo "issue_number=$issue_number" >> "$GITHUB_OUTPUT"
