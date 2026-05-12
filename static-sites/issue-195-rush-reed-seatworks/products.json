@@ -1,0 +1,87 @@
+{
+  "store": "Rush & Reed Seatworks",
+  "site_id": "issue-195-rush-reed-seatworks",
+  "catalog_note": "Structured product data mirrors the visible static HTML catalog: material cards and project kits for chair caning and woven-seat restoration supplies.",
+  "materials": [
+    {
+      "name": "Open Hex Cane Webbing",
+      "category": "Cane webbing",
+      "format": "sheets",
+      "visible_price": "from $18",
+      "weave_or_size": "1/2 in. open hex",
+      "confidence_cue": "match groove width first"
+    },
+    {
+      "name": "Chair Cane Strand Coils",
+      "category": "Hand cane",
+      "format": "strand",
+      "visible_price": "from $14",
+      "weave_or_size": "fine, narrow medium, common",
+      "confidence_cue": "hole spacing gauge included"
+    },
+    {
+      "name": "Twisted Paper Rush Bundle",
+      "category": "Paper rush",
+      "format": "coils",
+      "visible_price": "from $22",
+      "weave_or_size": "5/32 in. standard twist",
+      "confidence_cue": "corner-build diagram"
+    },
+    {
+      "name": "Three-Ply Danish Cord",
+      "category": "Danish cord",
+      "format": "natural spool",
+      "visible_price": "from $36",
+      "weave_or_size": "2 lb natural laced cord",
+      "confidence_cue": "fastener checklist"
+    },
+    {
+      "name": "Walnut & Straw Shaker Tape",
+      "category": "Shaker tape",
+      "format": "cotton tape",
+      "visible_price": "from $19",
+      "weave_or_size": "5/8 in. and 1 in.",
+      "confidence_cue": "two-color yardage chart"
+    },
+    {
+      "name": "Reed Spline & Groove Set",
+      "category": "Spline and prep goods",
+      "format": "sizing set",
+      "visible_price": "from $9",
+      "weave_or_size": "4.0 mm to 7.0 mm",
+      "confidence_cue": "test strip before glue"
+    }
+  ],
+  "project_kits": [
+    {
+      "name": "Pressed-Cane Dining Chair Kit",
+      "price": "$58",
+      "material_path": "Cane webbing, spline, wedges, chisel",
+      "confidence_cues": "Groove card, soak time note, trimming sequence"
+    },
+    {
+      "name": "Hand-Caned Seat Starter Kit",
+      "price": "$64",
+      "material_path": "Cane strand, binder cane, pegs, awl",
+      "confidence_cues": "Hole-spacing gauge, seven-step weave card"
+    },
+    {
+      "name": "Ladder-Back Rush Chair Kit",
+      "price": "$72",
+      "material_path": "Paper rush, mallet, clamps, corner guide",
+      "confidence_cues": "Rail-length yardage chart, tension checklist"
+    },
+    {
+      "name": "Danish Cord Bench Kit",
+      "price": "$86",
+      "material_path": "Three-ply cord, L-nails, cord needle",
+      "confidence_cues": "Wrap plan, fastener map, refill estimate"
+    },
+    {
+      "name": "Shaker Tape Rocker Kit",
+      "price": "$79",
+      "material_path": "Cotton tape, shuttle, finishing brush",
+      "confidence_cues": "Width chooser, two-color crossing guide"
+    }
+  ]
+}
