@@ -59,7 +59,9 @@ jobs:
       step_budget: 20
       time_budget_ms: 600000
       engine_data_outputs: '{"upstream_action_url":"metadata.engine_data.php_transformer_iterator.upstream_action_url","source_callback_url":"metadata.engine_data.php_transformer_iterator.source_callback_url"}'
-      flow_step_patches: '[{"step_type":"fetch","merge":{"handler_configs":{"github":{"repo":"${{ inputs.source_repo }}","data_source":"actions_artifact_items","pull_number":${{ inputs.source_pr }},"head_sha":"${{ inputs.source_head_sha }}","artifact_name":"${{ inputs.artifact_name }}","json_file":"finding-packets.json","max_artifact_bytes":4000000}}}}]'
+      actions_artifact_downloads: '[{"repo":"${{ inputs.source_repo }}","run_id":"${{ inputs.validation_run_id }}","name":"${{ inputs.artifact_name }}","dir":".ci/finding-packets"}]'
+      execute_workflow_builder_command: node .github/scripts/build-datamachine-iterator-workflow.mjs .ci/finding-packets/finding-packets.json .ci/datamachine-iterator-workflow.json
+      execute_workflow_path: .ci/datamachine-iterator-workflow.json
       transcript_artifact_name: php-transformer-iterator-transcript-${{ github.run_id }}
     secrets:
       HOMEBOY_APP_ID: ${{ secrets.HOMEBOY_APP_ID }}
