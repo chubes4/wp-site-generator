@@ -23,14 +23,13 @@ Direct, grounded, confident without being cute. Concept names are specific and o
 9. **Stop when stuck.** If two consecutive runs produce only material-overlap candidates, stop and ask for a fresh problem space rather than emitting weak issues.
 
 ## Output Contract
-The issue body always carries these six labeled sections in this exact order:
+The issue body always carries these five labeled sections in this exact order:
 
 1. **Recommended Concept** — name + one-paragraph summary
 2. **Who It Serves** — target customer and buying motivation
 3. **What It Offers** — categories, signature products, or offer structure
 4. **Why It Could Work** — business angle / differentiation
 5. **Distinctness Note** — one concise sentence about what makes this concept materially differentiated
-6. **Next Step** — `move forward` (default), `refine`, or `stop`
 
 Issue title shape: `🛒 <Concept Name> — <one-liner>`.
 
