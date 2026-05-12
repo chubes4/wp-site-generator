@@ -4,341 +4,269 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Shadeform Workshop — Lampshade Making & Repair Supplies</title>
-  <meta name="description" content="A measured catalogue of lampshade frames, fitters, panels, trims, kits, swatches, and sizing tools for home lighting repair.">
+  <meta name="description" content="Shadeform Workshop helps home restorers identify, size, and buy lampshade frames, fitters, panels, trims, kits, and swatches with confidence.">
   <link rel="stylesheet" href="assets/styles.css">
 </head>
 <body>
+  <div class="top-rule" aria-hidden="true"></div>
   <header class="site-header">
     <a class="brand" href="#top" aria-label="Shadeform Workshop home">
       <span class="brand-mark" aria-hidden="true">
-        <svg viewBox="0 0 48 48" role="img">
-          <path d="M13 30h22L30 12H18l-5 18Z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/>
-          <path d="M24 30v10M18 40h12M15 30h18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
-          <path d="M18.5 15.5h11" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" opacity=".55"/>
+        <svg viewBox="0 0 64 64" role="img" focusable="false">
+          <path d="M18 13h28l8 21H10l8-21Z" fill="none" stroke="currentColor" stroke-width="3" stroke-linejoin="round"/>
+          <path d="M32 34v17M22 51h20" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"/>
+          <path d="M18 13c5 5 23 5 28 0" fill="none" stroke="currentColor" stroke-width="2" opacity=".55"/>
         </svg>
       </span>
       <span>
         <strong>Shadeform Workshop</strong>
-        <small>Measured parts for useful light</small>
+        <small>Lampshade making & repair supplies</small>
       </span>
     </a>
-    <nav class="nav" aria-label="Primary navigation">
-      <a href="#shop-routes">Shop by problem</a>
-      <a href="#forms">Shade forms</a>
-      <a href="#fitters">Fitter guide</a>
+    <nav aria-label="Primary navigation">
+      <a href="#problems">Shop by problem</a>
+      <a href="#catalogue">Catalogue</a>
+      <a href="#fit-check">Fit check</a>
       <a href="#kits">Project kits</a>
     </nav>
   </header>
 
   <main id="top">
-    <section class="hero" aria-labelledby="hero-title">
+    <section class="hero">
       <div class="hero-copy">
-        <p class="eyebrow">Lampshade making · recovering · repair</p>
-        <h1 id="hero-title">Find the exact frame, fitter, panel, and trim before the lamp leaves your worktable.</h1>
-        <p class="lede">Shadeform Workshop organizes obscure shade supplies around the problem you can see: a stained drum, cracked parchment, missing spider fitter, wrong harp height, or estate-sale lamp waiting for a precise fit.</p>
+        <p class="eyebrow">Measured restoration catalogue</p>
+        <h1>Make the shade fit the lamp you already love.</h1>
+        <p class="lede">Wire frames, adhesive styrene, parchment panels, fitters, lining, tape, trims, and project kits organized around shade form, lamp problem, and hardware compatibility.</p>
         <div class="hero-actions">
-          <a class="button primary cta" href="#shop-routes">Start with the lamp problem</a>
-          <a class="button secondary" href="#fit-check">Use the fit-check path</a>
+          <a class="button cta" href="#fit-check">Start a fit check</a>
+          <a class="button button-secondary" href="#catalogue">Browse repair parts</a>
         </div>
       </div>
-      <div class="drafting-board" aria-label="Measured lampshade diagram">
-        <div class="board-glow"></div>
-        <svg class="shade-diagram" viewBox="0 0 420 360" role="img" aria-labelledby="diagram-title diagram-desc">
-          <title id="diagram-title">Drafting diagram of a drum lampshade</title>
-          <desc id="diagram-desc">A lampshade frame with measured top ring, bottom ring, side height, and spider fitter lines.</desc>
+      <div class="hero-diagram" aria-label="Lampshade measurement diagram">
+        <div class="shade-glow"></div>
+        <svg viewBox="0 0 500 420" role="img" aria-labelledby="diagram-title diagram-desc">
+          <title id="diagram-title">Measured drum shade diagram</title>
+          <desc id="diagram-desc">A lampshade silhouette with measured top ring, bottom ring, height, fitter drop, and brass hardware marks.</desc>
           <defs>
-            <linearGradient id="vellum" x1="0" x2="0" y1="0" y2="1">
-              <stop stop-color="#FFF1BD" stop-opacity=".75"/>
-              <stop offset="1" stop-color="#D9C5A3" stop-opacity=".55"/>
+            <linearGradient id="shade" x1="0" x2="0" y1="0" y2="1">
+              <stop offset="0" stop-color="#FFF1BD" stop-opacity=".9"/>
+              <stop offset="1" stop-color="#D9C5A3" stop-opacity=".72"/>
             </linearGradient>
           </defs>
-          <path d="M126 88h168l35 184H91L126 88Z" fill="url(#vellum)" stroke="#25211C" stroke-width="4" stroke-linejoin="round"/>
-          <path d="M127 88c34 18 132 18 166 0M91 272c54 31 184 31 238 0" fill="none" stroke="#A9792B" stroke-width="4"/>
-          <path d="M210 88v184M145 88l65 44 65-44" fill="none" stroke="#67452F" stroke-width="2.5" stroke-linecap="round" stroke-dasharray="8 8"/>
-          <path d="M71 88h44M51 272h28M61 88v184" fill="none" stroke="#9C3F2E" stroke-width="2" stroke-linecap="round"/>
-          <path d="M56 88l10-10M56 272l10 10" stroke="#9C3F2E" stroke-width="2" stroke-linecap="round"/>
-          <text x="35" y="184" transform="rotate(-90 35 184)" class="svg-spec">SIDE HEIGHT</text>
-          <text x="166" y="60" class="svg-spec">TOP RING 10&quot;</text>
-          <text x="148" y="322" class="svg-spec">BOTTOM RING 14&quot;</text>
-          <circle cx="210" cy="132" r="7" fill="#9C3F2E"/>
-          <text x="226" y="138" class="svg-spec">SPIDER FITTER</text>
+          <path d="M140 85h220l50 210H90l50-210Z" fill="url(#shade)" stroke="#25211C" stroke-width="4" stroke-linejoin="round"/>
+          <path d="M140 85c36 24 184 24 220 0M90 295c48 34 272 34 320 0" fill="none" stroke="#25211C" stroke-width="2" opacity=".55"/>
+          <path d="M250 295v70M210 365h80" fill="none" stroke="#A9792B" stroke-width="6" stroke-linecap="round"/>
+          <path d="M250 85v-42M164 43h172" fill="none" stroke="#9C3F2E" stroke-width="2" stroke-dasharray="6 7"/>
+          <path d="M428 88v205M411 88h34M411 293h34" fill="none" stroke="#9C3F2E" stroke-width="2"/>
+          <path d="M112 321h276" fill="none" stroke="#9C3F2E" stroke-width="2" stroke-dasharray="6 7"/>
+          <text x="250" y="31" text-anchor="middle">top ring diameter</text>
+          <text x="458" y="195" transform="rotate(90 458 195)" text-anchor="middle">shade height</text>
+          <text x="250" y="346" text-anchor="middle">spider fitter + harp</text>
+          <text x="250" y="398" text-anchor="middle">bottom ring diameter</text>
         </svg>
-        <div class="bench-tray">
-          <span>spider</span>
-          <span>uno</span>
-          <span>clip</span>
-          <span>harp</span>
-        </div>
       </div>
     </section>
 
-    <section class="confidence-strip" aria-label="Buying confidence tools">
-      <article>
-        <strong>Fit-check cards</strong>
-        <span>Confirm fitter size, harp height, reducer, and washer before ordering hardware.</span>
+    <section class="trust-strip" aria-label="Confidence services">
+      <div>
+        <strong>Fit-first shopping</strong>
+        <span>Buy by lamp problem, not mystery hardware vocabulary.</span>
+      </div>
+      <div>
+        <strong>Readable specs</strong>
+        <span>Shape, diameter, height, fitter, lining, and opacity stay visible.</span>
+      </div>
+      <div>
+        <strong>Swatches before panels</strong>
+        <span>Check color temperature and material diffusion at home.</span>
+      </div>
+    </section>
+
+    <section class="section-intro" id="problems">
+      <p class="eyebrow">Shop by lamp problem</p>
+      <h2>Start where the repair actually starts.</h2>
+      <p>Whether the shade is stained, the lining has cracked, a thrifted base is missing its shade, or the finial never sits straight, each route points to the parts and measurements that matter first.</p>
+    </section>
+
+    <section class="problem-grid" aria-label="Shopping routes by repair problem">
+      <article class="problem-card">
+        <span class="diagram-chip" aria-hidden="true">01</span>
+        <h3>Damaged shade, good frame</h3>
+        <p>Recover with adhesive styrene, linen or parchment panels, binding tape, seam rollers, and heat-resistant adhesive.</p>
+        <a href="#materials">Recovering materials</a>
       </article>
-      <article>
-        <strong>Opacity swatches</strong>
-        <span>Compare parchment, linen, vellum, blackout lining, and diffuser warmth in real light.</span>
+      <article class="problem-card">
+        <span class="diagram-chip" aria-hidden="true">02</span>
+        <h3>Good lamp, no shade</h3>
+        <p>Choose drum, empire, bell, oval, coolie, rectangular, chandelier, sconce, or clip-on frames by base proportion.</p>
+        <a href="#frames">Frames by form</a>
       </article>
-      <article>
-        <strong>Measured guides</strong>
-        <span>Translate lamp base height into shade diameter, drop, and silhouette without guesswork.</span>
+      <article class="problem-card">
+        <span class="diagram-chip" aria-hidden="true">03</span>
+        <h3>Wrong height or fitter</h3>
+        <p>Match spider, uno, clip, harp, reducer, riser, washer, and finial hardware before committing to a shade build.</p>
+        <a href="#hardware">Hardware & sizing</a>
+      </article>
+      <article class="problem-card">
+        <span class="diagram-chip" aria-hidden="true">04</span>
+        <h3>Pair needs to match</h3>
+        <p>Order coordinated bedside kits with repeatable rings, panels, trims, and fit-check cards for two lamps.</p>
+        <a href="#kits">Pairing kits</a>
       </article>
     </section>
 
-    <section id="shop-routes" class="section shop-routes" aria-labelledby="routes-title">
-      <div class="section-heading">
-        <p class="eyebrow">Shop routes</p>
-        <h2 id="routes-title">Start with what went wrong.</h2>
-        <p>Most repair jobs begin with a visible symptom, not a hardware term. Choose the route that matches your lamp and build the parts list from there.</p>
+    <section class="catalogue" id="catalogue">
+      <div class="section-intro compact">
+        <p class="eyebrow">Parts catalogue</p>
+        <h2>Measured shelves for obscure pieces.</h2>
       </div>
-      <div class="route-grid">
-        <article class="route-card feature">
-          <span class="route-number">01</span>
-          <h3>Stained or brittle shade</h3>
-          <p>Recover a drum, empire, bell, or oval frame with adhesive styrene, fabric panels, lining, bias binding, seam rollers, and heat-safe glue.</p>
-          <a href="#materials">Panel materials</a>
+      <div class="collection-grid">
+        <article class="collection" id="frames">
+          <div class="collection-illustration rings" aria-hidden="true"></div>
+          <p class="tag">Frames by form</p>
+          <h3>Wire shade frames</h3>
+          <p>Drum, empire, bell, coolie, oval, rectangular, chandelier, sconce, and clip-on candle shade frames with top and bottom ring dimensions.</p>
+          <dl>
+            <div><dt>Shapes</dt><dd>9</dd></div>
+            <div><dt>Spec focus</dt><dd>diameter / height</dd></div>
+          </dl>
         </article>
-        <article class="route-card feature">
-          <span class="route-number">02</span>
-          <h3>Thrifted base, no shade</h3>
-          <p>Use lamp height and socket style to choose shade diameter, frame form, spider or uno fitter, harp, finial, and reducer washers.</p>
-          <a href="#fit-check">Build the fit</a>
+        <article class="collection" id="materials">
+          <div class="collection-illustration panel" aria-hidden="true"></div>
+          <p class="tag">Material panels</p>
+          <h3>Diffusers, styrene & shade skins</h3>
+          <p>Adhesive styrene, parchment, linen, cotton, silk-look panels, blackout lining, vellum, and diffuser sheets for controlled glow.</p>
+          <dl>
+            <div><dt>Swatch</dt><dd>available</dd></div>
+            <div><dt>Spec focus</dt><dd>opacity / warmth</dd></div>
+          </dl>
         </article>
-        <article class="route-card feature">
-          <span class="route-number">03</span>
-          <h3>Cracked parchment panel</h3>
-          <p>Replace translucent panels with parchment, vellum, diffuser sheet, ring clips, trim, and burnishing tools matched to the original glow.</p>
-          <a href="#materials">Compare diffusion</a>
+        <article class="collection" id="hardware">
+          <div class="collection-illustration fitter" aria-hidden="true"></div>
+          <p class="tag">Hardware & sizing</p>
+          <h3>Fitters, harps, reducers & finials</h3>
+          <p>Spider, uno, and clip fitters plus harps, risers, reducers, rings, washers, finials, and measuring templates.</p>
+          <dl>
+            <div><dt>Guided</dt><dd>by lamp type</dd></div>
+            <div><dt>Spec focus</dt><dd>drop / thread / seat</dd></div>
+          </dl>
         </article>
-        <article class="route-card feature">
-          <span class="route-number">04</span>
-          <h3>Mismatched bedside pair</h3>
-          <p>Order twin frames, paired panels, finials, and a swatch pack so both lamps share height, color temperature, and trim width.</p>
-          <a href="#kits">Pair kits</a>
+        <article class="collection">
+          <div class="collection-illustration trim" aria-hidden="true"></div>
+          <p class="tag">Finishing supplies</p>
+          <h3>Binding, trim & workshop tools</h3>
+          <p>Bias binding, grosgrain tape, trims, fringe, clips, glue, seam rollers, burnishers, and heat-resistant adhesives.</p>
+          <dl>
+            <div><dt>Finish</dt><dd>clean seams</dd></div>
+            <div><dt>Spec focus</dt><dd>width / heat rating</dd></div>
+          </dl>
         </article>
       </div>
     </section>
 
-    <section id="forms" class="section catalogue" aria-labelledby="forms-title">
-      <div class="section-heading split">
-        <div>
-          <p class="eyebrow">Frames by form</p>
-          <h2 id="forms-title">A parts catalogue organized by silhouette.</h2>
-        </div>
-        <p>Wire frames and rings are grouped by the shape customers can recognize on a lamp: drum, empire, bell, coolie, oval, rectangle, chandelier, sconce, and clip-on candle shades.</p>
-      </div>
-      <div class="product-grid collection">
-        <article class="product-card">
-          <div class="product-illustration drum" aria-hidden="true"></div>
-          <p class="tag">Frame set</p>
-          <h3>True Drum Recovery Frame</h3>
-          <p>Parallel top and bottom rings with spider fitter support, sized for fabric or parchment panels.</p>
-          <dl class="spec-list">
-            <div><dt>Diameters</dt><dd>8–18 in.</dd></div>
-            <div><dt>Fitters</dt><dd>Spider · Uno</dd></div>
-          </dl>
-          <p class="price">from $18</p>
-        </article>
-        <article class="product-card">
-          <div class="product-illustration empire" aria-hidden="true"></div>
-          <p class="tag">Frame set</p>
-          <h3>Classic Empire Frame</h3>
-          <p>Tapered profile for vintage table lamps, with measured top ring and bottom flare.</p>
-          <dl class="spec-list">
-            <div><dt>Drop</dt><dd>7–12 in.</dd></div>
-            <div><dt>Use</dt><dd>Base lamps</dd></div>
-          </dl>
-          <p class="price">from $22</p>
-        </article>
-        <article class="product-card">
-          <div class="product-illustration clip" aria-hidden="true"></div>
-          <p class="tag">Small shade</p>
-          <h3>Clip-On Candle Shade Set</h3>
-          <p>Mini wire frames, flame-bulb clips, vellum panels, and narrow trim for sconces and chandeliers.</p>
-          <dl class="spec-list">
-            <div><dt>Bulb</dt><dd>Candelabra</dd></div>
-            <div><dt>Pack</dt><dd>4 frames</dd></div>
-          </dl>
-          <p class="price">$34</p>
-        </article>
-        <article class="product-card">
-          <div class="product-illustration rectangle" aria-hidden="true"></div>
-          <p class="tag">Specialty form</p>
-          <h3>Rectangular Shade Frame</h3>
-          <p>Crisp corners for narrow consoles and mid-century bases, with corner clips and lining notes.</p>
-          <dl class="spec-list">
-            <div><dt>Widths</dt><dd>10–20 in.</dd></div>
-            <div><dt>Finish</dt><dd>Black wire</dd></div>
-          </dl>
-          <p class="price">from $28</p>
-        </article>
-      </div>
-    </section>
-
-    <section id="fitters" class="section fitters" aria-labelledby="fitters-title">
-      <div class="section-heading">
-        <p class="eyebrow">Hardware identification</p>
-        <h2 id="fitters-title">Small line diagrams for the parts people confuse.</h2>
-        <p>Every hardware card names the part, shows where it sits, and lists the lamp symptoms it solves.</p>
-      </div>
-      <div class="diagram-grid">
-        <article class="diagram-card">
-          <svg viewBox="0 0 180 140" role="img" aria-label="Spider fitter diagram">
-            <path d="M35 96h110M90 33v80M55 55l35 28 35-28" fill="none" stroke="currentColor" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"/>
-            <circle cx="90" cy="83" r="9" fill="currentColor"/>
-          </svg>
-          <h3>Spider fitter</h3>
-          <p>For harp-and-finial lamps where the shade rests above the bulb on a center washer.</p>
-        </article>
-        <article class="diagram-card">
-          <svg viewBox="0 0 180 140" role="img" aria-label="Uno fitter diagram">
-            <path d="M52 92h76M90 42v50" fill="none" stroke="currentColor" stroke-width="6" stroke-linecap="round"/>
-            <circle cx="90" cy="92" r="23" fill="none" stroke="currentColor" stroke-width="6"/>
-            <path d="M74 109h32" stroke="currentColor" stroke-width="6" stroke-linecap="round"/>
-          </svg>
-          <h3>Uno fitter</h3>
-          <p>Threads or slips around the socket, useful when the lamp has no harp or finial stem.</p>
-        </article>
-        <article class="diagram-card">
-          <svg viewBox="0 0 180 140" role="img" aria-label="Clip fitter diagram">
-            <path d="M62 52c10-14 46-14 56 0M65 53l25 45 25-45" fill="none" stroke="currentColor" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"/>
-            <path d="M75 101c8 10 22 10 30 0" fill="none" stroke="currentColor" stroke-width="6" stroke-linecap="round"/>
-          </svg>
-          <h3>Clip fitter</h3>
-          <p>Clips directly onto candle or flame bulbs for small sconces and chandelier shades.</p>
-        </article>
-        <article class="diagram-card">
-          <svg viewBox="0 0 180 140" role="img" aria-label="Harp and finial diagram">
-            <path d="M58 110c0-56 64-56 64 0M90 28v24M78 29h24M84 18h12" fill="none" stroke="currentColor" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"/>
-            <path d="M72 110h36" stroke="currentColor" stroke-width="6" stroke-linecap="round"/>
-          </svg>
-          <h3>Harp + finial</h3>
-          <p>Raises the shade to the correct height and locks a spider fitter in place.</p>
-        </article>
-      </div>
-    </section>
-
-    <section id="materials" class="section materials" aria-labelledby="materials-title">
-      <div class="section-heading split">
-        <div>
-          <p class="eyebrow">Material close-ups</p>
-          <h2 id="materials-title">Choose the panel by glow, texture, and opacity.</h2>
-        </div>
-        <p>Swatch packs and sample strips help customers compare color temperature before committing to a full shade.</p>
-      </div>
-      <div class="material-grid">
-        <article class="material-card parchment">
-          <span class="swatch"></span>
-          <h3>Warm parchment sheet</h3>
-          <p>Translucent amber glow for vintage replacements and cracked panel repairs.</p>
-          <span class="spec-pill">Opacity 38%</span>
-        </article>
-        <article class="material-card linen">
-          <span class="swatch"></span>
-          <h3>Linen adhesive styrene</h3>
-          <p>Fabric texture bonded to shade-safe styrene for recoveries with clean seams.</p>
-          <span class="spec-pill">Opacity 62%</span>
-        </article>
-        <article class="material-card blackout">
-          <span class="swatch"></span>
-          <h3>Blackout lining</h3>
-          <p>Controls glare and directs light downward for desks, bedside lamps, and sconces.</p>
-          <span class="spec-pill">Opacity 91%</span>
-        </article>
-        <article class="material-card brass">
-          <span class="swatch"></span>
-          <h3>Aged brass hardware tray</h3>
-          <p>Rings, washers, risers, reducers, finials, and harp adapters sorted by thread and finish.</p>
-          <span class="spec-pill">5 finishes</span>
-        </article>
-      </div>
-    </section>
-
-    <section id="fit-check" class="section fit-check" aria-labelledby="fit-title">
+    <section class="fit-check" id="fit-check">
       <div class="fit-copy">
         <p class="eyebrow">Fit-check pathway</p>
-        <h2 id="fit-title">Measure twice, order the shade once.</h2>
-        <p>The path turns a lamp base and damaged shade into a confident cart: form, diameter, drop, fitter, harp height, panel material, lining, and trim width.</p>
-        <ol class="steps">
-          <li><strong>Identify the socket.</strong> Note harp saddle, uno thread, or clip bulb.</li>
-          <li><strong>Measure the base.</strong> Match shade diameter to lamp height and visual weight.</li>
-          <li><strong>Set the drop.</strong> Keep socket hardware covered without crowding the bulb.</li>
-          <li><strong>Choose the finish.</strong> Compare swatches under the lamp's bulb temperature.</li>
-        </ol>
+        <h2>Measure twice, order the right tray of parts once.</h2>
+        <p>The shop centers confidence tools: printable fit cards, shade silhouettes, fitter diagrams, and opacity comparisons. Each product page names the compatibility question it answers.</p>
       </div>
-      <div class="sizing-chart" role="img" aria-label="Sizing chart for lamp height and shade diameter">
-        <div class="chart-row header"><span>Lamp base</span><span>Shade diameter</span><span>Common form</span></div>
-        <div class="chart-row"><span>12–16 in.</span><span>8–10 in.</span><span>Clip · small drum</span></div>
-        <div class="chart-row"><span>17–23 in.</span><span>10–14 in.</span><span>Empire · drum</span></div>
-        <div class="chart-row"><span>24–30 in.</span><span>14–18 in.</span><span>Bell · oval</span></div>
-        <div class="chart-row"><span>31+ in.</span><span>18–22 in.</span><span>Drum · rectangle</span></div>
-      </div>
-    </section>
-
-    <section id="kits" class="section kits" aria-labelledby="kits-title">
-      <div class="section-heading">
-        <p class="eyebrow">Project kit bundles</p>
-        <h2 id="kits-title">Everything for one repair, packed by outcome.</h2>
-      </div>
-      <div class="kit-grid collection">
-        <article class="kit-card product-card">
-          <p class="tag">Recover</p>
-          <h3>Drum Shade Recovery Kit</h3>
-          <p>Frame rings, adhesive styrene, linen panel, bias binding, seam tape, clips, roller, and measuring guide.</p>
-          <ul>
-            <li>Choose 10, 12, 14, or 16 in. diameter</li>
-            <li>Natural linen, parchment, or cotton finish</li>
-            <li>Includes fit-check card</li>
-          </ul>
-          <p class="price">$64</p>
+      <div class="fit-board" aria-label="Hardware compatibility diagrams">
+        <article class="hardware-card">
+          <svg viewBox="0 0 160 110" aria-hidden="true"><path d="M26 26h108l-18 56H44L26 26Z"/><path d="M80 30v52M54 82h52"/></svg>
+          <h3>Spider fitter</h3>
+          <p>Needs harp and finial; check center drop and shade height.</p>
         </article>
-        <article class="kit-card product-card">
-          <p class="tag">Reline</p>
-          <h3>Vintage Lining Renewal Kit</h3>
-          <p>Blackout or cream lining, heat-resistant adhesive, burnisher, seam guide, and replacement trim.</p>
-          <ul>
-            <li>For stained, brittle, or torn interiors</li>
-            <li>Works with bell, empire, and oval forms</li>
-            <li>Optional fringe add-on</li>
-          </ul>
-          <p class="price">$42</p>
+        <article class="hardware-card">
+          <svg viewBox="0 0 160 110" aria-hidden="true"><path d="M38 24h84l-13 50H51L38 24Z"/><path d="M80 74v22M60 96h40"/><circle cx="80" cy="74" r="8"/></svg>
+          <h3>Uno fitter</h3>
+          <p>Seats at socket; verify ring size and socket style.</p>
         </article>
-        <article class="kit-card product-card">
-          <p class="tag">Match</p>
-          <h3>Bedside Pair Matching Kit</h3>
-          <p>Twin frames, paired panels, two finials, harp height cards, and trim measured from the same dye lot.</p>
-          <ul>
-            <li>Build a matched pair from mismatched bases</li>
-            <li>Includes opacity swatch strip</li>
-            <li>Hardware finish matched in brass or black</li>
-          </ul>
-          <p class="price">$118</p>
+        <article class="hardware-card">
+          <svg viewBox="0 0 160 110" aria-hidden="true"><path d="M42 28h76l-16 44H58L42 28Z"/><path d="M66 75c8 16 20 16 28 0M80 72v28"/></svg>
+          <h3>Clip fitter</h3>
+          <p>Clips to bulb; best for candle and small accent lamps.</p>
         </article>
       </div>
     </section>
 
-    <section class="section workshop-note" aria-labelledby="note-title">
+    <section class="product-section" id="kits">
+      <div class="section-intro compact">
+        <p class="eyebrow">Project kits & swatches</p>
+        <h2>Bundled workbench orders for common repairs.</h2>
+      </div>
+      <div class="product-grid">
+        <article class="product-card">
+          <p class="tag">Recovering kit</p>
+          <h3>Drum Shade Recovery Bench Kit</h3>
+          <p>Adhesive styrene, linen panel, top and bottom binding, seam tape, clips, burnisher, and measuring guide.</p>
+          <div class="spec-row"><span>Best for</span><strong>stained or torn fabric</strong></div>
+          <div class="price">$48</div>
+        </article>
+        <article class="product-card">
+          <p class="tag">Small shade kit</p>
+          <h3>Clip-On Candle Shade Pair Kit</h3>
+          <p>Two small frames, clip fitters, vellum panels, bias binding, trim cord, and a pair-matching height card.</p>
+          <div class="spec-row"><span>Best for</span><strong>sconces & chandeliers</strong></div>
+          <div class="price">$36</div>
+        </article>
+        <article class="product-card">
+          <p class="tag">Relining kit</p>
+          <h3>Vintage Shade Lining Repair Kit</h3>
+          <p>Warm diffuser sheet, blackout lining strip, heat-safe adhesive, seam roller, clips, and cracked-panel removal guide.</p>
+          <div class="spec-row"><span>Best for</span><strong>brittle interior panels</strong></div>
+          <div class="price">$42</div>
+        </article>
+        <article class="product-card featured">
+          <p class="tag">Sample service</p>
+          <h3>Opacity & Hardware Swatch Pack</h3>
+          <p>Linen, parchment, silk-look, blackout, and vellum swatches with spider, uno, clip, washer, and finial fit-check cards.</p>
+          <div class="spec-row"><span>Best for</span><strong>first-time shade builds</strong></div>
+          <div class="price">$14</div>
+        </article>
+      </div>
+    </section>
+
+    <section class="material-table" aria-labelledby="materials-title">
       <div>
-        <p class="eyebrow">Workshop note</p>
-        <h2 id="note-title">The right vocabulary should arrive after the confidence.</h2>
+        <p class="eyebrow">Opacity comparison</p>
+        <h2 id="materials-title">Choose the glow before cutting the panel.</h2>
       </div>
-      <p>Shadeform Workshop keeps obscure terms visible, but never makes them the first hurdle. Shoppers can begin with “missing fitter,” “wrong height,” “cracked panel,” or “pair these lamps,” then see the exact ring, washer, panel, lining, and trim that belongs in the cart.</p>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr><th>Material</th><th>Light character</th><th>Use when</th><th>Swatch</th></tr>
+          </thead>
+          <tbody>
+            <tr><td>Natural linen</td><td>Warm texture, medium diffusion</td><td>Soft domestic lamps</td><td>Yes</td></tr>
+            <tr><td>Parchment panel</td><td>Amber glow, visible grain</td><td>Vintage and library lamps</td><td>Yes</td></tr>
+            <tr><td>Adhesive styrene</td><td>Structure layer, clean white core</td><td>Recovering fabric shades</td><td>Yes</td></tr>
+            <tr><td>Blackout lining</td><td>Directional light control</td><td>Desk and reading lamps</td><td>Yes</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <section class="cta final-cta">
+      <p class="eyebrow">Workbench ready</p>
+      <h2>Bring one lamp measurement. Leave with a complete parts list.</h2>
+      <p>Shadeform Workshop keeps the vocabulary visible, the diagrams close, and the material choices practical so a repaired lamp can become usable again.</p>
+      <a class="button" href="#fit-check">Build my repair list</a>
     </section>
   </main>
 
-  <footer class="site-footer">
-    <div>
-      <strong>Shadeform Workshop</strong>
-      <p>Lampshade frames, fitters, panels, swatches, trims, and project kits for home lighting restoration.</p>
+  <footer>
+    <div class="brand footer-brand">
+      <span class="brand-mark" aria-hidden="true">
+        <svg viewBox="0 0 64 64" focusable="false"><path d="M18 13h28l8 21H10l8-21Z" fill="none" stroke="currentColor" stroke-width="3" stroke-linejoin="round"/><path d="M32 34v17M22 51h20" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"/></svg>
+      </span>
+      <span><strong>Shadeform Workshop</strong><small>Measured supplies for home lighting repair</small></span>
     </div>
-    <nav aria-label="Footer navigation">
-      <a href="#shop-routes">Problems</a>
-      <a href="#forms">Forms</a>
-      <a href="#materials">Materials</a>
+    <div class="footer-links" aria-label="Footer links">
+      <a href="#problems">Problem routes</a>
+      <a href="#catalogue">Catalogue</a>
+      <a href="#fit-check">Fit check</a>
       <a href="#kits">Kits</a>
-    </nav>
+    </div>
   </footer>
 </body>
 </html>
