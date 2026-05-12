@@ -1,0 +1,57 @@
+{
+  "store": "Marbler’s Quire",
+  "currency": "USD",
+  "products": [
+    {
+      "name": "Casebound Journal Bench Kit",
+      "category": "Project kits",
+      "price": 74,
+      "description": "Precut Davey board, linen bookcloth, mull, headbands, folded signatures, PVA, glue brush, and casing-in guide.",
+      "specs": ["Finished size: 6 × 9 in.", "Paper grain: short", "Thread: 18/3 natural linen"]
+    },
+    {
+      "name": "Exposed-Spine Sketchbook Kit",
+      "category": "Project kits",
+      "price": 58,
+      "description": "Heavy drawing signatures, waxed linen thread, curved needles, punching cradle template, and press-board instructions.",
+      "specs": ["Binding: link stitch", "Paper: 120 lb drawing", "Includes: practice fold set"]
+    },
+    {
+      "name": "Family Recipe Binder Kit",
+      "category": "Project kits",
+      "price": 86,
+      "description": "Cloth-covered boards, reinforced hinge tape, recipe-weight pages, tab stock, brass corners, and wipe-clean spine label.",
+      "specs": ["Capacity: 80 recipe leaves", "Board: 0.098 in.", "Cloth: oxblood or navy"]
+    },
+    {
+      "name": "Carrageenan Bath Set",
+      "category": "Marbling supplies",
+      "price": 42,
+      "description": "Measured carrageenan, alum, ox gall, pipettes, bath cards, and a troubleshooting sheet for pigment control."
+    },
+    {
+      "name": "Rake & Comb Pair",
+      "category": "Marbling supplies",
+      "price": 34,
+      "description": "Two scale-marked tools for nonpareil, feather, and stone patterns in small home trays."
+    },
+    {
+      "name": "Bookcloth Swatch Folio",
+      "category": "Samplers",
+      "price": 18,
+      "description": "Twelve cloth colors on labeled cards with weave, backing, and adhesive notes."
+    },
+    {
+      "name": "Endpaper Grain Sampler",
+      "category": "Samplers",
+      "price": 22,
+      "description": "Short-grain, long-grain, laid, smooth, and marbled trial sheets marked for fold tests."
+    },
+    {
+      "name": "Thread Weight Card",
+      "category": "Samplers",
+      "price": 14,
+      "description": "Natural, navy, oxblood, and brass-toned linen samples in 18/3 and 25/3 weights."
+    }
+  ]
+}
