@@ -1,0 +1,42 @@
+{
+  "store": "Rag & Rail Rugworks",
+  "currency": "USD",
+  "products": [
+    {
+      "name": "Hallway Runner Starter Crate",
+      "price": 86,
+      "technique": "rag weaving",
+      "description": "Precut cotton rag bundles, rug warp, shuttle stick, hem thread, and a room-length measuring card for narrow apartment halls.",
+      "size": "24 × 72 in",
+      "traffic": "High",
+      "washability": "Spot / line dry"
+    },
+    {
+      "name": "Stair Tread Hooking Set",
+      "price": 112,
+      "technique": "rug hooking",
+      "description": "Wool foundation cloth, madder and moss wool strips, rug hook, edge tape, nonslip pad strips, and stair-nose finishing notes.",
+      "size": "9 × 28 in × 4",
+      "traffic": "Very high",
+      "grip": "Nonslip included"
+    },
+    {
+      "name": "Washable Bath Mat Punch Kit",
+      "price": 74,
+      "technique": "punch needle",
+      "description": "Monk’s cloth panel, cotton rug yarn, adjustable punch needle, binding needle, care card, and low-pile layout for bath doors.",
+      "size": "20 × 30 in",
+      "traffic": "Medium",
+      "washability": "Machine gentle"
+    },
+    {
+      "name": "Chair Pad Braiding Bench Kit",
+      "price": 58,
+      "technique": "braided textile",
+      "description": "Denim strips, braiding clamp, waxed lacing thread, repair needle, trimming shears, and a flat spiral guide for seat-friendly thickness.",
+      "size": "15 in round",
+      "traffic": "Daily seat",
+      "profile": "Low"
+    }
+  ]
+}
