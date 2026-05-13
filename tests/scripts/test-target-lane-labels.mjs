@@ -15,8 +15,12 @@ for (const source of [staticValidation, lifecycle, staticFlow, staticPipeline, r
 
 assert.match(staticValidation, /target:wordpress/, 'validation accepts the WordPress target lane');
 assert.match(staticValidation, /target:woocommerce/, 'validation accepts the WooCommerce target lane');
+assert.match(staticValidation, /github\.event\.action == 'labeled' && github\.event\.label\.name == 'target:wordpress'/, 'validation accepts target:wordpress labeled events');
+assert.match(staticValidation, /github\.event\.action == 'labeled' && github\.event\.label\.name == 'target:woocommerce'/, 'validation accepts target:woocommerce labeled events');
 assert.match(lifecycle, /target:wordpress/, 'lifecycle recognizes the WordPress target lane');
 assert.match(lifecycle, /target:woocommerce/, 'lifecycle recognizes the WooCommerce target lane');
+assert.match(lifecycle, /github\.event\.label\.name == 'target:wordpress'/, 'lifecycle accepts target:wordpress labeled events');
+assert.match(lifecycle, /github\.event\.label\.name == 'target:woocommerce'/, 'lifecycle accepts target:woocommerce labeled events');
 assert.match(staticFlow, /commerce:woocommerce[\s\S]*target:woocommerce/, 'static agent maps commerce issues to WooCommerce PRs');
 assert.match(staticFlow, /commerce:none[\s\S]*target:wordpress/, 'static agent maps content issues to WordPress PRs');
 assert.match(staticPipeline, /labels set to \[\\"target:woocommerce\\"\]/, 'publish call labels WooCommerce PRs');
