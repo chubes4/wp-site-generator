@@ -52,6 +52,7 @@
     "source_pr": 77,
     "source_head_sha": "abc123",
     "validation_run_id": 12345,
+    "candidate_repo": "chubes4/static-site-importer",
     "kind": "core_html",
     "path": "home.html",
     "selector": ".product-card",
@@ -126,5 +127,28 @@
     "converter": "visual-parity",
     "stage": "screenshot_diff",
     "reason": "Imported WordPress screenshot differs from source static HTML screenshot: mismatch=56.31%, threshold=1.50%."
+  },
+  {
+    "schema_version": 2,
+    "site": "demo-store",
+    "source_repo": "chubes4/wp-site-generator",
+    "source_pr": 77,
+    "source_head_sha": "abc123",
+    "validation_run_id": 12345,
+    "candidate_repo": "chubes4/static-site-importer",
+    "kind": "core_html",
+    "path": "patterns/page-home.php",
+    "selector": ".product-card",
+    "source_html_preview": "<article class=\"product-card\"><p>$10</p></article>",
+    "block_name": "core/html",
+    "converter": "h2bc-card-converter",
+    "stage": "generated_theme_block_analysis",
+    "reason": "generated_document_contains_core_html",
+    "design_system": "editorial-magazine",
+    "palette_kind": "warm-neutral",
+    "typography_kind": "mixed-serif-sans",
+    "layout_kind": "magazine",
+    "density": "comfortable",
+    "commerce_pattern": "editorial-pdp"
   }
 ]

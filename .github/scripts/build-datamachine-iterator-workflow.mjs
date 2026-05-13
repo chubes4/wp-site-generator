@@ -9,7 +9,7 @@ const outputPath = process.env.DATAMACHINE_WORKFLOW_PATH || process.argv[3] || '
 const pipelinePath = process.env.ITERATOR_PIPELINE_PATH || 'bundles/php-transformer-iterator-agent/pipelines/php-transformer-iterator-pipeline.json';
 const flowPath = process.env.ITERATOR_FLOW_PATH || 'bundles/php-transformer-iterator-agent/flows/php-transformer-iterator-manual-flow.json';
 
-const findingPackets = await readJson(resolveRepoPath(packetsPath));
+const findingPackets = normalizeFindingInput(await readJson(resolveRepoPath(packetsPath)));
 const pipeline = await readJson(resolveRepoPath(pipelinePath));
 const flow = await readJson(resolveRepoPath(flowPath));
 
@@ -63,31 +63,58 @@ function buildWorkflow(packets, pipelineConfig, flowConfig) {
 	};
 }
 
-function toDataMachinePacket(packet, index) {
-	const kind = text(packet.kind) || 'finding';
+function toDataMachinePacket(item, index) {
+	const packet = Array.isArray(item?.packets) ? item.packets[0] || {} : item;
+	const kind = text(item.kind) || text(packet.kind) || 'finding';
 	const pathLabel = text(packet.path) || text(packet.selector) || `finding-${index + 1}`;
 	const sourceRepo = text(packet.source_repo) || 'chubes4/wp-site-generator';
 	const sourcePr = text(packet.source_pr);
 	const validationRunId = text(packet.validation_run_id);
 	const identifierParts = [sourceRepo, sourcePr, validationRunId, kind, pathLabel].filter(Boolean);
+	const isGroup = Array.isArray(item?.packets);
+	const title = isGroup
+		? `${kind}: ${text(item.reason) || pathLabel}`
+		: `${kind}: ${pathLabel}`;
+	const body = isGroup
+		? `Grouped SSI finding with ${item.count || item.packets.length} packet(s). ${text(item.reason) || text(packet.reason) || text(packet.preview)}`
+		: text(packet.reason) || text(packet.preview) || 'Static Site Importer validation finding.';
 
 	return {
-		type: 'ssi_finding',
+		type: isGroup ? 'ssi_finding_group' : 'ssi_finding',
 		data: {
-			title: `${kind}: ${pathLabel}`,
-			body: text(packet.reason) || text(packet.preview) || 'Static Site Importer validation finding.',
+			title,
+			body,
 			finding_packet: packet,
+			finding_group: isGroup ? item : null,
 		},
 		metadata: {
 			source_type: 'ssi_validation',
 			item_identifier: identifierParts.join(':'),
 			kind,
-			candidate_repo: text(packet.candidate_repo),
+			candidate_repo: text(item.candidate_repo) || text(packet.candidate_repo),
 			_engine_data: {
 				finding_packet: packet,
+				finding_group: isGroup ? item : null,
 			},
 		},
 	};
+}
+
+function normalizeFindingInput(input) {
+	if (Array.isArray(input)) {
+		return input;
+	}
+	if (Array.isArray(input?.groups)) {
+		return input.groups;
+	}
+	if (Array.isArray(input?.packets)) {
+		return input.packets;
+	}
+	if (Array.isArray(input?.findings)) {
+		return input.findings;
+	}
+
+	throw new Error('Finding input must be an array, grouped finding object, or object with packets/findings.');
 }
 
 function resolveRepoPath(inputPath) {

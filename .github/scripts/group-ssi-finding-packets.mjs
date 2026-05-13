@@ -35,7 +35,7 @@ function groupPackets(rawPackets) {
 			packet.kind,
 			packet.converter,
 			packet.block_name,
-			normalizeReason(packet.reason),
+			groupSignature(packet),
 		]);
 
 		if (!groupMap.has(key)) {
@@ -143,11 +143,6 @@ function dedupe(packets) {
 }
 
 function routeCandidateRepo(packet) {
-	const explicit = text(packet.candidate_repo);
-	if (isCandidateRepo(explicit)) {
-		return explicit;
-	}
-
 	const kind = text(packet.kind).toLowerCase();
 	if (kind === 'bench_failure') {
 		return 'chubes4/wp-site-generator';
@@ -171,7 +166,25 @@ function routeCandidateRepo(packet) {
 		return 'chubes4/wp-site-generator';
 	}
 
+	const explicit = text(packet.candidate_repo);
+	if (isCandidateRepo(explicit)) {
+		return explicit;
+	}
+
 	return 'chubes4/static-site-importer';
+}
+
+function groupSignature(packet) {
+	const html = text(packet.source_html_preview).toLowerCase();
+	if (/<figure\b/.test(html) && /<figcaption\b/.test(html) && !/<img\b|<picture\b|<video\b|<svg\b/.test(html)) {
+		return 'figure-with-caption-only';
+	}
+	if (/<div\b/.test(html) && /marquee[-_]lights/.test(html)) {
+		return 'div-marquee-lights';
+	}
+
+	const selector = text(packet.selector).toLowerCase().replace(/\.[-_a-z0-9]+/g, '.class');
+	return selector || normalizeReason(packet.reason);
 }
 
 function isCandidateRepo(value) {

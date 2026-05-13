@@ -22,9 +22,9 @@ assert.equal(result.status, 0, result.stderr || result.stdout);
 
 const grouped = JSON.parse(await readFile(outputPath, 'utf8'));
 assert.equal(grouped.schema_version, 2);
-assert.equal(grouped.packet_count, 7);
-assert.equal(grouped.actionable_packet_count, 5);
-assert.equal(grouped.deduped_packet_count, 4);
+assert.equal(grouped.packet_count, 8);
+assert.equal(grouped.actionable_packet_count, 6);
+assert.equal(grouped.deduped_packet_count, 5);
 assert.equal(grouped.group_count, 4);
 assert.deepEqual(grouped.candidate_repos.sort(), [
 	'chubes4/html-to-blocks-converter',
@@ -33,7 +33,7 @@ assert.deepEqual(grouped.candidate_repos.sort(), [
 
 const h2bcGroup = grouped.groups.find((group) => group.candidate_repo === 'chubes4/html-to-blocks-converter');
 assert.equal(h2bcGroup.kind, 'core_html');
-assert.equal(h2bcGroup.count, 1);
+assert.equal(h2bcGroup.count, 2);
 
 const ssiGroup = grouped.groups.find((group) => group.candidate_repo === 'chubes4/static-site-importer');
 assert.equal(ssiGroup.count, 1);
