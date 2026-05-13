@@ -100,6 +100,10 @@
                     "prompt": "Before opening a fallback issue, call list_github_issues in the owner repository and check for an existing open issue covering the same source PR, validation run, site slug, signal kind, artifact names, or visual parity mismatch. If a matching issue exists, do not create a duplicate; comment back to the source PR with the existing issue URL and evidence summary. Only call create_github_issue when no existing issue covers the finding."
                 },
                 {
+                    "added_at": "2026-05-12T23:55:00+00:00",
+                    "prompt": "Treat fallback issues as durable per source finding, not per iterator run. A new validation_run_id or newly worded title is not enough to justify a new issue. When list_github_issues returns an open issue with the same source_pr plus the same site slug and signal family, reuse it. For visual parity packets, match any open visual-parity issue for the same source_pr and site slug. For ignored_region or intentionally ignored accessibility chrome, match any open validation or triage issue for the same source_pr/site slug mentioning ignored_region, intentionally ignored, accessibility chrome, or skip link. When reusing, call comment_github_pull_request with the existing issue URL and complete via existing_issue_path."
+                },
+                {
                     "added_at": "2026-05-12T19:20:00+00:00",
                     "prompt": "Keep transformer fixes bounded by the fetched packet evidence. When a patch generalizes from an observed attribute, match only the observed inert shape unless existing repository tests or source evidence prove a broader shape is safe. Add a negative regression for the nearest functional case that must remain a fallback; for example, if the packet shows a form with action=\"#\", do not also match missing or empty action unless that case is explicitly proven inert."
                 }
