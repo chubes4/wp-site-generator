@@ -50,6 +50,10 @@
                 {
                     "added_at": "2026-05-09T22:00:00+00:00",
                     "prompt": "Implement the fetched concept as a static site. Read both the issue body (concept) and the design agent's most recent comment (design direction) — both are sources of truth. Honor them. Do not invent a different concept and do not override the design."
+                },
+                {
+                    "added_at": "2026-05-13T12:35:00+00:00",
+                    "prompt": "Set the pull request target lane from the fetched issue labels when calling github_pull_request_publish. If the issue has commerce:woocommerce or site-kind:commerce, pass labels [\"target:woocommerce\"]. If the issue has commerce:none or site-kind:content, pass labels [\"target:wordpress\"]. Use exactly one target label. The target label describes the WordPress import lane; static-sites/ remains only the source-file location."
                 }
             ],
             "queue_mode": "static",
@@ -63,7 +67,6 @@
                 "github_pull_request": {
                     "base": "main",
                     "draft": false,
-                    "labels": "target:static-site",
                     "maintainer_can_modify": false,
                     "repo": "chubes4/wp-site-generator"
                 }

@@ -2,7 +2,7 @@ name: Idea lifecycle labels
 
 on:
   pull_request_target:
-    types: [opened, reopened, closed]
+    types: [opened, reopened, closed, labeled]
   issues:
     types: [reopened]
 
@@ -20,9 +20,9 @@ jobs:
     name: Mark idea built when static-site PR opens
     if: |
       github.event_name == 'pull_request_target' &&
-      (github.event.action == 'opened' || github.event.action == 'reopened') &&
+      (github.event.action == 'opened' || github.event.action == 'reopened' || github.event.action == 'labeled') &&
       github.event.pull_request.state == 'open' &&
-      contains(github.event.pull_request.labels.*.name, 'target:static-site')
+      (contains(github.event.pull_request.labels.*.name, 'target:wordpress') || contains(github.event.pull_request.labels.*.name, 'target:woocommerce'))
     runs-on: ubuntu-latest
     steps:
       - name: Require cross-repo app credentials
@@ -99,7 +99,7 @@ jobs:
       github.event_name == 'pull_request_target' &&
       github.event.action == 'closed' &&
       github.event.pull_request.merged == false &&
-      contains(github.event.pull_request.labels.*.name, 'target:static-site')
+      (contains(github.event.pull_request.labels.*.name, 'target:wordpress') || contains(github.event.pull_request.labels.*.name, 'target:woocommerce'))
     runs-on: ubuntu-latest
     steps:
       - name: Require cross-repo app credentials
@@ -145,16 +145,21 @@ jobs:
             const owner = context.repo.owner;
             const repo = context.repo.repo;
 
-            // Search for any other open static-site PRs that close the same issue.
+            // Search for any other open target-lane PRs that close the same issue.
             const otherOpenClaims = async (issueNumber) => {
-              const q = `repo:${owner}/${repo} is:pr is:open label:"target:static-site" -head:foo`;
-              // Use search to enumerate open target:static-site PRs and inspect their bodies.
-              const prs = await github.paginate(github.rest.search.issuesAndPullRequests, {
-                q: `repo:${owner}/${repo} is:pr is:open label:"target:static-site"`,
-                per_page: 100,
-              });
+              const laneQueries = [
+                `repo:${owner}/${repo} is:pr is:open label:"target:wordpress"`,
+                `repo:${owner}/${repo} is:pr is:open label:"target:woocommerce"`,
+              ];
+              const prsByNumber = new Map();
+              for (const q of laneQueries) {
+                const prs = await github.paginate(github.rest.search.issuesAndPullRequests, { q, per_page: 100 });
+                for (const pr of prs) {
+                  prsByNumber.set(pr.number, pr);
+                }
+              }
               const claimRe = /\b(?:close[sd]?|fix(?:e[sd])?|resolve[sd]?)\s*:?\s*#(\d+)/gi;
-              for (const pr of prs) {
+              for (const pr of prsByNumber.values()) {
                 if (pr.number === closingPrNumber) continue;
                 const prBody = pr.body || '';
                 let m;
@@ -171,7 +176,7 @@ jobs:
             for (const issueNumber of ideaIssues) {
               const stillClaimed = await otherOpenClaims(issueNumber);
               if (stillClaimed) {
-                core.info(`Issue #${issueNumber} still claimed by another open target:static-site PR; leaving labels untouched.`);
+                core.info(`Issue #${issueNumber} still claimed by another open target-lane PR; leaving labels untouched.`);
                 continue;
               }
               core.info(`Resetting labels on idea issue #${issueNumber}: remove status:built, add status:abandoned.`);
