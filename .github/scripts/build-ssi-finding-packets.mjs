@@ -289,19 +289,79 @@ function packetFromVisualDiff(diff) {
 	const thresholdPercent = `${(Number(diff.threshold || 0) * 100).toFixed(2)}%`;
 	const sourceSize = `${diff.source?.width || 0}x${diff.source?.height || 0}`;
 	const importedSize = `${diff.imported?.width || 0}x${diff.imported?.height || 0}`;
+	const regions = visualRegions(diff);
+	const topRegion = regions[0] || null;
+	const regionSummary = topRegion
+		? ` top_region=x:${topRegion.x},y:${topRegion.y},w:${topRegion.width},h:${topRegion.height},mismatch=${formatRatio(topRegion.mismatchRatio)} source=${probeSummary(topRegion.source_matches)} imported=${probeSummary(topRegion.imported_matches)}`
+		: '';
 	return {
 		...packetBase(),
 		kind: 'visual_parity_mismatch',
 		path: visualDiffPath,
-		preview: `source=${sourceSize} imported=${importedSize} mismatch=${mismatchPercent}`,
-		selector: '',
-		excerpt: '',
+		preview: `source=${sourceSize} imported=${importedSize} mismatch=${mismatchPercent}${regionSummary}`,
+		selector: topRegion ? `screenshot region ${topRegion.x},${topRegion.y} ${topRegion.width}x${topRegion.height}` : '',
+		excerpt: topRegion ? topRegionExcerpt(topRegion) : '',
 		source_html_preview: '',
 		block_name: '',
 		converter: 'visual-parity',
 		stage: 'screenshot_diff',
-		reason: `Imported WordPress screenshot differs from source static HTML screenshot: mismatch=${mismatchPercent}, threshold=${thresholdPercent}, mismatched_pixels=${diff.mismatchPixels || 0}, total_pixels=${diff.totalPixels || 0}, dimension_mismatch=${diff.dimensionMismatch ? 'yes' : 'no'}. See visual-parity artifact files source.png, imported.png, diff.png, and visual-diff.json.`,
+		reason: `Imported WordPress screenshot differs from source static HTML screenshot: mismatch=${mismatchPercent}, threshold=${thresholdPercent}, mismatched_pixels=${diff.mismatchPixels || 0}, total_pixels=${diff.totalPixels || 0}, dimension_mismatch=${diff.dimensionMismatch ? 'yes' : 'no'}.${regionSummary} See visual-parity artifact files source.png, imported.png, diff.png, and visual-diff.json.`,
+		visual_regions: regions,
 	};
+}
+
+function visualRegions(diff) {
+	return asArray(diff?.regions)
+		.filter((region) => region && typeof region === 'object')
+		.slice(0, 8)
+		.map((region) => ({
+			rank: Number(region.rank || 0),
+			x: Number(region.x || 0),
+			y: Number(region.y || 0),
+			width: Number(region.width || 0),
+			height: Number(region.height || 0),
+			mismatchPixels: Number(region.mismatchPixels || 0),
+			totalPixels: Number(region.totalPixels || 0),
+			mismatchRatio: Number(region.mismatchRatio || 0),
+			source_matches: visualProbes(region.source_matches),
+			imported_matches: visualProbes(region.imported_matches),
+		}));
+}
+
+function visualProbes(probes) {
+	return asArray(probes)
+		.filter((probe) => probe && typeof probe === 'object')
+		.slice(0, 5)
+		.map((probe) => ({
+			selector: text(probe.selector),
+			text: truncate(probe.text, 180),
+			rect: probe.rect && typeof probe.rect === 'object' ? {
+				x: Number(probe.rect.x || 0),
+				y: Number(probe.rect.y || 0),
+				width: Number(probe.rect.width || 0),
+				height: Number(probe.rect.height || 0),
+			} : {},
+		}));
+}
+
+function probeSummary(probes) {
+	const probe = asArray(probes)[0];
+	if (!probe) {
+		return 'none';
+	}
+	return truncate([probe.selector, probe.text].filter(Boolean).join(' '), 120);
+}
+
+function topRegionExcerpt(region) {
+	return truncate([
+		`region ${region.x},${region.y} ${region.width}x${region.height}`,
+		`source: ${probeSummary(region.source_matches)}`,
+		`imported: ${probeSummary(region.imported_matches)}`,
+	].join('; '), 260);
+}
+
+function formatRatio(value) {
+	return `${(Number(value || 0) * 100).toFixed(2)}%`;
 }
 
 function truncate(value, length) {

@@ -44,6 +44,8 @@ assert.equal(sourceRegionGroup.candidate_repo, 'chubes4/static-site-importer');
 const visualGroup = grouped.groups.find((group) => group.kind === 'visual_parity_mismatch');
 assert.equal(visualGroup.candidate_repo, 'chubes4/static-site-importer');
 assert.equal(visualGroup.count, 1);
+assert.equal(visualGroup.packets[0].visual_regions.length, 1);
+assert.equal(visualGroup.packets[0].visual_regions[0].source_matches[0].selector, 'section.hero');
 
 const nonActionableKinds = grouped.groups.flatMap((group) => group.packets).map((packet) => packet.kind);
 assert.ok(!nonActionableKinds.includes('ignored_region'), 'Ignored regions must not reach the iterator groups');

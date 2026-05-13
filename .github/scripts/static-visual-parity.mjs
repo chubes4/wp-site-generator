@@ -261,15 +261,15 @@ async function captureParityScreenshots({ sourceUrl, importedUrl, outputDir }) {
 		const sourcePath = path.join(outputDir, 'source.png');
 		const importedPath = path.join(outputDir, 'imported.png');
 		const diffPath = path.join(outputDir, 'diff.png');
-		await screenshot(browser, sourceUrl, sourcePath);
-		await screenshot(browser, importedUrl, importedPath);
-		return await writeVisualDiff({ sourcePath, importedPath, diffPath, outputDir });
+		const sourceCapture = await screenshot(browser, sourceUrl, sourcePath);
+		const importedCapture = await screenshot(browser, importedUrl, importedPath);
+		return await writeVisualDiff({ sourcePath, importedPath, diffPath, outputDir, sourceCapture, importedCapture });
 	} finally {
 		await browser.close();
 	}
 }
 
-async function writeVisualDiff({ sourcePath, importedPath, diffPath, outputDir }) {
+async function writeVisualDiff({ sourcePath, importedPath, diffPath, outputDir, sourceCapture, importedCapture }) {
 	const source = PNG.sync.read(await readFile(sourcePath));
 	const imported = PNG.sync.read(await readFile(importedPath));
 	const width = Math.max(source.width, imported.width);
@@ -284,6 +284,14 @@ async function writeVisualDiff({ sourcePath, importedPath, diffPath, outputDir }
 	const totalPixels = width * height;
 	const mismatchRatio = totalPixels > 0 ? mismatchPixels / totalPixels : 0;
 	const dimensionMismatch = source.width !== imported.width || source.height !== imported.height;
+	const regions = visualMismatchRegions({
+		source: normalizedSource,
+		imported: normalizedImported,
+		width,
+		height,
+		sourceProbes: sourceCapture?.probes || [],
+		importedProbes: importedCapture?.probes || [],
+	});
 	const result = {
 		pass: mismatchRatio <= maxMismatchRatio && !dimensionMismatch,
 		threshold: maxMismatchRatio,
@@ -291,15 +299,18 @@ async function writeVisualDiff({ sourcePath, importedPath, diffPath, outputDir }
 		totalPixels,
 		mismatchRatio,
 		dimensionMismatch,
+		regions,
 		source: {
 			path: path.basename(sourcePath),
 			width: source.width,
 			height: source.height,
+			probes: sourceCapture?.probes || [],
 		},
 		imported: {
 			path: path.basename(importedPath),
 			width: imported.width,
 			height: imported.height,
+			probes: importedCapture?.probes || [],
 		},
 		diff: {
 			path: path.basename(diffPath),
@@ -311,6 +322,124 @@ async function writeVisualDiff({ sourcePath, importedPath, diffPath, outputDir }
 	await writeFile(diffPath, PNG.sync.write(diff));
 	await writeFile(path.join(outputDir, 'visual-diff.json'), `${JSON.stringify(result, null, 2)}\n`);
 	return result;
+}
+
+function visualMismatchRegions({ source, imported, width, height, sourceProbes, importedProbes }) {
+	const tileSize = 32;
+	const minTileMismatchPixels = 12;
+	const maxRegions = 8;
+	const tileColumns = Math.ceil(width / tileSize);
+	const tileRows = Math.ceil(height / tileSize);
+	const activeTiles = new Map();
+
+	for (let y = 0; y < height; y += 1) {
+		for (let x = 0; x < width; x += 1) {
+			if (!pixelDiffers(source.data, imported.data, (y * width + x) * 4)) {
+				continue;
+			}
+
+			const tileKey = `${Math.floor(x / tileSize)},${Math.floor(y / tileSize)}`;
+			activeTiles.set(tileKey, (activeTiles.get(tileKey) || 0) + 1);
+		}
+	}
+
+	const active = new Set(
+		[...activeTiles.entries()]
+			.filter(([, count]) => count >= minTileMismatchPixels)
+			.map(([key]) => key)
+	);
+	const visited = new Set();
+	const regions = [];
+
+	for (const key of active) {
+		if (visited.has(key)) {
+			continue;
+		}
+
+		const queue = [key];
+		visited.add(key);
+		let minTileX = Infinity;
+		let minTileY = Infinity;
+		let maxTileX = -1;
+		let maxTileY = -1;
+		let regionMismatchPixels = 0;
+
+		while (queue.length) {
+			const current = queue.shift();
+			const [tileX, tileY] = current.split(',').map(Number);
+			minTileX = Math.min(minTileX, tileX);
+			minTileY = Math.min(minTileY, tileY);
+			maxTileX = Math.max(maxTileX, tileX);
+			maxTileY = Math.max(maxTileY, tileY);
+			regionMismatchPixels += activeTiles.get(current) || 0;
+
+			for (const [nextX, nextY] of [
+				[tileX - 1, tileY],
+				[tileX + 1, tileY],
+				[tileX, tileY - 1],
+				[tileX, tileY + 1],
+			]) {
+				if (nextX < 0 || nextY < 0 || nextX >= tileColumns || nextY >= tileRows) {
+					continue;
+				}
+
+				const nextKey = `${nextX},${nextY}`;
+				if (!active.has(nextKey) || visited.has(nextKey)) {
+					continue;
+				}
+
+				visited.add(nextKey);
+				queue.push(nextKey);
+			}
+		}
+
+		const x = minTileX * tileSize;
+		const y = minTileY * tileSize;
+		const regionWidth = Math.min(width - x, (maxTileX - minTileX + 1) * tileSize);
+		const regionHeight = Math.min(height - y, (maxTileY - minTileY + 1) * tileSize);
+		const totalRegionPixels = regionWidth * regionHeight;
+		regions.push({
+			x,
+			y,
+			width: regionWidth,
+			height: regionHeight,
+			mismatchPixels: regionMismatchPixels,
+			totalPixels: totalRegionPixels,
+			mismatchRatio: totalRegionPixels > 0 ? regionMismatchPixels / totalRegionPixels : 0,
+			source_matches: matchingProbes(sourceProbes, { x, y, width: regionWidth, height: regionHeight }),
+			imported_matches: matchingProbes(importedProbes, { x, y, width: regionWidth, height: regionHeight }),
+		});
+	}
+
+	return regions
+		.sort((a, b) => b.mismatchPixels - a.mismatchPixels)
+		.slice(0, maxRegions)
+		.map((region, index) => ({ rank: index + 1, ...region }));
+}
+
+function pixelDiffers(sourceData, importedData, offset) {
+	const red = Math.abs(sourceData[offset] - importedData[offset]);
+	const green = Math.abs(sourceData[offset + 1] - importedData[offset + 1]);
+	const blue = Math.abs(sourceData[offset + 2] - importedData[offset + 2]);
+	const alpha = Math.abs(sourceData[offset + 3] - importedData[offset + 3]);
+	return red + green + blue + alpha > 48;
+}
+
+function matchingProbes(probes, region) {
+	return probes
+		.map((probe) => ({ probe, overlap: rectOverlap(region, probe.rect || {}) }))
+		.filter((item) => item.overlap > 0)
+		.sort((a, b) => b.overlap - a.overlap)
+		.slice(0, 5)
+		.map((item) => item.probe);
+}
+
+function rectOverlap(a, b) {
+	const left = Math.max(Number(a.x || 0), Number(b.x || 0));
+	const top = Math.max(Number(a.y || 0), Number(b.y || 0));
+	const right = Math.min(Number(a.x || 0) + Number(a.width || 0), Number(b.x || 0) + Number(b.width || 0));
+	const bottom = Math.min(Number(a.y || 0) + Number(a.height || 0), Number(b.y || 0) + Number(b.height || 0));
+	return Math.max(0, right - left) * Math.max(0, bottom - top);
 }
 
 function normalizePng(image, width, height) {
@@ -373,7 +502,46 @@ async function screenshot(browser, url, outputPath) {
 				html, body { scrollbar-width: none !important; }
 			`,
 		});
+		const probes = await page.evaluate(() => {
+			function cssEscape(value) {
+				return typeof CSS !== 'undefined' && typeof CSS.escape === 'function'
+					? CSS.escape(value)
+					: String(value).replace(/[^a-zA-Z0-9_-]/g, '\\$&');
+			}
+
+			function elementSelector(element) {
+				const id = element.id ? `#${cssEscape(element.id)}` : '';
+				const classes = Array.from(element.classList || []).slice(0, 3).map((className) => `.${cssEscape(className)}`).join('');
+				return `${element.tagName.toLowerCase()}${id}${classes}`;
+			}
+
+			function textPreview(element) {
+				return (element.innerText || element.textContent || '').replace(/\s+/g, ' ').trim().slice(0, 180);
+			}
+
+			const candidates = Array.from(
+				document.querySelectorAll('header, nav, main, section, article, aside, footer, h1, h2, h3, p, a, button, img, figure, figcaption, .wp-block-group, .wp-block-cover, .wp-block-columns, .wp-block-button')
+			);
+
+			return candidates
+				.map((element) => {
+					const rect = element.getBoundingClientRect();
+					return {
+						selector: elementSelector(element),
+						text: textPreview(element),
+						rect: {
+							x: Math.round(rect.left + window.scrollX),
+							y: Math.round(rect.top + window.scrollY),
+							width: Math.round(rect.width),
+							height: Math.round(rect.height),
+						},
+					};
+				})
+				.filter((probe) => probe.rect.width > 0 && probe.rect.height > 0)
+				.slice(0, 300);
+		});
 		await page.screenshot({ path: outputPath, fullPage: true, type: 'png' });
+		return { path: outputPath, probes };
 	} finally {
 		await page.close();
 	}
