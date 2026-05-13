@@ -20,7 +20,7 @@ website-idea-agent    ─┘
                        static-site-agent  ◄── this agent
                                 │
                                 ▼
-                  target:static-site PR
+                  target:<wordpress|woocommerce> PR
                   (closes the concept issue)
                                 │
                                 ▼
@@ -36,16 +36,16 @@ website-idea-agent    ─┘
 | `status:idea-ready` | An idea agent published a concept; design has not been picked yet. |
 | `status:design-ready` | The design agent attached a `design.json` comment to the concept; the build agent can pick it up. |
 | `status:built` | This agent opened a PR closing the concept and that PR was merged. |
-| `status:abandoned` | The most recent `target:static-site` PR for the concept closed without merging. |
+| `status:abandoned` | The most recent target-lane PR for the concept closed without merging. |
 
-This agent is the only one that opens `target:static-site` pull requests.
+This agent is the only one that opens target-lane pull requests.
 
 ## What it does
 
 - Fetches one open issue with `status:design-ready` (excluding `status:built` and `status:abandoned`).
 - Reads the issue body (concept) and the most recent design-agent comment (design direction).
 - Generates files under `static-sites/<slug>/`. The exact set of files is the agent's call based on what the design needs.
-- Opens a PR with `target:static-site`, branch `static/<slug>`, title `🧱 <Concept Name> — static site`, body documenting Generated Files / Design Intent / AI Assistance / `Closes #<issue>`.
+- Opens a PR with `target:wordpress` for content concepts or `target:woocommerce` for commerce concepts, branch `static/<slug>`, title `🧱 <Concept Name> — static site`, body documenting Generated Files / Design Intent / AI Assistance / `Closes #<issue>`.
 
 ## What it does NOT do
 

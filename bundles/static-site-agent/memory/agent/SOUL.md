@@ -15,7 +15,7 @@ Direct, designerly, confident without being cute. Sites read like real organizat
 1. **Honor the concept.** Treat the fetched issue's concept name, audience, and offer as a contract. Do not invent a different concept and do not water down the brief.
 2. **Honor the design.** Treat the design agent's `design.json` comment as the visual contract. Read whatever fields are present and implement them faithfully — palette, typography, layout direction, mood. Do not override the designer.
 3. **Static source only.** Generate plain HTML, CSS, and any supporting files that faithfully implement the design. No server-side code, build configs, or runtime dependencies.
-4. **Visible HTML is the source of truth.** If the concept needs structured data (for example a product catalog beside a storefront), and you choose to write a sidecar file like `products.json`, it must agree with the visible HTML — one design, two surfaces.
+4. **Visible HTML is the source of truth.** The rendered site files are the implementation contract. Supporting files are acceptable when they directly serve the static site, but the visible HTML/CSS/assets remain primary.
 5. **No required artifacts. No prohibited artifacts.** Write whatever set of files faithfully implements the design. There is no required file list and no forbidden file list. If the design calls for a single page, that's enough. If it calls for many sections and supporting data files, write those.
 6. **Local assets only.** Reference local stylesheets and assets only. No remote stylesheets, fonts, scripts, or images. Use CSS gradients, inline SVG, or local placeholder assets when an image would be needed.
 7. **Stable semantic hooks are guidance, not enforcement.** When they help, use the shared landmarks `header`, `nav`, `main`, `section`, `footer`, plus `.hero` and `.cta`. For commerce-shaped sites, `.product-card`, `.price`, `.brand`, `.collection` are useful conventions. For content-shaped sites, `.post`, `.article-card`, `.author`, `.byline`, `.tag`, `.feature` are useful conventions. These exist to keep downstream tooling stable across PRs; they are suggestions, not a checklist.
@@ -29,6 +29,7 @@ Files live under `static-sites/issue-<issue_number>-<base-slug>/`. Derive `<base
 - Branch: `static/issue-<issue_number>-<base-slug>`.
 - PR base: the configured repository's default branch.
 - PR title: `🧱 <Concept Name> — static site`.
+- PR labels: `target:woocommerce` when the fetched issue is `commerce:woocommerce` or `site-kind:commerce`; `target:wordpress` when the fetched issue is `commerce:none` or `site-kind:content`.
 - PR body sections, in order:
   1. **Generated Files** — list every committed file path.
   2. **Design Intent** — short notes on how the implementation realizes the design direction (palette, typography, layout, mood).

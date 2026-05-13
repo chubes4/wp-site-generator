@@ -48,9 +48,9 @@ Concurrency is the strategy. The system is designed to produce many credible sta
                            +---------+----------+
                                      |
                                      v
-                            PR with static-site
-                            branch: static/<slug>
-                            label: target:static-site
+                             PR with static source files
+                             branch: static/<slug>
+                             label: target:<wordpress|woocommerce>
                                      |
                                      v
                             Homeboy WordPress extension
@@ -98,7 +98,7 @@ The bridge between the idea agents and the build agent. Reads one open `status:i
 
 ### `static-site-agent`
 
-Reads one open `status:design-ready` issue (concept body + design-agent comment) and authors a **static HTML/CSS site PR**. Files live under `static-sites/<slug>/`. The exact set of files is the agent's call based on what the design needs; there is no required file list and no forbidden file list. If the concept needs structured data (e.g. `products.json` beside a storefront), the agent writes it and keeps it consistent with the visible HTML. PR opens with `target:static-site`. Validation happens in CI.
+Reads one open `status:design-ready` issue (concept body + design-agent comment) and authors a **static HTML/CSS site PR**. Files live under `static-sites/<slug>/`. The exact set of files is the agent's call based on what the design needs; there is no required file list and no forbidden file list. PRs open with `target:wordpress` for content concepts or `target:woocommerce` for commerce concepts. Validation happens in CI.
 
 PR title shape: `🧱 <Concept Name> — static site`. Branch: `static/<slug>`.
 
@@ -113,11 +113,12 @@ PR title shape: `🧱 <Concept Name> — static site`. Branch: `static/<slug>`.
 | `status:idea-ready` | An idea agent published a concept; design has not been picked yet. |
 | `status:design-ready` | The design agent attached a `design.json` comment; the build agent can pick it up. |
 | `status:built` | The static site agent's PR for this concept was merged. |
-| `status:abandoned` | The most recent `target:static-site` PR for this concept closed without merging. |
+| `status:abandoned` | The most recent target-lane PR for this concept closed without merging. |
 
 ### Target lane (per PR)
 
-- `target:static-site` — opened by the static site agent; triggers the SSI validation lane.
+- `target:wordpress` — content-shaped sites imported into WordPress.
+- `target:woocommerce` — commerce-shaped sites imported into WordPress with WooCommerce available.
 
 ### Site kind / commerce / industry (per issue, set by idea flows)
 
@@ -141,7 +142,7 @@ Static-site PRs trigger a Homeboy CI workflow that:
 
 This whole loop runs **without a hosted WordPress site**. PHP runs as WebAssembly in CI; the database is SQLite. The Playground preview link the reviewer clicks does the same import in their browser.
 
-The Static Site Importer auto-detects whether the input is a content site or a Woo store from the input data: a valid `products.json` next to the visible HTML is what flips the importer into commerce mode. The harness does not branch on a flag, and the build agent does not know about that detection.
+The PR target label identifies the validation lane. `target:wordpress` validates a content-shaped WordPress import; `target:woocommerce` validates with WooCommerce available for commerce-shaped sites. The build agent still emits static source files; CI owns the WordPress import context.
 
 The Homeboy WordPress extension capability that makes this possible (`playground_workloads`) is generic. SSI is just one consumer; any WordPress plugin can be exercised the same way in CI.
 
@@ -165,7 +166,7 @@ wp-site-generator/
   homeboy.json                       Homeboy config: WordPress extension + base playground_blueprint
   .github/
     workflows/
-      static-site-validation.yml     SSI import in Playground for target:static-site PRs
+      static-site-validation.yml     SSI import in Playground for target-lane PRs
       playground-stage-5.yml         Data Machine idea-agent proof in Playground CI
   bundles/
     store-idea-agent/                Data Machine bundle: commerce concept generation

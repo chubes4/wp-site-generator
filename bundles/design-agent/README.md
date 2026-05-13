@@ -20,7 +20,7 @@ website-idea-agent    ─┘
                        static-site-agent
                                 │
                                 ▼
-                  target:static-site PR
+                  target:<wordpress|woocommerce> PR
                   (closes the concept issue)
                                 │
                                 ▼
@@ -36,7 +36,7 @@ website-idea-agent    ─┘
 | `status:idea-ready` | An idea agent published a concept; design has not been picked yet. |
 | `status:design-ready` | The design agent attached a `design.json` comment to the concept; the build agent can pick it up. |
 | `status:built` | The static site agent opened a PR closing this concept. |
-| `status:abandoned` | The most recent `target:static-site` PR for this concept closed without merging. |
+| `status:abandoned` | The most recent target-lane PR for this concept closed without merging. |
 
 The design agent is the only agent that performs the `status:idea-ready` → `status:design-ready` transition.
 
