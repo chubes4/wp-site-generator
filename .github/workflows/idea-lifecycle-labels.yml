@@ -22,7 +22,7 @@ jobs:
       github.event_name == 'pull_request_target' &&
       (github.event.action == 'opened' || github.event.action == 'reopened' || github.event.action == 'labeled') &&
       github.event.pull_request.state == 'open' &&
-      (contains(github.event.pull_request.labels.*.name, 'target:wordpress') || contains(github.event.pull_request.labels.*.name, 'target:woocommerce'))
+      (contains(github.event.pull_request.labels.*.name, 'target:wordpress') || contains(github.event.pull_request.labels.*.name, 'target:woocommerce') || github.event.label.name == 'target:wordpress' || github.event.label.name == 'target:woocommerce')
     runs-on: ubuntu-latest
     steps:
       - name: Require cross-repo app credentials
@@ -99,7 +99,7 @@ jobs:
       github.event_name == 'pull_request_target' &&
       github.event.action == 'closed' &&
       github.event.pull_request.merged == false &&
-      (contains(github.event.pull_request.labels.*.name, 'target:wordpress') || contains(github.event.pull_request.labels.*.name, 'target:woocommerce'))
+      (contains(github.event.pull_request.labels.*.name, 'target:wordpress') || contains(github.event.pull_request.labels.*.name, 'target:woocommerce') || github.event.label.name == 'target:wordpress' || github.event.label.name == 'target:woocommerce')
     runs-on: ubuntu-latest
     steps:
       - name: Require cross-repo app credentials

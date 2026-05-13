@@ -25,7 +25,9 @@ jobs:
     name: Detect changed static sites
     if: |
       contains(github.event.pull_request.labels.*.name, 'target:wordpress') ||
-      contains(github.event.pull_request.labels.*.name, 'target:woocommerce')
+      contains(github.event.pull_request.labels.*.name, 'target:woocommerce') ||
+      (github.event.action == 'labeled' && github.event.label.name == 'target:wordpress') ||
+      (github.event.action == 'labeled' && github.event.label.name == 'target:woocommerce')
     runs-on: ubuntu-latest
     outputs:
       sites: ${{ steps.detect.outputs.sites }}
