@@ -9,6 +9,7 @@ const signalMetrics = [
 	['ssi_signal_total_count', 'total classified signals'],
 	['ssi_core_html_count', 'core/html blocks'],
 	['ssi_fallback_count', 'fallback blocks'],
+	['ssi_freeform_block_count', 'freeform blocks'],
 	['ssi_invalid_block_count', 'invalid blocks'],
 	['ssi_manifest_error_count', 'manifest errors'],
 	['ssi_product_candidate_rejected_count', 'rejected product candidates'],

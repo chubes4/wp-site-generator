@@ -12,6 +12,7 @@ return static function (): array {
 		'ssi_product_candidate_rejected_count' => 0,
 		'ssi_fallback_count' => 0,
 		'ssi_core_html_count' => 0,
+		'ssi_freeform_block_count' => 0,
 		'ssi_invalid_block_count' => 0,
 		'ssi_manifest_error_count' => 0,
 	);
@@ -276,6 +277,13 @@ return static function (): array {
 			static fn ( array $diagnostic ): bool => isset( $diagnostic['block_name'] ) && 'core/html' === strtolower( (string) $diagnostic['block_name'] )
 		);
 		$set_metric( 'ssi_core_html_count', 'core_html', '$.diagnostics[*].block_name', $core_html_count, null, 0 === count( $fallback_diagnostics ) );
+
+		$freeform_block_count = $get_path( $report, array( 'quality', 'freeform_block_count' ) );
+		if ( null === $freeform_block_count ) {
+			$documents = $get_path( $report, array( 'generated_theme', 'block_documents' ) );
+			$freeform_block_count = is_array( $documents ) ? $sum_named_counts( $documents, 'freeform_block_count' ) : 0;
+		}
+		$set_metric( 'ssi_freeform_block_count', 'freeform_block', '$.quality.freeform_block_count', $freeform_block_count );
 
 		$invalid_block_count = $get_path( $report, array( 'quality', 'invalid_block_count' ) );
 		if ( null === $invalid_block_count ) {

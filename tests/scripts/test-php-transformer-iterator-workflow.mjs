@@ -7,9 +7,11 @@ const workflow = await readFile(path.join(repoRoot, '.github/workflows/php-trans
 const iteratorFlow = await readFile(path.join(repoRoot, 'bundles/php-transformer-iterator-agent/flows/php-transformer-iterator-manual-flow.json'), 'utf8');
 
 assert.match(workflow, /actions_artifact_downloads:/, 'iterator downloads validation artifacts in the reusable runner');
-assert.match(workflow, /build-datamachine-iterator-workflow\.mjs \.ci\/finding-packets\/finding-packets\.json \.ci\/datamachine-iterator-workflow\.json/, 'iterator builds an execute-workflow payload from downloaded packets');
+assert.match(workflow, /group-ssi-finding-packets\.mjs \.ci\/finding-packets\/finding-packets\.json/, 'iterator groups downloaded packets before Data Machine fanout');
+assert.match(workflow, /build-datamachine-iterator-workflow\.mjs \.ci\/finding-packets\/grouped-finding-packets\.json \.ci\/datamachine-iterator-workflow\.json/, 'iterator builds an execute-workflow payload from grouped packets');
 assert.match(workflow, /execute_workflow_path: \.ci\/datamachine-iterator-workflow\.json/, 'iterator executes the generated workflow payload');
 assert.doesNotMatch(workflow, /actions_artifact_items/, 'iterator no longer fetches artifact ZIPs inside WordPress runtime');
+assert.doesNotMatch(workflow, /exactly one finding packet per Data Machine child job/, 'iterator prompt must not describe raw per-packet fanout');
 assert.match(iteratorFlow, /fallback issues as durable per source finding/, 'iterator treats fallback issues as durable across reruns');
 assert.match(iteratorFlow, /new validation_run_id or newly worded title is not enough/, 'iterator does not create duplicate issues for new validation runs');
 
