@@ -1,0 +1,881 @@
+:root {
+  --porcelain: #F7F1E8;
+  --warm-stone: #D8CDBF;
+  --bone: #FFF9F0;
+  --lacquer-black: #1E1A17;
+  --iron-clay: #8F4E3A;
+  --tea-brown: #6C5544;
+  --soft-sage: #9AA58B;
+  --mended-gold: #C79A3B;
+  --powder-mica: #E7D4A5;
+  --warning-oxide: #B45A3C;
+  --line: rgba(30, 26, 23, 0.15);
+  --shadow: 0 24px 70px rgba(30, 26, 23, 0.12);
+  --serif: Georgia, "Times New Roman", serif;
+  --sans: Optima, Candara, "Segoe UI", Tahoma, sans-serif;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  margin: 0;
+  color: var(--lacquer-black);
+  background:
+    radial-gradient(circle at top left, rgba(231, 212, 165, 0.42), transparent 30rem),
+    linear-gradient(180deg, var(--bone), var(--porcelain) 34rem, #efe4d7);
+  font-family: var(--sans);
+  line-height: 1.6;
+}
+
+body::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  opacity: 0.28;
+  background-image:
+    linear-gradient(rgba(30, 26, 23, 0.035) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(30, 26, 23, 0.025) 1px, transparent 1px);
+  background-size: 42px 42px;
+}
+
+a {
+  color: inherit;
+  text-decoration: none;
+}
+
+img, svg {
+  max-width: 100%;
+}
+
+.skip-link {
+  position: absolute;
+  left: 1rem;
+  top: -4rem;
+  z-index: 20;
+  padding: 0.75rem 1rem;
+  background: var(--lacquer-black);
+  color: var(--bone);
+  border-radius: 999px;
+}
+
+.skip-link:focus {
+  top: 1rem;
+}
+
+.site-header {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  backdrop-filter: blur(18px);
+  background: rgba(247, 241, 232, 0.86);
+  border-bottom: 1px solid var(--line);
+}
+
+.notice-bar {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.55rem;
+  padding: 0.52rem 1rem;
+  color: var(--bone);
+  background: var(--lacquer-black);
+  font-size: 0.78rem;
+  letter-spacing: 0.04em;
+}
+
+.status-dot {
+  width: 0.56rem;
+  height: 0.56rem;
+  border-radius: 999px;
+  background: var(--mended-gold);
+  box-shadow: 0 0 0 4px rgba(199, 154, 59, 0.22);
+}
+
+.nav-shell,
+.hero,
+.repair-paths,
+.collection,
+.materials,
+.guide-panel,
+.site-footer {
+  width: min(1180px, calc(100% - 2rem));
+  margin-inline: auto;
+}
+
+.nav-shell {
+  min-height: 78px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.brand {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.72rem;
+}
+
+.brand-mark {
+  display: grid;
+  place-items: center;
+  width: 2.75rem;
+  height: 2.75rem;
+  border: 1px solid rgba(30, 26, 23, 0.32);
+  border-radius: 50%;
+  background:
+    linear-gradient(130deg, transparent 47%, var(--mended-gold) 49%, var(--mended-gold) 52%, transparent 54%),
+    var(--bone);
+  font-family: var(--serif);
+  font-size: 0.88rem;
+  font-weight: 700;
+}
+
+.brand strong,
+.brand small {
+  display: block;
+}
+
+.brand strong {
+  font-family: var(--serif);
+  font-size: 1.18rem;
+  line-height: 1.1;
+}
+
+.brand small {
+  color: var(--tea-brown);
+  font-size: 0.72rem;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+}
+
+.nav-links {
+  display: flex;
+  align-items: center;
+  gap: 1.3rem;
+  color: var(--tea-brown);
+  font-size: 0.92rem;
+}
+
+.nav-links a,
+.footer-links a {
+  border-bottom: 1px solid transparent;
+}
+
+.nav-links a:hover,
+.footer-links a:hover {
+  border-bottom-color: var(--mended-gold);
+}
+
+.nav-cta,
+.button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 2.75rem;
+  padding: 0.75rem 1.08rem;
+  border: 1px solid var(--lacquer-black);
+  border-radius: 999px;
+  font-size: 0.86rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+}
+
+.nav-cta,
+.button.primary {
+  color: var(--bone);
+  background: var(--lacquer-black);
+  box-shadow: inset 0 -3px 0 rgba(199, 154, 59, 0.28);
+}
+
+.button.secondary {
+  color: var(--lacquer-black);
+  background: rgba(255, 249, 240, 0.72);
+}
+
+.hero {
+  display: grid;
+  grid-template-columns: minmax(0, 1.02fr) minmax(340px, 0.88fr);
+  gap: clamp(2rem, 6vw, 5rem);
+  align-items: center;
+  padding: clamp(4rem, 8vw, 7.5rem) 0 4rem;
+}
+
+.eyebrow,
+.utility-label {
+  margin: 0 0 0.75rem;
+  color: var(--iron-clay);
+  font-size: 0.76rem;
+  font-weight: 800;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+}
+
+h1,
+h2,
+h3,
+p {
+  margin-top: 0;
+}
+
+h1,
+h2,
+h3 {
+  font-family: var(--serif);
+  font-weight: 500;
+  line-height: 1.05;
+}
+
+h1 {
+  max-width: 12ch;
+  margin-bottom: 1.3rem;
+  font-size: clamp(3.35rem, 8.3vw, 7.2rem);
+  letter-spacing: -0.07em;
+}
+
+h2 {
+  font-size: clamp(2rem, 4.2vw, 4rem);
+  letter-spacing: -0.045em;
+}
+
+h3 {
+  font-size: 1.45rem;
+  letter-spacing: -0.025em;
+}
+
+.hero-text {
+  max-width: 38rem;
+  color: var(--tea-brown);
+  font-size: 1.12rem;
+}
+
+.hero-actions,
+.cta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.85rem;
+  margin-top: 1.65rem;
+}
+
+.quick-specs {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 0;
+  max-width: 44rem;
+  margin: 2.1rem 0 0;
+  border-top: 1px solid var(--line);
+  border-bottom: 1px solid var(--line);
+}
+
+.quick-specs div {
+  padding: 1rem 1rem 1rem 0;
+  border-right: 1px solid var(--line);
+}
+
+.quick-specs div:last-child {
+  border-right: 0;
+  padding-left: 1rem;
+}
+
+.quick-specs dt {
+  color: var(--lacquer-black);
+  font-variant-numeric: tabular-nums;
+  font-weight: 800;
+}
+
+.quick-specs dd {
+  margin: 0;
+  color: var(--tea-brown);
+  font-size: 0.86rem;
+}
+
+.hero-workbench {
+  position: relative;
+  min-height: 570px;
+}
+
+.bench-card,
+.product-image,
+.material-card,
+.path-card,
+.comparison-card {
+  border: 1px solid var(--line);
+  background: rgba(255, 249, 240, 0.74);
+  box-shadow: var(--shadow);
+}
+
+.bench-card-large {
+  position: relative;
+  height: 430px;
+  padding: 1rem;
+  overflow: hidden;
+  border-radius: 2rem;
+  background:
+    radial-gradient(circle at 20% 20%, rgba(255, 249, 240, 0.94), transparent 18rem),
+    linear-gradient(135deg, var(--warm-stone), var(--porcelain));
+}
+
+.image-label {
+  position: absolute;
+  left: 1rem;
+  top: 1rem;
+  z-index: 2;
+  padding: 0.42rem 0.65rem;
+  border: 1px solid rgba(30, 26, 23, 0.18);
+  border-radius: 999px;
+  background: rgba(255, 249, 240, 0.76);
+  color: var(--tea-brown);
+  font-size: 0.72rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.ceramic-plate {
+  position: absolute;
+  right: -2rem;
+  bottom: -2rem;
+  width: min(88%, 420px);
+  aspect-ratio: 1;
+  border: 22px solid var(--bone);
+  border-radius: 50%;
+  background:
+    radial-gradient(circle, rgba(255, 249, 240, 0.95) 0 36%, rgba(216, 205, 191, 0.64) 37% 39%, rgba(255, 249, 240, 0.88) 40% 100%);
+  box-shadow: inset 0 18px 50px rgba(30, 26, 23, 0.08), 0 18px 45px rgba(30, 26, 23, 0.13);
+}
+
+.chip-one {
+  position: absolute;
+  left: 18%;
+  top: 2%;
+  width: 4.2rem;
+  height: 2.2rem;
+  border-radius: 10% 90% 70% 40%;
+  background: var(--warm-stone);
+  transform: rotate(-16deg);
+}
+
+.gold-seam {
+  position: absolute;
+  width: 0.2rem;
+  border-radius: 999px;
+  background: var(--mended-gold);
+  box-shadow: 0 0 0 2px rgba(199, 154, 59, 0.14);
+}
+
+.seam-one {
+  left: 33%;
+  top: 13%;
+  height: 12rem;
+  transform: rotate(-28deg);
+}
+
+.seam-two {
+  left: 45%;
+  top: 34%;
+  height: 7rem;
+  transform: rotate(47deg);
+}
+
+.bench-grid {
+  position: absolute;
+  left: -0.4rem;
+  bottom: 0.75rem;
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 0.72rem;
+  width: min(92%, 430px);
+}
+
+.tool {
+  min-height: 120px;
+  display: flex;
+  align-items: flex-end;
+  padding: 0.8rem;
+  border: 1px solid var(--line);
+  border-radius: 1.25rem;
+  color: var(--lacquer-black);
+  background: var(--bone);
+  box-shadow: 0 18px 50px rgba(30, 26, 23, 0.1);
+  font-size: 0.72rem;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.tile-powder {
+  background: radial-gradient(circle at 56% 38%, var(--powder-mica) 0 1.8rem, transparent 1.9rem), var(--bone);
+}
+
+.tile-clamp {
+  background: linear-gradient(90deg, transparent 42%, var(--lacquer-black) 43% 48%, transparent 49%), var(--warm-stone);
+}
+
+.tile-tag {
+  background: linear-gradient(135deg, transparent 63%, rgba(180, 90, 60, 0.18) 64%), var(--bone);
+}
+
+.section-heading {
+  max-width: 820px;
+  margin-bottom: 1.65rem;
+}
+
+.section-heading p {
+  color: var(--tea-brown);
+}
+
+.section-heading.split {
+  max-width: none;
+  display: grid;
+  grid-template-columns: 1fr minmax(260px, 0.48fr);
+  gap: 2rem;
+  align-items: end;
+}
+
+.repair-paths,
+.collection,
+.materials,
+.guide-panel {
+  padding: 4.8rem 0;
+}
+
+.path-grid,
+.product-grid,
+.material-board,
+.comparison-cards {
+  display: grid;
+  gap: 1rem;
+}
+
+.path-grid {
+  grid-template-columns: repeat(3, 1fr);
+}
+
+.path-card {
+  position: relative;
+  min-height: 245px;
+  padding: 1.35rem;
+  border-radius: 1.35rem;
+  overflow: hidden;
+}
+
+.path-card::after,
+.product-card::before,
+.guide-panel::before {
+  content: "";
+  position: absolute;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, var(--mended-gold), transparent);
+  opacity: 0.72;
+}
+
+.path-card::after {
+  left: 1.35rem;
+  right: 1.35rem;
+  bottom: 4.1rem;
+}
+
+.path-icon {
+  display: grid;
+  place-items: center;
+  width: 3rem;
+  height: 3rem;
+  margin-bottom: 1.15rem;
+  border-radius: 50%;
+  color: var(--lacquer-black);
+  background: var(--porcelain);
+  border: 1px solid var(--line);
+  font-size: 1.25rem;
+}
+
+.path-card p,
+.product-card p,
+.material-card p,
+.comparison-card p {
+  color: var(--tea-brown);
+}
+
+.tag,
+.caution {
+  display: inline-flex;
+  align-items: center;
+  width: fit-content;
+  gap: 0.35rem;
+  padding: 0.38rem 0.58rem;
+  border-radius: 999px;
+  font-size: 0.7rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.tag::before,
+.caution::before {
+  content: "";
+  width: 0.48rem;
+  height: 0.48rem;
+  border-radius: 999px;
+  background: currentColor;
+}
+
+.tag.sage,
+.status-safe {
+  color: #526044;
+  background: rgba(154, 165, 139, 0.22);
+}
+
+.tag.gold,
+.status-display {
+  color: #7f5e1d;
+  background: rgba(199, 154, 59, 0.18);
+}
+
+.tag.clay,
+.status-practice {
+  color: var(--iron-clay);
+  background: rgba(143, 78, 58, 0.13);
+}
+
+.tag.warning,
+.status-warning {
+  color: var(--warning-oxide);
+  background: rgba(180, 90, 60, 0.14);
+}
+
+.product-grid {
+  grid-template-columns: repeat(4, 1fr);
+}
+
+.product-card {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  border: 1px solid var(--line);
+  border-radius: 1.45rem;
+  background: rgba(255, 249, 240, 0.82);
+  box-shadow: 0 18px 56px rgba(30, 26, 23, 0.08);
+}
+
+.product-card::before {
+  left: 1rem;
+  right: 1rem;
+  top: 232px;
+}
+
+.product-image {
+  min-height: 225px;
+  display: flex;
+  align-items: flex-end;
+  padding: 0.88rem;
+  border: 0;
+  border-radius: 0;
+  box-shadow: none;
+  color: var(--lacquer-black);
+  font-size: 0.72rem;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.repair-rim {
+  background:
+    radial-gradient(circle at 58% 42%, var(--bone) 0 3.3rem, transparent 3.4rem),
+    radial-gradient(circle at 69% 35%, var(--warm-stone) 0 0.95rem, transparent 1rem),
+    linear-gradient(135deg, var(--porcelain), var(--warm-stone));
+}
+
+.visible-mend {
+  background:
+    linear-gradient(118deg, transparent 48%, var(--mended-gold) 49% 51%, transparent 52%),
+    radial-gradient(circle at 42% 52%, var(--bone) 0 4.6rem, transparent 4.7rem),
+    linear-gradient(135deg, #e9dccc, var(--porcelain));
+}
+
+.handle-clamp {
+  background:
+    linear-gradient(90deg, transparent 35%, var(--lacquer-black) 36% 40%, transparent 41% 59%, var(--lacquer-black) 60% 64%, transparent 65%),
+    radial-gradient(circle at 50% 48%, var(--bone) 0 3rem, transparent 3.1rem),
+    var(--warm-stone);
+}
+
+.test-tiles {
+  background:
+    linear-gradient(90deg, rgba(255, 249, 240, 0.85) 0 23%, transparent 23% 26%, rgba(255, 249, 240, 0.85) 26% 49%, transparent 49% 52%, rgba(255, 249, 240, 0.85) 52% 75%, transparent 75% 78%, rgba(255, 249, 240, 0.85) 78% 100%),
+    linear-gradient(135deg, var(--warm-stone), var(--powder-mica));
+}
+
+.product-body {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  padding: 1.2rem;
+}
+
+.spec-list {
+  display: grid;
+  gap: 0.5rem;
+  margin: 0.35rem 0 1.2rem;
+  padding: 0;
+  list-style: none;
+  color: var(--tea-brown);
+  font-size: 0.86rem;
+}
+
+.spec-list li {
+  padding-top: 0.5rem;
+  border-top: 1px solid rgba(30, 26, 23, 0.1);
+}
+
+.card-foot {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-top: auto;
+}
+
+.price {
+  font-variant-numeric: tabular-nums;
+  color: var(--lacquer-black);
+  font-size: 1.28rem;
+  font-weight: 900;
+}
+
+.material-board {
+  grid-template-columns: repeat(4, 1fr);
+}
+
+.material-card {
+  min-height: 260px;
+  padding: 1.2rem;
+  border-radius: 1.3rem;
+}
+
+.material-swatch {
+  display: block;
+  width: 100%;
+  height: 105px;
+  margin-bottom: 1.2rem;
+  border: 1px solid var(--line);
+  border-radius: 1rem;
+}
+
+.material-swatch.adhesive {
+  background: linear-gradient(110deg, rgba(255,255,255,0.4), rgba(216,205,191,0.5)), var(--bone);
+}
+
+.material-swatch.filler {
+  background: linear-gradient(90deg, var(--bone), var(--porcelain), var(--warm-stone), var(--tea-brown));
+}
+
+.material-swatch.metallic {
+  background: radial-gradient(circle at 55% 45%, var(--mended-gold) 0 2.5rem, transparent 2.6rem), var(--powder-mica);
+}
+
+.material-swatch.tools {
+  background: repeating-linear-gradient(90deg, transparent 0 1.2rem, rgba(30,26,23,0.14) 1.25rem 1.35rem), var(--warm-stone);
+}
+
+.material-card small {
+  color: var(--iron-clay);
+  font-variant-numeric: tabular-nums;
+}
+
+.guide-panel {
+  position: relative;
+  display: grid;
+  grid-template-columns: minmax(0, 0.9fr) minmax(300px, 0.78fr);
+  gap: clamp(1.5rem, 4vw, 3.5rem);
+  margin-bottom: 4rem;
+  padding: clamp(1.5rem, 4vw, 3rem);
+  border: 1px solid var(--line);
+  border-radius: 2rem;
+  background:
+    linear-gradient(120deg, rgba(255, 249, 240, 0.84), rgba(216, 205, 191, 0.48)),
+    var(--porcelain);
+  box-shadow: var(--shadow);
+}
+
+.guide-panel::before {
+  left: 3rem;
+  right: 3rem;
+  top: 2.4rem;
+}
+
+.guide-copy p {
+  color: var(--tea-brown);
+}
+
+.comparison-cards {
+  grid-template-columns: 1fr;
+}
+
+.comparison-card {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 0 1rem;
+  align-items: start;
+  padding: 1rem;
+  border-radius: 1.1rem;
+  box-shadow: none;
+}
+
+.comparison-card h3,
+.comparison-card p {
+  grid-column: 2;
+}
+
+.status-marker {
+  grid-row: span 2;
+  width: 1.05rem;
+  height: 1.05rem;
+  margin-top: 0.2rem;
+  border-radius: 50%;
+  box-shadow: 0 0 0 6px rgba(30, 26, 23, 0.06);
+}
+
+.status-marker.display {
+  background: var(--mended-gold);
+}
+
+.status-marker.practice {
+  background: var(--soft-sage);
+}
+
+.status-marker.caution {
+  background: var(--warning-oxide);
+}
+
+.site-footer {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 2rem;
+  align-items: end;
+  padding: 2.4rem 0 3.2rem;
+  border-top: 1px solid var(--line);
+  color: var(--tea-brown);
+}
+
+.footer-brand {
+  margin-bottom: 1rem;
+  color: var(--lacquer-black);
+}
+
+.site-footer p {
+  max-width: 34rem;
+  margin: 0;
+}
+
+.footer-links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+  font-size: 0.92rem;
+}
+
+@media (max-width: 1020px) {
+  .nav-links {
+    display: none;
+  }
+
+  .hero,
+  .section-heading.split,
+  .guide-panel,
+  .site-footer {
+    grid-template-columns: 1fr;
+  }
+
+  .hero-workbench {
+    min-height: 510px;
+  }
+
+  .path-grid,
+  .product-grid,
+  .material-board {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 680px) {
+  .notice-bar {
+    align-items: flex-start;
+    justify-content: flex-start;
+    text-align: left;
+  }
+
+  .nav-shell {
+    min-height: 68px;
+  }
+
+  .nav-cta {
+    display: none;
+  }
+
+  .hero {
+    padding-top: 3rem;
+  }
+
+  h1 {
+    font-size: clamp(3rem, 17vw, 4.6rem);
+  }
+
+  .quick-specs,
+  .path-grid,
+  .product-grid,
+  .material-board {
+    grid-template-columns: 1fr;
+  }
+
+  .quick-specs div,
+  .quick-specs div:last-child {
+    padding: 0.9rem 0;
+    border-right: 0;
+    border-bottom: 1px solid var(--line);
+  }
+
+  .quick-specs div:last-child {
+    border-bottom: 0;
+  }
+
+  .hero-workbench {
+    min-height: 420px;
+  }
+
+  .bench-card-large {
+    height: 330px;
+  }
+
+  .bench-grid {
+    position: relative;
+    left: auto;
+    bottom: auto;
+    width: 100%;
+    margin-top: 0.75rem;
+  }
+
+  .tool {
+    min-height: 92px;
+  }
+
+  .repair-paths,
+  .collection,
+  .materials,
+  .guide-panel {
+    padding-block: 3rem;
+  }
+
+  .guide-panel {
+    padding-inline: 1rem;
+  }
+
+  .site-footer {
+    align-items: start;
+  }
+}
