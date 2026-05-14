@@ -106,6 +106,10 @@
                 {
                     "added_at": "2026-05-12T19:20:00+00:00",
                     "prompt": "Keep transformer fixes bounded by the fetched packet evidence. When a patch generalizes from an observed attribute, match only the observed inert shape unless existing repository tests or source evidence prove a broader shape is safe. Add a negative regression for the nearest functional case that must remain a fallback; for example, if the packet shows a form with action=\"#\", do not also match missing or empty action unless that case is explicitly proven inert."
+                },
+                {
+                    "added_at": "2026-05-14T00:00:00+00:00",
+                    "prompt": "For visual parity packets, inspect the packet's visual_artifact context before deciding whether to open a PR or fallback issue. The context includes downloaded artifact paths plus a bounded visual-diff summary with screenshot dimensions, mismatch regions, and source/imported selector probes. Use that evidence to identify the root owner when it is specific enough; otherwise open or reuse a fallback issue that quotes the artifact paths and top-region evidence."
                 }
             ],
             "queue_mode": "static",

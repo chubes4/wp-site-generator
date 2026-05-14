@@ -205,6 +205,16 @@ jobs:
           npm install --no-save --prefix "$PWD" playwright @wp-playground/cli@latest pixelmatch pngjs ./.homeboy-extensions/wordpress
           ./node_modules/.bin/playwright install --with-deps chromium
 
+      - name: Prepare visual parity artifact directory
+        if: always()
+        shell: bash
+        env:
+          SITE: ${{ matrix.site }}
+        run: |
+          set -euo pipefail
+          mkdir -p "visual-parity-artifacts/$SITE"
+          jq -nc --arg site "$SITE" '{ site: $site, visualDiff: null, artifacts: [] }' > "visual-parity-artifacts/$SITE/summary.json"
+
       - name: Capture visual parity screenshots
         id: visual
         if: always()
@@ -421,6 +431,7 @@ jobs:
           SOURCE_HEAD_SHA: ${{ github.event.pull_request.head.sha }}
           VALIDATION_RUN_ID: ${{ github.run_id }}
           ARTIFACT_NAME: ssi-validation-${{ matrix.site }}
+          VISUAL_ARTIFACT_NAME: visual-parity-${{ matrix.site }}
         run: |
           set -euo pipefail
           gh workflow run php-transformer-iterator.yml \
@@ -431,6 +442,7 @@ jobs:
             -f source_head_sha="$SOURCE_HEAD_SHA" \
             -f validation_run_id="$VALIDATION_RUN_ID" \
             -f artifact_name="$ARTIFACT_NAME" \
+            -f visual_artifact_name="$VISUAL_ARTIFACT_NAME" \
             -f openai_model="gpt-5.5" \
             -f data_machine_ref="main" \
             -f data_machine_code_ref="main"
