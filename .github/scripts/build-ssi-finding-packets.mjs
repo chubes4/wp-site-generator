@@ -62,9 +62,13 @@ async function buildPackets() {
 		packets.push(packetFromMissingSummary(benchFailure, benchReadError));
 	} else {
 		const fallbacks = asArray(summary.fallback_diagnostics);
+		const freeforms = asArray(summary.freeform_diagnostics);
 		const findings = asArray(summary.findings);
 		for (const diagnostic of fallbacks) {
 			packets.push(packetFromFallbackDiagnostic(diagnostic));
+		}
+		for (const diagnostic of freeforms) {
+			packets.push(packetFromFreeformDiagnostic(diagnostic));
 		}
 		for (const finding of findings) {
 			packets.push(packetFromFinding(finding));
@@ -73,7 +77,7 @@ async function buildPackets() {
 		// info packet so the grouped payload always carries at least one
 		// candidate-routed entry. The PHP transformer iterator depends on a
 		// non-empty group set to do useful work.
-		if (fallbacks.length === 0 && findings.length === 0) {
+		if (fallbacks.length === 0 && freeforms.length === 0 && findings.length === 0) {
 			packets.push(packetFromCleanImport(summary));
 		}
 	}
@@ -176,19 +180,46 @@ function packetFromFallbackDiagnostic(diagnostic) {
 	};
 }
 
-function packetFromFinding(finding) {
+function packetFromFreeformDiagnostic(diagnostic) {
 	return {
 		...packetBase(),
-		kind: text(finding?.kind),
+		kind: 'freeform_block',
+		path: text(diagnostic?.path),
+		preview: text(diagnostic?.emitted_block_preview) || text(diagnostic?.source_html_preview),
+		selector: text(diagnostic?.selector),
+		excerpt: text(diagnostic?.excerpt),
+		source_html_preview: text(diagnostic?.source_html_preview),
+		emitted_block_preview: text(diagnostic?.emitted_block_preview),
+		block_name: text(diagnostic?.block_name) || 'core/freeform',
+		block_path: text(diagnostic?.block_path),
+		converter: text(diagnostic?.converter),
+		stage: text(diagnostic?.stage),
+		reason: text(diagnostic?.reason),
+		malformed: Boolean(diagnostic?.malformed),
+		repair_mode: 'pr_or_issue',
+	};
+}
+
+function packetFromFinding(finding) {
+	const kind = text(finding?.kind);
+	const sourceHtml = text(finding?.source_html_preview);
+	const emittedBlock = text(finding?.emitted_block_preview);
+	const isAggregateFreeform = kind.toLowerCase() === 'freeform_block' && !sourceHtml && !emittedBlock;
+
+	return {
+		...packetBase(),
+		kind,
 		path: text(finding?.path),
 		preview: text(finding?.preview),
 		selector: text(finding?.selector),
 		excerpt: text(finding?.excerpt),
-		source_html_preview: text(finding?.source_html_preview),
+		source_html_preview: sourceHtml,
+		emitted_block_preview: emittedBlock,
 		block_name: text(finding?.block_name),
 		converter: text(finding?.converter),
 		stage: text(finding?.stage),
 		reason: text(finding?.reason),
+		repair_mode: isAggregateFreeform ? 'issue_only' : text(finding?.repair_mode),
 	};
 }
 
@@ -381,10 +412,12 @@ function dedupePackets(packets) {
 			packet.selector,
 			packet.excerpt,
 			packet.source_html_preview,
+			packet.emitted_block_preview,
 			packet.block_name,
 			packet.converter,
 			packet.stage,
 			packet.reason,
+			packet.repair_mode,
 		]);
 
 		if (seen.has(key)) {

@@ -110,6 +110,10 @@
                 {
                     "added_at": "2026-05-14T00:00:00+00:00",
                     "prompt": "For visual parity packets, inspect the packet's visual_artifact context before deciding whether to open a PR or fallback issue. The context includes downloaded artifact paths plus a bounded visual-diff summary with screenshot dimensions, mismatch regions, and source/imported selector probes. Use that evidence to identify the root owner when it is specific enough; otherwise open or reuse a fallback issue that quotes the artifact paths and top-region evidence."
+                },
+                {
+                    "added_at": "2026-05-14T00:00:00+00:00",
+                    "prompt": "If the fetched finding packet or finding group has repair_mode=issue_only, do not create a worktree, commit, or pull request. Treat the packet as aggregate evidence that needs human narrowing: open or reuse a focused upstream issue with the packet fields, artifact names, source PR, and validation run, then comment back to the source PR."
                 }
             ],
             "queue_mode": "static",

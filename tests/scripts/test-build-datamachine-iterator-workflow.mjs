@@ -87,7 +87,7 @@ assert.equal(emitStep.flow_step_settings.task, 'emit_data_packets', 'first step 
 assert.equal(emitStep.flow_step_settings.params.replace_data_packets, true, 'emit step replaces stale upstream packets');
 assert.equal(emitStep.flow_step_settings.params.suppress_result_packet, true, 'emit step suppresses synthetic task result');
 assert.equal(emitStep.flow_step_settings.params.complete_no_items, true, 'empty findings stop as completed_no_items');
-assert.equal(emitStep.flow_step_settings.params.packets.length, 4, 'fixture emits grouped findings for fanout');
+assert.equal(emitStep.flow_step_settings.params.packets.length, 6, 'fixture emits grouped findings for fanout');
 assert.equal(emitStep.flow_step_settings.params.packets[0].type, 'ssi_finding_group', 'grouped packets use ssi_finding_group type');
 assert.ok(emitStep.flow_step_settings.params.packets[0].metadata._engine_data.finding_packet, 'group seeds representative finding_packet into child engine data');
 assert.ok(emitStep.flow_step_settings.params.packets[0].metadata._engine_data.finding_group, 'group seeds full finding_group into child engine data');
@@ -106,6 +106,10 @@ assert.match(visualPacket.data.body, /Visual parity artifact context:/, 'visual 
 assert.match(visualPacket.data.body, /source screenshot:/, 'visual packet body includes screenshot paths');
 assert.match(visualPacket.data.body, /region 1: x=0, y=640, w=1280, h=320/, 'visual packet body includes top visual region');
 assert.deepEqual(visualPacket.metadata._engine_data.visual_artifact, visualPacket.data.visual_artifact, 'visual artifact context is mirrored into engine data');
+
+const issueOnlyPacket = emitStep.flow_step_settings.params.packets.find((packet) => packet.metadata.kind === 'freeform_block' && packet.data.finding_packet.repair_mode === 'issue_only');
+assert.ok(issueOnlyPacket, 'aggregate freeform packet remains available for issue fallback');
+assert.match(issueOnlyPacket.data.body, /Repair mode: issue_only/, 'issue-only packet body blocks speculative PRs');
 
 assert.equal(aiStep.type, 'ai', 'second step is iterator AI');
 assert.ok(aiStep.system_prompt.includes('PHP Transformer Iterator Agent'), 'iterator system prompt is preserved');
