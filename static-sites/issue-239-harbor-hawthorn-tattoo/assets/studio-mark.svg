@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120" role="img" aria-labelledby="title desc">
+  <title id="title">Harbor and Hawthorn Tattoo mark</title>
+  <desc id="desc">A circular local studio mark with harbor waves, hawthorn leaves, and a fine tattoo needle shape.</desc>
+  <rect width="120" height="120" rx="60" fill="#0D0C0B"/>
+  <circle cx="60" cy="60" r="48" fill="#F4EFE6" stroke="#B08A45" stroke-width="4"/>
+  <path d="M22 76c10-8 20-8 30 0s20 8 30 0 20-8 30 0" fill="none" stroke="#2F5360" stroke-width="5" stroke-linecap="round"/>
+  <path d="M31 87c8-5 16-5 24 0s16 5 24 0 16-5 24 0" fill="none" stroke="#2F5360" stroke-width="3" stroke-linecap="round" opacity=".75"/>
+  <path d="M59 25l5 47" stroke="#1E1B18" stroke-width="4" stroke-linecap="round"/>
+  <path d="M64 72l-7 15-4-16" fill="#1E1B18"/>
+  <path d="M54 37c-11-5-18-2-24 8 11 4 19 1 24-8z" fill="#4E5F45"/>
+  <path d="M69 35c10-7 18-5 26 3-9 7-18 6-26-3z" fill="#4E5F45"/>
+  <circle cx="60" cy="24" r="4" fill="#A45E4D"/>
+</svg>
