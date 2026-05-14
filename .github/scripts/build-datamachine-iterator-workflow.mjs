@@ -80,6 +80,9 @@ function toDataMachinePacket(item, index) {
 	let body = isGroup
 		? `Grouped SSI finding with ${item.count || item.packets.length} packet(s). ${text(item.reason) || text(packet.reason) || text(packet.preview)}`
 		: text(packet.reason) || text(packet.preview) || 'Static Site Importer validation finding.';
+	if (text(packet.repair_mode) === 'issue_only' || text(item.repair_mode) === 'issue_only') {
+		body = `${body}\n\nRepair mode: issue_only. This packet is aggregate evidence only; open or reuse a focused upstream issue instead of creating a repair PR.`;
+	}
 	const visualArtifact = visualArtifactForPacket(packet);
 	if (visualArtifact) {
 		body = `${body}\n\n${formatVisualArtifactContext(visualArtifact)}`;

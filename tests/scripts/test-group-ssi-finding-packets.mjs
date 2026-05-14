@@ -22,10 +22,10 @@ assert.equal(result.status, 0, result.stderr || result.stdout);
 
 const grouped = JSON.parse(await readFile(outputPath, 'utf8'));
 assert.equal(grouped.schema_version, 2);
-assert.equal(grouped.packet_count, 8);
-assert.equal(grouped.actionable_packet_count, 6);
-assert.equal(grouped.deduped_packet_count, 5);
-assert.equal(grouped.group_count, 4);
+assert.equal(grouped.packet_count, 10);
+assert.equal(grouped.actionable_packet_count, 8);
+assert.equal(grouped.deduped_packet_count, 7);
+assert.equal(grouped.group_count, 6);
 assert.deepEqual(grouped.candidate_repos.sort(), [
 	'chubes4/html-to-blocks-converter',
 	'chubes4/static-site-importer',
@@ -35,8 +35,18 @@ const h2bcGroup = grouped.groups.find((group) => group.candidate_repo === 'chube
 assert.equal(h2bcGroup.kind, 'core_html');
 assert.equal(h2bcGroup.count, 2);
 
-const ssiGroup = grouped.groups.find((group) => group.candidate_repo === 'chubes4/static-site-importer');
+const freeformH2bcGroup = grouped.groups.find((group) => group.candidate_repo === 'chubes4/html-to-blocks-converter' && group.kind === 'freeform_block');
+assert.ok(freeformH2bcGroup, 'Concrete freeform diagnostics route to h2bc');
+assert.equal(freeformH2bcGroup.repair_mode, 'pr_or_issue');
+assert.equal(freeformH2bcGroup.packets[0].block_path, '1');
+assert.match(freeformH2bcGroup.packets[0].emitted_block_preview, /wp:freeform/);
+
+const ssiGroup = grouped.groups.find((group) => group.candidate_repo === 'chubes4/static-site-importer' && group.kind === 'fallback');
 assert.equal(ssiGroup.count, 1);
+
+const aggregateFreeformGroup = grouped.groups.find((group) => group.candidate_repo === 'chubes4/static-site-importer' && group.kind === 'freeform_block');
+assert.ok(aggregateFreeformGroup, 'Aggregate freeform packets remain grouped for issue fallback');
+assert.equal(aggregateFreeformGroup.repair_mode, 'issue_only');
 
 const sourceRegionGroup = grouped.groups.find((group) => group.kind === 'source_region');
 assert.equal(sourceRegionGroup.candidate_repo, 'chubes4/static-site-importer');

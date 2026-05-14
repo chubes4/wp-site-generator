@@ -18,8 +18,10 @@ return static function (): array {
 	);
 	$findings = array();
 	$fallback_diagnostics = array();
+	$freeform_diagnostics = array();
 	$seen_findings = array();
 	$seen_fallback_diagnostics = array();
+	$seen_freeform_diagnostics = array();
 
 	if ( ! is_readable( $report_path ) ) {
 		return array(
@@ -29,6 +31,7 @@ return static function (): array {
 					'path' => $report_path,
 					'readable' => false,
 					'fallback_diagnostics' => array(),
+					'freeform_diagnostics' => array(),
 					'findings' => array(),
 				),
 			),
@@ -82,7 +85,7 @@ return static function (): array {
 		return '';
 	};
 
-	$record_fallback_diagnostic = static function ( array $diagnostic ) use ( &$fallback_diagnostics, &$seen_fallback_diagnostics, $preview_value, $first_scalar_path ): void {
+	$diagnostic_row = static function ( array $diagnostic ) use ( $preview_value, $first_scalar_path ): array {
 		$row = array(
 			'path' => $first_scalar_path(
 				$diagnostic,
@@ -104,14 +107,21 @@ return static function (): array {
 			'converter' => $first_scalar_path( $diagnostic, array( array( 'converter' ) ) ),
 			'stage' => $first_scalar_path( $diagnostic, array( array( 'stage' ), array( 'type' ), array( 'code' ) ) ),
 			'reason' => $first_scalar_path( $diagnostic, array( array( 'reason' ), array( 'type' ), array( 'code' ), array( 'message' ) ) ),
+			'emitted_block_preview' => $first_scalar_path( $diagnostic, array( array( 'emitted_block_preview' ), array( 'emitted_block' ) ) ),
 		);
 
 		foreach ( $row as $field => $value ) {
-			$row[ $field ] = $preview_value( $value, in_array( $field, array( 'excerpt', 'source_html_preview', 'reason' ), true ) ? 220 : 160 );
+			$row[ $field ] = $preview_value( $value, in_array( $field, array( 'excerpt', 'source_html_preview', 'reason', 'emitted_block_preview' ), true ) ? 220 : 160 );
 		}
 		if ( '' === $row['converter'] ) {
 			$row['converter'] = 'static-site-importer';
 		}
+
+		return $row;
+	};
+
+	$record_fallback_diagnostic = static function ( array $diagnostic ) use ( &$fallback_diagnostics, &$seen_fallback_diagnostics, $diagnostic_row ): void {
+		$row = $diagnostic_row( $diagnostic );
 
 		$key = wp_json_encode( $row );
 		if ( isset( $seen_fallback_diagnostics[ $key ] ) ) {
@@ -120,6 +130,20 @@ return static function (): array {
 
 		$seen_fallback_diagnostics[ $key ] = true;
 		$fallback_diagnostics[] = $row;
+	};
+
+	$record_freeform_diagnostic = static function ( array $diagnostic ) use ( &$freeform_diagnostics, &$seen_freeform_diagnostics, $diagnostic_row, $preview_value, $first_scalar_path ): void {
+		$row = $diagnostic_row( $diagnostic );
+		$row['block_path'] = $preview_value( $first_scalar_path( $diagnostic, array( array( 'block_path' ) ) ), 120 );
+		$row['malformed'] = ! empty( $diagnostic['malformed'] );
+
+		$key = wp_json_encode( $row );
+		if ( isset( $seen_freeform_diagnostics[ $key ] ) ) {
+			return;
+		}
+
+		$seen_freeform_diagnostics[ $key ] = true;
+		$freeform_diagnostics[] = $row;
 	};
 
 	$get_path = static function ( array $value, array $keys ) {
@@ -229,6 +253,28 @@ return static function (): array {
 		}
 	};
 
+	$collect_freeform_diagnostics = static function ( array $report ) use ( $get_path, $record_freeform_diagnostic ): void {
+		$theme_freeform_blocks = $get_path( $report, array( 'generated_theme', 'freeform_blocks' ) );
+		if ( is_array( $theme_freeform_blocks ) ) {
+			foreach ( $theme_freeform_blocks as $diagnostic ) {
+				if ( is_array( $diagnostic ) ) {
+					$record_freeform_diagnostic( $diagnostic );
+				}
+			}
+		}
+
+		$diagnostics = $get_path( $report, array( 'diagnostics' ) );
+		if ( ! is_array( $diagnostics ) ) {
+			return;
+		}
+
+		foreach ( $diagnostics as $diagnostic ) {
+			if ( is_array( $diagnostic ) && 'freeform_block' === strtolower( (string) ( $diagnostic['type'] ?? '' ) ) ) {
+				$record_freeform_diagnostic( $diagnostic );
+			}
+		}
+	};
+
 	$find_manifest_errors = static function ( $value, string $path = '$' ) use ( &$find_manifest_errors, $set_metric ): void {
 		if ( ! is_array( $value ) ) {
 			return;
@@ -247,6 +293,7 @@ return static function (): array {
 
 	if ( is_array( $report ) ) {
 		$collect_fallback_diagnostics( $report );
+		$collect_freeform_diagnostics( $report );
 
 		$ignored_regions = $get_path( $report, array( 'source_region_selection', 'intentionally_ignored_regions' ) );
 		$set_metric( 'ssi_ignored_region_count', 'ignored_region', '$.source_region_selection.intentionally_ignored_regions', $ignored_regions );
@@ -283,7 +330,7 @@ return static function (): array {
 			$documents = $get_path( $report, array( 'generated_theme', 'block_documents' ) );
 			$freeform_block_count = is_array( $documents ) ? $sum_named_counts( $documents, 'freeform_block_count' ) : 0;
 		}
-		$set_metric( 'ssi_freeform_block_count', 'freeform_block', '$.quality.freeform_block_count', $freeform_block_count );
+		$set_metric( 'ssi_freeform_block_count', 'freeform_block', '$.quality.freeform_block_count', $freeform_block_count, null, 0 === count( $freeform_diagnostics ) );
 
 		$invalid_block_count = $get_path( $report, array( 'quality', 'invalid_block_count' ) );
 		if ( null === $invalid_block_count ) {
@@ -303,6 +350,7 @@ return static function (): array {
 				'readable' => true,
 				'top_level_keys' => is_array( $report ) ? array_keys( $report ) : array(),
 				'fallback_diagnostics' => $fallback_diagnostics,
+				'freeform_diagnostics' => $freeform_diagnostics,
 				'findings' => $findings,
 			),
 		),
