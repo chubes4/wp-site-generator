@@ -69,6 +69,15 @@ jobs:
         with:
           fetch-depth: 0
 
+      - name: Refresh validation harness from main
+        shell: bash
+        run: |
+          set -euo pipefail
+          git fetch --depth=1 origin main
+          git checkout origin/main -- .github/scripts .github/homeboy
+          mkdir -p homeboy-ci-results
+          git rev-parse origin/main > homeboy-ci-results/validation-harness-main-sha.txt
+
       - name: Generate Homeboy app token
         id: app-token
         if: env.HOMEBOY_APP_ID != '' && env.HOMEBOY_APP_PRIVATE_KEY != ''
