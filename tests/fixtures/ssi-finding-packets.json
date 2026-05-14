@@ -126,7 +126,33 @@
     "preview": "source=1280x5076 imported=1280x7450 mismatch=56.31%",
     "converter": "visual-parity",
     "stage": "screenshot_diff",
-    "reason": "Imported WordPress screenshot differs from source static HTML screenshot: mismatch=56.31%, threshold=1.50%."
+    "reason": "Imported WordPress screenshot differs from source static HTML screenshot: mismatch=56.31%, threshold=1.50%.",
+    "visual_regions": [
+      {
+        "rank": 1,
+        "x": 0,
+        "y": 640,
+        "width": 1280,
+        "height": 320,
+        "mismatchPixels": 1000,
+        "totalPixels": 409600,
+        "mismatchRatio": 0.00244140625,
+        "source_matches": [
+          {
+            "selector": "section.hero",
+            "text": "Crown Alley Little Stage",
+            "rect": { "x": 0, "y": 600, "width": 1280, "height": 360 }
+          }
+        ],
+        "imported_matches": [
+          {
+            "selector": "main.wp-block-group",
+            "text": "Crown Alley Little Stage",
+            "rect": { "x": 0, "y": 620, "width": 1280, "height": 380 }
+          }
+        ]
+      }
+    ]
   },
   {
     "schema_version": 2,

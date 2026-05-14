@@ -98,6 +98,7 @@ function normalizePacket(packet) {
 		artifact_names: packet.artifact_names && typeof packet.artifact_names === 'object' ? packet.artifact_names : {},
 		bench_outcome: text(packet.bench_outcome),
 		visual_outcome: text(packet.visual_outcome),
+		visual_regions: visualRegions(packet.visual_regions),
 		design_system: designText(packet.design_system),
 		palette_kind: designText(packet.palette_kind),
 		typography_kind: designText(packet.typography_kind),
@@ -105,6 +106,10 @@ function normalizePacket(packet) {
 		density: designText(packet.density),
 		commerce_pattern: designText(packet.commerce_pattern),
 	};
+}
+
+function visualRegions(value) {
+	return Array.isArray(value) ? value.filter((region) => region && typeof region === 'object').slice(0, 8) : [];
 }
 
 function designText(value) {
