@@ -1,0 +1,27 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 460" role="img" aria-labelledby="title desc">
+  <title id="title">Before and after bicycle repair detail illustration</title>
+  <desc id="desc">A split view showing a worn drivetrain before service and a clean adjusted drivetrain after service.</desc>
+  <rect width="640" height="460" fill="#F3E8D2"/>
+  <rect x="34" y="54" width="268" height="340" fill="#FFF9EC" stroke="#1F2421" stroke-width="9"/>
+  <rect x="338" y="54" width="268" height="340" fill="#FFF9EC" stroke="#1F2421" stroke-width="9"/>
+  <rect x="34" y="54" width="268" height="56" fill="#4A4A43"/>
+  <rect x="338" y="54" width="268" height="56" fill="#2F5D46"/>
+  <text x="168" y="91" text-anchor="middle" font-family="Courier New, monospace" font-size="23" font-weight="700" fill="#FFF9EC">BEFORE</text>
+  <text x="472" y="91" text-anchor="middle" font-family="Courier New, monospace" font-size="23" font-weight="700" fill="#FFF9EC">AFTER</text>
+  <g transform="translate(40 24)" stroke="#1F2421" stroke-width="8" stroke-linecap="round" stroke-linejoin="round" fill="none">
+    <circle cx="122" cy="242" r="66"/>
+    <circle cx="224" cy="240" r="26"/>
+    <path d="M122 242l44-76 58 74h-102l44-76"/>
+    <path d="M80 184l172 102" stroke="#4A4A43"/>
+    <path d="M92 310c26 10 74 8 108-8" stroke="#F26A2E"/>
+  </g>
+  <g transform="translate(344 24)" stroke="#1F2421" stroke-width="8" stroke-linecap="round" stroke-linejoin="round" fill="none">
+    <circle cx="122" cy="242" r="66"/>
+    <circle cx="224" cy="240" r="26"/>
+    <path d="M122 242l44-76 58 74h-102l44-76"/>
+    <path d="M80 184l172 102" stroke="#2F80A7"/>
+    <path d="M92 310c28 4 76 3 108-8" stroke="#2F5D46"/>
+  </g>
+  <circle cx="244" cy="344" r="12" fill="#F26A2E" stroke="#1F2421" stroke-width="5"/>
+  <circle cx="548" cy="344" r="12" fill="#F26A2E" stroke="#1F2421" stroke-width="5"/>
+</svg>
