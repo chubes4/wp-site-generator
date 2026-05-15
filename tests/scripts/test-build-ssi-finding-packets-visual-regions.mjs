@@ -61,6 +61,15 @@ await writeFile(
 					{
 						selector: 'section.hero',
 						text: 'Original hero copy',
+						html: '<section class="hero"><h1>Original hero copy</h1></section>',
+						computed_style: {
+							display: 'grid',
+							'font-size': '48px',
+							'background-color': 'rgb(17, 24, 39)',
+						},
+						matched_css_rules: [
+							{ selector: '.hero', media: '', css: '.hero { display: grid; }' },
+						],
 						rect: { x: 0, y: 32, width: 100, height: 64 },
 					},
 				],
@@ -68,6 +77,15 @@ await writeFile(
 					{
 						selector: 'main.wp-block-group',
 						text: 'Imported hero copy',
+						html: '<main class="wp-block-group"><h1>Imported hero copy</h1></main>',
+						computed_style: {
+							display: 'block',
+							'font-size': '40px',
+							'background-color': 'rgba(0, 0, 0, 0)',
+						},
+						matched_css_rules: [
+							{ selector: '.wp-block-group', media: '', css: '.wp-block-group { display: block; }' },
+						],
 						rect: { x: 0, y: 32, width: 100, height: 64 },
 					},
 				],
@@ -98,5 +116,9 @@ assert.ok(visualPacket, 'Expected visual parity packet');
 assert.equal(visualPacket.selector, 'screenshot region 0,32 100x64');
 assert.equal(visualPacket.visual_regions.length, 1);
 assert.equal(visualPacket.visual_regions[0].source_matches[0].selector, 'section.hero');
+assert.equal(visualPacket.visual_regions[0].source_matches[0].computed_style.display, 'grid');
+assert.match(visualPacket.visual_regions[0].source_matches[0].html, /<section/);
+assert.equal(visualPacket.visual_regions[0].source_matches[0].matched_css_rules[0].selector, '.hero');
+assert.equal(visualPacket.visual_code_evidence.imported[0].computed_style['font-size'], '40px');
 assert.match(visualPacket.preview, /top_region=x:0,y:32,w:100,h:64/);
 assert.match(visualPacket.excerpt, /Original hero copy/);

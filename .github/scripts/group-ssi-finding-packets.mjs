@@ -45,6 +45,8 @@ function groupPackets(rawPackets) {
 				converter: packet.converter,
 				block_name: packet.block_name,
 				repair_mode: packet.repair_mode,
+				visual_summary: visualSummary(packet),
+				visual_code_evidence: visualCodeEvidence(packet),
 				reason: packet.reason,
 				count: 0,
 				packets: [],
@@ -104,6 +106,7 @@ function normalizePacket(packet) {
 		bench_outcome: text(packet.bench_outcome),
 		visual_outcome: text(packet.visual_outcome),
 		visual_regions: visualRegions(packet.visual_regions),
+		visual_code_evidence: visualCodeEvidence(packet),
 		design_system: designText(packet.design_system),
 		palette_kind: designText(packet.palette_kind),
 		typography_kind: designText(packet.typography_kind),
@@ -114,7 +117,96 @@ function normalizePacket(packet) {
 }
 
 function visualRegions(value) {
-	return Array.isArray(value) ? value.filter((region) => region && typeof region === 'object').slice(0, 8) : [];
+	return Array.isArray(value)
+		? value.filter((region) => region && typeof region === 'object').slice(0, 8).map((region) => ({
+			rank: numberOrString(region.rank),
+			x: numberOrString(region.x),
+			y: numberOrString(region.y),
+			width: numberOrString(region.width),
+			height: numberOrString(region.height),
+			mismatchPixels: numberOrString(region.mismatchPixels),
+			totalPixels: numberOrString(region.totalPixels),
+			mismatchRatio: numberOrString(region.mismatchRatio),
+			source_matches: visualProbes(region.source_matches),
+			imported_matches: visualProbes(region.imported_matches),
+		}))
+		: [];
+}
+
+function visualProbes(value) {
+	return Array.isArray(value)
+		? value.filter((probe) => probe && typeof probe === 'object').slice(0, 5).map((probe) => ({
+			selector: text(probe.selector),
+			text: text(probe.text),
+			html: text(probe.html),
+			computed_style: objectStrings(probe.computed_style),
+			matched_css_rules: cssRules(probe.matched_css_rules),
+			rect: probe.rect && typeof probe.rect === 'object' ? {
+				x: numberOrString(probe.rect.x),
+				y: numberOrString(probe.rect.y),
+				width: numberOrString(probe.rect.width),
+				height: numberOrString(probe.rect.height),
+			} : {},
+		}))
+		: [];
+}
+
+function cssRules(value) {
+	return Array.isArray(value)
+		? value.filter((rule) => rule && typeof rule === 'object').slice(0, 8).map((rule) => ({
+			selector: text(rule.selector),
+			media: text(rule.media),
+			css: text(rule.css),
+		}))
+		: [];
+}
+
+function objectStrings(value) {
+	if (!value || typeof value !== 'object' || Array.isArray(value)) {
+		return {};
+	}
+	return Object.fromEntries(Object.entries(value).map(([key, raw]) => [key, text(raw)]));
+}
+
+function visualSummary(packet) {
+	if (text(packet.kind) !== 'visual_parity_mismatch') {
+		return '';
+	}
+	const region = visualRegions(packet.visual_regions)[0];
+	if (!region) {
+		return text(packet.preview);
+	}
+	return [
+		`region ${region.x},${region.y} ${region.width}x${region.height}`,
+		`source ${probeSummary(region.source_matches)}`,
+		`imported ${probeSummary(region.imported_matches)}`,
+	].join('; ');
+}
+
+function probeSummary(probes) {
+	const probe = Array.isArray(probes) ? probes[0] : null;
+	if (!probe) {
+		return 'none';
+	}
+	const style = probe.computed_style && typeof probe.computed_style === 'object' ? probe.computed_style : {};
+	return [probe.selector, probe.text, style.display, style['font-size'], style['background-color']]
+		.filter((value) => text(value) !== '')
+		.join(' ');
+}
+
+function visualCodeEvidence(packet) {
+	const configured = packet.visual_code_evidence;
+	if (configured && typeof configured === 'object' && !Array.isArray(configured)) {
+		return {
+			source: visualProbes(configured.source),
+			imported: visualProbes(configured.imported),
+		};
+	}
+	const region = visualRegions(packet.visual_regions)[0];
+	return region ? {
+		source: region.source_matches,
+		imported: region.imported_matches,
+	} : {};
 }
 
 function designText(value) {
