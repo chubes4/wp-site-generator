@@ -31,14 +31,7 @@ jobs:
   detect-changed-sites:
     name: Detect changed static sites
     needs: validation-preflight
-    if: |
-      needs.validation-preflight.outputs.should_run == 'true' &&
-      (
-        contains(github.event.pull_request.labels.*.name, 'target:wordpress') ||
-        contains(github.event.pull_request.labels.*.name, 'target:woocommerce') ||
-        (github.event.action == 'labeled' && github.event.label.name == 'target:wordpress') ||
-        (github.event.action == 'labeled' && github.event.label.name == 'target:woocommerce')
-      )
+    if: needs.validation-preflight.outputs.should_run == 'true'
     runs-on: ubuntu-latest
     outputs:
       sites: ${{ steps.detect.outputs.sites }}
