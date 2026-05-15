@@ -1,0 +1,22 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 460" role="img" aria-labelledby="title desc">
+  <title id="title">Tool wall and repair stand illustration</title>
+  <desc id="desc">A workshop wall with hand tools, parts bins, and a bicycle repair stand.</desc>
+  <rect width="640" height="460" fill="#F3E8D2"/>
+  <rect x="44" y="50" width="552" height="186" rx="8" fill="#B9854D" stroke="#1F2421" stroke-width="9"/>
+  <g stroke="#1F2421" stroke-width="7" stroke-linecap="round">
+    <path d="M95 94v98M126 94v98M111 120h-1"/>
+    <path d="M205 91l-26 96M186 112l34 10"/>
+    <path d="M286 88v98M264 108h44M264 166h44"/>
+    <path d="M374 96c32 8 34 48 2 59l22 36" fill="none"/>
+    <path d="M474 92v98M446 112h56M448 168h52"/>
+  </g>
+  <rect x="62" y="268" width="180" height="100" fill="#2F80A7" stroke="#1F2421" stroke-width="8"/>
+  <path d="M62 318h180M122 268v100M182 268v100" stroke="#1F2421" stroke-width="6"/>
+  <rect x="292" y="274" width="278" height="56" fill="#FFF9EC" stroke="#1F2421" stroke-width="8"/>
+  <rect x="314" y="330" width="234" height="35" fill="#4A4A43" stroke="#1F2421" stroke-width="6"/>
+  <path d="M424 274v-55h76M424 219l-42 32M424 219l38 34" stroke="#1F2421" stroke-width="8" stroke-linecap="round" fill="none"/>
+  <circle cx="382" cy="252" r="12" fill="#F26A2E" stroke="#1F2421" stroke-width="5"/>
+  <circle cx="462" cy="253" r="12" fill="#F26A2E" stroke="#1F2421" stroke-width="5"/>
+  <text x="151" y="419" text-anchor="middle" font-family="Courier New, monospace" font-size="22" font-weight="700" fill="#1F2421">USED PARTS</text>
+  <text x="431" y="419" text-anchor="middle" font-family="Courier New, monospace" font-size="22" font-weight="700" fill="#1F2421">STAND CHECK</text>
+</svg>
