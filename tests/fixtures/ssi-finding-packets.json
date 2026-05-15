@@ -186,6 +186,19 @@
           {
             "selector": "section.hero",
             "text": "Crown Alley Little Stage",
+            "html": "<section class=\"hero\"><h1>Crown Alley Little Stage</h1></section>",
+            "computed_style": {
+              "display": "grid",
+              "font-size": "48px",
+              "background-color": "rgb(17, 24, 39)"
+            },
+            "matched_css_rules": [
+              {
+                "selector": ".hero",
+                "media": "",
+                "css": ".hero { display: grid; background: #111827; }"
+              }
+            ],
             "rect": { "x": 0, "y": 600, "width": 1280, "height": 360 }
           }
         ],
@@ -193,6 +206,19 @@
           {
             "selector": "main.wp-block-group",
             "text": "Crown Alley Little Stage",
+            "html": "<main class=\"wp-block-group\"><h1>Crown Alley Little Stage</h1></main>",
+            "computed_style": {
+              "display": "block",
+              "font-size": "40px",
+              "background-color": "rgba(0, 0, 0, 0)"
+            },
+            "matched_css_rules": [
+              {
+                "selector": ".wp-block-group",
+                "media": "",
+                "css": ".wp-block-group { display: block; }"
+              }
+            ],
             "rect": { "x": 0, "y": 620, "width": 1280, "height": 380 }
           }
         ]

@@ -338,6 +338,7 @@ function packetFromVisualDiff(diff) {
 		stage: 'screenshot_diff',
 		reason: `Imported WordPress screenshot differs from source static HTML screenshot: mismatch=${mismatchPercent}, threshold=${thresholdPercent}, mismatched_pixels=${diff.mismatchPixels || 0}, total_pixels=${diff.totalPixels || 0}, dimension_mismatch=${diff.dimensionMismatch ? 'yes' : 'no'}.${regionSummary} See visual-parity artifact files source.png, imported.png, diff.png, and visual-diff.json.`,
 		visual_regions: regions,
+		visual_code_evidence: topRegion ? visualCodeEvidence(topRegion) : {},
 	};
 }
 
@@ -366,6 +367,9 @@ function visualProbes(probes) {
 		.map((probe) => ({
 			selector: text(probe.selector),
 			text: truncate(probe.text, 180),
+			html: truncate(probe.html, 1000),
+			computed_style: styleSnapshot(probe.computed_style),
+			matched_css_rules: cssRules(probe.matched_css_rules),
 			rect: probe.rect && typeof probe.rect === 'object' ? {
 				x: Number(probe.rect.x || 0),
 				y: Number(probe.rect.y || 0),
@@ -375,12 +379,69 @@ function visualProbes(probes) {
 		}));
 }
 
+function visualCodeEvidence(region) {
+	return {
+		source: asArray(region.source_matches).slice(0, 3).map(probeCodeEvidence),
+		imported: asArray(region.imported_matches).slice(0, 3).map(probeCodeEvidence),
+	};
+}
+
+function probeCodeEvidence(probe) {
+	return {
+		selector: text(probe.selector),
+		text: truncate(probe.text, 180),
+		html: truncate(probe.html, 1000),
+		computed_style: styleSnapshot(probe.computed_style),
+		matched_css_rules: cssRules(probe.matched_css_rules),
+	};
+}
+
+function styleSnapshot(value) {
+	if (!value || typeof value !== 'object' || Array.isArray(value)) {
+		return {};
+	}
+	const snapshot = {};
+	for (const [key, rawValue] of Object.entries(value)) {
+		const normalized = truncate(rawValue, 180);
+		if (normalized !== '') {
+			snapshot[key] = normalized;
+		}
+	}
+	return snapshot;
+}
+
+function cssRules(value) {
+	return asArray(value)
+		.filter((rule) => rule && typeof rule === 'object')
+		.slice(0, 8)
+		.map((rule) => ({
+			selector: text(rule.selector),
+			media: text(rule.media),
+			css: truncate(rule.css, 700),
+		}));
+}
+
 function probeSummary(probes) {
 	const probe = asArray(probes)[0];
 	if (!probe) {
 		return 'none';
 	}
-	return truncate([probe.selector, probe.text].filter(Boolean).join(' '), 120);
+	return truncate([probe.selector, probe.text, styleSummary(probe.computed_style)].filter(Boolean).join(' '), 160);
+}
+
+function styleSummary(style) {
+	if (!style || typeof style !== 'object') {
+		return '';
+	}
+	return [
+		['display', style.display],
+		['font', style['font-family']],
+		['size', style['font-size']],
+		['bg', style['background-color']],
+	]
+		.filter(([, value]) => text(value) !== '')
+		.map(([key, value]) => `${key}=${text(value)}`)
+		.join(' ');
 }
 
 function topRegionExcerpt(region) {

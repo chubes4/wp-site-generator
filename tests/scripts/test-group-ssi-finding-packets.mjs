@@ -56,6 +56,11 @@ assert.equal(visualGroup.candidate_repo, 'chubes4/static-site-importer');
 assert.equal(visualGroup.count, 1);
 assert.equal(visualGroup.packets[0].visual_regions.length, 1);
 assert.equal(visualGroup.packets[0].visual_regions[0].source_matches[0].selector, 'section.hero');
+assert.match(visualGroup.visual_summary, /section\.hero/);
+assert.equal(visualGroup.visual_code_evidence.source[0].computed_style.display, 'grid');
+assert.match(visualGroup.visual_code_evidence.source[0].html, /<section/);
+assert.equal(visualGroup.visual_code_evidence.source[0].matched_css_rules[0].selector, '.hero');
+assert.equal(visualGroup.packets[0].visual_regions[0].imported_matches[0].computed_style['font-size'], '40px');
 
 const nonActionableKinds = grouped.groups.flatMap((group) => group.packets).map((packet) => packet.kind);
 assert.ok(!nonActionableKinds.includes('ignored_region'), 'Ignored regions must not reach the iterator groups');

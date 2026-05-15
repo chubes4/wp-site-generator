@@ -503,6 +503,37 @@ async function screenshot(browser, url, outputPath) {
 			`,
 		});
 		const probes = await page.evaluate(() => {
+			const computedStyleProperties = [
+				'display',
+				'position',
+				'box-sizing',
+				'width',
+				'height',
+				'min-height',
+				'margin-top',
+				'margin-right',
+				'margin-bottom',
+				'margin-left',
+				'padding-top',
+				'padding-right',
+				'padding-bottom',
+				'padding-left',
+				'gap',
+				'row-gap',
+				'column-gap',
+				'font-family',
+				'font-size',
+				'font-weight',
+				'line-height',
+				'letter-spacing',
+				'grid-template-columns',
+				'grid-template-rows',
+				'align-items',
+				'justify-content',
+				'background-color',
+				'border-radius',
+			];
+
 			function cssEscape(value) {
 				return typeof CSS !== 'undefined' && typeof CSS.escape === 'function'
 					? CSS.escape(value)
@@ -519,6 +550,68 @@ async function screenshot(browser, url, outputPath) {
 				return (element.innerText || element.textContent || '').replace(/\s+/g, ' ').trim().slice(0, 180);
 			}
 
+			function htmlPreview(element) {
+				return (element.outerHTML || '').replace(/\s+/g, ' ').trim().slice(0, 2000);
+			}
+
+			function computedStyleSnapshot(element) {
+				const computed = window.getComputedStyle(element);
+				const snapshot = {};
+				for (const property of computedStyleProperties) {
+					snapshot[property] = computed.getPropertyValue(property);
+				}
+				return snapshot;
+			}
+
+			function matchingCssRules(element) {
+				const matches = [];
+				for (const sheet of Array.from(document.styleSheets || [])) {
+					let rules = [];
+					try {
+						rules = Array.from(sheet.cssRules || []);
+					} catch {
+						continue;
+					}
+					collectMatchingRules(element, rules, matches);
+					if (matches.length >= 12) {
+						break;
+					}
+				}
+				return matches.slice(0, 12);
+			}
+
+			function collectMatchingRules(element, rules, matches, media = '') {
+				for (const rule of rules) {
+					if (matches.length >= 12) {
+						return;
+					}
+					if ('cssRules' in rule && rule.cssRules) {
+						const condition = rule.conditionText || media;
+						collectMatchingRules(element, Array.from(rule.cssRules), matches, condition);
+						continue;
+					}
+					if (!rule.selectorText || !rule.style) {
+						continue;
+					}
+					const selectors = String(rule.selectorText).split(',').map((selector) => selector.trim()).filter(Boolean);
+					const matchedSelector = selectors.find((selector) => {
+						try {
+							return element.matches(selector);
+						} catch {
+							return false;
+						}
+					});
+					if (!matchedSelector) {
+						continue;
+					}
+					matches.push({
+						selector: matchedSelector,
+						media,
+						css: String(rule.cssText || '').replace(/\s+/g, ' ').trim().slice(0, 700),
+					});
+				}
+			}
+
 			const candidates = Array.from(
 				document.querySelectorAll('header, nav, main, section, article, aside, footer, h1, h2, h3, p, a, button, img, figure, figcaption, .wp-block-group, .wp-block-cover, .wp-block-columns, .wp-block-button')
 			);
@@ -529,6 +622,9 @@ async function screenshot(browser, url, outputPath) {
 					return {
 						selector: elementSelector(element),
 						text: textPreview(element),
+						html: htmlPreview(element),
+						computed_style: computedStyleSnapshot(element),
+						matched_css_rules: matchingCssRules(element),
 						rect: {
 							x: Math.round(rect.left + window.scrollX),
 							y: Math.round(rect.top + window.scrollY),
