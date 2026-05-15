@@ -12,7 +12,7 @@ Concurrency is the strategy. The system is designed to produce many credible sta
 
 ---
 
-## Five agents, one substrate
+## Four agents, one substrate
 
 ```
                 +---------------------+    +-----------------------+
@@ -93,13 +93,20 @@ This repo is the only place all of them meet.
 
 The agents are narrow on purpose.
 
-### `store-idea-agent`
+### Idea agents
+
+Implemented as two focused bundles:
+
+- `store-idea-agent`
+- `website-idea-agent`
+
+#### `store-idea-agent`
 
 Reads the recent issue corpus, picks the strongest distinct **commerce store concept** inside the industry the flow specifies, and files a `status:idea-ready` issue. Industry / problem space lives on flow user messages; flow labels carry the `site-kind:`, `commerce:`, and `industry:` axes. Ships eight industry-tuned flows plus a manual flow.
 
 Issue body sections: Recommended Concept, Who It Serves, What It Offers, Why It Could Work, Issue Overlap Check, Next Step.
 
-### `website-idea-agent`
+#### `website-idea-agent`
 
 Same shape, different lane. Generates **non-commerce website concepts** (blog, local business, portfolio, professional services, nonprofit). Ships a manual flow plus focused local business, blog, portfolio, professional services, and nonprofit flows. Concepts whose core is an online storefront are excluded from this agent — they belong to the store agent.
 
@@ -203,7 +210,7 @@ wp-site-generator/
   scripts/                           optional dev helpers
 ```
 
-The agents are portable Data Machine bundles. All five are tracked here.
+The agents are portable Data Machine bundles. The idea role is split into two bundles, so five bundles are tracked here for four agent roles.
 
 ---
 
