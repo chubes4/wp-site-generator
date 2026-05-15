@@ -18,16 +18,27 @@ permissions:
 
 concurrency:
   group: static-site-validation-${{ github.event.pull_request.number || github.ref }}
-  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+  cancel-in-progress: ${{ github.event.action == 'synchronize' }}
 
 jobs:
+  validation-preflight:
+    name: Validation preflight
+    uses: Extra-Chill/homeboy-extensions/.github/workflows/actions-run-once.yml@main
+    with:
+      mode: check
+      idempotency_key: static-site-validation/${{ github.repository }}/${{ github.event.pull_request.number }}/${{ github.event.pull_request.head.sha }}
+
   detect-changed-sites:
     name: Detect changed static sites
+    needs: validation-preflight
     if: |
-      contains(github.event.pull_request.labels.*.name, 'target:wordpress') ||
-      contains(github.event.pull_request.labels.*.name, 'target:woocommerce') ||
-      (github.event.action == 'labeled' && github.event.label.name == 'target:wordpress') ||
-      (github.event.action == 'labeled' && github.event.label.name == 'target:woocommerce')
+      needs.validation-preflight.outputs.should_run == 'true' &&
+      (
+        contains(github.event.pull_request.labels.*.name, 'target:wordpress') ||
+        contains(github.event.pull_request.labels.*.name, 'target:woocommerce') ||
+        (github.event.action == 'labeled' && github.event.label.name == 'target:wordpress') ||
+        (github.event.action == 'labeled' && github.event.label.name == 'target:woocommerce')
+      )
     runs-on: ubuntu-latest
     outputs:
       sites: ${{ steps.detect.outputs.sites }}
@@ -446,3 +457,15 @@ jobs:
             -f openai_model="gpt-5.5" \
             -f data_machine_ref="main" \
             -f data_machine_code_ref="main"
+
+  mark-validation-processed:
+    name: Mark validation processed
+    needs: [validation-preflight, detect-changed-sites, validate-site]
+    if: |
+      always() &&
+      needs.validation-preflight.outputs.should_run == 'true' &&
+      needs.detect-changed-sites.outputs.has_sites == 'true'
+    uses: Extra-Chill/homeboy-extensions/.github/workflows/actions-run-once.yml@main
+    with:
+      mode: mark
+      idempotency_key: static-site-validation/${{ github.repository }}/${{ github.event.pull_request.number }}/${{ github.event.pull_request.head.sha }}
