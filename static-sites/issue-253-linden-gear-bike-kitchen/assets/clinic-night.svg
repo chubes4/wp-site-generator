@@ -1,0 +1,29 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 460" role="img" aria-labelledby="title desc">
+  <title id="title">Fix-it clinic night illustration</title>
+  <desc id="desc">Neighbors gathered around a workbench during a bicycle maintenance clinic.</desc>
+  <rect width="640" height="460" fill="#FFF9EC"/>
+  <rect x="0" y="0" width="640" height="130" fill="#1F2421"/>
+  <circle cx="108" cy="84" r="24" fill="#F26A2E"/>
+  <circle cx="188" cy="74" r="18" fill="#F3E8D2"/>
+  <circle cx="486" cy="82" r="22" fill="#F26A2E"/>
+  <rect x="76" y="258" width="488" height="72" rx="8" fill="#B9854D" stroke="#1F2421" stroke-width="9"/>
+  <g stroke="#1F2421" stroke-width="8" stroke-linecap="round" fill="none">
+    <circle cx="236" cy="234" r="44"/>
+    <circle cx="382" cy="234" r="44"/>
+    <path d="M236 234l54-82 92 82h-146l54-82h84"/>
+    <path d="M318 152h48"/>
+  </g>
+  <g fill="#2F5D46" stroke="#1F2421" stroke-width="7">
+    <circle cx="118" cy="202" r="28"/>
+    <path d="M80 326c8-64 70-64 78 0"/>
+    <circle cx="520" cy="202" r="28"/>
+    <path d="M480 326c8-64 72-64 82 0"/>
+  </g>
+  <g fill="#2F80A7" stroke="#1F2421" stroke-width="7">
+    <circle cx="316" cy="183" r="30"/>
+    <path d="M270 326c10-72 86-72 96 0"/>
+  </g>
+  <path d="M132 280l72-36M506 280l-62-38M316 244v-44" stroke="#F26A2E" stroke-width="8" stroke-linecap="round"/>
+  <rect x="116" y="350" width="408" height="48" fill="#F3E8D2" stroke="#1F2421" stroke-width="7"/>
+  <text x="320" y="382" text-anchor="middle" font-family="Courier New, monospace" font-size="22" font-weight="700" fill="#1F2421">FIX-A-FLAT NIGHT</text>
+</svg>
