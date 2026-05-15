@@ -89,6 +89,25 @@ This repo is the only place all of them meet.
 
 ---
 
+## Collaborating repos
+
+This repository is the orchestration and generated-site source repo. The working system spans these repos:
+
+- [`chubes4/wp-site-generator`](https://github.com/chubes4/wp-site-generator) — concept issues, Data Machine bundles, generated static-site PRs, validation workflows, and iterator dispatch.
+- [`Extra-Chill/data-machine`](https://github.com/Extra-Chill/data-machine) — agent runtime, bundles, flows, pipelines, chat/step execution, and GitHub handler integration.
+- [`Extra-Chill/data-machine-code`](https://github.com/Extra-Chill/data-machine-code) — workspace, worktree, GitHub, and PR tooling used by agents that edit code.
+- [`Extra-Chill/homeboy`](https://github.com/Extra-Chill/homeboy) — local and CI quality runner used to execute repo checks and WordPress benches.
+- [`Extra-Chill/homeboy-action`](https://github.com/Extra-Chill/homeboy-action) — GitHub Action wrapper that runs Homeboy in repository workflows.
+- [`Extra-Chill/homeboy-extensions`](https://github.com/Extra-Chill/homeboy-extensions) — reusable WordPress Playground workloads, Data Machine agent CI workflow, validation reporting, and iterator plumbing.
+- [`chubes4/static-site-importer`](https://github.com/chubes4/static-site-importer) — WordPress plugin that imports each generated static site into a block theme.
+- [`chubes4/html-to-blocks-converter`](https://github.com/chubes4/html-to-blocks-converter) — HTML-to-block transformer used by Static Site Importer.
+- [`chubes4/block-format-bridge`](https://github.com/chubes4/block-format-bridge) — block serialization/format bridge used by the import pipeline.
+- [`WordPress/wordpress-playground`](https://github.com/WordPress/wordpress-playground) — PHP-WASM WordPress runtime used by validation and preview links.
+
+The generated-site PR is only one artifact in the loop. Validation output can produce upstream PRs or issues in the importer and transformer repos, then the generated-site PR is revalidated against the improved stack.
+
+---
+
 ## Agents
 
 The agents are narrow on purpose.
@@ -277,9 +296,7 @@ There is no auto-merge step. Merging is a human decision, and generated-site PRs
 
 ---
 
-## Current Direction
-
-The old direction was "run Data Machine in Playground CI." That is now reality for this repo's workflow entry points through Homeboy Extensions. The current frontier is tightening the feedback loop between generated-site validation and upstream transformer quality:
+## Current Loop
 
 1. Keep generated sites as raw static source PRs.
 2. Keep WordPress import, visual parity, and diagnostics in CI.
@@ -287,4 +304,4 @@ The old direction was "run Data Machine in Playground CI." That is now reality f
 4. Let the PHP transformer iterator open focused upstream fixes or fallback issues.
 5. Re-run the generated-site PR against the improved importer stack until the WordPress result is reviewable.
 
-SSI is still the first consumer of the generic Playground workload substrate, but the repo now exercises both sides of the loop: generation and validation in CI, plus upstream repair from validation evidence.
+The repo exercises both sides of the loop: generation and validation in CI, plus upstream repair from validation evidence.
