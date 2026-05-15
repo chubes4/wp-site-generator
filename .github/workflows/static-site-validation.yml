@@ -23,6 +23,10 @@ concurrency:
 jobs:
   validation-preflight:
     name: Validation preflight
+    if: |
+      github.event.action != 'labeled' ||
+      (github.event.action == 'labeled' && github.event.label.name == 'target:wordpress') ||
+      (github.event.action == 'labeled' && github.event.label.name == 'target:woocommerce')
     uses: Extra-Chill/homeboy-extensions/.github/workflows/actions-run-once.yml@main
     with:
       mode: check
