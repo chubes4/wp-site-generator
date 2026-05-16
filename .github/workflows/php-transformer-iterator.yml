@@ -58,7 +58,7 @@ jobs:
       data_machine_ref: ${{ inputs.data_machine_ref }}
       data_machine_code_ref: ${{ inputs.data_machine_code_ref }}
       success_requires_pr: true
-      success_completion_outcomes: '["issue_fallback_path","existing_issue_path"]'
+      success_completion_outcomes: '["pull_request_path","issue_fallback_path","existing_issue_path"]'
       max_turns: 24
       step_budget: 20
       time_budget_ms: 600000

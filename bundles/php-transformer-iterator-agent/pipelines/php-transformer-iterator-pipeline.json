@@ -20,16 +20,10 @@
                             "name": "pull_request_path",
                             "tools": [
                                 {
-                                    "name": "workspace_edit"
-                                },
-                                {
-                                    "name": "workspace_git_commit"
-                                },
-                                {
-                                    "name": "workspace_git_push"
-                                },
-                                {
                                     "name": "create_github_pull_request"
+                                },
+                                {
+                                    "name": "comment_github_pull_request"
                                 }
                             ]
                         },
@@ -41,6 +35,9 @@
                                 },
                                 {
                                     "name": "create_github_issue"
+                                },
+                                {
+                                    "name": "comment_github_pull_request"
                                 }
                             ]
                         },
@@ -49,12 +46,12 @@
                             "tools": [
                                 {
                                     "name": "list_github_issues"
+                                },
+                                {
+                                    "name": "comment_github_pull_request"
                                 }
                             ]
                         }
-                    ],
-                    "required_tool_names": [
-                        "comment_github_pull_request"
                     ]
                 },
                 "disabled_tools": [
