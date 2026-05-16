@@ -114,7 +114,14 @@ assert.match(issueOnlyPacket.data.body, /Repair mode: issue_only/, 'issue-only p
 assert.equal(aiStep.type, 'ai', 'second step is iterator AI');
 assert.ok(aiStep.system_prompt.includes('PHP Transformer Iterator Agent'), 'iterator system prompt is preserved');
 assert.ok(aiStep.user_message.includes('Run the PR-first iterator'), 'iterator flow prompt is preserved');
-assert.ok(aiStep.completion_assertions.required_tool_names.includes('comment_github_pull_request'), 'completion assertions are preserved');
+const outcomeAssertions = aiStep.completion_assertions.complete_when_any;
+assert.ok(outcomeAssertions.some((outcome) => outcome.name === 'pull_request_path'), 'PR completion outcome is preserved');
+for (const outcome of outcomeAssertions) {
+	assert.ok(
+		outcome.tools.some((tool) => tool.name === 'comment_github_pull_request'),
+		`${outcome.name} requires a source callback comment`,
+	);
+}
 assert.ok(aiStep.tool_runtime_rules.some((rule) => rule.id === 'iterator-inspection-budget'), 'tool runtime rules are preserved');
 
 console.log('build-datamachine-iterator-workflow smoke passed');
