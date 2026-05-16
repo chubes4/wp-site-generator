@@ -116,6 +116,8 @@ assert.ok(aiStep.system_prompt.includes('PHP Transformer Iterator Agent'), 'iter
 assert.ok(aiStep.user_message.includes('Run the PR-first iterator'), 'iterator flow prompt is preserved');
 const outcomeAssertions = aiStep.completion_assertions.complete_when_any;
 assert.ok(outcomeAssertions.some((outcome) => outcome.name === 'pull_request_path'), 'PR completion outcome is preserved');
+assert.deepEqual(aiStep.completion_assertions.required_tool_names, ['comment_github_pull_request'], 'source callback remains a direct required tool');
+assert.match(aiStep.system_prompt, /immediately comment back on the source generated-site PR/, 'prompt requires callback immediately after upstream action');
 for (const outcome of outcomeAssertions) {
 	assert.ok(
 		outcome.tools.some((tool) => tool.name === 'comment_github_pull_request'),
