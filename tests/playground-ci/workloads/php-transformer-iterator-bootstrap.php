@@ -71,6 +71,21 @@ if ( ! class_exists( 'WC_Site_Generator_PHP_Transformer_Iterator_Tool_Recorder' 
 		}
 
 		public static function handle_comment_tool_call( array $parameters, array $tool_def = array() ): array {
+			if ( self::is_source_pull_request( $parameters ) ) {
+				$parameters = self::prepare_source_callback_parameters( $parameters );
+				$response   = self::handle_ability_tool_call(
+					$parameters,
+					$tool_def + array(
+						'ability'   => 'datamachine/upsert-github-pull-review-comment',
+						'tool_name' => 'comment_github_pull_request',
+					)
+				);
+				if ( ! empty( $response['success'] ) ) {
+					self::record_iterator_event( $parameters, 'source_callback', 'pull_request_comment', self::first_url( $response ), $response );
+				}
+				return $response;
+			}
+
 			$response = self::handle_ability_tool_call(
 				$parameters,
 				$tool_def + array(
@@ -78,10 +93,27 @@ if ( ! class_exists( 'WC_Site_Generator_PHP_Transformer_Iterator_Tool_Recorder' 
 					'tool_name' => 'comment_github_pull_request',
 				)
 			);
-			if ( ! empty( $response['success'] ) && self::is_source_pull_request( $parameters ) ) {
-				self::record_iterator_event( $parameters, 'source_callback', 'pull_request_comment', self::first_url( $response ), $response );
-			}
 			return $response;
+		}
+
+		private static function prepare_source_callback_parameters( array $parameters ): array {
+			$body   = (string) ( $parameters['body'] ?? '' );
+			$marker = trim( (string) ( $parameters['marker'] ?? '' ) );
+
+			if ( '' === $marker ) {
+				$marker = self::extract_iterator_marker( $body );
+			}
+			if ( '' === $marker ) {
+				$marker = self::build_iterator_marker( $parameters );
+			}
+
+			$parameters['marker'] = $marker;
+			$parameters['mode']   = 'update_existing';
+			if ( '' !== $body ) {
+				$parameters['body'] = self::strip_iterator_marker( $body, $marker );
+			}
+
+			return $parameters;
 		}
 
 		private static function error( string $tool_name, string $message ): array {
@@ -143,6 +175,49 @@ if ( ! class_exists( 'WC_Site_Generator_PHP_Transformer_Iterator_Tool_Recorder' 
 			$pull_number = (int) ( $parameters['pull_number'] ?? 0 );
 
 			return '' !== $source_repo && $source_pr > 0 && $repo === $source_repo && $pull_number === $source_pr;
+		}
+
+		private static function extract_iterator_marker( string $body ): string {
+			if ( preg_match_all( '/<!--\s*(php-transformer-iterator[^>]*)\s*-->/', $body, $matches ) ) {
+				$markers = array_values( array_filter( array_map( 'trim', $matches[1] ) ) );
+				return (string) end( $markers );
+			}
+
+			return '';
+		}
+
+		private static function build_iterator_marker( array $parameters ): string {
+			$parts = array(
+				'php-transformer-iterator-agent',
+				'validation-' . trim( (string) getenv( 'ITERATOR_VALIDATION_RUN_ID' ) ),
+			);
+
+			$job_id = (int) ( $parameters['job_id'] ?? 0 );
+			if ( $job_id > 0 && function_exists( 'datamachine_get_engine_data' ) ) {
+				$engine_data = datamachine_get_engine_data( $job_id );
+				$packet      = is_array( $engine_data['finding_packet'] ?? null ) ? $engine_data['finding_packet'] : array();
+				foreach ( array( 'site', 'kind', 'path', 'selector' ) as $key ) {
+					$value = trim( (string) ( $packet[ $key ] ?? '' ) );
+					if ( '' !== $value ) {
+						$parts[] = $value;
+					}
+				}
+			}
+
+			return self::sanitize_marker( implode( ':', array_filter( $parts ) ) );
+		}
+
+		private static function strip_iterator_marker( string $body, string $marker ): string {
+			$quoted = preg_quote( $marker, '/' );
+			$body   = preg_replace( '/\n{0,2}<!--\s*' . $quoted . '\s*-->\s*$/', '', $body );
+			return rtrim( is_string( $body ) ? $body : '' );
+		}
+
+		private static function sanitize_marker( string $marker ): string {
+			$marker = strtolower( $marker );
+			$marker = preg_replace( '/[^a-z0-9:_\/.#-]+/', '-', $marker );
+			$marker = str_replace( '--', '-', is_string( $marker ) ? $marker : '' );
+			return trim( $marker, '-:' );
 		}
 
 		private static function first_url( mixed $value ): string {
