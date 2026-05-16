@@ -142,6 +142,7 @@ jobs:
       data_machine_code_ref: ${{ inputs.data_machine_code_ref }}
       success_requires_pr: false
       success_completion_outcomes: '["design_comment_and_labels"]'
+      flow_step_patches: '[{"step_type":"fetch","merge":{"handler_configs":{"github":{"issue_number":${{ needs.collect-store-issue.outputs.issue_number }},"max_items":1}}}}]'
       transcript_artifact_name: design-agent-store-${{ needs.collect-store-issue.outputs.issue_number }}-transcript-${{ github.run_id }}
       comment_pr_summary: false
     secrets:
@@ -166,6 +167,7 @@ jobs:
       data_machine_code_ref: ${{ inputs.data_machine_code_ref }}
       success_requires_pr: false
       success_completion_outcomes: '["design_comment_and_labels"]'
+      flow_step_patches: '[{"step_type":"fetch","merge":{"handler_configs":{"github":{"issue_number":${{ needs.collect-website-issue.outputs.issue_number }},"max_items":1}}}}]'
       transcript_artifact_name: design-agent-website-${{ needs.collect-website-issue.outputs.issue_number }}-transcript-${{ github.run_id }}
       comment_pr_summary: false
     secrets:
