@@ -398,6 +398,8 @@ function visualMismatchRegions({ source, imported, width, height, sourceProbes, 
 		const regionWidth = Math.min(width - x, (maxTileX - minTileX + 1) * tileSize);
 		const regionHeight = Math.min(height - y, (maxTileY - minTileY + 1) * tileSize);
 		const totalRegionPixels = regionWidth * regionHeight;
+		const sourceMatches = matchingProbes(sourceProbes, { x, y, width: regionWidth, height: regionHeight });
+		const importedMatches = matchingProbes(importedProbes, { x, y, width: regionWidth, height: regionHeight });
 		regions.push({
 			x,
 			y,
@@ -406,8 +408,9 @@ function visualMismatchRegions({ source, imported, width, height, sourceProbes, 
 			mismatchPixels: regionMismatchPixels,
 			totalPixels: totalRegionPixels,
 			mismatchRatio: totalRegionPixels > 0 ? regionMismatchPixels / totalRegionPixels : 0,
-			source_matches: matchingProbes(sourceProbes, { x, y, width: regionWidth, height: regionHeight }),
-			imported_matches: matchingProbes(importedProbes, { x, y, width: regionWidth, height: regionHeight }),
+			source_matches: sourceMatches,
+			imported_matches: importedMatches,
+			layout_deltas: visualLayoutDeltas(sourceMatches, importedMatches),
 		});
 	}
 
@@ -432,6 +435,73 @@ function matchingProbes(probes, region) {
 		.sort((a, b) => b.overlap - a.overlap)
 		.slice(0, 5)
 		.map((item) => item.probe);
+}
+
+function visualLayoutDeltas(sourceMatches, importedMatches) {
+	const pairs = [];
+	const maxPairs = Math.min(sourceMatches.length, importedMatches.length, 3);
+	for (let index = 0; index < maxPairs; index += 1) {
+		const source = sourceMatches[index];
+		const imported = importedMatches[index];
+		pairs.push({
+			pair: index + 1,
+			source_selector: source.selector || '',
+			imported_selector: imported.selector || '',
+			source_path: source.path || '',
+			imported_path: imported.path || '',
+			source_child_summary: source.child_summary || '',
+			imported_child_summary: imported.child_summary || '',
+			rect_delta: rectDelta(source.rect, imported.rect),
+			style_diffs: styleDiffs(source.computed_style, imported.computed_style),
+		});
+	}
+	return pairs;
+}
+
+function rectDelta(sourceRect = {}, importedRect = {}) {
+	return {
+		x: Math.round(Number(importedRect.x || 0) - Number(sourceRect.x || 0)),
+		y: Math.round(Number(importedRect.y || 0) - Number(sourceRect.y || 0)),
+		width: Math.round(Number(importedRect.width || 0) - Number(sourceRect.width || 0)),
+		height: Math.round(Number(importedRect.height || 0) - Number(sourceRect.height || 0)),
+	};
+}
+
+function styleDiffs(sourceStyle = {}, importedStyle = {}) {
+	const properties = [
+		'display',
+		'position',
+		'box-sizing',
+		'width',
+		'height',
+		'min-height',
+		'margin-top',
+		'margin-right',
+		'margin-bottom',
+		'margin-left',
+		'padding-top',
+		'padding-right',
+		'padding-bottom',
+		'padding-left',
+		'gap',
+		'row-gap',
+		'column-gap',
+		'grid-template-columns',
+		'grid-template-rows',
+		'align-items',
+		'justify-content',
+		'font-size',
+		'line-height',
+		'background-color',
+	];
+	return properties
+		.map((property) => ({
+			property,
+			source: sourceStyle[property] || '',
+			imported: importedStyle[property] || '',
+		}))
+		.filter((diff) => diff.source !== diff.imported)
+		.slice(0, 16);
 }
 
 function rectOverlap(a, b) {
@@ -546,6 +616,30 @@ async function screenshot(browser, url, outputPath) {
 				return `${element.tagName.toLowerCase()}${id}${classes}`;
 			}
 
+			function elementPath(element) {
+				const parts = [];
+				let current = element;
+				while (current && current.nodeType === Node.ELEMENT_NODE && parts.length < 5) {
+					let part = elementSelector(current);
+					if (!current.id && current.parentElement) {
+						const siblings = Array.from(current.parentElement.children).filter((sibling) => sibling.tagName === current.tagName);
+						if (siblings.length > 1) {
+							part += `:nth-of-type(${siblings.indexOf(current) + 1})`;
+						}
+					}
+					parts.unshift(part);
+					current = current.parentElement;
+				}
+				return parts.join(' > ');
+			}
+
+			function childSummary(element) {
+				return Array.from(element.children || [])
+					.slice(0, 8)
+					.map((child) => elementSelector(child))
+					.join(' > ');
+			}
+
 			function textPreview(element) {
 				return (element.innerText || element.textContent || '').replace(/\s+/g, ' ').trim().slice(0, 180);
 			}
@@ -621,8 +715,10 @@ async function screenshot(browser, url, outputPath) {
 					const rect = element.getBoundingClientRect();
 					return {
 						selector: elementSelector(element),
+						path: elementPath(element),
 						text: textPreview(element),
 						html: htmlPreview(element),
+						child_summary: childSummary(element),
 						computed_style: computedStyleSnapshot(element),
 						matched_css_rules: matchingCssRules(element),
 						rect: {

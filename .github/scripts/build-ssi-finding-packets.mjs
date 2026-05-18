@@ -357,6 +357,7 @@ function visualRegions(diff) {
 			mismatchRatio: Number(region.mismatchRatio || 0),
 			source_matches: visualProbes(region.source_matches),
 			imported_matches: visualProbes(region.imported_matches),
+			layout_deltas: visualLayoutDeltas(region.layout_deltas),
 		}));
 }
 
@@ -366,8 +367,10 @@ function visualProbes(probes) {
 		.slice(0, 5)
 		.map((probe) => ({
 			selector: text(probe.selector),
+			path: text(probe.path),
 			text: truncate(probe.text, 180),
 			html: truncate(probe.html, 1000),
+			child_summary: truncate(probe.child_summary, 500),
 			computed_style: styleSnapshot(probe.computed_style),
 			matched_css_rules: cssRules(probe.matched_css_rules),
 			rect: probe.rect && typeof probe.rect === 'object' ? {
@@ -389,11 +392,42 @@ function visualCodeEvidence(region) {
 function probeCodeEvidence(probe) {
 	return {
 		selector: text(probe.selector),
+		path: text(probe.path),
 		text: truncate(probe.text, 180),
 		html: truncate(probe.html, 1000),
+		child_summary: truncate(probe.child_summary, 500),
 		computed_style: styleSnapshot(probe.computed_style),
 		matched_css_rules: cssRules(probe.matched_css_rules),
 	};
+}
+
+function visualLayoutDeltas(value) {
+	return asArray(value)
+		.filter((delta) => delta && typeof delta === 'object')
+		.slice(0, 3)
+		.map((delta) => ({
+			pair: Number(delta.pair || 0),
+			source_selector: text(delta.source_selector),
+			imported_selector: text(delta.imported_selector),
+			source_path: text(delta.source_path),
+			imported_path: text(delta.imported_path),
+			source_child_summary: truncate(delta.source_child_summary, 500),
+			imported_child_summary: truncate(delta.imported_child_summary, 500),
+			rect_delta: delta.rect_delta && typeof delta.rect_delta === 'object' ? {
+				x: Number(delta.rect_delta.x || 0),
+				y: Number(delta.rect_delta.y || 0),
+				width: Number(delta.rect_delta.width || 0),
+				height: Number(delta.rect_delta.height || 0),
+			} : {},
+			style_diffs: asArray(delta.style_diffs)
+				.filter((diff) => diff && typeof diff === 'object')
+				.slice(0, 16)
+				.map((diff) => ({
+					property: text(diff.property),
+					source: truncate(diff.source, 180),
+					imported: truncate(diff.imported, 180),
+				})),
+		}));
 }
 
 function styleSnapshot(value) {

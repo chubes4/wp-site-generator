@@ -40,8 +40,21 @@ await Promise.all([
 						mismatchPixels: 1200,
 						totalPixels: 409600,
 						mismatchRatio: 0.0029296875,
-						source_matches: [{ selector: 'section.hero', text: 'Crown Alley Little Stage', rect: { x: 0, y: 600, width: 1280, height: 360 } }],
-						imported_matches: [{ selector: 'main.wp-block-group', text: 'Crown Alley Little Stage', rect: { x: 0, y: 620, width: 1280, height: 380 } }],
+						source_matches: [{ selector: 'section.hero', path: 'body > main > section.hero', text: 'Crown Alley Little Stage', child_summary: 'h1', rect: { x: 0, y: 600, width: 1280, height: 360 } }],
+						imported_matches: [{ selector: 'main.wp-block-group', path: 'body > main.wp-block-group', text: 'Crown Alley Little Stage', child_summary: 'h1', rect: { x: 0, y: 620, width: 1280, height: 380 } }],
+						layout_deltas: [
+							{
+								pair: 1,
+								source_selector: 'section.hero',
+								imported_selector: 'main.wp-block-group',
+								source_path: 'body > main > section.hero',
+								imported_path: 'body > main.wp-block-group',
+								source_child_summary: 'h1',
+								imported_child_summary: 'h1',
+								rect_delta: { x: 0, y: 20, width: 0, height: 20 },
+								style_diffs: [{ property: 'display', source: 'grid', imported: 'block' }],
+							},
+						],
 					},
 				],
 			},
@@ -102,9 +115,12 @@ assert.ok(visualPacket.data.visual_artifact, 'visual packet includes downloaded 
 assert.equal(visualPacket.data.visual_artifact.files.length, 6, 'visual packet lists downloaded visual artifact files');
 assert.equal(visualPacket.data.visual_artifact.visual_diff.dimension_mismatch, true, 'visual packet includes visual-diff summary');
 assert.equal(visualPacket.data.visual_artifact.visual_diff.regions[0].source_matches[0].selector, 'section.hero', 'visual packet includes source selector probe evidence');
+assert.equal(visualPacket.data.visual_artifact.visual_diff.regions[0].layout_deltas[0].style_diffs[0].property, 'display', 'visual packet includes layout deltas');
 assert.match(visualPacket.data.body, /Visual parity artifact context:/, 'visual packet body names visual artifact context');
 assert.match(visualPacket.data.body, /source screenshot:/, 'visual packet body includes screenshot paths');
 assert.match(visualPacket.data.body, /region 1: x=0, y=640, w=1280, h=320/, 'visual packet body includes top visual region');
+assert.match(visualPacket.data.body, /layout delta 1: section\.hero -> main\.wp-block-group/, 'visual packet body includes layout delta summary');
+assert.match(visualPacket.data.body, /style display: source=grid imported=block/, 'visual packet body includes style deltas');
 assert.deepEqual(visualPacket.metadata._engine_data.visual_artifact, visualPacket.data.visual_artifact, 'visual artifact context is mirrored into engine data');
 
 const issueOnlyPacket = emitStep.flow_step_settings.params.packets.find((packet) => packet.metadata.kind === 'freeform_block' && packet.data.finding_packet.repair_mode === 'issue_only');
