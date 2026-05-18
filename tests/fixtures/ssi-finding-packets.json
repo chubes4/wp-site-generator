@@ -185,8 +185,10 @@
         "source_matches": [
           {
             "selector": "section.hero",
+            "path": "body > main > section.hero",
             "text": "Crown Alley Little Stage",
             "html": "<section class=\"hero\"><h1>Crown Alley Little Stage</h1></section>",
+            "child_summary": "h1",
             "computed_style": {
               "display": "grid",
               "font-size": "48px",
@@ -205,8 +207,10 @@
         "imported_matches": [
           {
             "selector": "main.wp-block-group",
+            "path": "body > main.wp-block-group",
             "text": "Crown Alley Little Stage",
             "html": "<main class=\"wp-block-group\"><h1>Crown Alley Little Stage</h1></main>",
+            "child_summary": "h1",
             "computed_style": {
               "display": "block",
               "font-size": "40px",
@@ -220,6 +224,22 @@
               }
             ],
             "rect": { "x": 0, "y": 620, "width": 1280, "height": 380 }
+          }
+        ],
+        "layout_deltas": [
+          {
+            "pair": 1,
+            "source_selector": "section.hero",
+            "imported_selector": "main.wp-block-group",
+            "source_path": "body > main > section.hero",
+            "imported_path": "body > main.wp-block-group",
+            "source_child_summary": "h1",
+            "imported_child_summary": "h1",
+            "rect_delta": { "x": 0, "y": 20, "width": 0, "height": 20 },
+            "style_diffs": [
+              { "property": "display", "source": "grid", "imported": "block" },
+              { "property": "font-size", "source": "48px", "imported": "40px" }
+            ]
           }
         ]
       }

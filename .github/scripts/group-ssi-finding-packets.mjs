@@ -129,6 +129,7 @@ function visualRegions(value) {
 			mismatchRatio: numberOrString(region.mismatchRatio),
 			source_matches: visualProbes(region.source_matches),
 			imported_matches: visualProbes(region.imported_matches),
+			layout_deltas: visualLayoutDeltas(region.layout_deltas),
 		}))
 		: [];
 }
@@ -137,8 +138,10 @@ function visualProbes(value) {
 	return Array.isArray(value)
 		? value.filter((probe) => probe && typeof probe === 'object').slice(0, 5).map((probe) => ({
 			selector: text(probe.selector),
+			path: text(probe.path),
 			text: text(probe.text),
 			html: text(probe.html),
+			child_summary: text(probe.child_summary),
 			computed_style: objectStrings(probe.computed_style),
 			matched_css_rules: cssRules(probe.matched_css_rules),
 			rect: probe.rect && typeof probe.rect === 'object' ? {
@@ -147,6 +150,33 @@ function visualProbes(value) {
 				width: numberOrString(probe.rect.width),
 				height: numberOrString(probe.rect.height),
 			} : {},
+		}))
+		: [];
+}
+
+function visualLayoutDeltas(value) {
+	return Array.isArray(value)
+		? value.filter((delta) => delta && typeof delta === 'object').slice(0, 3).map((delta) => ({
+			pair: numberOrString(delta.pair),
+			source_selector: text(delta.source_selector),
+			imported_selector: text(delta.imported_selector),
+			source_path: text(delta.source_path),
+			imported_path: text(delta.imported_path),
+			source_child_summary: text(delta.source_child_summary),
+			imported_child_summary: text(delta.imported_child_summary),
+			rect_delta: delta.rect_delta && typeof delta.rect_delta === 'object' ? {
+				x: numberOrString(delta.rect_delta.x),
+				y: numberOrString(delta.rect_delta.y),
+				width: numberOrString(delta.rect_delta.width),
+				height: numberOrString(delta.rect_delta.height),
+			} : {},
+			style_diffs: Array.isArray(delta.style_diffs)
+				? delta.style_diffs.filter((diff) => diff && typeof diff === 'object').slice(0, 16).map((diff) => ({
+					property: text(diff.property),
+					source: text(diff.source),
+					imported: text(diff.imported),
+				}))
+				: [],
 		}))
 		: [];
 }
