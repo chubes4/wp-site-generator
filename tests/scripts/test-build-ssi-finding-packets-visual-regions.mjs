@@ -60,8 +60,10 @@ await writeFile(
 				source_matches: [
 					{
 						selector: 'section.hero',
+						path: 'body > main > section.hero',
 						text: 'Original hero copy',
 						html: '<section class="hero"><h1>Original hero copy</h1></section>',
+						child_summary: 'h1',
 						computed_style: {
 							display: 'grid',
 							'font-size': '48px',
@@ -76,8 +78,10 @@ await writeFile(
 				imported_matches: [
 					{
 						selector: 'main.wp-block-group',
+						path: 'body > main.wp-block-group',
 						text: 'Imported hero copy',
 						html: '<main class="wp-block-group"><h1>Imported hero copy</h1></main>',
+						child_summary: 'h1',
 						computed_style: {
 							display: 'block',
 							'font-size': '40px',
@@ -87,6 +91,22 @@ await writeFile(
 							{ selector: '.wp-block-group', media: '', css: '.wp-block-group { display: block; }' },
 						],
 						rect: { x: 0, y: 32, width: 100, height: 64 },
+					},
+				],
+				layout_deltas: [
+					{
+						pair: 1,
+						source_selector: 'section.hero',
+						imported_selector: 'main.wp-block-group',
+						source_path: 'body > main > section.hero',
+						imported_path: 'body > main.wp-block-group',
+						source_child_summary: 'h1',
+						imported_child_summary: 'h1',
+						rect_delta: { x: 0, y: 0, width: 0, height: 0 },
+						style_diffs: [
+							{ property: 'display', source: 'grid', imported: 'block' },
+							{ property: 'font-size', source: '48px', imported: '40px' },
+						],
 					},
 				],
 			},
@@ -117,8 +137,10 @@ assert.equal(visualPacket.selector, 'screenshot region 0,32 100x64');
 assert.equal(visualPacket.visual_regions.length, 1);
 assert.equal(visualPacket.visual_regions[0].source_matches[0].selector, 'section.hero');
 assert.equal(visualPacket.visual_regions[0].source_matches[0].computed_style.display, 'grid');
+assert.equal(visualPacket.visual_regions[0].source_matches[0].path, 'body > main > section.hero');
 assert.match(visualPacket.visual_regions[0].source_matches[0].html, /<section/);
 assert.equal(visualPacket.visual_regions[0].source_matches[0].matched_css_rules[0].selector, '.hero');
+assert.equal(visualPacket.visual_regions[0].layout_deltas[0].style_diffs[0].property, 'display');
 assert.equal(visualPacket.visual_code_evidence.imported[0].computed_style['font-size'], '40px');
 assert.match(visualPacket.preview, /top_region=x:0,y:32,w:100,h:64/);
 assert.match(visualPacket.excerpt, /Original hero copy/);

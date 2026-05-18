@@ -195,6 +195,7 @@ function summarizeRegion(region) {
 		mismatch_ratio: numberOrNull(region.mismatchRatio),
 		source_matches: summarizeMatches(region.source_matches),
 		imported_matches: summarizeMatches(region.imported_matches),
+		layout_deltas: summarizeLayoutDeltas(region.layout_deltas),
 	};
 }
 
@@ -202,7 +203,9 @@ function summarizeMatches(matches) {
 	return Array.isArray(matches)
 		? matches.slice(0, 3).map((match) => ({
 			selector: text(match.selector),
+			path: text(match.path),
 			text: text(match.text).slice(0, 180),
+			child_summary: text(match.child_summary).slice(0, 240),
 			rect: match.rect && typeof match.rect === 'object'
 				? {
 					x: numberOrNull(match.rect.x),
@@ -211,6 +214,35 @@ function summarizeMatches(matches) {
 					height: numberOrNull(match.rect.height),
 				}
 				: null,
+		}))
+		: [];
+}
+
+function summarizeLayoutDeltas(deltas) {
+	return Array.isArray(deltas)
+		? deltas.slice(0, 3).map((delta) => ({
+			pair: numberOrNull(delta.pair),
+			source_selector: text(delta.source_selector),
+			imported_selector: text(delta.imported_selector),
+			source_path: text(delta.source_path),
+			imported_path: text(delta.imported_path),
+			source_child_summary: text(delta.source_child_summary).slice(0, 240),
+			imported_child_summary: text(delta.imported_child_summary).slice(0, 240),
+			rect_delta: delta.rect_delta && typeof delta.rect_delta === 'object'
+				? {
+					x: numberOrNull(delta.rect_delta.x),
+					y: numberOrNull(delta.rect_delta.y),
+					width: numberOrNull(delta.rect_delta.width),
+					height: numberOrNull(delta.rect_delta.height),
+				}
+				: null,
+			style_diffs: Array.isArray(delta.style_diffs)
+				? delta.style_diffs.slice(0, 8).map((diff) => ({
+					property: text(diff.property),
+					source: text(diff.source).slice(0, 160),
+					imported: text(diff.imported).slice(0, 160),
+				}))
+				: [],
 		}))
 		: [];
 }
@@ -253,6 +285,15 @@ function formatVisualArtifactContext(artifact) {
 			}
 			if (importedMatch) {
 				lines.push(`  imported match: ${importedMatch.selector || '(selector unknown)'} ${importedMatch.text ? `"${importedMatch.text}"` : ''}`.trimEnd());
+			}
+			for (const delta of region.layout_deltas.slice(0, 2)) {
+				const rect = delta.rect_delta || {};
+				lines.push(
+					`  layout delta ${delta.pair || '?'}: ${delta.source_selector || '(source)'} -> ${delta.imported_selector || '(imported)'}; rect dx=${rect.x || 0}, dy=${rect.y || 0}, dw=${rect.width || 0}, dh=${rect.height || 0}`
+				);
+				for (const diff of delta.style_diffs.slice(0, 4)) {
+					lines.push(`    style ${diff.property}: source=${diff.source || '(empty)'} imported=${diff.imported || '(empty)'}`);
+				}
 			}
 		}
 	}
