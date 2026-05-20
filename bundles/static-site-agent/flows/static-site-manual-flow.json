@@ -1,5 +1,5 @@
 {
-    "max_items": [],
+    "max_items": {},
     "name": "Static Site — Manual",
     "pipeline_slug": "static-site-pipeline",
     "schedule": "manual",
@@ -10,7 +10,9 @@
             "config_patch_queue": [],
             "disabled_tools": [],
             "enabled": true,
-            "handler_slug": "github",
+            "handler_slugs": [
+                "github"
+            ],
             "handler_configs": {
                 "github": {
                     "data_source": "issues",
@@ -45,7 +47,7 @@
                 "reject_source",
                 "defer_item"
             ],
-            "handler_configs": [],
+            "handler_configs": {},
             "prompt_queue": [
                 {
                     "added_at": "2026-05-09T22:00:00+00:00",
