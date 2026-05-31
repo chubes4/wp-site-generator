@@ -39,7 +39,7 @@
                                 "required_parameters": {
                                     "action": "comment"
                                 },
-                                "required_output": "comment.html_url"
+                                "required_output": "data.comment.html_url"
                             },
                             {
                                 "name": "remove_label_from_issue",
