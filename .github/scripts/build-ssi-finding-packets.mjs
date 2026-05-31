@@ -93,7 +93,7 @@ async function loadVisualDiff(inputPath) {
 }
 
 function findSsiSummary(bench) {
-	const scenarios = asArray(bench?.data?.results?.scenarios);
+	const scenarios = asArray((bench?.data?.payload || bench?.data)?.results?.scenarios);
 	const scenario = scenarios.find((item) => item?.id === 'ssi-import');
 
 	return scenario?.metadata?.import_report_summary || null;
