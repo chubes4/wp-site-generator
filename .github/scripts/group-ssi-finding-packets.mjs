@@ -77,7 +77,11 @@ function groupPackets(rawPackets) {
 }
 
 function isActionablePacket(packet) {
-	if (text(packet.actionable).toLowerCase() === 'false') {
+	const actionable = text(packet.actionable).toLowerCase();
+	if (actionable === 'false') {
+		return false;
+	}
+	if (actionable !== 'true' && ['debug', 'info', 'notice'].includes(text(packet.severity).toLowerCase())) {
 		return false;
 	}
 

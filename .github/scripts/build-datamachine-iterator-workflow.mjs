@@ -30,6 +30,16 @@ function buildWorkflow(packets, pipelineConfig, flowConfig) {
 	const promptQueue = Array.isArray(iteratorFlowStep.prompt_queue) ? iteratorFlowStep.prompt_queue : [];
 	const userMessage = promptQueue.map((item) => item?.prompt || '').filter(Boolean).join('\n\n');
 
+	const initialData = {
+		job_source: 'system',
+		job_label: 'SSI finding iterator workflow',
+	};
+	if (packets.length === 0) {
+		initialData.completion_assertions_satisfied = {
+			complete_when_any: ['no_actionable_findings'],
+		};
+	}
+
 	return {
 		workflow: {
 			steps: [
@@ -58,10 +68,7 @@ function buildWorkflow(packets, pipelineConfig, flowConfig) {
 				},
 			],
 		},
-		initial_data: {
-			job_source: 'system',
-			job_label: 'SSI finding iterator workflow',
-		},
+		initial_data: initialData,
 	};
 }
 
