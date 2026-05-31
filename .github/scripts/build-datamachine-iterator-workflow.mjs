@@ -80,6 +80,10 @@ function toDataMachinePacket(item, index) {
 	let body = isGroup
 		? `Grouped SSI finding with ${item.count || item.packets.length} packet(s). ${text(item.reason) || text(packet.reason) || text(packet.preview)}`
 		: text(packet.reason) || text(packet.preview) || 'Static Site Importer validation finding.';
+	body = `${body}\n\nDiagnostic: ${text(packet.diagnostic_id) || '(none)'}\nSource path: ${text(packet.source_path) || text(packet.path) || '(none)'}\nCategory: ${text(packet.category) || '(none)'}\nReason code: ${text(packet.reason_code) || '(none)'}\nSuggested repair class: ${text(packet.suggested_repair_class) || '(none)'}`;
+	if (Array.isArray(packet.asset_map_refs) && packet.asset_map_refs.length > 0) {
+		body = `${body}\nAsset map refs: ${packet.asset_map_refs.join(', ')}`;
+	}
 	if (text(packet.repair_mode) === 'issue_only' || text(item.repair_mode) === 'issue_only') {
 		body = `${body}\n\nRepair mode: issue_only. This packet is aggregate evidence only; open or reuse a focused upstream issue instead of creating a repair PR.`;
 	}
@@ -102,6 +106,11 @@ function toDataMachinePacket(item, index) {
 			item_identifier: identifierParts.join(':'),
 			kind,
 			candidate_repo: text(item.candidate_repo) || text(packet.candidate_repo),
+			diagnostic_id: text(packet.diagnostic_id),
+			source_path: text(packet.source_path) || text(packet.path),
+			category: text(packet.category),
+			reason_code: text(packet.reason_code),
+			suggested_repair_class: text(packet.suggested_repair_class),
 			_engine_data: {
 				finding_packet: packet,
 				finding_group: isGroup ? item : null,
@@ -311,11 +320,8 @@ function normalizeFindingInput(input) {
 	if (Array.isArray(input?.packets)) {
 		return input.packets;
 	}
-	if (Array.isArray(input?.findings)) {
-		return input.findings;
-	}
 
-	throw new Error('Finding input must be an array, grouped finding object, or object with packets/findings.');
+	throw new Error('Finding input must be an array, grouped finding object, or object with packets.');
 }
 
 function resolveRepoPath(inputPath) {

@@ -24,10 +24,15 @@ await writeFile(
 						metadata: {
 							import_report_summary: {
 								path: 'import-report.json',
-								fallback_diagnostics: [],
-								freeform_diagnostics: [
+								diagnostics: [
 									{
-										path: 'parts/header.html',
+										diagnostic_id: 'diag-freeform-header',
+										type: 'freeform_block',
+										source_path: 'parts/header.html',
+										severity: 'warning',
+										category: 'fallback_block',
+										reason_code: 'generated_document_contains_core_freeform',
+										suggested_repair_class: 'replace_fallback_block',
 										block_path: '1',
 										selector: 'a.nav-logo',
 										excerpt: 'Field Notes Live',
@@ -36,14 +41,7 @@ await writeFile(
 										block_name: 'core/freeform',
 										converter: 'html-to-blocks-converter',
 										stage: 'generated_theme_block_analysis',
-										reason: 'generated_document_contains_core_freeform',
-									},
-								],
-								findings: [
-									{
-										kind: 'freeform_block',
-										path: '$.quality.freeform_block_count',
-										preview: '1',
+										message: 'generated_document_contains_core_freeform',
 									},
 								],
 							},
@@ -73,10 +71,13 @@ assert.equal(result.status, 0, result.stderr || result.stdout);
 
 const packets = JSON.parse(await readFile(outputPath, 'utf8'));
 const concrete = packets.find((packet) => packet.kind === 'freeform_block' && packet.source_html_preview);
-const aggregate = packets.find((packet) => packet.kind === 'freeform_block' && packet.path === '$.quality.freeform_block_count');
 
 assert.ok(concrete, 'Expected concrete freeform diagnostic packet');
+assert.equal(concrete.schema_version, 3);
 assert.equal(concrete.candidate_repo, 'chubes4/static-site-importer');
+assert.equal(concrete.category, 'fallback_block');
+assert.equal(concrete.reason_code, 'generated_document_contains_core_freeform');
+assert.equal(concrete.suggested_repair_class, 'replace_fallback_block');
 assert.equal(concrete.block_name, 'core/freeform');
 assert.equal(concrete.block_path, '1');
 assert.equal(concrete.selector, 'a.nav-logo');
@@ -85,8 +86,5 @@ assert.equal(concrete.stage, 'generated_theme_block_analysis');
 assert.equal(concrete.reason, 'generated_document_contains_core_freeform');
 assert.match(concrete.emitted_block_preview, /wp:freeform/);
 assert.equal(concrete.repair_mode, 'pr_or_issue');
-
-assert.ok(aggregate, 'Expected legacy aggregate freeform packet to remain visible');
-assert.equal(aggregate.repair_mode, 'issue_only');
 
 console.log('build SSI freeform finding packets smoke passed');

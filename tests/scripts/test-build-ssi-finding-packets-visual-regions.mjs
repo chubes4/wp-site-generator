@@ -25,8 +25,7 @@ await writeFile(
 						metadata: {
 							import_report_summary: {
 								path: 'import-report.json',
-								fallback_diagnostics: [],
-								findings: [],
+								diagnostics: [],
 							},
 						},
 					},
