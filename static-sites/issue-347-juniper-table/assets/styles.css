@@ -359,13 +359,12 @@ p {
   margin: 1.8rem 0 0;
 }
 
-.essential-row {
+.essentials-list div {
   padding-top: 1rem;
   border-top: 1px dashed rgba(90, 59, 46, 0.25);
 }
 
-.essential-label {
-  display: block;
+.essentials-list dt {
   color: var(--coffee-brown);
   font-size: 0.76rem;
   font-weight: 800;
@@ -373,7 +372,7 @@ p {
   text-transform: uppercase;
 }
 
-.essential-text {
+.essentials-list dd {
   margin: 0.25rem 0 0;
   font-size: 1.04rem;
 }
