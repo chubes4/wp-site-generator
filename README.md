@@ -194,11 +194,11 @@ The Homeboy WordPress extension capability that makes this possible (`wp_codebox
 
 ## How Concepts Stay Distinct
 
-- Before opening an issue, each idea agent reads the recent issue corpus (open + recently-closed).
-- Material overlap means the candidate is dropped and no issue is opened.
-- Adjacent but differentiated means the differentiation is stated in the issue body so reviewers see why it isn't a duplicate.
+- Before opening an issue, each idea agent does one lightweight recent-corpus read for variety.
+- The agent publishes a buildable concept after that read instead of spending turns on corpus analysis.
+- Adjacent but differentiated ideas are acceptable when the audience, offer, place, product angle, or site shape differs.
 
-When concurrency increases, two idea runs can briefly race. The intent is to tolerate a small collision rate and rely on volume to outweigh the few duplicates. Heavier dedup belongs in the agent layer, not the repo.
+Prompt-level variety keeps the generator moving. Stronger duplicate prevention should be deterministic, ideally through Data Machine processed-item/idempotency machinery, rather than asking the model to police the corpus.
 
 ---
 
