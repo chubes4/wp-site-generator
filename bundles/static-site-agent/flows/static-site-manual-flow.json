@@ -36,7 +36,7 @@
                         "tools": [
                             {
                                 "name": "github_pull_request_publish",
-                                "required_output": "data.html_url",
+                                "required_output": "html_url",
                                 "success": true
                             }
                         ]
