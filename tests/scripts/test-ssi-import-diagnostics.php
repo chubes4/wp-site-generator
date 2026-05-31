@@ -32,7 +32,7 @@ define( 'WP_CONTENT_DIR', $tmp_dir . '/wp-content' );
 function wp_get_theme() {
 	return new class() {
 		public function get_stylesheet(): string {
-			return 'demo-theme';
+			return 'twentytwentyfive';
 		}
 	};
 }
@@ -64,6 +64,8 @@ $result      = $diagnostics();
 $summary     = $result['metadata']['import_report_summary'] ?? array();
 $modern_rows = $summary['diagnostics'] ?? array();
 
+assert_same( $theme_dir . '/import-report.json', $summary['path'] ?? null, 'resolved report path' );
+assert_same( true, $summary['readable'] ?? null, 'resolved report readable' );
 assert_same( 1, $result['metrics']['ssi_fallback_count'] ?? null, 'fallback metric' );
 assert_same( 1, $result['metrics']['ssi_core_html_count'] ?? null, 'core/html metric' );
 assert_same( 1, count( $modern_rows ), 'modern diagnostic row count' );

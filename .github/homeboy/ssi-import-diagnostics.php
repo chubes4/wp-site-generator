@@ -3,6 +3,19 @@
 return static function (): array {
 	$site = function_exists( 'wp_get_theme' ) ? wp_get_theme()->get_stylesheet() : '';
 	$report_path = WP_CONTENT_DIR . '/themes/' . $site . '/import-report.json';
+	if ( ! is_readable( $report_path ) ) {
+		$report_candidates = glob( WP_CONTENT_DIR . '/themes/*/import-report.json' );
+		if ( is_array( $report_candidates ) ) {
+			$report_candidates = array_values( array_filter( $report_candidates, 'is_readable' ) );
+			usort(
+				$report_candidates,
+				static fn ( string $left, string $right ): int => filemtime( $right ) <=> filemtime( $left )
+			);
+			if ( ! empty( $report_candidates ) ) {
+				$report_path = $report_candidates[0];
+			}
+		}
+	}
 	$metrics = array(
 		'ssi_report_readable' => 0,
 		'ssi_report_top_level_keys' => 0,
