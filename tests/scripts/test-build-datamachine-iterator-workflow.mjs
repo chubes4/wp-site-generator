@@ -100,7 +100,7 @@ assert.equal(emitStep.flow_step_settings.task, 'emit_data_packets', 'first step 
 assert.equal(emitStep.flow_step_settings.params.replace_data_packets, true, 'emit step replaces stale upstream packets');
 assert.equal(emitStep.flow_step_settings.params.suppress_result_packet, true, 'emit step suppresses synthetic task result');
 assert.equal(emitStep.flow_step_settings.params.complete_no_items, true, 'empty findings stop as completed_no_items');
-assert.equal(emitStep.flow_step_settings.params.packets.length, 7, 'fixture emits grouped findings for fanout');
+assert.equal(emitStep.flow_step_settings.params.packets.length, 8, 'fixture emits grouped findings for fanout');
 assert.equal(emitStep.flow_step_settings.params.packets[0].type, 'ssi_finding_group', 'grouped packets use ssi_finding_group type');
 assert.ok(emitStep.flow_step_settings.params.packets[0].metadata._engine_data.finding_packet, 'group seeds representative finding_packet into child engine data');
 assert.ok(emitStep.flow_step_settings.params.packets[0].metadata._engine_data.finding_group, 'group seeds full finding_group into child engine data');
@@ -122,6 +122,15 @@ assert.match(visualPacket.data.body, /region 1: x=0, y=640, w=1280, h=320/, 'vis
 assert.match(visualPacket.data.body, /layout delta 1: section\.hero -> main\.wp-block-group/, 'visual packet body includes layout delta summary');
 assert.match(visualPacket.data.body, /style display: source=grid imported=block/, 'visual packet body includes style deltas');
 assert.deepEqual(visualPacket.metadata._engine_data.visual_artifact, visualPacket.data.visual_artifact, 'visual artifact context is mirrored into engine data');
+assert.equal(visualPacket.metadata.candidate_repo, 'chubes4/wp-site-generator', 'visual packet routes to source-site owner');
+assert.equal(visualPacket.metadata.repair_mode, 'pr_or_issue', 'source-site visual defects can take the PR path when source evidence exists');
+assert.match(visualPacket.metadata.route_reason, /wp-site-generator/, 'visual packet carries structured route rationale');
+
+const artifactCompilerPacket = emitStep.flow_step_settings.params.packets.find((packet) => packet.metadata.candidate_repo === 'chubes4/block-artifact-compiler');
+assert.ok(artifactCompilerPacket, 'fixture emits an artifact compiler route');
+assert.equal(artifactCompilerPacket.metadata.kind, 'artifact_schema_violation');
+assert.equal(artifactCompilerPacket.metadata.repair_mode, 'pr_or_issue');
+assert.match(artifactCompilerPacket.metadata.route_reason, /block-artifact-compiler/);
 
 const issueOnlyPacket = emitStep.flow_step_settings.params.packets.find((packet) => packet.metadata.kind === 'ambiguous_import_quality' && packet.data.finding_packet.repair_mode === 'issue_only');
 assert.ok(issueOnlyPacket, 'aggregate freeform packet remains available for issue fallback');

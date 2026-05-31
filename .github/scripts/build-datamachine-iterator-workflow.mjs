@@ -106,6 +106,8 @@ function toDataMachinePacket(item, index) {
 			item_identifier: identifierParts.join(':'),
 			kind,
 			candidate_repo: text(item.candidate_repo) || text(packet.candidate_repo),
+			repair_mode: text(item.repair_mode) || text(packet.repair_mode),
+			route_reason: text(item.route_reason),
 			diagnostic_id: text(packet.diagnostic_id),
 			source_path: text(packet.source_path) || text(packet.path),
 			category: text(packet.category),

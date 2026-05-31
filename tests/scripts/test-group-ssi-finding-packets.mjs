@@ -22,11 +22,12 @@ assert.equal(result.status, 0, result.stderr || result.stdout);
 
 const grouped = JSON.parse(await readFile(outputPath, 'utf8'));
 assert.equal(grouped.schema_version, 3);
-assert.equal(grouped.packet_count, 7);
-assert.equal(grouped.actionable_packet_count, 7);
-assert.equal(grouped.deduped_packet_count, 7);
-assert.equal(grouped.group_count, 7);
+assert.equal(grouped.packet_count, 8);
+assert.equal(grouped.actionable_packet_count, 8);
+assert.equal(grouped.deduped_packet_count, 8);
+assert.equal(grouped.group_count, 8);
 assert.deepEqual(grouped.candidate_repos.sort(), [
+	'chubes4/block-artifact-compiler',
 	'chubes4/block-format-bridge',
 	'chubes4/html-to-blocks-converter',
 	'chubes4/static-site-importer',
@@ -55,12 +56,18 @@ const bfbGroup = grouped.groups.find((group) => group.candidate_repo === 'chubes
 assert.equal(bfbGroup.kind, 'bfb_scope_diagnostic');
 assert.match(bfbGroup.route_reason, /BFB/);
 
+const artifactCompilerGroup = grouped.groups.find((group) => group.candidate_repo === 'chubes4/block-artifact-compiler');
+assert.equal(artifactCompilerGroup.kind, 'artifact_schema_violation');
+assert.equal(artifactCompilerGroup.repair_mode, 'pr_or_issue');
+assert.match(artifactCompilerGroup.route_reason, /artifact schema/);
+
 const ambiguousGroup = grouped.groups.find((group) => group.kind === 'ambiguous_import_quality');
 assert.equal(ambiguousGroup.repair_mode, 'issue_only');
 assert.match(ambiguousGroup.route_reason, /insufficient evidence/);
 
 const visualGroup = grouped.groups.find((group) => group.kind === 'visual_parity_mismatch');
 assert.equal(visualGroup.candidate_repo, 'chubes4/wp-site-generator');
+assert.equal(visualGroup.repair_mode, 'pr_or_issue');
 assert.equal(visualGroup.count, 1);
 assert.equal(visualGroup.packets[0].visual_regions.length, 1);
 assert.equal(visualGroup.packets[0].visual_regions[0].source_matches[0].selector, 'section.hero');

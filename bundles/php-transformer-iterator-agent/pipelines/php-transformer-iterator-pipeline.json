@@ -62,7 +62,7 @@
                     "list_github_pulls"
                 ],
                 "execution_order": 1,
-                "label": "Repair transformer findings",
+                "label": "Repair static-site validation findings",
                 "step_type": "ai",
                 "tool_runtime_rules": [
                     {

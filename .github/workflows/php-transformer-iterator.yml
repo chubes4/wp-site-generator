@@ -1,4 +1,4 @@
-name: PHP transformer iterator
+name: Static site validation iterator
 
 on:
   workflow_dispatch:
@@ -44,7 +44,7 @@ permissions:
 
 jobs:
   iterator:
-    name: Run PR-first transformer iterator
+    name: Run PR-first validation iterator
     uses: Extra-Chill/homeboy-extensions/.github/workflows/datamachine-agent-ci.yml@main
     with:
       bundle_path: bundles/php-transformer-iterator-agent
@@ -52,9 +52,9 @@ jobs:
       pipeline_slug: php-transformer-iterator-pipeline
       flow_slug: php-transformer-iterator-manual-flow
       target_repo: ${{ inputs.source_repo }}
-      prompt: Run the PHP transformer iterator now. The fetch step supplies exactly one grouped finding per Data Machine child job. Process the fetched DataPacket as the source of truth.
+      prompt: Run the static-site validation iterator now. The fetch step supplies exactly one grouped finding per Data Machine child job. Process the fetched DataPacket as the source of truth.
       model: ${{ inputs.openai_model }}
-      app_token_repos: chubes4/wp-site-generator,chubes4/static-site-importer,chubes4/html-to-blocks-converter,chubes4/block-format-bridge
+      app_token_repos: chubes4/wp-site-generator,chubes4/static-site-importer,chubes4/html-to-blocks-converter,chubes4/block-format-bridge,chubes4/block-artifact-compiler
       data_machine_ref: ${{ inputs.data_machine_ref }}
       data_machine_code_ref: ${{ inputs.data_machine_code_ref }}
       success_requires_pr: true
