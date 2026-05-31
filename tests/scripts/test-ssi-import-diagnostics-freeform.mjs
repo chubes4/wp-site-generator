@@ -12,8 +12,11 @@ assert.match(diagnostics, /'ssi_freeform_block_count'\s*=>\s*0/, 'diagnostics in
 assert.match(diagnostics, /array\(\s*'quality',\s*'freeform_block_count'\s*\)/, 'diagnostics reads quality.freeform_block_count');
 assert.match(diagnostics, /'freeform_block_count'\s*\)/, 'diagnostics falls back to generated document freeform counts');
 assert.match(diagnostics, /'diagnostics'\s*=>\s*\$diagnostics/, 'diagnostics exposes modern diagnostic rows');
+assert.match(diagnostics, /'format'\s*=>\s*\$first_scalar_path/, 'diagnostics exposes source-document format fields');
 assert.match(diagnostics, /'ssi_bac_available'\s*=>\s*0/, 'diagnostics initializes BAC availability metric');
 assert.match(diagnostics, /'block_artifact_compiler'\s*=>\s*is_array\( \$report \) \? \$bac_summary\( \$report \)/, 'diagnostics exposes BAC import report summary');
+assert.match(diagnostics, /'source_documents'\s*=>\s*is_array\( \$report \) \? \$normalize_source_documents/, 'diagnostics exposes SSI source-document summary');
+assert.match(diagnostics, /'source_documents'\s*=>\s*\$source_documents/, 'diagnostics exposes BAC source-document summary');
 assert.doesNotMatch(diagnostics, /freeform_diagnostics/, 'diagnostics does not expose legacy freeform diagnostic rows');
 assert.doesNotMatch(diagnostics, /fallback_diagnostics/, 'diagnostics does not expose legacy fallback diagnostic rows');
 assert.doesNotMatch(diagnostics, /'findings'/, 'diagnostics does not expose legacy finding rows');
