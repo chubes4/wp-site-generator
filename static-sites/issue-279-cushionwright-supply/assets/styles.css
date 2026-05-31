@@ -471,12 +471,12 @@ h3 {
 .product-card {
   display: flex;
   flex-direction: column;
-  min-height: 460px;
+  min-height: 580px;
   padding: 1rem;
 }
 
 .product-card.is-layout-flow {
-  min-height: 543px;
+  min-height: 580px;
 }
 
 .swatch {
