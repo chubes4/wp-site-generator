@@ -16,38 +16,40 @@ await writeFile(
 	JSON.stringify({
 		success: true,
 		data: {
-			status: 'success',
-			results: {
-				scenarios: [
-					{
-						id: 'ssi-import',
-						metadata: {
-							import_report_summary: {
-								path: 'import-report.json',
-								diagnostics: [
-									{
-										diagnostic_id: 'diag-freeform-header',
-										type: 'freeform_block',
-										source_path: 'parts/header.html',
-										severity: 'warning',
-										category: 'fallback_block',
-										reason_code: 'generated_document_contains_core_freeform',
-										suggested_repair_class: 'replace_fallback_block',
-										block_path: '1',
-										selector: 'a.nav-logo',
-										excerpt: 'Field Notes Live',
-										source_html_preview: '<a href="#" class="nav-logo">Field Notes Live</a>',
-										emitted_block_preview: '<!-- wp:freeform --><a href="#" class="nav-logo">Field Notes Live</a><!-- /wp:freeform -->',
-										block_name: 'core/freeform',
-										converter: 'html-to-blocks-converter',
-										stage: 'generated_theme_block_analysis',
-										message: 'generated_document_contains_core_freeform',
-									},
-								],
+			payload: {
+				status: 'success',
+				results: {
+					scenarios: [
+						{
+							id: 'ssi-import',
+							metadata: {
+								import_report_summary: {
+									path: 'import-report.json',
+									diagnostics: [
+										{
+											diagnostic_id: 'diag-freeform-header',
+											type: 'freeform_block',
+											source_path: 'parts/header.html',
+											severity: 'warning',
+											category: 'fallback_block',
+											reason_code: 'generated_document_contains_core_freeform',
+											suggested_repair_class: 'replace_fallback_block',
+											block_path: '1',
+											selector: 'a.nav-logo',
+											excerpt: 'Field Notes Live',
+											source_html_preview: '<a href="#" class="nav-logo">Field Notes Live</a>',
+											emitted_block_preview: '<!-- wp:freeform --><a href="#" class="nav-logo">Field Notes Live</a><!-- /wp:freeform -->',
+											block_name: 'core/freeform',
+											converter: 'html-to-blocks-converter',
+											stage: 'generated_theme_block_analysis',
+											message: 'generated_document_contains_core_freeform',
+										},
+									],
+								},
 							},
 						},
-					},
-				],
+					],
+				},
 			},
 		},
 	})

@@ -33,7 +33,7 @@ if (!bench) {
 	console.log('_Bench artifact is not valid JSON._');
 	process.exit(0);
 }
-const ssi = bench?.data?.results?.scenarios?.find((scenario) => scenario?.id === 'ssi-import');
+const ssi = (bench?.data?.payload || bench?.data)?.results?.scenarios?.find((scenario) => scenario?.id === 'ssi-import');
 
 if (!ssi) {
 	console.log('_SSI workload did not run._');
