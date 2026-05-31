@@ -1,0 +1,22 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 96 96" role="img" aria-labelledby="title desc">
+  <title id="title">Hearth &amp; Hide Repairs mark</title>
+  <desc id="desc">A circular leather repair mark with a stitched hide shape, brass rivet, and small house roof.</desc>
+  <defs>
+    <linearGradient id="leather" x1="12" y1="8" x2="84" y2="88" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#8A5632"/>
+      <stop offset="0.55" stop-color="#5A241F"/>
+      <stop offset="1" stop-color="#2F221A"/>
+    </linearGradient>
+    <linearGradient id="brass" x1="27" y1="20" x2="76" y2="80" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#D08A3C"/>
+      <stop offset="1" stop-color="#B48A45"/>
+    </linearGradient>
+  </defs>
+  <circle cx="48" cy="48" r="45" fill="#F8F2E8"/>
+  <circle cx="48" cy="48" r="40" fill="url(#leather)"/>
+  <path d="M24 45 48 25l24 20" fill="none" stroke="#EFE5D6" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M29 44h38v27a5 5 0 0 1-5 5H34a5 5 0 0 1-5-5V44Z" fill="#EFE5D6" opacity="0.93"/>
+  <path d="M36 61c5-8 18-8 24 0" fill="none" stroke="#5A241F" stroke-width="5" stroke-linecap="round"/>
+  <circle cx="48" cy="60" r="5" fill="url(#brass)"/>
+  <path d="M22 50c4 2 4 2 8 0m36 0c4 2 4 2 8 0M35 79c3-3 5-3 8 0m10 0c3-3 5-3 8 0" fill="none" stroke="#B48A45" stroke-width="3" stroke-linecap="round" opacity="0.85"/>
+</svg>
