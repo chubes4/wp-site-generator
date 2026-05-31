@@ -2,6 +2,10 @@
 
 declare( strict_types=1 );
 
+if ( function_exists( 'wp_get_theme' ) ) {
+	return;
+}
+
 $repo_root = dirname( __DIR__, 2 );
 $tmp_dir   = sys_get_temp_dir() . '/ssi-import-diagnostics-' . bin2hex( random_bytes( 4 ) );
 $theme_dir = $tmp_dir . '/wp-content/themes/demo-theme';
@@ -29,21 +33,55 @@ if ( ! mkdir( $theme_dir, 0777, true ) && ! is_dir( $theme_dir ) ) {
 
 define( 'WP_CONTENT_DIR', $tmp_dir . '/wp-content' );
 
-function wp_get_theme() {
-	return new class() {
-		public function get_stylesheet(): string {
-			return 'twentytwentyfive';
-		}
-	};
+if ( ! function_exists( 'wp_get_theme' ) ) {
+	function wp_get_theme() {
+		return new class() {
+			public function get_stylesheet(): string {
+				return 'twentytwentyfive';
+			}
+		};
+	}
 }
 
-function wp_json_encode( $value, $flags = 0 ) {
-	return json_encode( $value, $flags );
+if ( ! function_exists( 'wp_json_encode' ) ) {
+	function wp_json_encode( $value, $flags = 0 ) {
+		return json_encode( $value, $flags );
+	}
 }
 
 $report = array(
 	'quality'     => array(
 		'fallback_count' => 1,
+	),
+	'source_metadata' => array(
+		'source' => 'website_artifact',
+	),
+	'block_artifact_compiler' => array(
+		'available'      => true,
+		'fragment_count' => 1,
+		'fragments'      => array(
+			array(
+				'source'           => 'main:index.html',
+				'component_count'  => 2,
+				'diagnostic_count' => 1,
+			),
+		),
+		'website_artifact' => array(
+			'summary'     => array(
+				'status'          => 'success',
+				'component_count' => 3,
+			),
+			'input'       => array(
+				'rejected_count' => 2,
+			),
+			'diagnostics' => array(
+				array(
+					'code'     => 'unsafe_artifact_path',
+					'severity' => 'warning',
+					'message'  => 'Rejected an unsafe artifact path.',
+				),
+			),
+		),
 	),
 	'diagnostics' => array(
 		array(
@@ -68,7 +106,17 @@ assert_same( $theme_dir . '/import-report.json', $summary['path'] ?? null, 'reso
 assert_same( true, $summary['readable'] ?? null, 'resolved report readable' );
 assert_same( 1, $result['metrics']['ssi_fallback_count'] ?? null, 'fallback metric' );
 assert_same( 1, $result['metrics']['ssi_core_html_count'] ?? null, 'core/html metric' );
+assert_same( 1, $result['metrics']['ssi_bac_available'] ?? null, 'BAC available metric' );
+assert_same( 1, $result['metrics']['ssi_bac_fragment_count'] ?? null, 'BAC fragment metric' );
+assert_same( 5, $result['metrics']['ssi_bac_component_count'] ?? null, 'BAC component metric' );
+assert_same( 2, $result['metrics']['ssi_bac_rejected_count'] ?? null, 'BAC rejected metric' );
+assert_same( 2, $result['metrics']['ssi_bac_diagnostic_count'] ?? null, 'BAC diagnostic metric' );
+assert_same( 1, $result['metrics']['ssi_bac_website_artifact_present'] ?? null, 'BAC website artifact metric' );
 assert_same( 1, count( $modern_rows ), 'modern diagnostic row count' );
+$bac_summary = $summary['block_artifact_compiler'] ?? array();
+assert_same( 'website_artifact', $bac_summary['import_mode'] ?? null, 'BAC import mode summary' );
+assert_same( 'success', $bac_summary['website_artifact_summary']['status'] ?? null, 'BAC website artifact status summary' );
+assert_same( 2, $bac_summary['rejected_count'] ?? null, 'BAC rejected summary' );
 
 $modern_row = $modern_rows[0];
 assert_same( 'unsupported_html_fallback', $modern_row['type'] ?? null, 'modern diagnostic type' );
