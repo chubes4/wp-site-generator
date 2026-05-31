@@ -56,6 +56,10 @@
                 {
                     "added_at": "2026-05-13T12:35:00+00:00",
                     "prompt": "Set the pull request target lane from the fetched issue labels when calling github_pull_request_publish. If the issue has commerce:woocommerce or site-kind:commerce, pass labels [\"target:woocommerce\"]. If the issue has commerce:none or site-kind:content, pass labels [\"target:wordpress\"]. Use exactly one target label. The target label describes the WordPress import lane; static-sites/ remains only the source-file location."
+                },
+                {
+                    "added_at": "2026-05-31T18:40:00+00:00",
+                    "prompt": "Use the fetched issue content and its Latest Comment section as the concept and design context. After you have those two inputs, proceed directly to github_pull_request_publish with a files array containing the complete static site implementation."
                 }
             ],
             "queue_mode": "static",
