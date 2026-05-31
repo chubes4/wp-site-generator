@@ -76,7 +76,11 @@ const concrete = packets.find((packet) => packet.kind === 'freeform_block' && pa
 const aggregate = packets.find((packet) => packet.kind === 'freeform_block' && packet.path === '$.quality.freeform_block_count');
 
 assert.ok(concrete, 'Expected concrete freeform diagnostic packet');
+assert.equal(concrete.schema_version, 3);
 assert.equal(concrete.candidate_repo, 'chubes4/static-site-importer');
+assert.equal(concrete.category, 'fallback_block');
+assert.equal(concrete.reason_code, 'generated_document_contains_core_freeform');
+assert.equal(concrete.suggested_repair_class, 'replace_fallback_block');
 assert.equal(concrete.block_name, 'core/freeform');
 assert.equal(concrete.block_path, '1');
 assert.equal(concrete.selector, 'a.nav-logo');

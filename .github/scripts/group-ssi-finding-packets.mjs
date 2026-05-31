@@ -30,11 +30,14 @@ function groupPackets(rawPackets) {
 
 	for (const packet of deduped) {
 		const candidateRepo = routeCandidateRepo(packet);
+		const repairMode = routeRepairMode(packet, candidateRepo);
 		const key = JSON.stringify([
 			candidateRepo,
 			packet.kind,
 			packet.converter,
 			packet.block_name,
+			packet.category,
+			packet.reason_code,
 			groupSignature(packet),
 		]);
 
@@ -44,7 +47,11 @@ function groupPackets(rawPackets) {
 				kind: packet.kind,
 				converter: packet.converter,
 				block_name: packet.block_name,
-				repair_mode: packet.repair_mode,
+				category: packet.category,
+				reason_code: packet.reason_code,
+				suggested_repair_class: packet.suggested_repair_class,
+				repair_mode: repairMode,
+				route_reason: routeReason(packet, candidateRepo, repairMode),
 				visual_summary: visualSummary(packet),
 				visual_code_evidence: visualCodeEvidence(packet),
 				reason: packet.reason,
@@ -59,7 +66,7 @@ function groupPackets(rawPackets) {
 	}
 
 	return {
-		schema_version: 2,
+		schema_version: 3,
 		packet_count: normalized.length,
 		actionable_packet_count: actionable.length,
 		deduped_packet_count: deduped.length,
@@ -87,8 +94,14 @@ function normalizePacket(packet) {
 		source_branch: text(packet.source_branch),
 		validation_run_id: numberOrString(packet.validation_run_id),
 		candidate_repo: text(packet.candidate_repo),
+		diagnostic_id: text(packet.diagnostic_id) || text(packet.id),
 		kind: text(packet.kind).toLowerCase(),
-		path: text(packet.path),
+		source_path: text(packet.source_path) || text(packet.path),
+		path: text(packet.source_path) || text(packet.path),
+		severity: text(packet.severity),
+		category: text(packet.category).toLowerCase(),
+		reason_code: text(packet.reason_code).toLowerCase(),
+		suggested_repair_class: text(packet.suggested_repair_class),
 		preview: text(packet.preview),
 		selector: text(packet.selector),
 		excerpt: text(packet.excerpt),
@@ -102,6 +115,8 @@ function normalizePacket(packet) {
 		repair_mode: text(packet.repair_mode),
 		malformed: Boolean(packet.malformed),
 		actionable: packet.actionable,
+		diagnostic_refs: Array.isArray(packet.diagnostic_refs) ? packet.diagnostic_refs.map(text).filter(Boolean) : [],
+		asset_map_refs: Array.isArray(packet.asset_map_refs) ? packet.asset_map_refs.map(text).filter(Boolean) : [],
 		artifact_names: packet.artifact_names && typeof packet.artifact_names === 'object' ? packet.artifact_names : {},
 		bench_outcome: text(packet.bench_outcome),
 		visual_outcome: text(packet.visual_outcome),
@@ -254,6 +269,9 @@ function dedupe(packets) {
 			packet.source_repo,
 			packet.source_pr,
 			packet.kind,
+			packet.diagnostic_id,
+			packet.category,
+			packet.reason_code,
 			packet.path,
 			packet.selector,
 			packet.source_html_preview,
@@ -283,21 +301,29 @@ function routeCandidateRepo(packet) {
 		return 'chubes4/wp-site-generator';
 	}
 	if (kind === 'visual_parity_outcome' || kind === 'visual_parity_mismatch') {
-		return 'chubes4/static-site-importer';
+		return 'chubes4/wp-site-generator';
 	}
 	if (kind === 'report_missing' || kind === 'import_clean') {
 		return 'chubes4/static-site-importer';
 	}
 
-	const haystack = [packet.kind, packet.converter, packet.block_name, packet.stage, packet.reason, packet.path].join(' ').toLowerCase();
+	const converter = text(packet.converter).toLowerCase();
+	const repairClass = text(packet.suggested_repair_class).toLowerCase();
+	const category = text(packet.category).toLowerCase();
+	const reasonCode = text(packet.reason_code).toLowerCase();
+	const stage = text(packet.stage).toLowerCase();
+	const haystack = [packet.kind, converter, packet.block_name, stage, packet.reason, packet.path, category, reasonCode, repairClass].join(' ').toLowerCase();
 
-	if (haystack.includes('html-to-block') || haystack.includes('h2bc')) {
+	if ((converter.includes('html-to-block') || converter.includes('h2bc')) && (repairClass.includes('converter_support') || repairClass.includes('replace_fallback') || category.includes('fallback') || kind.includes('fallback') || kind.includes('core_html') || kind.includes('freeform'))) {
 		return 'chubes4/html-to-blocks-converter';
 	}
-	if (haystack.includes('block-format-bridge') || haystack.includes('bfb') || haystack.includes('serialization')) {
+	if (haystack.includes('block-format-bridge') || haystack.includes('bfb') || haystack.includes('serialization') || category.includes('adapter') || category.includes('scope') || category.includes('bfb_report')) {
 		return 'chubes4/block-format-bridge';
 	}
-	if (haystack.includes('generator') || haystack.includes('static-site-generator') || haystack.includes('visual parity') || haystack.includes('homeboy-bench')) {
+	if (category.includes('source_region') || category.includes('source-selection') || category.includes('unresolved_asset') || category.includes('asset_map') || category.includes('import_report') || stage.includes('source_selection') || stage.includes('asset_map') || haystack.includes('source-selection') || haystack.includes('asset_map')) {
+		return 'chubes4/static-site-importer';
+	}
+	if (haystack.includes('generator') || haystack.includes('static-site-generator') || haystack.includes('visual parity') || haystack.includes('homeboy-bench') || category.includes('generator_policy')) {
 		return 'chubes4/wp-site-generator';
 	}
 
@@ -307,6 +333,34 @@ function routeCandidateRepo(packet) {
 	}
 
 	return 'chubes4/static-site-importer';
+}
+
+function routeRepairMode(packet, candidateRepo) {
+	const configured = text(packet.repair_mode);
+	if (configured) {
+		return configured;
+	}
+	const hasPatchEvidence = Boolean(text(packet.source_html_preview) || text(packet.selector) || text(packet.source_path));
+	if (!hasPatchEvidence || candidateRepo === 'chubes4/wp-site-generator') {
+		return 'issue_only';
+	}
+	return 'pr_or_issue';
+}
+
+function routeReason(packet, candidateRepo, repairMode) {
+	if (repairMode === 'issue_only') {
+		return 'insufficient evidence for a safe automated PR path; group remains issue-only';
+	}
+	if (candidateRepo === 'chubes4/html-to-blocks-converter') {
+		return 'converter diagnostic routes to html-to-blocks-converter';
+	}
+	if (candidateRepo === 'chubes4/block-format-bridge') {
+		return 'BFB adapter/report/scope diagnostic routes to block-format-bridge';
+	}
+	if (candidateRepo === 'chubes4/static-site-importer') {
+		return 'SSI import/source-selection/asset-map diagnostic routes to static-site-importer';
+	}
+	return 'visual parity or generator policy diagnostic routes to wp-site-generator';
 }
 
 function groupSignature(packet) {

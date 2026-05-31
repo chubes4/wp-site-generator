@@ -62,12 +62,20 @@ file_put_contents( $theme_dir . '/import-report.json', json_encode( $report ) );
 $diagnostics = require $repo_root . '/.github/homeboy/ssi-import-diagnostics.php';
 $result      = $diagnostics();
 $summary     = $result['metadata']['import_report_summary'] ?? array();
+$modern_rows = $summary['diagnostics'] ?? array();
 $rows        = $summary['fallback_diagnostics'] ?? array();
 $findings    = $summary['findings'] ?? array();
 
 assert_same( 1, $result['metrics']['ssi_fallback_count'] ?? null, 'fallback metric' );
 assert_same( 1, $result['metrics']['ssi_core_html_count'] ?? null, 'core/html metric' );
+assert_same( 1, count( $modern_rows ), 'modern diagnostic row count' );
 assert_same( 1, count( $rows ), 'fallback diagnostic row count' );
+
+$modern_row = $modern_rows[0];
+assert_same( 'unsupported_html_fallback', $modern_row['type'] ?? null, 'modern diagnostic type' );
+assert_same( 'unsupported_custom_element', $modern_row['reason_code'] ?? null, 'modern diagnostic reason code' );
+assert_same( 'main:index.html', $modern_row['source_path'] ?? null, 'modern diagnostic source path' );
+assert_same( 'core/html', $modern_row['block_name'] ?? null, 'modern diagnostic block name' );
 
 $row = $rows[0];
 assert_same( 'main:index.html', $row['path'] ?? null, 'diagnostic path' );

@@ -19,23 +19,27 @@ return static function (): array {
 	$findings = array();
 	$fallback_diagnostics = array();
 	$freeform_diagnostics = array();
+	$diagnostics = array();
 	$seen_findings = array();
 	$seen_fallback_diagnostics = array();
 	$seen_freeform_diagnostics = array();
+	$seen_diagnostics = array();
 
 	if ( ! is_readable( $report_path ) ) {
 		return array(
 			'metrics' => $metrics,
 			'metadata' => array(
-				'import_report_summary' => array(
-					'path' => $report_path,
-					'readable' => false,
-					'fallback_diagnostics' => array(),
-					'freeform_diagnostics' => array(),
-					'findings' => array(),
+					'import_report_summary' => array(
+						'path' => $report_path,
+						'readable' => false,
+						'diagnostics' => array(),
+						'fallback_diagnostics' => array(),
+						'freeform_diagnostics' => array(),
+						'findings' => array(),
+						'asset_map' => array(),
+					),
 				),
-			),
-		);
+			);
 	}
 
 	$report = json_decode( file_get_contents( $report_path ), true );
@@ -120,6 +124,52 @@ return static function (): array {
 		return $row;
 	};
 
+	$modern_diagnostic_row = static function ( array $diagnostic ) use ( $preview_value, $first_scalar_path ): array {
+		$row = array(
+			'diagnostic_id' => $first_scalar_path( $diagnostic, array( array( 'id' ), array( 'diagnostic_id' ) ) ),
+			'type' => $first_scalar_path( $diagnostic, array( array( 'type' ), array( 'code' ) ) ),
+			'severity' => $first_scalar_path( $diagnostic, array( array( 'severity' ) ) ),
+			'category' => $first_scalar_path( $diagnostic, array( array( 'category' ) ) ),
+			'reason_code' => $first_scalar_path( $diagnostic, array( array( 'reason_code' ), array( 'reason' ), array( 'error_code' ), array( 'code' ) ) ),
+			'suggested_repair_class' => $first_scalar_path( $diagnostic, array( array( 'suggested_repair_class' ) ) ),
+			'source_path' => $first_scalar_path( $diagnostic, array( array( 'source_path' ), array( 'path' ), array( 'source' ), array( 'scope', 'source_id' ), array( 'details', 'scope', 'source_id' ) ) ),
+			'selector' => $first_scalar_path( $diagnostic, array( array( 'selector' ), array( 'source_selector' ), array( 'scope', 'source_selector' ), array( 'details', 'scope', 'source_selector' ) ) ),
+			'stage' => $first_scalar_path( $diagnostic, array( array( 'stage' ) ) ),
+			'converter' => $first_scalar_path( $diagnostic, array( array( 'converter' ) ) ),
+			'block_name' => $first_scalar_path( $diagnostic, array( array( 'block_name' ), array( 'context', 'block_name' ) ) ),
+			'block_path' => $first_scalar_path( $diagnostic, array( array( 'block_path' ), array( 'context', 'block_path' ) ) ),
+			'source_html_preview' => $first_scalar_path( $diagnostic, array( array( 'source_html_preview' ), array( 'html_excerpt' ), array( 'source_html' ), array( 'context', 'source_html_preview' ), array( 'context', 'html_excerpt' ) ) ),
+			'excerpt' => $first_scalar_path( $diagnostic, array( array( 'excerpt' ), array( 'html_excerpt' ), array( 'message' ), array( 'context', 'excerpt' ) ) ),
+			'message' => $first_scalar_path( $diagnostic, array( array( 'message' ), array( 'error_message' ), array( 'context', 'error_message' ) ) ),
+			'emitted_block_preview' => $first_scalar_path( $diagnostic, array( array( 'emitted_block_preview' ), array( 'emitted_block' ) ) ),
+		);
+
+		foreach ( $row as $field => $value ) {
+			$row[ $field ] = $preview_value( $value, in_array( $field, array( 'source_html_preview', 'excerpt', 'message', 'emitted_block_preview' ), true ) ? 400 : 180 );
+		}
+
+		$diagnostic_refs = array();
+		if ( ! empty( $diagnostic['diagnostic_refs'] ) && is_array( $diagnostic['diagnostic_refs'] ) ) {
+			$diagnostic_refs = $diagnostic['diagnostic_refs'];
+		}
+		$row['diagnostic_refs'] = $diagnostic_refs;
+
+		$asset_map_refs = array();
+		foreach ( array( 'asset_map_ref', 'asset_map_refs' ) as $field ) {
+			if ( isset( $diagnostic[ $field ] ) ) {
+				$asset_map_refs = is_array( $diagnostic[ $field ] ) ? $diagnostic[ $field ] : array( $diagnostic[ $field ] );
+			}
+		}
+		foreach ( array( 'url', 'href', 'src', 'key' ) as $field ) {
+			if ( isset( $diagnostic[ $field ] ) && is_scalar( $diagnostic[ $field ] ) ) {
+				$asset_map_refs[ $field ] = (string) $diagnostic[ $field ];
+			}
+		}
+		$row['asset_map_refs'] = $asset_map_refs;
+
+		return $row;
+	};
+
 	$record_fallback_diagnostic = static function ( array $diagnostic ) use ( &$fallback_diagnostics, &$seen_fallback_diagnostics, $diagnostic_row ): void {
 		$row = $diagnostic_row( $diagnostic );
 
@@ -144,6 +194,17 @@ return static function (): array {
 
 		$seen_freeform_diagnostics[ $key ] = true;
 		$freeform_diagnostics[] = $row;
+	};
+
+	$record_modern_diagnostic = static function ( array $diagnostic ) use ( &$diagnostics, &$seen_diagnostics, $modern_diagnostic_row ): void {
+		$row = $modern_diagnostic_row( $diagnostic );
+		$key = wp_json_encode( $row );
+		if ( isset( $seen_diagnostics[ $key ] ) ) {
+			return;
+		}
+
+		$seen_diagnostics[ $key ] = true;
+		$diagnostics[] = $row;
 	};
 
 	$get_path = static function ( array $value, array $keys ) {
@@ -210,44 +271,33 @@ return static function (): array {
 		return $count;
 	};
 
-	$collect_fallback_diagnostics = static function ( array $report ) use ( $get_path, $record_fallback_diagnostic ): void {
+	$collect_modern_diagnostics = static function ( array $report ) use ( $get_path, $record_modern_diagnostic ): void {
 		$diagnostics = $get_path( $report, array( 'diagnostics' ) );
 		if ( ! is_array( $diagnostics ) ) {
 			return;
 		}
 
-		$fallback_fields = array(
-			'selector',
-			'source_selector',
-			'excerpt',
-			'html_excerpt',
-			'source_html_preview',
-			'source_html',
-			'block_name',
-			'converter',
-			'stage',
-			'reason',
-			'type',
-			'code',
-		);
 		foreach ( $diagnostics as $diagnostic ) {
-			if ( ! is_array( $diagnostic ) || ! array_intersect_key( $diagnostic, array_flip( $fallback_fields ) ) ) {
+			if ( ! is_array( $diagnostic ) ) {
 				continue;
 			}
+			$record_modern_diagnostic( $diagnostic );
+		}
+	};
 
-			$diagnostic_values = array();
-			foreach ( array( 'type', 'code', 'message', 'block_name', 'converter', 'stage', 'reason' ) as $field ) {
-				if ( isset( $diagnostic[ $field ] ) && is_scalar( $diagnostic[ $field ] ) ) {
-					$diagnostic_values[] = (string) $diagnostic[ $field ];
-				}
+	$collect_legacy_fallback_diagnostics = static function ( array $report ) use ( $get_path, $record_fallback_diagnostic ): void {
+		$diagnostics = $get_path( $report, array( 'diagnostics' ) );
+		if ( ! is_array( $diagnostics ) ) {
+			return;
+		}
+
+		foreach ( $diagnostics as $diagnostic ) {
+			if ( ! is_array( $diagnostic ) ) {
+				continue;
 			}
-			$haystack = strtolower( implode( ' ', $diagnostic_values ) );
-
-			if (
-				false !== strpos( $haystack, 'fallback' )
-				|| false !== strpos( $haystack, 'unsupported_html' )
-				|| false !== strpos( $haystack, 'core/html' )
-			) {
+			$type = strtolower( (string) ( $diagnostic['type'] ?? $diagnostic['code'] ?? '' ) );
+			$block_name = strtolower( (string) ( $diagnostic['block_name'] ?? '' ) );
+			if ( in_array( $type, array( 'unsupported_html_fallback', 'core_html_block' ), true ) || 'core/html' === $block_name ) {
 				$record_fallback_diagnostic( $diagnostic );
 			}
 		}
@@ -292,7 +342,8 @@ return static function (): array {
 	};
 
 	if ( is_array( $report ) ) {
-		$collect_fallback_diagnostics( $report );
+		$collect_modern_diagnostics( $report );
+		$collect_legacy_fallback_diagnostics( $report );
 		$collect_freeform_diagnostics( $report );
 
 		$ignored_regions = $get_path( $report, array( 'source_region_selection', 'intentionally_ignored_regions' ) );
@@ -349,9 +400,11 @@ return static function (): array {
 				'path' => $report_path,
 				'readable' => true,
 				'top_level_keys' => is_array( $report ) ? array_keys( $report ) : array(),
+				'diagnostics' => $diagnostics,
 				'fallback_diagnostics' => $fallback_diagnostics,
 				'freeform_diagnostics' => $freeform_diagnostics,
 				'findings' => $findings,
+				'asset_map' => is_array( $get_path( $report, array( 'asset_map' ) ) ) ? $get_path( $report, array( 'asset_map' ) ) : array(),
 			),
 		),
 	);

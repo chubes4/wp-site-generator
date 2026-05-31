@@ -3,7 +3,7 @@
 import { mkdir, readFile, writeFile } from 'node:fs/promises';
 import path from 'node:path';
 
-const schemaVersion = 2;
+const schemaVersion = 3;
 const site = requiredEnv('SITE');
 const sourceRepo = requiredEnv('SOURCE_REPO');
 const sourcePr = process.env.SOURCE_PR || '';
@@ -61,13 +61,17 @@ async function buildPackets() {
 		// on instead of receiving an empty payload.
 		packets.push(packetFromMissingSummary(benchFailure, benchReadError));
 	} else {
+		const diagnostics = asArray(summary.diagnostics);
 		const fallbacks = asArray(summary.fallback_diagnostics);
 		const freeforms = asArray(summary.freeform_diagnostics);
 		const findings = asArray(summary.findings);
-		for (const diagnostic of fallbacks) {
+		for (const diagnostic of diagnostics) {
+			packets.push(packetFromModernDiagnostic(diagnostic, summary));
+		}
+		for (const diagnostic of diagnostics.length > 0 ? [] : fallbacks) {
 			packets.push(packetFromFallbackDiagnostic(diagnostic));
 		}
-		for (const diagnostic of freeforms) {
+		for (const diagnostic of diagnostics.length > 0 ? [] : freeforms) {
 			packets.push(packetFromFreeformDiagnostic(diagnostic));
 		}
 		for (const finding of findings) {
@@ -77,7 +81,7 @@ async function buildPackets() {
 		// info packet so the grouped payload always carries at least one
 		// candidate-routed entry. The PHP transformer iterator depends on a
 		// non-empty group set to do useful work.
-		if (fallbacks.length === 0 && freeforms.length === 0 && findings.length === 0) {
+		if (diagnostics.length === 0 && fallbacks.length === 0 && freeforms.length === 0 && findings.length === 0) {
 			packets.push(packetFromCleanImport(summary));
 		}
 	}
@@ -162,13 +166,54 @@ function packetBase(overrideRepo) {
 	};
 }
 
+function packetFromModernDiagnostic(diagnostic, summary) {
+	const type = text(diagnostic?.type) || 'import_diagnostic';
+	const category = text(diagnostic?.category) || categoryFromDiagnostic(type, diagnostic);
+	const reasonCode = text(diagnostic?.reason_code) || text(diagnostic?.reason) || type;
+	const blockName = text(diagnostic?.block_name);
+	const sourcePath = text(diagnostic?.source_path) || text(diagnostic?.path);
+	const suggestedRepairClass = text(diagnostic?.suggested_repair_class) || repairClassFromDiagnostic(type);
+	const repairMode = text(diagnostic?.repair_mode) || repairModeFromDiagnostic(diagnostic, category, suggestedRepairClass);
+
+	return {
+		...packetBase(text(diagnostic?.candidate_repo)),
+		diagnostic_id: text(diagnostic?.diagnostic_id) || text(diagnostic?.id),
+		kind: kindFromDiagnostic(type, category, blockName),
+		source_path: sourcePath,
+		path: sourcePath,
+		severity: text(diagnostic?.severity) || 'warning',
+		category,
+		reason_code: reasonCode,
+		suggested_repair_class: suggestedRepairClass,
+		preview: text(diagnostic?.message) || text(diagnostic?.excerpt) || reasonCode,
+		selector: text(diagnostic?.selector),
+		excerpt: text(diagnostic?.excerpt) || text(diagnostic?.message),
+		source_html_preview: text(diagnostic?.source_html_preview),
+		emitted_block_preview: text(diagnostic?.emitted_block_preview),
+		block_name: blockName,
+		block_path: text(diagnostic?.block_path),
+		converter: text(diagnostic?.converter) || converterFromDiagnostic(type, category),
+		stage: text(diagnostic?.stage) || stageFromDiagnostic(type, category),
+		reason: text(diagnostic?.message) || reasonCode,
+		diagnostic_refs: diagnosticRefs(diagnostic, summary),
+		asset_map_refs: assetMapRefs(diagnostic, summary),
+		repair_mode: repairMode,
+	};
+}
+
 function packetFromFallbackDiagnostic(diagnostic) {
 	const blockName = text(diagnostic?.block_name);
 
 	return {
 		...packetBase(),
+		diagnostic_id: text(diagnostic?.diagnostic_id),
 		kind: blockName.toLowerCase() === 'core/html' ? 'core_html' : 'fallback',
-		path: text(diagnostic?.path),
+		source_path: text(diagnostic?.source_path) || text(diagnostic?.path),
+		path: text(diagnostic?.source_path) || text(diagnostic?.path),
+		severity: text(diagnostic?.severity) || 'warning',
+		category: text(diagnostic?.category) || 'fallback_block',
+		reason_code: text(diagnostic?.reason_code) || text(diagnostic?.reason),
+		suggested_repair_class: text(diagnostic?.suggested_repair_class) || 'replace_fallback_block',
 		preview: text(diagnostic?.preview),
 		selector: text(diagnostic?.selector),
 		excerpt: text(diagnostic?.excerpt),
@@ -177,14 +222,22 @@ function packetFromFallbackDiagnostic(diagnostic) {
 		converter: text(diagnostic?.converter),
 		stage: text(diagnostic?.stage),
 		reason: text(diagnostic?.reason),
+		diagnostic_refs: diagnosticRefs(diagnostic),
+		asset_map_refs: assetMapRefs(diagnostic),
 	};
 }
 
 function packetFromFreeformDiagnostic(diagnostic) {
 	return {
 		...packetBase(),
+		diagnostic_id: text(diagnostic?.diagnostic_id),
 		kind: 'freeform_block',
-		path: text(diagnostic?.path),
+		source_path: text(diagnostic?.source_path) || text(diagnostic?.path),
+		path: text(diagnostic?.source_path) || text(diagnostic?.path),
+		severity: text(diagnostic?.severity) || 'warning',
+		category: text(diagnostic?.category) || 'fallback_block',
+		reason_code: text(diagnostic?.reason_code) || text(diagnostic?.reason),
+		suggested_repair_class: text(diagnostic?.suggested_repair_class) || 'replace_fallback_block',
 		preview: text(diagnostic?.emitted_block_preview) || text(diagnostic?.source_html_preview),
 		selector: text(diagnostic?.selector),
 		excerpt: text(diagnostic?.excerpt),
@@ -195,6 +248,8 @@ function packetFromFreeformDiagnostic(diagnostic) {
 		converter: text(diagnostic?.converter),
 		stage: text(diagnostic?.stage),
 		reason: text(diagnostic?.reason),
+		diagnostic_refs: diagnosticRefs(diagnostic),
+		asset_map_refs: assetMapRefs(diagnostic),
 		malformed: Boolean(diagnostic?.malformed),
 		repair_mode: 'pr_or_issue',
 	};
@@ -208,8 +263,14 @@ function packetFromFinding(finding) {
 
 	return {
 		...packetBase(),
+		diagnostic_id: text(finding?.diagnostic_id),
 		kind,
-		path: text(finding?.path),
+		source_path: text(finding?.source_path) || text(finding?.path),
+		path: text(finding?.source_path) || text(finding?.path),
+		severity: text(finding?.severity) || 'warning',
+		category: text(finding?.category),
+		reason_code: text(finding?.reason_code) || text(finding?.reason),
+		suggested_repair_class: text(finding?.suggested_repair_class),
 		preview: text(finding?.preview),
 		selector: text(finding?.selector),
 		excerpt: text(finding?.excerpt),
@@ -219,6 +280,8 @@ function packetFromFinding(finding) {
 		converter: text(finding?.converter),
 		stage: text(finding?.stage),
 		reason: text(finding?.reason),
+		diagnostic_refs: diagnosticRefs(finding),
+		asset_map_refs: assetMapRefs(finding),
 		repair_mode: isAggregateFreeform ? 'issue_only' : text(finding?.repair_mode),
 	};
 }
@@ -243,8 +306,14 @@ function packetFromBenchFailure(failure) {
 	const reason = reasonParts.join('; ') || 'Homeboy bench step did not produce a parseable scenario summary.';
 	return {
 		...packetBase(generatorRepo),
+		diagnostic_id: 'bench-runner-failure',
 		kind: 'bench_failure',
+		source_path: benchPath,
 		path: benchPath,
+		severity: 'error',
+		category: 'generator_policy',
+		reason_code: failure.source || 'bench_runner_failure',
+		suggested_repair_class: 'repair_validation_harness',
 		preview: truncate(failure.stderr_tail || failure.detail || reason, 180),
 		selector: '',
 		excerpt: '',
@@ -253,6 +322,8 @@ function packetFromBenchFailure(failure) {
 		converter: 'homeboy-bench',
 		stage: failure.source || 'bench_runner',
 		reason,
+		diagnostic_refs: [],
+		asset_map_refs: [],
 	};
 }
 
@@ -269,8 +340,14 @@ function packetFromMissingSummary(failure, benchReadError) {
 	}
 	return {
 		...packetBase(),
+		diagnostic_id: 'import-report-missing',
 		kind: 'report_missing',
+		source_path: benchPath,
 		path: benchPath,
+		severity: 'error',
+		category: 'import_report',
+		reason_code: 'import_report_summary_missing',
+		suggested_repair_class: 'emit_import_report_summary',
 		preview: 'No SSI import_report_summary metadata in bench output.',
 		selector: '',
 		excerpt: '',
@@ -279,6 +356,8 @@ function packetFromMissingSummary(failure, benchReadError) {
 		converter: 'static-site-importer',
 		stage: 'workload',
 		reason: reasonParts.join('; '),
+		diagnostic_refs: [],
+		asset_map_refs: [],
 	};
 }
 
@@ -286,8 +365,14 @@ function packetFromCleanImport(summary) {
 	const topKeys = Array.isArray(summary?.top_level_keys) ? summary.top_level_keys.join(',') : '';
 	return {
 		...packetBase(),
+		diagnostic_id: 'import-clean',
 		kind: 'import_clean',
+		source_path: text(summary?.path),
 		path: text(summary?.path),
+		severity: 'info',
+		category: 'import_report',
+		reason_code: 'import_clean',
+		suggested_repair_class: '',
 		preview: 'SSI import completed without fallback diagnostics or classified findings.',
 		selector: '',
 		excerpt: '',
@@ -296,14 +381,22 @@ function packetFromCleanImport(summary) {
 		converter: 'static-site-importer',
 		stage: 'baseline',
 		reason: topKeys ? `import_report top_level_keys=${truncate(topKeys, 180)}` : 'import_report present, no fallbacks or findings recorded.',
+		diagnostic_refs: [],
+		asset_map_refs: [],
 	};
 }
 
 function packetFromVisualOutcome(outcome) {
 	return {
-		...packetBase(),
+		...packetBase(generatorRepo),
+		diagnostic_id: `visual-parity-outcome-${outcome || 'unknown'}`,
 		kind: 'visual_parity_outcome',
+		source_path: '.github/scripts/static-visual-parity.mjs',
 		path: '.github/scripts/static-visual-parity.mjs',
+		severity: 'warning',
+		category: 'visual_parity',
+		reason_code: `visual_outcome_${outcome || 'unknown'}`,
+		suggested_repair_class: 'inspect_visual_parity_policy',
 		preview: `visual parity step outcome=${outcome}`,
 		selector: '',
 		excerpt: '',
@@ -312,6 +405,8 @@ function packetFromVisualOutcome(outcome) {
 		converter: 'visual-parity',
 		stage: 'screenshots',
 		reason: `Static visual parity capture reported outcome=${outcome}; decoupled from packet emission.`,
+		diagnostic_refs: [],
+		asset_map_refs: [],
 	};
 }
 
@@ -326,9 +421,15 @@ function packetFromVisualDiff(diff) {
 		? ` top_region=x:${topRegion.x},y:${topRegion.y},w:${topRegion.width},h:${topRegion.height},mismatch=${formatRatio(topRegion.mismatchRatio)} source=${probeSummary(topRegion.source_matches)} imported=${probeSummary(topRegion.imported_matches)}`
 		: '';
 	return {
-		...packetBase(),
+		...packetBase(generatorRepo),
+		diagnostic_id: `visual-parity-${site}`,
 		kind: 'visual_parity_mismatch',
+		source_path: visualDiffPath,
 		path: visualDiffPath,
+		severity: 'warning',
+		category: 'visual_parity',
+		reason_code: 'visual_parity_mismatch',
+		suggested_repair_class: 'inspect_visual_parity_policy',
 		preview: `source=${sourceSize} imported=${importedSize} mismatch=${mismatchPercent}${regionSummary}`,
 		selector: topRegion ? `screenshot region ${topRegion.x},${topRegion.y} ${topRegion.width}x${topRegion.height}` : '',
 		excerpt: topRegion ? topRegionExcerpt(topRegion) : '',
@@ -337,6 +438,8 @@ function packetFromVisualDiff(diff) {
 		converter: 'visual-parity',
 		stage: 'screenshot_diff',
 		reason: `Imported WordPress screenshot differs from source static HTML screenshot: mismatch=${mismatchPercent}, threshold=${thresholdPercent}, mismatched_pixels=${diff.mismatchPixels || 0}, total_pixels=${diff.totalPixels || 0}, dimension_mismatch=${diff.dimensionMismatch ? 'yes' : 'no'}.${regionSummary} See visual-parity artifact files source.png, imported.png, diff.png, and visual-diff.json.`,
+		diagnostic_refs: [],
+		asset_map_refs: [],
 		visual_regions: regions,
 		visual_code_evidence: topRegion ? visualCodeEvidence(topRegion) : {},
 	};
@@ -490,6 +593,150 @@ function formatRatio(value) {
 	return `${(Number(value || 0) * 100).toFixed(2)}%`;
 }
 
+function kindFromDiagnostic(type, category, blockName) {
+	const normalizedType = text(type).toLowerCase();
+	const normalizedCategory = text(category).toLowerCase();
+	const normalizedBlock = text(blockName).toLowerCase();
+	if (normalizedType === 'unsupported_html_fallback') {
+		return 'unsupported_html_fallback';
+	}
+	if (normalizedType === 'core_html_block' || normalizedBlock === 'core/html') {
+		return 'core_html_block';
+	}
+	if (normalizedType === 'freeform_block' || normalizedBlock === 'core/freeform') {
+		return 'freeform_block';
+	}
+	if (normalizedCategory === 'unresolved_asset' || normalizedType.includes('asset_map')) {
+		return 'asset_map';
+	}
+	if (normalizedCategory === 'source_region') {
+		return 'source_region';
+	}
+	return normalizedType || normalizedCategory || 'import_diagnostic';
+}
+
+function categoryFromDiagnostic(type, diagnostic) {
+	const normalizedType = text(type).toLowerCase();
+	const blockName = text(diagnostic?.block_name).toLowerCase();
+	if (['unsupported_html_fallback', 'core_html_block', 'freeform_block'].includes(normalizedType) || ['core/html', 'core/freeform'].includes(blockName)) {
+		return 'fallback_block';
+	}
+	if (normalizedType.includes('asset')) {
+		return 'unresolved_asset';
+	}
+	if (normalizedType.includes('source_region')) {
+		return 'source_region';
+	}
+	if (normalizedType.includes('bridge') || normalizedType.includes('serialization')) {
+		return 'bfb_report';
+	}
+	return 'import_quality';
+}
+
+function repairClassFromDiagnostic(type) {
+	const normalizedType = text(type).toLowerCase();
+	if (normalizedType.includes('asset')) {
+		return 'materialize_or_rewrite_asset';
+	}
+	if (['unsupported_html_fallback'].includes(normalizedType)) {
+		return 'replace_unsupported_html';
+	}
+	if (['core_html_block', 'freeform_block'].includes(normalizedType)) {
+		return 'replace_fallback_block';
+	}
+	if (normalizedType.includes('source_region')) {
+		return 'assign_or_ignore_source_region';
+	}
+	return '';
+}
+
+function converterFromDiagnostic(type, category) {
+	const haystack = `${type} ${category}`.toLowerCase();
+	if (haystack.includes('bridge') || haystack.includes('bfb')) {
+		return 'block-format-bridge';
+	}
+	return 'static-site-importer';
+}
+
+function stageFromDiagnostic(type, category) {
+	const haystack = `${type} ${category}`.toLowerCase();
+	if (haystack.includes('asset')) {
+		return 'asset_map';
+	}
+	if (haystack.includes('source_region')) {
+		return 'source_selection';
+	}
+	return 'import_report';
+}
+
+function repairModeFromDiagnostic(diagnostic, category, suggestedRepairClass) {
+	if (text(diagnostic?.repair_mode)) {
+		return text(diagnostic.repair_mode);
+	}
+	if (text(diagnostic?.actionable).toLowerCase() === 'false') {
+		return 'issue_only';
+	}
+	if (!text(diagnostic?.source_html_preview) && !text(suggestedRepairClass) && text(category) === 'import_quality') {
+		return 'issue_only';
+	}
+	return 'pr_or_issue';
+}
+
+function diagnosticRefs(diagnostic, summary = {}) {
+	const refs = [];
+	if (Array.isArray(diagnostic?.diagnostic_refs)) {
+		refs.push(...diagnostic.diagnostic_refs.map(text).filter(Boolean));
+	}
+	const diagnosticId = text(diagnostic?.diagnostic_id) || text(diagnostic?.id);
+	if (diagnosticId) {
+		refs.push(diagnosticId);
+	}
+	const qualityRefs = summary?.quality?.diagnostic_refs;
+	if (qualityRefs && typeof qualityRefs === 'object') {
+		for (const value of Object.values(qualityRefs)) {
+			if (Array.isArray(value) && (!diagnosticId || value.includes(diagnosticId))) {
+				refs.push(...value.map(text).filter(Boolean));
+			}
+		}
+	}
+	return [...new Set(refs)];
+}
+
+function assetMapRefs(diagnostic, summary = {}) {
+	const refs = [];
+	for (const field of ['asset_map_refs', 'asset_map_ref']) {
+		const value = diagnostic?.[field];
+		if (Array.isArray(value)) {
+			refs.push(...value.map(text).filter(Boolean));
+		} else if (value && typeof value === 'object') {
+			refs.push(JSON.stringify(value));
+		} else if (text(value)) {
+			refs.push(text(value));
+		}
+	}
+	for (const field of ['key', 'url', 'href', 'src']) {
+		if (text(diagnostic?.[field])) {
+			refs.push(`${field}:${text(diagnostic[field])}`);
+		}
+	}
+	const assetMap = summary?.asset_map && typeof summary.asset_map === 'object' ? summary.asset_map : {};
+	const unresolved = Array.isArray(assetMap.unresolved) ? assetMap.unresolved : [];
+	const sourcePath = text(diagnostic?.source_path) || text(diagnostic?.path);
+	for (const item of unresolved) {
+		if (!item || typeof item !== 'object') {
+			continue;
+		}
+		if (!sourcePath || text(item.source_path) === sourcePath || text(item.source) === sourcePath) {
+			for (const field of ['key', 'url']) {
+				if (text(item[field])) {
+					refs.push(`${field}:${text(item[field])}`);
+				}
+			}
+		}
+	}
+	return [...new Set(refs)];
+}
+
 function truncate(value, length) {
 	const s = text(value);
 	return s.length <= length ? s : s.slice(0, length);
@@ -506,6 +753,10 @@ function dedupePackets(packets) {
 			packet.preview,
 			packet.selector,
 			packet.excerpt,
+			packet.diagnostic_id,
+			packet.source_path,
+			packet.category,
+			packet.reason_code,
 			packet.source_html_preview,
 			packet.emitted_block_preview,
 			packet.block_name,
