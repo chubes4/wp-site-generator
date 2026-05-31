@@ -129,22 +129,15 @@ function renderImportReport(summary) {
 		`- **Top-level keys:** \`${Array.isArray(summary.top_level_keys) ? summary.top_level_keys.join(', ') : ''}\``,
 	];
 
-	const fallbacks = Array.isArray(summary.fallback_diagnostics) ? summary.fallback_diagnostics : [];
-	const findings = Array.isArray(summary.findings) ? summary.findings : [];
+	const diagnostics = Array.isArray(summary.diagnostics) ? summary.diagnostics : [];
 
-	if (fallbacks.length > 0) {
-		lines.push('', '| Site | Selector | Excerpt | Source HTML | Block | Converter | Stage | Reason |');
-		lines.push('| --- | --- | --- | --- | --- | --- | --- | --- |');
-		for (const diagnostic of fallbacks) {
-			lines.push(`| \`${escapeCell(site)}\` | ${escapeCell(diagnostic?.selector)} | ${escapeCell(diagnostic?.excerpt)} | ${escapeCell(diagnostic?.source_html_preview)} | \`${escapeCell(diagnostic?.block_name)}\` | \`${escapeCell(diagnostic?.converter)}\` | \`${escapeCell(diagnostic?.stage)}\` | ${escapeCell(diagnostic?.reason)} |`);
-		}
-	} else if (findings.length === 0) {
+	if (diagnostics.length === 0) {
 		lines.push('', '_No classified validation signals found in the import report._');
 	} else {
-		lines.push('', '| Kind | Path | Preview |');
-		lines.push('| --- | --- | --- |');
-		for (const finding of findings) {
-			lines.push(`| \`${escapeCell(finding?.kind)}\` | \`${escapeCell(finding?.path)}\` | ${escapeCell(finding?.preview)} |`);
+		lines.push('', '| Diagnostic | Severity | Category | Source Path | Block | Converter | Stage | Reason Code | Repair Class | Source HTML |');
+		lines.push('| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |');
+		for (const diagnostic of diagnostics) {
+			lines.push(`| \`${escapeCell(diagnostic?.diagnostic_id)}\` | \`${escapeCell(diagnostic?.severity)}\` | \`${escapeCell(diagnostic?.category)}\` | \`${escapeCell(diagnostic?.source_path)}\` | \`${escapeCell(diagnostic?.block_name)}\` | \`${escapeCell(diagnostic?.converter)}\` | \`${escapeCell(diagnostic?.stage)}\` | \`${escapeCell(diagnostic?.reason_code)}\` | \`${escapeCell(diagnostic?.suggested_repair_class)}\` | ${escapeCell(diagnostic?.source_html_preview)} |`);
 		}
 	}
 

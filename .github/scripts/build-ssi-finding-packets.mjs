@@ -62,26 +62,14 @@ async function buildPackets() {
 		packets.push(packetFromMissingSummary(benchFailure, benchReadError));
 	} else {
 		const diagnostics = asArray(summary.diagnostics);
-		const fallbacks = asArray(summary.fallback_diagnostics);
-		const freeforms = asArray(summary.freeform_diagnostics);
-		const findings = asArray(summary.findings);
 		for (const diagnostic of diagnostics) {
 			packets.push(packetFromModernDiagnostic(diagnostic, summary));
 		}
-		for (const diagnostic of diagnostics.length > 0 ? [] : fallbacks) {
-			packets.push(packetFromFallbackDiagnostic(diagnostic));
-		}
-		for (const diagnostic of diagnostics.length > 0 ? [] : freeforms) {
-			packets.push(packetFromFreeformDiagnostic(diagnostic));
-		}
-		for (const finding of findings) {
-			packets.push(packetFromFinding(finding));
-		}
-		// Even on a clean import (no fallbacks, no findings) emit a baseline
+		// Even on a clean import emit a baseline
 		// info packet so the grouped payload always carries at least one
 		// candidate-routed entry. The PHP transformer iterator depends on a
 		// non-empty group set to do useful work.
-		if (diagnostics.length === 0 && fallbacks.length === 0 && freeforms.length === 0 && findings.length === 0) {
+		if (diagnostics.length === 0) {
 			packets.push(packetFromCleanImport(summary));
 		}
 	}
@@ -201,91 +189,6 @@ function packetFromModernDiagnostic(diagnostic, summary) {
 	};
 }
 
-function packetFromFallbackDiagnostic(diagnostic) {
-	const blockName = text(diagnostic?.block_name);
-
-	return {
-		...packetBase(),
-		diagnostic_id: text(diagnostic?.diagnostic_id),
-		kind: blockName.toLowerCase() === 'core/html' ? 'core_html' : 'fallback',
-		source_path: text(diagnostic?.source_path) || text(diagnostic?.path),
-		path: text(diagnostic?.source_path) || text(diagnostic?.path),
-		severity: text(diagnostic?.severity) || 'warning',
-		category: text(diagnostic?.category) || 'fallback_block',
-		reason_code: text(diagnostic?.reason_code) || text(diagnostic?.reason),
-		suggested_repair_class: text(diagnostic?.suggested_repair_class) || 'replace_fallback_block',
-		preview: text(diagnostic?.preview),
-		selector: text(diagnostic?.selector),
-		excerpt: text(diagnostic?.excerpt),
-		source_html_preview: text(diagnostic?.source_html_preview),
-		block_name: blockName,
-		converter: text(diagnostic?.converter),
-		stage: text(diagnostic?.stage),
-		reason: text(diagnostic?.reason),
-		diagnostic_refs: diagnosticRefs(diagnostic),
-		asset_map_refs: assetMapRefs(diagnostic),
-	};
-}
-
-function packetFromFreeformDiagnostic(diagnostic) {
-	return {
-		...packetBase(),
-		diagnostic_id: text(diagnostic?.diagnostic_id),
-		kind: 'freeform_block',
-		source_path: text(diagnostic?.source_path) || text(diagnostic?.path),
-		path: text(diagnostic?.source_path) || text(diagnostic?.path),
-		severity: text(diagnostic?.severity) || 'warning',
-		category: text(diagnostic?.category) || 'fallback_block',
-		reason_code: text(diagnostic?.reason_code) || text(diagnostic?.reason),
-		suggested_repair_class: text(diagnostic?.suggested_repair_class) || 'replace_fallback_block',
-		preview: text(diagnostic?.emitted_block_preview) || text(diagnostic?.source_html_preview),
-		selector: text(diagnostic?.selector),
-		excerpt: text(diagnostic?.excerpt),
-		source_html_preview: text(diagnostic?.source_html_preview),
-		emitted_block_preview: text(diagnostic?.emitted_block_preview),
-		block_name: text(diagnostic?.block_name) || 'core/freeform',
-		block_path: text(diagnostic?.block_path),
-		converter: text(diagnostic?.converter),
-		stage: text(diagnostic?.stage),
-		reason: text(diagnostic?.reason),
-		diagnostic_refs: diagnosticRefs(diagnostic),
-		asset_map_refs: assetMapRefs(diagnostic),
-		malformed: Boolean(diagnostic?.malformed),
-		repair_mode: 'pr_or_issue',
-	};
-}
-
-function packetFromFinding(finding) {
-	const kind = text(finding?.kind);
-	const sourceHtml = text(finding?.source_html_preview);
-	const emittedBlock = text(finding?.emitted_block_preview);
-	const isAggregateFreeform = kind.toLowerCase() === 'freeform_block' && !sourceHtml && !emittedBlock;
-
-	return {
-		...packetBase(),
-		diagnostic_id: text(finding?.diagnostic_id),
-		kind,
-		source_path: text(finding?.source_path) || text(finding?.path),
-		path: text(finding?.source_path) || text(finding?.path),
-		severity: text(finding?.severity) || 'warning',
-		category: text(finding?.category),
-		reason_code: text(finding?.reason_code) || text(finding?.reason),
-		suggested_repair_class: text(finding?.suggested_repair_class),
-		preview: text(finding?.preview),
-		selector: text(finding?.selector),
-		excerpt: text(finding?.excerpt),
-		source_html_preview: sourceHtml,
-		emitted_block_preview: emittedBlock,
-		block_name: text(finding?.block_name),
-		converter: text(finding?.converter),
-		stage: text(finding?.stage),
-		reason: text(finding?.reason),
-		diagnostic_refs: diagnosticRefs(finding),
-		asset_map_refs: assetMapRefs(finding),
-		repair_mode: isAggregateFreeform ? 'issue_only' : text(finding?.repair_mode),
-	};
-}
-
 function packetFromBenchFailure(failure) {
 	const reasonParts = [];
 	if (failure.status) {
@@ -373,14 +276,14 @@ function packetFromCleanImport(summary) {
 		category: 'import_report',
 		reason_code: 'import_clean',
 		suggested_repair_class: '',
-		preview: 'SSI import completed without fallback diagnostics or classified findings.',
+		preview: 'SSI import completed without machine-actionable diagnostics.',
 		selector: '',
 		excerpt: '',
 		source_html_preview: '',
 		block_name: '',
 		converter: 'static-site-importer',
 		stage: 'baseline',
-		reason: topKeys ? `import_report top_level_keys=${truncate(topKeys, 180)}` : 'import_report present, no fallbacks or findings recorded.',
+		reason: topKeys ? `import_report top_level_keys=${truncate(topKeys, 180)}` : 'import_report present, no diagnostics recorded.',
 		diagnostic_refs: [],
 		asset_map_refs: [],
 	};

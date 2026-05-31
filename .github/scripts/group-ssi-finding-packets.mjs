@@ -16,7 +16,7 @@ if (inputPaths.length === 0) {
 const packets = [];
 for (const inputPath of inputPaths) {
 	const data = JSON.parse(await readFile(inputPath, 'utf8'));
-	packets.push(...(Array.isArray(data) ? data : data.packets || data.findings || []));
+	packets.push(...(Array.isArray(data) ? data : data.packets || []));
 }
 
 const grouped = groupPackets(packets);

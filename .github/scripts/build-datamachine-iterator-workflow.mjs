@@ -320,11 +320,8 @@ function normalizeFindingInput(input) {
 	if (Array.isArray(input?.packets)) {
 		return input.packets;
 	}
-	if (Array.isArray(input?.findings)) {
-		return input.findings;
-	}
 
-	throw new Error('Finding input must be an array, grouped finding object, or object with packets/findings.');
+	throw new Error('Finding input must be an array, grouped finding object, or object with packets.');
 }
 
 function resolveRepoPath(inputPath) {
