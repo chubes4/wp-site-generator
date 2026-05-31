@@ -37,9 +37,12 @@ a {
   color: inherit;
 }
 
+p {
+  margin: 0;
+}
+
 .site-header {
-  position: sticky;
-  top: 0;
+  position: relative;
   z-index: 10;
   display: flex;
   align-items: center;
@@ -149,6 +152,10 @@ main {
   font-size: 0.78rem;
 }
 
+.is-layout-flow > .eyebrow {
+  margin-bottom: 0.8rem !important;
+}
+
 h1,
 h2,
 h3 {
@@ -181,11 +188,26 @@ h3 {
   font-size: clamp(1.05rem, 1.8vw, 1.28rem);
 }
 
+.is-layout-flow > .hero-lede {
+  margin-top: 1.4rem !important;
+}
+
 .hero-actions {
   display: flex;
   flex-wrap: wrap;
   gap: 0.8rem;
   margin-top: 2rem;
+}
+
+.is-layout-flow > .hero-actions {
+  margin-top: 2rem !important;
+}
+
+.hero-actions > p:only-child,
+.card-foot > p:only-child,
+.ladder div > p:only-child,
+.table-row > p:only-child {
+  display: contents;
 }
 
 .button {
@@ -334,6 +356,10 @@ h3 {
   background: var(--walnut-frame);
 }
 
+.is-layout-flow.trust-strip {
+  margin-bottom: clamp(3rem, 7vw, 6rem) !important;
+}
+
 .trust-strip div {
   padding: 1.2rem;
   background: rgba(255, 249, 238, 0.88);
@@ -358,6 +384,10 @@ h3 {
 .section-heading {
   max-width: 880px;
   margin-bottom: 2rem;
+}
+
+.is-layout-flow > .section-heading {
+  margin-bottom: 2rem !important;
 }
 
 .section-heading p:not(.eyebrow),
@@ -412,6 +442,11 @@ h3 {
   margin-top: 1rem;
 }
 
+.collection > .wp-block-heading,
+.product-card > .wp-block-heading {
+  margin-top: 1rem !important;
+}
+
 .collection p,
 .product-card p,
 .guide-panel p,
@@ -440,11 +475,19 @@ h3 {
   padding: 1rem;
 }
 
+.product-card.is-layout-flow {
+  min-height: 543px;
+}
+
 .swatch {
   height: 118px;
   margin-bottom: 1rem;
   border: 2px solid var(--walnut-frame);
   box-shadow: inset 0 0 0 8px rgba(255, 249, 238, 0.34);
+}
+
+.is-layout-flow > .swatch {
+  margin-bottom: 1rem !important;
 }
 
 .foam-swatch {
@@ -487,6 +530,14 @@ h3 {
   border-top: 1px dashed var(--line);
 }
 
+.spec-list li {
+  display: grid;
+  gap: 0.25rem;
+  padding-top: 0.5rem;
+  border-top: 1px dashed var(--line);
+  list-style: none;
+}
+
 .spec-list dt {
   color: var(--walnut-frame);
   font-size: 0.68rem;
@@ -498,12 +549,20 @@ h3 {
   font-weight: 750;
 }
 
+.spec-list li::marker {
+  content: "";
+}
+
 .card-foot {
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 0.75rem;
   margin-top: auto;
+}
+
+.is-layout-flow > .card-foot {
+  margin-top: auto !important;
 }
 
 .price {
@@ -538,6 +597,10 @@ h3 {
   padding: 0;
   list-style: none;
   counter-reset: steps;
+}
+
+.is-layout-flow > .step-list {
+  margin-top: 1.5rem !important;
 }
 
 .step-list li {
@@ -579,6 +642,10 @@ h3 {
   display: grid;
   gap: 0.55rem;
   margin-top: 1.2rem;
+}
+
+.is-layout-flow > .ladder {
+  margin-top: 1.2rem !important;
 }
 
 .ladder div {
@@ -662,6 +729,10 @@ h3 {
   box-shadow: 12px 12px 0 rgba(90, 61, 43, 0.12);
 }
 
+.is-layout-flow.cta {
+  margin: clamp(2rem, 5vw, 4rem) clamp(1rem, 4vw, 3.5rem) clamp(4rem, 8vw, 7rem) !important;
+}
+
 .cta h2 {
   max-width: 12ch;
 }
@@ -678,6 +749,11 @@ footer {
   padding: 2rem clamp(1rem, 4vw, 3.5rem);
   background: var(--charcoal-thread);
   color: var(--cotton-canvas);
+}
+
+footer.wp-block-template-part {
+  display: block;
+  padding: 0;
 }
 
 footer .brand small,
