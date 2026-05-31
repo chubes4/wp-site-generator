@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="96" height="96" viewBox="0 0 96 96" role="img" aria-labelledby="title desc">
+  <title id="title">Kiln Shelf Commons workshop mark</title>
+  <desc id="desc">A compact kiln shelf rack mark with clay, graphite, bisque, and warning-orange accents.</desc>
+  <rect width="96" height="96" rx="10" fill="#252827"/>
+  <rect x="12" y="15" width="72" height="58" rx="3" fill="#F4EFE5" stroke="#E7D2B3" stroke-width="3"/>
+  <path d="M23 27h50M23 42h50M23 57h50" stroke="#6F716C" stroke-width="7" stroke-linecap="square"/>
+  <path d="M24 75h48" stroke="#B86F4A" stroke-width="7" stroke-linecap="square"/>
+  <path d="M66 20l12 28H54l12-28z" fill="#E45F2B"/>
+  <circle cx="28" cy="83" r="5" fill="#2F6F83"/>
+  <circle cx="68" cy="83" r="5" fill="#2F6F83"/>
+</svg>
