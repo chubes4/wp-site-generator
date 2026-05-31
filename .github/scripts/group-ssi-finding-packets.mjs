@@ -303,6 +303,10 @@ function routeCandidateRepo(packet) {
 	if (kind === 'visual_parity_outcome' || kind === 'visual_parity_mismatch') {
 		return 'chubes4/wp-site-generator';
 	}
+	const explicit = text(packet.candidate_repo);
+	if (explicit === 'chubes4/block-artifact-compiler') {
+		return explicit;
+	}
 	if (kind === 'report_missing' || kind === 'import_clean') {
 		return 'chubes4/static-site-importer';
 	}
@@ -320,6 +324,9 @@ function routeCandidateRepo(packet) {
 	if (haystack.includes('block-format-bridge') || haystack.includes('bfb') || haystack.includes('serialization') || category.includes('adapter') || category.includes('scope') || category.includes('bfb_report')) {
 		return 'chubes4/block-format-bridge';
 	}
+	if (haystack.includes('block-artifact-compiler') || haystack.includes('artifact schema') || haystack.includes('artifact contract') || haystack.includes('artifact compiler') || haystack.includes('artifact_schema') || haystack.includes('artifact_contract') || haystack.includes('artifact_compiler') || haystack.includes('schema_validation') || haystack.includes('compile_artifact') || category.includes('artifact_schema') || category.includes('artifact_contract') || category.includes('artifact_compiler')) {
+		return 'chubes4/block-artifact-compiler';
+	}
 	if (category.includes('source_region') || category.includes('source-selection') || category.includes('unresolved_asset') || category.includes('asset_map') || category.includes('import_report') || stage.includes('source_selection') || stage.includes('asset_map') || haystack.includes('source-selection') || haystack.includes('asset_map')) {
 		return 'chubes4/static-site-importer';
 	}
@@ -327,7 +334,6 @@ function routeCandidateRepo(packet) {
 		return 'chubes4/wp-site-generator';
 	}
 
-	const explicit = text(packet.candidate_repo);
 	if (isCandidateRepo(explicit)) {
 		return explicit;
 	}
@@ -341,10 +347,32 @@ function routeRepairMode(packet, candidateRepo) {
 		return configured;
 	}
 	const hasPatchEvidence = Boolean(text(packet.source_html_preview) || text(packet.selector) || text(packet.source_path));
-	if (!hasPatchEvidence || candidateRepo === 'chubes4/wp-site-generator') {
+	if (!hasPatchEvidence) {
+		return 'issue_only';
+	}
+	if (candidateRepo === 'chubes4/wp-site-generator' && !hasSourceSitePatchEvidence(packet)) {
 		return 'issue_only';
 	}
 	return 'pr_or_issue';
+}
+
+function hasSourceSitePatchEvidence(packet) {
+	if (text(packet.kind).toLowerCase() !== 'visual_parity_mismatch') {
+		return false;
+	}
+
+	const repairClass = text(packet.suggested_repair_class).toLowerCase();
+	const category = text(packet.category).toLowerCase();
+	const reasonCode = text(packet.reason_code).toLowerCase();
+	const stage = text(packet.stage).toLowerCase();
+	const routeFields = [repairClass, category, reasonCode, stage, text(packet.reason).toLowerCase()].join(' ');
+	if (routeFields.includes('generated_source') || routeFields.includes('source_site') || routeFields.includes('source_css') || routeFields.includes('source_html')) {
+		return true;
+	}
+
+	const evidence = packet.visual_code_evidence && typeof packet.visual_code_evidence === 'object' ? packet.visual_code_evidence : visualCodeEvidence(packet);
+	const sourceEvidence = Array.isArray(evidence.source) ? evidence.source : [];
+	return sourceEvidence.some((probe) => text(probe.html) || (Array.isArray(probe.matched_css_rules) && probe.matched_css_rules.length > 0));
 }
 
 function routeReason(packet, candidateRepo, repairMode) {
@@ -356,6 +384,9 @@ function routeReason(packet, candidateRepo, repairMode) {
 	}
 	if (candidateRepo === 'chubes4/block-format-bridge') {
 		return 'BFB adapter/report/scope diagnostic routes to block-format-bridge';
+	}
+	if (candidateRepo === 'chubes4/block-artifact-compiler') {
+		return 'artifact schema/contract/compiler diagnostic routes to block-artifact-compiler';
 	}
 	if (candidateRepo === 'chubes4/static-site-importer') {
 		return 'SSI import/source-selection/asset-map diagnostic routes to static-site-importer';
@@ -381,6 +412,7 @@ function isCandidateRepo(value) {
 		'chubes4/static-site-importer',
 		'chubes4/html-to-blocks-converter',
 		'chubes4/block-format-bridge',
+		'chubes4/block-artifact-compiler',
 		'chubes4/wp-site-generator',
 	].includes(value);
 }

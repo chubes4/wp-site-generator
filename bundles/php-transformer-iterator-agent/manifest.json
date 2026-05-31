@@ -1,7 +1,7 @@
 {
     "agent": {
         "agent_config": {
-            "description": "Consumes schema v3 SSI/BFB diagnostic finding groups, routes each actionable group to its owning upstream repository, and opens focused repair pull requests with source validation evidence. Issues are fallback records for groups without a safe patch path.",
+            "description": "Consumes schema v3 static-site validation finding groups, routes each actionable group to its owning upstream repository, and opens focused repair pull requests with source validation evidence. Issues are fallback records for groups without a safe patch path.",
             "mode_models": {
                 "chat": {
                     "model": "gpt-5.5",
@@ -18,7 +18,7 @@
             }
         },
         "description": "",
-        "label": "PHP Transformer Iterator Agent",
+        "label": "Static Site Validation Iterator Agent",
         "slug": "php-transformer-iterator-agent"
     },
     "bundle_slug": "php-transformer-iterator-agent",
