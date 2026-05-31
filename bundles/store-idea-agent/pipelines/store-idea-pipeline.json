@@ -13,7 +13,6 @@
                             "tools": [
                                 {
                                     "name": "github_issue_publish",
-                                    "required_output": "data.issue_number",
                                     "success": true
                                 }
                             ]
