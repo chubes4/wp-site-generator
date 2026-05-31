@@ -69,7 +69,7 @@ SETTINGS_JSON=$(jq -nc \
             GITHUB_TOKEN: $githubToken,
             STAGE4_GITHUB_REPO: $stage4Repo
         },
-        playground_workloads: [
+        wp_codebox_workloads: [
             {
                 id: "dm-github-issue-publish",
                 label: "Run DM flow that publishes a GitHub issue",

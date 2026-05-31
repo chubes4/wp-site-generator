@@ -8,7 +8,7 @@
 #     "component under test" so the bench runner mounts this repo cleanly;
 #   - HOMEBOY_WORDPRESS_DEPENDENCY_PATHS to mount real DM + DMC checkouts
 #     into wp-content/plugins/;
-#   - playground_workloads in HOMEBOY_SETTINGS_JSON to run the boot probe
+#   - wp_codebox_workloads in HOMEBOY_SETTINGS_JSON to run the boot probe
 #     and emit { metrics, artifacts, metadata } as a BenchResults scenario.
 #
 # Refs Extra-Chill/homeboy-extensions#422
@@ -69,13 +69,13 @@ trap 'rm -f "$RESULTS_TMPFILE" "$COMPONENT_WORKLOAD"' EXIT
 # Settings JSON: declares DM + DMC as validation_dependencies (the bench
 # runner's existing helper resolves these to mount paths and exports
 # HOMEBOY_WORDPRESS_DEPENDENCY_PATHS) and one configured workload that runs
-# the boot probe through the new playground_workloads primitive.
+# the boot probe through the new wp_codebox_workloads primitive.
 SETTINGS_JSON=$(jq -nc \
     --arg dm "$DM_PATH" \
     --arg dmc "$DMC_PATH" \
     '{
         validation_dependencies: [$dm, $dmc],
-        playground_workloads: [
+        wp_codebox_workloads: [
             {
                 id: "dm-boot-probe",
                 label: "Data Machine cold-boot probe",

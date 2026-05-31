@@ -56,7 +56,7 @@ SETTINGS_JSON=$(jq -nc \
     --arg dmc "$DMC_PATH" \
     '{
         validation_dependencies: [$dm, $dmc],
-        playground_workloads: [
+        wp_codebox_workloads: [
             {
                 id: "dm-import-agent",
                 label: "Import store-idea-agent bundle into DM",

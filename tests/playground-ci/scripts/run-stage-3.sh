@@ -54,7 +54,7 @@ SETTINGS_JSON=$(jq -nc \
     --arg dmc "$DMC_PATH" \
     '{
         validation_dependencies: [$dm, $dmc],
-        playground_workloads: [
+        wp_codebox_workloads: [
             {
                 id: "dm-run-flow",
                 label: "Run and drain a CI-safe DM flow",
