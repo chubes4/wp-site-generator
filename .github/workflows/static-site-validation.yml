@@ -142,7 +142,7 @@ jobs:
           ')
           settings=$(jq -nc --argjson workloads "$workloads" '
             {
-              "playground_blueprint": {
+              "wp_codebox_blueprint": {
                 "$schema": "https://playground.wordpress.net/blueprint-schema.json",
                 "preferredVersions": { "php": "8.3", "wp": "latest" },
                 "steps": [
@@ -172,7 +172,7 @@ jobs:
                   }
                 ]
               },
-              "playground_workloads": $workloads
+              "wp_codebox_workloads": $workloads
             }
           ')
           delim="EOF_$(openssl rand -hex 8)"
@@ -199,7 +199,7 @@ jobs:
           pr-comment: 'false'
           app-token: ${{ steps.app-token.outputs.token }}
           args: >-
-            --setting-json playground_workloads='${{ steps.settings.outputs.workloads }}'
+            --setting-json wp_codebox_workloads='${{ steps.settings.outputs.workloads }}'
         env:
           HOMEBOY_SETTINGS_JSON: ${{ steps.settings.outputs.settings }}
           HOMEBOY_BENCH_ITERATIONS: '1'

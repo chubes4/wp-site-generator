@@ -154,7 +154,7 @@ SETTINGS_JSON=$(jq -nc \
     --arg stage5ProofMode "$STAGE5_PROOF_MODE" \
     '{
         validation_dependencies: [$agentsApi, $dm, $dmc, $openaiProvider],
-        playground_wordpress_version: "7.0",
+        wp_codebox_wordpress_version: "7.0",
         bench_warmup_iterations: 0,
         bench_env: {
             GITHUB_TOKEN: $githubToken,
@@ -163,7 +163,7 @@ SETTINGS_JSON=$(jq -nc \
             STAGE5_OPENAI_MODEL: $stage5Model,
             STAGE5_PROOF_MODE: $stage5ProofMode
         },
-        playground_workloads: [
+        wp_codebox_workloads: [
             {
                 id: "dm-openai-issue-flow",
                 label: "Run imported DM agent with OpenAI and publish a GitHub issue",

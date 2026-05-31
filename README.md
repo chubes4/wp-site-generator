@@ -176,7 +176,7 @@ Idea flows publish issues with `status:idea-ready` plus the relevant `site-kind:
 Static-site PRs trigger a Homeboy CI workflow that:
 
 1. Boots WordPress Playground inside GitHub Actions.
-2. Installs Static Site Importer and WooCommerce via `playground_blueprint`.
+2. Installs Static Site Importer and WooCommerce via `wp_codebox_blueprint`.
 3. Runs `wp static-site-importer import-theme` on the PR's `static-sites/<slug>/index.html`.
 4. Captures a Playwright visual parity comparison between the source static HTML and imported WordPress result.
 5. Reads the resulting `import-report.json` and emits importer metrics + the report itself as a Homeboy bench artifact.
@@ -188,7 +188,7 @@ This whole loop runs **without a hosted WordPress site**. PHP runs as WebAssembl
 
 The PR target label gates validation. `target:wordpress` marks content-shaped WordPress imports; `target:woocommerce` marks commerce-shaped imports. The current validation harness installs WooCommerce in the Playground environment for both lanes, so the target label is selection and review metadata rather than the only place WooCommerce is introduced. The build agent still emits static source files; CI owns the WordPress import context.
 
-The Homeboy WordPress extension capability that makes this possible (`playground_workloads`) is generic. SSI is just one consumer; any WordPress plugin can be exercised the same way in CI. The validation workflow refreshes the reusable harness scripts from `origin/main` before running, so older generated-site branches get the current validation behavior without rebasing their source files.
+The Homeboy WordPress extension capability that makes this possible (`wp_codebox_workloads`) is generic. SSI is just one consumer; any WordPress plugin can be exercised the same way in CI. The validation workflow refreshes the reusable harness scripts from `origin/main` before running, so older generated-site branches get the current validation behavior without rebasing their source files.
 
 ---
 
@@ -207,7 +207,7 @@ When concurrency increases, two idea runs can briefly race. The intent is to tol
 ```
 wp-site-generator/
   README.md
-  homeboy.json                       Homeboy config: WordPress extension + base playground_blueprint
+  homeboy.json                       Homeboy config: WordPress extension + base wp_codebox_blueprint
   .github/
     workflows/
       static-site-validation.yml     SSI import, visual parity, findings, iterator dispatch
