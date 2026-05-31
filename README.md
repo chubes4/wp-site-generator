@@ -194,8 +194,8 @@ The Homeboy WordPress extension capability that makes this possible (`wp_codebox
 
 ## How Concepts Stay Distinct
 
-- Before opening an issue, each idea agent does one lightweight recent-corpus read for variety.
-- The agent publishes a buildable concept after that read instead of spending turns on corpus analysis.
+- Idea agents publish a buildable concept directly instead of spending turns on corpus analysis.
+- Prompt-level variety keeps concepts specific without trying to enforce global uniqueness.
 - Adjacent but differentiated ideas are acceptable when the audience, offer, place, product angle, or site shape differs.
 
 Prompt-level variety keeps the generator moving. Stronger duplicate prevention should be deterministic, ideally through Data Machine processed-item/idempotency machinery, rather than asking the model to police the corpus.

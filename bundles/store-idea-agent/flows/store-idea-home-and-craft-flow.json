@@ -7,7 +7,9 @@
     "slug": "store-idea-home-and-craft-flow",
     "steps": [
         {
-            "disabled_tools": [],
+            "disabled_tools": [
+                "list_github_issues"
+            ],
             "handler_configs": [],
             "prompt_queue": [
                 {
