@@ -250,7 +250,7 @@ h3 {
   position: relative;
   padding: 1rem;
   background: var(--cream);
-  border: 2px solid var(--walnut-frame);
+  border: 2px solid var(--line);
   box-shadow: 16px 16px 0 rgba(90, 61, 43, 0.12);
 }
 
@@ -260,7 +260,7 @@ h3 {
   gap: 0;
   height: 2.4rem;
   margin-bottom: 1rem;
-  border-bottom: 2px solid var(--walnut-frame);
+  border-bottom: 2px solid var(--line);
   background: var(--cream);
   font-family: var(--utility);
   font-variant-numeric: tabular-nums;
@@ -289,7 +289,7 @@ h3 {
   position: absolute;
   left: 10%;
   right: 10%;
-  border: 2px solid var(--walnut-frame);
+  border: 2px solid var(--line);
   box-shadow: 0 10px 0 rgba(45, 43, 40, 0.08);
 }
 
@@ -311,7 +311,7 @@ h3 {
   position: absolute;
   z-index: 1;
   padding: 0.35rem 0.55rem;
-  border: 1px solid var(--walnut-frame);
+  border: 1px solid var(--line);
   background: var(--cream);
   font-family: var(--utility);
   font-size: 0.76rem;
