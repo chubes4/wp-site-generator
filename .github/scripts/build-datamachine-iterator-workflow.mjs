@@ -34,10 +34,10 @@ function buildWorkflow(packets, pipelineConfig, flowConfig) {
 		workflow: {
 			steps: [
 				{
-					type: 'system_task',
+					step_type: 'system_task',
 					label: 'Emit SSI finding packets',
 					flow_step_settings: {
-						task: 'emit_data_packets',
+						task_type: 'emit_data_packets',
 						params: {
 							packets: packets.map(toDataMachinePacket),
 							replace_data_packets: true,
@@ -47,7 +47,7 @@ function buildWorkflow(packets, pipelineConfig, flowConfig) {
 					},
 				},
 				{
-					type: 'ai',
+					step_type: 'ai',
 					label: aiConfig.label || 'Repair transformer findings',
 					system_prompt: aiConfig.system_prompt || '',
 					user_message: userMessage,

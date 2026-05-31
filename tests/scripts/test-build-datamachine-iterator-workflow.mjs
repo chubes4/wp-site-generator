@@ -95,8 +95,8 @@ const payload = JSON.parse(await readFile(outputPath, 'utf8'));
 assert.equal(payload.workflow.steps.length, 2, 'workflow has emit + iterator AI steps');
 
 const [emitStep, aiStep] = payload.workflow.steps;
-assert.equal(emitStep.type, 'system_task', 'first step is system_task');
-assert.equal(emitStep.flow_step_settings.task, 'emit_data_packets', 'first step uses emit_data_packets');
+assert.equal(emitStep.step_type, 'system_task', 'first step is system_task');
+assert.equal(emitStep.flow_step_settings.task_type, 'emit_data_packets', 'first step uses emit_data_packets');
 assert.equal(emitStep.flow_step_settings.params.replace_data_packets, true, 'emit step replaces stale upstream packets');
 assert.equal(emitStep.flow_step_settings.params.suppress_result_packet, true, 'emit step suppresses synthetic task result');
 assert.equal(emitStep.flow_step_settings.params.complete_no_items, true, 'empty findings stop as completed_no_items');
@@ -136,7 +136,7 @@ const issueOnlyPacket = emitStep.flow_step_settings.params.packets.find((packet)
 assert.ok(issueOnlyPacket, 'aggregate freeform packet remains available for issue fallback');
 assert.match(issueOnlyPacket.data.body, /Repair mode: issue_only/, 'issue-only packet body blocks speculative PRs');
 
-assert.equal(aiStep.type, 'ai', 'second step is iterator AI');
+assert.equal(aiStep.step_type, 'ai', 'second step is iterator AI');
 assert.ok(aiStep.system_prompt.includes('PHP Transformer Iterator Agent'), 'iterator system prompt is preserved');
 assert.ok(aiStep.user_message.includes('Run the PR-first iterator'), 'iterator flow prompt is preserved');
 const outcomeAssertions = aiStep.completion_assertions.complete_when_any;
