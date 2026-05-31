@@ -86,6 +86,7 @@ function renderReport(ssi) {
 
 	const importReportSummary = ssi?.metadata?.import_report_summary;
 	sections.push(renderBacStatus(metrics, importReportSummary?.block_artifact_compiler));
+	sections.push(renderSourceDocuments(importReportSummary?.source_documents, importReportSummary?.diagnostics));
 	sections.push(renderImportReport(importReportSummary));
 
 	return sections.filter(Boolean).join('\n\n');
@@ -134,6 +135,9 @@ function renderBacStatus(metrics, compiler) {
 	const rows = bacMetrics.map(([key, label]) => `| ${label} | ${formatCount(metricValue(metrics, key))} |`);
 
 	const lines = ['### Block Artifact Compiler', '| Signal | Count |', '| --- | ---: |', ...rows];
+	if (summary.status) {
+		lines.push('', `- **Status:** \`${escapeCell(summary.status)}\``);
+	}
 	if (summary.import_mode) {
 		lines.push('', `- **Import mode:** \`${escapeCell(summary.import_mode)}\``);
 	}
@@ -147,6 +151,21 @@ function renderBacStatus(metrics, compiler) {
 		}
 	}
 
+	const sourceDocuments = summary.source_documents && typeof summary.source_documents === 'object' ? summary.source_documents : {};
+	if (Object.keys(sourceDocuments).length > 0) {
+		lines.push('', renderSourceDocumentTable('BAC Source Documents', sourceDocuments));
+	}
+
+	const candidateCounts = summary.candidate_counts && typeof summary.candidate_counts === 'object' ? summary.candidate_counts : {};
+	const candidateRows = Object.entries(candidateCounts)
+		.filter(([, value]) => numericValue(value) !== null)
+		.map(([key, value]) => `| ${labelFromKey(key)} | ${formatCount(numericValue(value))} |`);
+	if (candidateRows.length > 0) {
+		lines.push('', '| BAC Candidate | Count |');
+		lines.push('| --- | ---: |');
+		lines.push(...candidateRows);
+	}
+
 	const websiteArtifact = summary.website_artifact && typeof summary.website_artifact === 'object' ? summary.website_artifact : {};
 	const diagnostics = Array.isArray(websiteArtifact.diagnostics) ? websiteArtifact.diagnostics : [];
 	if (diagnostics.length > 0) {
@@ -158,6 +177,70 @@ function renderBacStatus(metrics, compiler) {
 	}
 
 	return lines.join('\n');
+}
+
+function renderSourceDocuments(sourceDocuments, diagnostics = []) {
+	const summary = sourceDocuments && typeof sourceDocuments === 'object' ? sourceDocuments : {};
+	const mdxDiagnostics = Array.isArray(diagnostics)
+		? diagnostics.filter((diagnostic) => isMdxSourceDiagnostic(diagnostic))
+		: [];
+
+	if (Object.keys(summary).length === 0 && mdxDiagnostics.length === 0) {
+		return '';
+	}
+
+	const lines = ['### Source Documents'];
+	if (Object.keys(summary).length > 0) {
+		lines.push(renderSourceDocumentTable('SSI Source Documents', summary));
+	}
+
+	if (mdxDiagnostics.length > 0) {
+		lines.push('', '| Skipped/Unsupported MDX | Source Path | Message |');
+		lines.push('| --- | --- | --- |');
+		for (const diagnostic of mdxDiagnostics) {
+			lines.push(`| \`${escapeCell(diagnostic?.type || diagnostic?.reason_code || diagnostic?.diagnostic_id)}\` | \`${escapeCell(diagnostic?.source_path || diagnostic?.source)}\` | ${escapeCell(diagnostic?.message || diagnostic?.excerpt)} |`);
+		}
+	}
+
+	return lines.join('\n');
+}
+
+function renderSourceDocumentTable(title, sourceDocuments) {
+	const counts = sourceDocuments.counts_by_kind || sourceDocuments.counts_by_format || sourceDocuments.files_by_kind || {};
+	const lines = [`| ${title} | Count |`, '| --- | ---: |'];
+	lines.push(`| total | ${formatCount(numericValue(sourceDocuments.total_count))} |`);
+	for (const [kind, count] of Object.entries(counts)) {
+		lines.push(`| ${escapeCell(kind)} | ${formatCount(numericValue(count))} |`);
+	}
+	for (const [key, label] of [
+		['skipped_mdx_count', 'skipped MDX'],
+		['unresolved_link_count', 'unresolved links'],
+		['markdown_parse_error_count', 'Markdown parse errors'],
+	]) {
+		if (numericValue(sourceDocuments[key]) !== null) {
+			lines.push(`| ${label} | ${formatCount(numericValue(sourceDocuments[key]))} |`);
+		}
+	}
+
+	return lines.join('\n');
+}
+
+function isMdxSourceDiagnostic(diagnostic) {
+	if (!diagnostic || typeof diagnostic !== 'object') {
+		return false;
+	}
+	const haystack = [
+		diagnostic.format,
+		diagnostic.source_path,
+		diagnostic.source,
+		diagnostic.type,
+		diagnostic.reason_code,
+		diagnostic.message,
+	]
+		.map((value) => String(value || '').toLowerCase())
+		.join(' ');
+
+	return haystack.includes('mdx') && (haystack.includes('unsupported') || haystack.includes('skipped'));
 }
 
 function renderImportReport(summary) {
@@ -177,10 +260,10 @@ function renderImportReport(summary) {
 	if (diagnostics.length === 0) {
 		lines.push('', '_No classified validation signals found in the import report._');
 	} else {
-		lines.push('', '| Diagnostic | Severity | Category | Source Path | Block | Converter | Stage | Reason Code | Repair Class | Source HTML |');
-		lines.push('| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |');
+		lines.push('', '| Diagnostic | Severity | Category | Format | Source Path | Block | Converter | Stage | Reason Code | Repair Class | Message | Source HTML |');
+		lines.push('| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |');
 		for (const diagnostic of diagnostics) {
-			lines.push(`| \`${escapeCell(diagnostic?.diagnostic_id)}\` | \`${escapeCell(diagnostic?.severity)}\` | \`${escapeCell(diagnostic?.category)}\` | \`${escapeCell(diagnostic?.source_path)}\` | \`${escapeCell(diagnostic?.block_name)}\` | \`${escapeCell(diagnostic?.converter)}\` | \`${escapeCell(diagnostic?.stage)}\` | \`${escapeCell(diagnostic?.reason_code)}\` | \`${escapeCell(diagnostic?.suggested_repair_class)}\` | ${escapeCell(diagnostic?.source_html_preview)} |`);
+			lines.push(`| \`${escapeCell(diagnostic?.diagnostic_id)}\` | \`${escapeCell(diagnostic?.severity)}\` | \`${escapeCell(diagnostic?.category)}\` | \`${escapeCell(diagnostic?.format)}\` | \`${escapeCell(diagnostic?.source_path)}\` | \`${escapeCell(diagnostic?.block_name)}\` | \`${escapeCell(diagnostic?.converter)}\` | \`${escapeCell(diagnostic?.stage)}\` | \`${escapeCell(diagnostic?.reason_code)}\` | \`${escapeCell(diagnostic?.suggested_repair_class)}\` | ${escapeCell(diagnostic?.message || diagnostic?.excerpt)} | ${escapeCell(diagnostic?.source_html_preview)} |`);
 		}
 	}
 
@@ -221,6 +304,10 @@ function formatValue(value) {
 		return JSON.stringify(value);
 	}
 	return String(value ?? '');
+}
+
+function labelFromKey(key) {
+	return String(key || '').replaceAll('_', ' ');
 }
 
 function escapeCell(value) {

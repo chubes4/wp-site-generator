@@ -94,6 +94,7 @@ return static function (): array {
 			'converter' => $first_scalar_path( $diagnostic, array( array( 'converter' ) ) ),
 			'block_name' => $first_scalar_path( $diagnostic, array( array( 'block_name' ), array( 'context', 'block_name' ) ) ),
 			'block_path' => $first_scalar_path( $diagnostic, array( array( 'block_path' ), array( 'context', 'block_path' ) ) ),
+			'format' => $first_scalar_path( $diagnostic, array( array( 'format' ), array( 'source_format' ), array( 'kind' ), array( 'context', 'format' ) ) ),
 			'source_html_preview' => $first_scalar_path( $diagnostic, array( array( 'source_html_preview' ), array( 'html_excerpt' ), array( 'source_html' ), array( 'context', 'source_html_preview' ), array( 'context', 'html_excerpt' ) ) ),
 			'excerpt' => $first_scalar_path( $diagnostic, array( array( 'excerpt' ), array( 'html_excerpt' ), array( 'message' ), array( 'context', 'excerpt' ) ) ),
 			'message' => $first_scalar_path( $diagnostic, array( array( 'message' ), array( 'error_message' ), array( 'context', 'error_message' ) ) ),
@@ -213,7 +214,34 @@ return static function (): array {
 		return $total;
 	};
 
-	$bac_summary = static function ( array $report ) use ( $get_path, $count_value, $sum_nested_counts ): array {
+	$normalize_source_documents = static function ( $source_documents, $input = null ) use ( $count_value ): array {
+		$summary = is_array( $source_documents ) ? $source_documents : array();
+		$counts = array();
+
+		foreach ( array( 'counts_by_kind', 'counts_by_format', 'files_by_kind' ) as $key ) {
+			if ( isset( $summary[ $key ] ) && is_array( $summary[ $key ] ) ) {
+				$counts = $summary[ $key ];
+				break;
+			}
+		}
+
+		if ( empty( $counts ) && is_array( $input ) && isset( $input['files_by_kind'] ) && is_array( $input['files_by_kind'] ) ) {
+			$counts = $input['files_by_kind'];
+		}
+
+		ksort( $counts );
+		$total = isset( $summary['total_count'] ) ? $count_value( $summary['total_count'] ) : array_sum( array_map( $count_value, $counts ) );
+
+		return array(
+			'total_count' => $total,
+			'counts_by_kind' => $counts,
+			'skipped_mdx_count' => $count_value( $summary['skipped_mdx_count'] ?? $summary['unsupported_mdx_count'] ?? ( $counts['mdx'] ?? 0 ) ),
+			'unresolved_link_count' => $count_value( $summary['unresolved_link_count'] ?? null ),
+			'markdown_parse_error_count' => $count_value( $summary['markdown_parse_error_count'] ?? null ),
+		);
+	};
+
+	$bac_summary = static function ( array $report ) use ( $get_path, $count_value, $sum_nested_counts, $normalize_source_documents ): array {
 		$compiler = $get_path( $report, array( 'block_artifact_compiler' ) );
 		$compiler = is_array( $compiler ) ? $compiler : array();
 		$fragments = isset( $compiler['fragments'] ) && is_array( $compiler['fragments'] ) ? $compiler['fragments'] : array();
@@ -221,6 +249,20 @@ return static function (): array {
 		$website_summary = isset( $website_artifact['summary'] ) && is_array( $website_artifact['summary'] ) ? $website_artifact['summary'] : array();
 		$website_input = isset( $website_artifact['input'] ) && is_array( $website_artifact['input'] ) ? $website_artifact['input'] : array();
 		$website_diagnostics = isset( $website_artifact['diagnostics'] ) && is_array( $website_artifact['diagnostics'] ) ? $website_artifact['diagnostics'] : array();
+		$source_documents = $normalize_source_documents( $compiler['source_documents'] ?? $website_artifact['source_documents'] ?? null, $website_input );
+		$candidate_counts = array();
+		foreach ( array( 'component_candidate_count', 'block_candidate_count', 'component_count', 'block_type_count', 'block_count' ) as $key ) {
+			$value = $website_summary[ $key ] ?? $website_artifact[ $key ] ?? null;
+			if ( null !== $value ) {
+				$candidate_counts[ $key ] = $count_value( $value );
+			}
+		}
+		$wordpress_artifacts = isset( $website_artifact['wordpress_artifacts'] ) && is_array( $website_artifact['wordpress_artifacts'] ) ? $website_artifact['wordpress_artifacts'] : array();
+		foreach ( array( 'components' => 'component_candidate_count', 'blocks' => 'block_candidate_count', 'block_types' => 'block_type_count' ) as $artifact_key => $count_key ) {
+			if ( ! isset( $candidate_counts[ $count_key ] ) && isset( $wordpress_artifacts[ $artifact_key ] ) ) {
+				$candidate_counts[ $count_key ] = $count_value( $wordpress_artifacts[ $artifact_key ] );
+			}
+		}
 
 		$component_count = $sum_nested_counts( $fragments, array( array( 'component_count' ), array( 'summary', 'component_count' ) ) );
 		$rejected_count = $sum_nested_counts( $fragments, array( array( 'rejected_count' ), array( 'input', 'rejected_count' ) ) );
@@ -245,6 +287,7 @@ return static function (): array {
 
 		return array(
 			'available' => ! empty( $compiler['available'] ) || ! empty( $fragments ) || ! empty( $website_artifact ),
+			'status' => is_scalar( $compiler['status'] ?? $website_artifact['status'] ?? '' ) ? (string) ( $compiler['status'] ?? $website_artifact['status'] ?? '' ) : '',
 			'import_mode' => is_scalar( $import_mode ) ? (string) $import_mode : '',
 			'fragment_count' => $count_value( $compiler['fragment_count'] ?? $fragments ),
 			'component_count' => $component_count,
@@ -254,6 +297,8 @@ return static function (): array {
 			'website_artifact' => $website_artifact,
 			'website_artifact_summary' => $website_summary,
 			'website_artifact_present' => ! empty( $website_artifact ),
+			'source_documents' => $source_documents,
+			'candidate_counts' => $candidate_counts,
 		);
 	};
 
@@ -368,6 +413,7 @@ return static function (): array {
 				'path' => $report_path,
 				'readable' => true,
 				'top_level_keys' => is_array( $report ) ? array_keys( $report ) : array(),
+				'source_documents' => is_array( $report ) ? $normalize_source_documents( $get_path( $report, array( 'source_documents' ) ) ) : array(),
 				'diagnostics' => $diagnostics,
 				'block_artifact_compiler' => is_array( $report ) ? $bac_summary( $report ) : array(),
 				'asset_map' => is_array( $get_path( $report, array( 'asset_map' ) ) ) ? $get_path( $report, array( 'asset_map' ) ) : array(),
