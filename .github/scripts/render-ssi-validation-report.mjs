@@ -17,11 +17,21 @@ const signalMetrics = [
 	['ssi_ignored_region_count', 'ignored regions'],
 ];
 
+const bacMetrics = [
+	['ssi_bac_available', 'compiler available'],
+	['ssi_bac_website_artifact_present', 'website artifact present'],
+	['ssi_bac_fragment_count', 'compiled fragments'],
+	['ssi_bac_component_count', 'components'],
+	['ssi_bac_rejected_count', 'rejected inputs'],
+	['ssi_bac_diagnostic_count', 'compiler diagnostics'],
+];
+
 const consumedMetricPatterns = [
 	/^(max|mean|min|p50|p95|p99)_ms$/,
 	/^ssi_report_readable_(max|mean|min|p50|p95|p99)$/,
 	/^ssi_report_top_level_keys_(max|mean|min|p50|p95|p99)$/,
 	...signalMetrics.map(([key]) => new RegExp(`^${escapeRegExp(key)}(_(max|mean|min|p50|p95|p99))?$`)),
+	...bacMetrics.map(([key]) => new RegExp(`^${escapeRegExp(key)}(_(max|mean|min|p50|p95|p99))?$`)),
 ];
 
 const benchText = await readInput(benchPath).catch((error) => {
@@ -74,7 +84,9 @@ function renderReport(ssi) {
 		sections.push(unexpected);
 	}
 
-	sections.push(renderImportReport(ssi?.metadata?.import_report_summary));
+	const importReportSummary = ssi?.metadata?.import_report_summary;
+	sections.push(renderBacStatus(metrics, importReportSummary?.block_artifact_compiler));
+	sections.push(renderImportReport(importReportSummary));
 
 	return sections.filter(Boolean).join('\n\n');
 }
@@ -115,6 +127,37 @@ function renderUnexpectedMetrics(metrics) {
 	}
 
 	return ['### Other Metrics', '| Metric | Value |', '| --- | ---: |', ...rows].join('\n');
+}
+
+function renderBacStatus(metrics, compiler) {
+	const summary = compiler && typeof compiler === 'object' ? compiler : {};
+	const rows = bacMetrics.map(([key, label]) => `| ${label} | ${formatCount(metricValue(metrics, key))} |`);
+
+	const lines = ['### Block Artifact Compiler', '| Signal | Count |', '| --- | ---: |', ...rows];
+	if (summary.import_mode) {
+		lines.push('', `- **Import mode:** \`${escapeCell(summary.import_mode)}\``);
+	}
+
+	const websiteSummary = summary.website_artifact_summary && typeof summary.website_artifact_summary === 'object' ? summary.website_artifact_summary : {};
+	if (Object.keys(websiteSummary).length > 0) {
+		lines.push('', '| Website Artifact Summary | Value |');
+		lines.push('| --- | --- |');
+		for (const [key, value] of Object.entries(websiteSummary)) {
+			lines.push(`| \`${escapeCell(key)}\` | ${escapeCell(formatValue(value))} |`);
+		}
+	}
+
+	const websiteArtifact = summary.website_artifact && typeof summary.website_artifact === 'object' ? summary.website_artifact : {};
+	const diagnostics = Array.isArray(websiteArtifact.diagnostics) ? websiteArtifact.diagnostics : [];
+	if (diagnostics.length > 0) {
+		lines.push('', '| Compiler Diagnostic | Severity | Message |');
+		lines.push('| --- | --- | --- |');
+		for (const diagnostic of diagnostics) {
+			lines.push(`| \`${escapeCell(diagnostic?.code || diagnostic?.type || diagnostic?.id)}\` | \`${escapeCell(diagnostic?.severity || diagnostic?.level)}\` | ${escapeCell(diagnostic?.message)} |`);
+		}
+	}
+
+	return lines.join('\n');
 }
 
 function renderImportReport(summary) {
@@ -173,6 +216,9 @@ function formatMs(value) {
 function formatValue(value) {
 	if (typeof value === 'number' && Number.isFinite(value)) {
 		return Number.isInteger(value) ? String(value) : String(Number(value.toFixed(3)));
+	}
+	if (value && typeof value === 'object') {
+		return JSON.stringify(value);
 	}
 	return String(value ?? '');
 }

@@ -28,6 +28,12 @@ return static function (): array {
 		'ssi_freeform_block_count' => 0,
 		'ssi_invalid_block_count' => 0,
 		'ssi_manifest_error_count' => 0,
+		'ssi_bac_available' => 0,
+		'ssi_bac_fragment_count' => 0,
+		'ssi_bac_component_count' => 0,
+		'ssi_bac_rejected_count' => 0,
+		'ssi_bac_diagnostic_count' => 0,
+		'ssi_bac_website_artifact_present' => 0,
 	);
 	$diagnostics = array();
 	$seen_diagnostics = array();
@@ -176,6 +182,81 @@ return static function (): array {
 		return $total;
 	};
 
+	$sum_nested_counts = static function ( $value, array $paths ) use ( $get_path, $count_value ): int {
+		$total = 0;
+		$items = is_array( $value ) ? $value : array();
+		$is_list = array_keys( $items ) === range( 0, count( $items ) - 1 );
+		if ( $is_list ) {
+			foreach ( $items as $item ) {
+				if ( ! is_array( $item ) ) {
+					continue;
+				}
+				foreach ( $paths as $path ) {
+					$found = $get_path( $item, $path );
+					if ( null !== $found ) {
+						$total += $count_value( $found );
+						break;
+					}
+				}
+			}
+			return $total;
+		}
+
+		foreach ( $paths as $path ) {
+			$found = $get_path( $items, $path );
+			if ( null !== $found ) {
+				$total += $count_value( $found );
+				break;
+			}
+		}
+
+		return $total;
+	};
+
+	$bac_summary = static function ( array $report ) use ( $get_path, $count_value, $sum_nested_counts ): array {
+		$compiler = $get_path( $report, array( 'block_artifact_compiler' ) );
+		$compiler = is_array( $compiler ) ? $compiler : array();
+		$fragments = isset( $compiler['fragments'] ) && is_array( $compiler['fragments'] ) ? $compiler['fragments'] : array();
+		$website_artifact = isset( $compiler['website_artifact'] ) && is_array( $compiler['website_artifact'] ) ? $compiler['website_artifact'] : array();
+		$website_summary = isset( $website_artifact['summary'] ) && is_array( $website_artifact['summary'] ) ? $website_artifact['summary'] : array();
+		$website_input = isset( $website_artifact['input'] ) && is_array( $website_artifact['input'] ) ? $website_artifact['input'] : array();
+		$website_diagnostics = isset( $website_artifact['diagnostics'] ) && is_array( $website_artifact['diagnostics'] ) ? $website_artifact['diagnostics'] : array();
+
+		$component_count = $sum_nested_counts( $fragments, array( array( 'component_count' ), array( 'summary', 'component_count' ) ) );
+		$rejected_count = $sum_nested_counts( $fragments, array( array( 'rejected_count' ), array( 'input', 'rejected_count' ) ) );
+		$diagnostic_count = $sum_nested_counts( $fragments, array( array( 'diagnostic_count' ), array( 'diagnostics' ) ) );
+
+		if ( ! empty( $website_artifact ) ) {
+			$component_count += $count_value( $website_summary['component_count'] ?? null );
+			$rejected_count += $count_value( $website_input['rejected_count'] ?? null );
+			$diagnostic_count += $count_value( $website_summary['diagnostic_count'] ?? $website_diagnostics );
+		}
+
+		$import_mode = $get_path( $report, array( 'import_mode' ) );
+		if ( null === $import_mode ) {
+			$import_mode = $get_path( $report, array( 'source_metadata', 'import_mode' ) );
+		}
+		if ( null === $import_mode ) {
+			$import_mode = $get_path( $report, array( 'source_metadata', 'mode' ) );
+		}
+		if ( null === $import_mode ) {
+			$import_mode = $get_path( $report, array( 'source_metadata', 'source' ) );
+		}
+
+		return array(
+			'available' => ! empty( $compiler['available'] ) || ! empty( $fragments ) || ! empty( $website_artifact ),
+			'import_mode' => is_scalar( $import_mode ) ? (string) $import_mode : '',
+			'fragment_count' => $count_value( $compiler['fragment_count'] ?? $fragments ),
+			'component_count' => $component_count,
+			'rejected_count' => $rejected_count,
+			'diagnostic_count' => $diagnostic_count,
+			'fragments' => $fragments,
+			'website_artifact' => $website_artifact,
+			'website_artifact_summary' => $website_summary,
+			'website_artifact_present' => ! empty( $website_artifact ),
+		);
+	};
+
 	$count_diagnostics = static function ( array $report, callable $matches ) use ( $get_path ): int {
 		$diagnostics = $get_path( $report, array( 'diagnostics' ) );
 		if ( ! is_array( $diagnostics ) ) {
@@ -223,6 +304,14 @@ return static function (): array {
 	};
 
 	if ( is_array( $report ) ) {
+		$block_artifact_compiler = $bac_summary( $report );
+		$metrics['ssi_bac_available'] = $block_artifact_compiler['available'] ? 1 : 0;
+		$metrics['ssi_bac_fragment_count'] = $block_artifact_compiler['fragment_count'];
+		$metrics['ssi_bac_component_count'] = $block_artifact_compiler['component_count'];
+		$metrics['ssi_bac_rejected_count'] = $block_artifact_compiler['rejected_count'];
+		$metrics['ssi_bac_diagnostic_count'] = $block_artifact_compiler['diagnostic_count'];
+		$metrics['ssi_bac_website_artifact_present'] = $block_artifact_compiler['website_artifact_present'] ? 1 : 0;
+
 		$collect_modern_diagnostics( $report );
 
 		$ignored_regions = $get_path( $report, array( 'source_region_selection', 'intentionally_ignored_regions' ) );
@@ -280,6 +369,7 @@ return static function (): array {
 				'readable' => true,
 				'top_level_keys' => is_array( $report ) ? array_keys( $report ) : array(),
 				'diagnostics' => $diagnostics,
+				'block_artifact_compiler' => is_array( $report ) ? $bac_summary( $report ) : array(),
 				'asset_map' => is_array( $get_path( $report, array( 'asset_map' ) ) ) ? $get_path( $report, array( 'asset_map' ) ) : array(),
 			),
 		),
