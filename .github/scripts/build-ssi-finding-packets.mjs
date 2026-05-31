@@ -76,7 +76,7 @@ async function buildPackets() {
 
 	const visualDiff = await loadVisualDiff(visualDiffPath);
 	if (visualDiff && visualDiff.pass === false) {
-		packets.push(packetFromVisualDiff(visualDiff));
+		packets.push(packetFromVisualDiff(visualDiff, summary));
 	} else if (visualOutcome && visualOutcome !== 'success' && visualOutcome !== 'skipped') {
 		packets.push(packetFromVisualOutcome(visualOutcome));
 	}
@@ -313,39 +313,182 @@ function packetFromVisualOutcome(outcome) {
 	};
 }
 
-function packetFromVisualDiff(diff) {
+function packetFromVisualDiff(diff, summary = null) {
 	const mismatchPercent = `${(Number(diff.mismatchRatio || 0) * 100).toFixed(2)}%`;
 	const thresholdPercent = `${(Number(diff.threshold || 0) * 100).toFixed(2)}%`;
 	const sourceSize = `${diff.source?.width || 0}x${diff.source?.height || 0}`;
 	const importedSize = `${diff.imported?.width || 0}x${diff.imported?.height || 0}`;
 	const regions = visualRegions(diff);
 	const topRegion = regions[0] || null;
+	const compilerEvidence = compilerEvidenceFromSummary(summary);
+	const hasCompilerEvidence = Object.keys(compilerEvidence).length > 0;
+	const candidate = hasCompilerEvidence ? 'chubes4/static-site-importer' : generatorRepo;
+	const category = hasCompilerEvidence ? 'import_layout_fidelity' : 'visual_parity';
+	const suggestedRepairClass = hasCompilerEvidence ? 'inspect_transformer_layout_fidelity' : 'inspect_visual_parity_policy';
+	const converter = hasCompilerEvidence ? 'static-site-importer' : 'visual-parity';
 	const regionSummary = topRegion
 		? ` top_region=x:${topRegion.x},y:${topRegion.y},w:${topRegion.width},h:${topRegion.height},mismatch=${formatRatio(topRegion.mismatchRatio)} source=${probeSummary(topRegion.source_matches)} imported=${probeSummary(topRegion.imported_matches)}`
 		: '';
 	return {
-		...packetBase(generatorRepo),
+		...packetBase(candidate),
 		diagnostic_id: `visual-parity-${site}`,
 		kind: 'visual_parity_mismatch',
 		source_path: visualDiffPath,
 		path: visualDiffPath,
 		severity: 'warning',
-		category: 'visual_parity',
+		category,
 		reason_code: 'visual_parity_mismatch',
-		suggested_repair_class: 'inspect_visual_parity_policy',
+		suggested_repair_class: suggestedRepairClass,
 		preview: `source=${sourceSize} imported=${importedSize} mismatch=${mismatchPercent}${regionSummary}`,
 		selector: topRegion ? `screenshot region ${topRegion.x},${topRegion.y} ${topRegion.width}x${topRegion.height}` : '',
 		excerpt: topRegion ? topRegionExcerpt(topRegion) : '',
 		source_html_preview: '',
 		block_name: '',
-		converter: 'visual-parity',
+		converter,
 		stage: 'screenshot_diff',
-		reason: `Imported WordPress screenshot differs from source static HTML screenshot: mismatch=${mismatchPercent}, threshold=${thresholdPercent}, mismatched_pixels=${diff.mismatchPixels || 0}, total_pixels=${diff.totalPixels || 0}, dimension_mismatch=${diff.dimensionMismatch ? 'yes' : 'no'}.${regionSummary} See visual-parity artifact files source.png, imported.png, diff.png, and visual-diff.json.`,
+		reason: `Imported WordPress screenshot differs from source static HTML screenshot: mismatch=${mismatchPercent}, threshold=${thresholdPercent}, mismatched_pixels=${diff.mismatchPixels || 0}, total_pixels=${diff.totalPixels || 0}, dimension_mismatch=${diff.dimensionMismatch ? 'yes' : 'no'}.${regionSummary}${hasCompilerEvidence ? ' Rich SSI compiler evidence is attached for transformer/importer repair triage.' : ''} See visual-parity artifact files source.png, imported.png, diff.png, and visual-diff.json.`,
 		diagnostic_refs: [],
 		asset_map_refs: [],
 		visual_regions: regions,
 		visual_code_evidence: topRegion ? visualCodeEvidence(topRegion) : {},
+		compiler_evidence: compilerEvidence,
+		repair_mode: hasCompilerEvidence ? 'issue_only' : '',
 	};
+}
+
+function compilerEvidenceFromSummary(summary) {
+	const compiler = summary?.block_artifact_compiler;
+	if (!compiler || typeof compiler !== 'object' || Array.isArray(compiler)) {
+		return {};
+	}
+
+	const fragments = asArray(compiler.fragments).slice(0, 3).map((fragment) => compilerFragmentEvidence(fragment));
+	const evidence = compactObject({
+		available: Boolean(compiler.available),
+		status: text(compiler.status),
+		import_mode: text(compiler.import_mode),
+		fragment_count: numericEvidence(compiler.fragment_count),
+		component_count: numericEvidence(compiler.component_count),
+		rejected_count: numericEvidence(compiler.rejected_count),
+		diagnostic_count: numericEvidence(compiler.diagnostic_count),
+		website_artifact_present: Boolean(compiler.website_artifact_present),
+		source_documents: objectEvidence(compiler.source_documents),
+		candidate_counts: objectEvidence(compiler.candidate_counts),
+		website_artifact_summary: objectEvidence(compiler.website_artifact_summary),
+		fragments,
+	});
+
+	return Object.keys(evidence).length > 0 && (evidence.available || evidence.website_artifact_present || fragments.length > 0)
+		? evidence
+		: {};
+}
+
+function compilerFragmentEvidence(fragment) {
+	if (!fragment || typeof fragment !== 'object' || Array.isArray(fragment)) {
+		return {};
+	}
+
+	return compactObject({
+		id: text(fragment.id || fragment.fragment_id),
+		path: text(fragment.path || fragment.source_path),
+		status: text(fragment.status),
+		summary: objectEvidence(fragment.summary),
+		input: compactObject({
+			source_report: sourceReportEvidence(fragment.input?.source_report),
+			rejected_count: numericEvidence(fragment.input?.rejected_count),
+		}),
+		provenance: objectEvidence(fragment.provenance),
+		diagnostics: asArray(fragment.diagnostics).slice(0, 5).map(diagnosticEvidence),
+		bfb_report: bfbReportEvidence(fragment.bfb_report),
+		wordpress_artifacts: wordpressArtifactEvidence(fragment.wordpress_artifacts),
+	});
+}
+
+function sourceReportEvidence(report) {
+	if (!report || typeof report !== 'object' || Array.isArray(report)) {
+		return {};
+	}
+
+	return compactObject({
+		html: objectEvidence(report.html),
+		css: objectEvidence(report.css),
+	});
+}
+
+function bfbReportEvidence(report) {
+	if (!report || typeof report !== 'object' || Array.isArray(report)) {
+		return {};
+	}
+
+	return compactObject({
+		status: text(report.status),
+		diagnostic_count: numericEvidence(report.diagnostic_count),
+		diagnostics: asArray(report.diagnostics).slice(0, 5).map(diagnosticEvidence),
+	});
+}
+
+function wordpressArtifactEvidence(artifacts) {
+	if (!artifacts || typeof artifacts !== 'object' || Array.isArray(artifacts)) {
+		return {};
+	}
+
+	return compactObject({
+		block_markup_length: numericEvidence(artifacts.block_markup_length),
+		block_markup_hash: text(artifacts.block_markup_hash),
+		block_tree: objectEvidence(artifacts.block_tree),
+	});
+}
+
+function diagnosticEvidence(diagnostic) {
+	if (!diagnostic || typeof diagnostic !== 'object' || Array.isArray(diagnostic)) {
+		return {};
+	}
+
+	return compactObject({
+		id: text(diagnostic.id || diagnostic.diagnostic_id),
+		type: text(diagnostic.type || diagnostic.code),
+		severity: text(diagnostic.severity),
+		category: text(diagnostic.category),
+		message: truncate(diagnostic.message || diagnostic.error_message, 260),
+	});
+}
+
+function objectEvidence(value) {
+	if (!value || typeof value !== 'object' || Array.isArray(value)) {
+		return {};
+	}
+
+	const entries = Object.entries(value).slice(0, 20).map(([key, raw]) => {
+		if (Array.isArray(raw)) {
+			return [key, raw.slice(0, 12).map((item) => typeof item === 'object' && item !== null ? objectEvidence(item) : truncate(item, 220))];
+		}
+		if (raw && typeof raw === 'object') {
+			return [key, objectEvidence(raw)];
+		}
+		return [key, typeof raw === 'number' || typeof raw === 'boolean' ? raw : truncate(raw, 220)];
+	});
+
+	return compactObject(Object.fromEntries(entries));
+}
+
+function numericEvidence(value) {
+	const number = Number(value);
+	return Number.isFinite(number) ? number : undefined;
+}
+
+function compactObject(value) {
+	return Object.fromEntries(Object.entries(value).filter(([, raw]) => {
+		if (raw === undefined || raw === null || raw === '') {
+			return false;
+		}
+		if (Array.isArray(raw)) {
+			return raw.length > 0;
+		}
+		if (typeof raw === 'object') {
+			return Object.keys(raw).length > 0;
+		}
+		return true;
+	}));
 }
 
 function visualRegions(diff) {

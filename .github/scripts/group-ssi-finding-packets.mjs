@@ -126,6 +126,7 @@ function normalizePacket(packet) {
 		visual_outcome: text(packet.visual_outcome),
 		visual_regions: visualRegions(packet.visual_regions),
 		visual_code_evidence: visualCodeEvidence(packet),
+		compiler_evidence: packet.compiler_evidence && typeof packet.compiler_evidence === 'object' && !Array.isArray(packet.compiler_evidence) ? packet.compiler_evidence : {},
 		design_system: designText(packet.design_system),
 		palette_kind: designText(packet.palette_kind),
 		typography_kind: designText(packet.typography_kind),
@@ -304,6 +305,9 @@ function routeCandidateRepo(packet) {
 	if (kind === 'bench_failure') {
 		return 'chubes4/wp-site-generator';
 	}
+	if (kind === 'visual_parity_mismatch' && hasCompilerEvidence(packet)) {
+		return 'chubes4/static-site-importer';
+	}
 	if (kind === 'visual_parity_outcome' || kind === 'visual_parity_mismatch') {
 		return 'chubes4/wp-site-generator';
 	}
@@ -358,6 +362,10 @@ function routeRepairMode(packet, candidateRepo) {
 		return 'issue_only';
 	}
 	return 'pr_or_issue';
+}
+
+function hasCompilerEvidence(packet) {
+	return packet.compiler_evidence && typeof packet.compiler_evidence === 'object' && Object.keys(packet.compiler_evidence).length > 0;
 }
 
 function hasSourceSitePatchEvidence(packet) {

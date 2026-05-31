@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 
 import assert from 'node:assert/strict';
-import { mkdtemp, readFile } from 'node:fs/promises';
+import { mkdtemp, readFile, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { spawnSync } from 'node:child_process';
@@ -138,3 +138,63 @@ for (const field of designFields) {
 // Routing must stay stable: groups are keyed by diagnostic signals, not design metadata.
 const h2bcGroups = grouped.groups.filter((group) => group.candidate_repo === 'chubes4/html-to-blocks-converter');
 assert.equal(h2bcGroups.length, 3, 'Design fields must not split converter routing groups');
+
+const richVisualPacketsPath = path.join(tmp, 'rich-visual-packets.json');
+const richVisualGroupsPath = path.join(tmp, 'rich-visual-groups.json');
+await writeFile(richVisualPacketsPath, JSON.stringify([
+	{
+		schema_version: 3,
+		diagnostic_id: 'visual-parity-rich-demo-store',
+		site: 'demo-store',
+		source_repo: 'chubes4/wp-site-generator',
+		source_pr: 77,
+		validation_run_id: 12345,
+		candidate_repo: 'chubes4/static-site-importer',
+		kind: 'visual_parity_mismatch',
+		source_path: 'visual-parity-artifacts/demo-store/visual-diff.json',
+		path: 'visual-parity-artifacts/demo-store/visual-diff.json',
+		severity: 'warning',
+		category: 'import_layout_fidelity',
+		reason_code: 'visual_parity_mismatch',
+		suggested_repair_class: 'inspect_transformer_layout_fidelity',
+		preview: 'source=1280x5076 imported=1280x7450 mismatch=56.31%',
+		converter: 'static-site-importer',
+		stage: 'screenshot_diff',
+		reason: 'Imported WordPress screenshot differs from source static HTML screenshot. Rich SSI compiler evidence is attached.',
+		repair_mode: 'issue_only',
+		diagnostic_refs: [],
+		asset_map_refs: [],
+		compiler_evidence: {
+			available: true,
+			fragment_count: 1,
+			fragments: [
+				{
+					path: 'index.html',
+					input: { source_report: { html: { element_count: 8 }, css: { selector_count: 4 } } },
+					wordpress_artifacts: { block_tree: { block_count: 4 } },
+				},
+			],
+		},
+		design_system: 'editorial-magazine',
+		palette_kind: 'warm-neutral',
+		typography_kind: 'mixed-serif-sans',
+		layout_kind: 'magazine',
+		density: 'comfortable',
+		commerce_pattern: 'editorial-pdp',
+	},
+], null, 2));
+
+const richVisualResult = spawnSync(process.execPath, [
+	path.join(repoRoot, '.github/scripts/group-ssi-finding-packets.mjs'),
+	richVisualPacketsPath,
+], {
+	cwd: repoRoot,
+	env: { ...process.env, FINDING_GROUPS_PATH: richVisualGroupsPath },
+	encoding: 'utf8',
+});
+assert.equal(richVisualResult.status, 0, richVisualResult.stderr || richVisualResult.stdout);
+
+const richVisualGrouped = JSON.parse(await readFile(richVisualGroupsPath, 'utf8'));
+assert.deepEqual(richVisualGrouped.candidate_repos, ['chubes4/static-site-importer']);
+assert.equal(richVisualGrouped.groups[0].repair_mode, 'issue_only');
+assert.equal(richVisualGrouped.groups[0].packets[0].compiler_evidence.fragments[0].wordpress_artifacts.block_tree.block_count, 4);

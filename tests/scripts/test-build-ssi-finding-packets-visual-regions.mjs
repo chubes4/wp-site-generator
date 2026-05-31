@@ -26,6 +26,35 @@ await writeFile(
 							import_report_summary: {
 								path: 'import-report.json',
 								diagnostics: [],
+								block_artifact_compiler: {
+									available: true,
+									status: 'success',
+									import_mode: 'website_artifact',
+									fragment_count: 1,
+									component_count: 3,
+									website_artifact_present: true,
+									source_documents: {
+										total_count: 2,
+										counts_by_kind: { html: 1, css: 1 },
+									},
+									fragments: [
+										{
+											id: 'home',
+											path: 'index.html',
+											input: {
+												source_report: {
+													html: { element_count: 8, top_classes: [{ class_name: 'hero', count: 1 }] },
+													css: { selector_count: 4, layout_sensitive_selectors: ['.hero'] },
+												},
+											},
+											wordpress_artifacts: {
+												block_markup_length: 120,
+												block_markup_hash: 'abc123',
+												block_tree: { block_count: 4, max_depth: 2 },
+											},
+										},
+									],
+								},
 							},
 						},
 					},
@@ -141,5 +170,11 @@ assert.match(visualPacket.visual_regions[0].source_matches[0].html, /<section/);
 assert.equal(visualPacket.visual_regions[0].source_matches[0].matched_css_rules[0].selector, '.hero');
 assert.equal(visualPacket.visual_regions[0].layout_deltas[0].style_diffs[0].property, 'display');
 assert.equal(visualPacket.visual_code_evidence.imported[0].computed_style['font-size'], '40px');
+assert.equal(visualPacket.candidate_repo, 'chubes4/static-site-importer');
+assert.equal(visualPacket.category, 'import_layout_fidelity');
+assert.equal(visualPacket.repair_mode, 'issue_only');
+assert.equal(visualPacket.compiler_evidence.fragment_count, 1);
+assert.equal(visualPacket.compiler_evidence.fragments[0].input.source_report.html.element_count, 8);
+assert.equal(visualPacket.compiler_evidence.fragments[0].wordpress_artifacts.block_tree.block_count, 4);
 assert.match(visualPacket.preview, /top_region=x:0,y:32,w:100,h:64/);
 assert.match(visualPacket.excerpt, /Original hero copy/);
