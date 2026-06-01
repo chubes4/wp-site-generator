@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 96 96" role="img" aria-labelledby="title desc">
+  <title id="title">Kiln Ledger mark</title>
+  <desc id="desc">A gridded ceramic test tile with archive tabs and glaze swatches.</desc>
+  <rect width="96" height="96" rx="10" fill="#F4EFE6"/>
+  <path d="M13 21h70v59H13z" fill="#fffaf0" stroke="#2F2D2A" stroke-width="4"/>
+  <path d="M13 34h70M13 48h70M13 62h70M30 21v59M48 21v59M66 21v59" stroke="#2F2D2A" stroke-opacity=".24" stroke-width="2"/>
+  <path d="M22 12h19v12H22z" fill="#8FAE9B" stroke="#2F2D2A" stroke-width="3"/>
+  <path d="M49 12h19v12H49z" fill="#D79A3B" stroke="#2F2D2A" stroke-width="3"/>
+  <circle cx="30" cy="48" r="8" fill="#D8C3A5" stroke="#2F2D2A" stroke-width="3"/>
+  <circle cx="48" cy="48" r="8" fill="#A86F4C" stroke="#2F2D2A" stroke-width="3"/>
+  <circle cx="66" cy="48" r="8" fill="#294E7A" stroke="#2F2D2A" stroke-width="3"/>
+  <path d="M24 71h48" stroke="#7C3F2C" stroke-width="5" stroke-linecap="round"/>
+</svg>
