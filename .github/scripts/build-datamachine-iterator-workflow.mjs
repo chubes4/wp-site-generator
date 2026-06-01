@@ -50,7 +50,13 @@ function buildWorkflow(packets, pipelineConfig, flowConfig) {
 					step_type: 'ai',
 					label: aiConfig.label || 'Repair transformer findings',
 					system_prompt: aiConfig.system_prompt || '',
-					user_message: userMessage,
+					prompt_queue: [
+						{
+							prompt: userMessage,
+							added_at: 'static-validation-iterator-build',
+						},
+					],
+					queue_mode: 'static',
 					enabled_tools: iteratorFlowStep.enabled_tools || [],
 					disabled_tools: aiConfig.disabled_tools || iteratorFlowStep.disabled_tools || [],
 					completion_assertions: aiConfig.completion_assertions || iteratorFlowStep.completion_assertions || {},

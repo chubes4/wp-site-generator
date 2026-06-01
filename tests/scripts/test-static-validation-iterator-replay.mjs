@@ -135,10 +135,10 @@ const workflowResult = spawnSync(process.execPath, [path.join(repoRoot, '.github
 assert.equal(workflowResult.status, 0, workflowResult.stderr || workflowResult.stdout);
 
 const workflow = JSON.parse(await readFile(workflowPath, 'utf8'));
-const userMessage = workflow.workflow.steps[0].user_message;
-assert.match(userMessage, /"candidate_repo": "chubes4\/html-to-blocks-converter"/, 'workflow embeds H2BC follow-up route');
-assert.match(userMessage, /"candidate_repo": "chubes4\/wp-site-generator"/, 'workflow embeds WPSG harness/visual route');
-assert.doesNotMatch(userMessage, /"kind": "report_missing"/, 'workflow no longer asks iterator to chase missing-report noise');
+const iteratorPrompt = workflow.workflow.steps[0].prompt_queue[0].prompt;
+assert.match(iteratorPrompt, /"candidate_repo": "chubes4\/html-to-blocks-converter"/, 'workflow embeds H2BC follow-up route');
+assert.match(iteratorPrompt, /"candidate_repo": "chubes4\/wp-site-generator"/, 'workflow embeds WPSG harness/visual route');
+assert.doesNotMatch(iteratorPrompt, /"kind": "report_missing"/, 'workflow no longer asks iterator to chase missing-report noise');
 
 console.log('static validation iterator replay passed');
 
