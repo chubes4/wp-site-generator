@@ -389,6 +389,18 @@ h3 {
   color: #46433d;
 }
 
+.section-intro p:not(.label),
+.section-heading-row p,
+.repair-card p,
+.story-copy p:not(.byline),
+.about-panel p,
+.contact-card > p,
+.access-card p,
+.static-form > p,
+.form-field p {
+  margin: 0;
+}
+
 .clipboard {
   padding: 0.85rem;
   background:
