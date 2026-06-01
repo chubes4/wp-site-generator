@@ -71,9 +71,6 @@
                             }
                         ]
                     }
-                ],
-                "required_tool_names": [
-                    "comment_github_pull_request"
                 ]
             },
             "disabled_tools": [
