@@ -136,7 +136,7 @@ jobs:
       pipeline_slug: design-pipeline
       flow_slug: design-manual-flow
       target_repo: ${{ github.repository }}
-      prompt: Decide one visual design direction for GitHub issue #${{ needs.collect-store-issue.outputs.issue_number }}. Read the concept body, post the design.json fenced JSON block as a comment, and toggle the issue label from status:idea-ready to status:design-ready using surgical add_label_to_issue and remove_label_from_issue tool calls. Preserve every other label.
+      prompt: "Decide one visual design direction for GitHub issue #${{ needs.collect-store-issue.outputs.issue_number }}. Read the concept body, post the design.json fenced JSON block as a comment, and toggle the issue label from status:idea-ready to status:design-ready using surgical add_label_to_issue and remove_label_from_issue tool calls. Preserve every other label."
       model: ${{ inputs.openai_model }}
       data_machine_ref: ${{ inputs.data_machine_ref }}
       data_machine_code_ref: ${{ inputs.data_machine_code_ref }}
@@ -161,7 +161,7 @@ jobs:
       pipeline_slug: design-pipeline
       flow_slug: design-manual-flow
       target_repo: ${{ github.repository }}
-      prompt: Decide one visual design direction for GitHub issue #${{ needs.collect-website-issue.outputs.issue_number }}. Read the concept body, post the design.json fenced JSON block as a comment, and toggle the issue label from status:idea-ready to status:design-ready using surgical add_label_to_issue and remove_label_from_issue tool calls. Preserve every other label.
+      prompt: "Decide one visual design direction for GitHub issue #${{ needs.collect-website-issue.outputs.issue_number }}. Read the concept body, post the design.json fenced JSON block as a comment, and toggle the issue label from status:idea-ready to status:design-ready using surgical add_label_to_issue and remove_label_from_issue tool calls. Preserve every other label."
       model: ${{ inputs.openai_model }}
       data_machine_ref: ${{ inputs.data_machine_ref }}
       data_machine_code_ref: ${{ inputs.data_machine_code_ref }}
@@ -188,7 +188,7 @@ jobs:
       pipeline_slug: static-site-pipeline
       flow_slug: static-site-manual-flow
       target_repo: ${{ github.repository }}
-      prompt: Implement GitHub issue #${{ needs.collect-store-issue.outputs.issue_number }} as a static site. Read the issue body and the design agent comment, honor both, and open exactly one static-site PR for that issue.
+      prompt: "Implement GitHub issue #${{ needs.collect-store-issue.outputs.issue_number }} as a static site. Read the issue body and the design agent comment, honor both, and open exactly one static-site PR for that issue."
       model: ${{ inputs.openai_model }}
       data_machine_ref: ${{ inputs.data_machine_ref }}
       data_machine_code_ref: ${{ inputs.data_machine_code_ref }}
@@ -217,7 +217,7 @@ jobs:
       pipeline_slug: static-site-pipeline
       flow_slug: static-site-manual-flow
       target_repo: ${{ github.repository }}
-      prompt: Implement GitHub issue #${{ needs.collect-website-issue.outputs.issue_number }} as a static site. Read the issue body and the design agent comment, honor both, and open exactly one static-site PR for that issue.
+      prompt: "Implement GitHub issue #${{ needs.collect-website-issue.outputs.issue_number }} as a static site. Read the issue body and the design agent comment, honor both, and open exactly one static-site PR for that issue."
       model: ${{ inputs.openai_model }}
       data_machine_ref: ${{ inputs.data_machine_ref }}
       data_machine_code_ref: ${{ inputs.data_machine_code_ref }}
