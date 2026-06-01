@@ -4,6 +4,8 @@ import { readFile } from 'node:fs/promises';
 
 const site = process.env.SITE || '';
 const benchPath = process.env.BENCH_PATH || 'homeboy-ci-results/bench.json';
+const visualSummaryPath = process.env.VISUAL_SUMMARY_PATH || `visual-parity-artifacts/${site}/summary.json`;
+const importReadyPath = process.env.IMPORT_READY_PATH || `visual-parity-artifacts/${site}/import-ready.json`;
 
 const signalMetrics = [
 	['ssi_signal_total_count', 'total classified signals'],
@@ -34,18 +36,21 @@ const consumedMetricPatterns = [
 	...bacMetrics.map(([key]) => new RegExp(`^${escapeRegExp(key)}(_(max|mean|min|p50|p95|p99))?$`)),
 ];
 
-const benchText = await readInput(benchPath).catch((error) => {
-	console.log(`_Bench artifact could not be read: ${escapeText(error?.message || error)}_`);
-	process.exit(0);
-});
-const bench = parseJson(benchText);
-if (!bench) {
-	console.log('_Bench artifact is not valid JSON._');
-	process.exit(0);
-}
-const ssi = (bench?.data?.payload || bench?.data)?.results?.scenarios?.find((scenario) => scenario?.id === 'ssi-import');
+const benchRead = await readInput(benchPath)
+	.then((text) => ({ text, error: '' }))
+	.catch((error) => ({ text: '', error: error?.message || String(error) }));
+const bench = benchRead.text ? parseJson(benchRead.text) : null;
+const ssi = (bench?.data?.payload || bench?.data)?.results?.scenarios?.find((scenario) => scenario?.id === 'ssi-import') || await loadRecoveredSsiScenario();
 
 if (!ssi) {
+	if (benchRead.error) {
+		console.log(`_Bench artifact could not be read: ${escapeText(benchRead.error)}_`);
+		process.exit(0);
+	}
+	if (benchRead.text && !bench) {
+		console.log('_Bench artifact is not valid JSON._');
+		process.exit(0);
+	}
 	console.log('_SSI workload did not run._');
 	process.exit(0);
 }
@@ -66,6 +71,50 @@ async function readInput(path) {
 	}
 
 	return readFile(path, 'utf8');
+}
+
+async function loadRecoveredSsiScenario() {
+	for (const inputPath of [visualSummaryPath, importReadyPath]) {
+		const data = await loadJson(inputPath);
+		const importReadiness = data?.importReadiness && typeof data.importReadiness === 'object' ? data.importReadiness : data;
+		const importResult = importReadiness?.import_result && typeof importReadiness.import_result === 'object' ? importReadiness.import_result : null;
+		const summary = importResult?.import_report_summary && typeof importResult.import_report_summary === 'object'
+			? importResult.import_report_summary
+			: null;
+		if (summary) {
+			const recoveredSummary = {
+				path: importResult?.report_path || summary.path,
+				readable: summary.readable ?? true,
+				...summary,
+			};
+			return {
+				id: 'ssi-import',
+				metrics: metricsFromImportSummary(recoveredSummary, importResult?.quality),
+				metadata: { import_report_summary: recoveredSummary },
+			};
+		}
+	}
+
+	return null;
+}
+
+async function loadJson(inputPath) {
+	try {
+		return JSON.parse(await readFile(inputPath, 'utf8'));
+	} catch {
+		return null;
+	}
+}
+
+function metricsFromImportSummary(summary, quality = null) {
+	const source = quality && typeof quality === 'object' ? { ...summary, ...quality } : summary;
+	return {
+		ssi_signal_total_count: numericValue(source.diagnostic_count),
+		ssi_core_html_count: numericValue(source.core_html_block_count),
+		ssi_fallback_count: numericValue(source.fallback_count),
+		ssi_freeform_block_count: numericValue(source.freeform_block_count),
+		ssi_invalid_block_count: numericValue(source.invalid_block_count),
+	};
 }
 
 function renderReport(ssi) {
