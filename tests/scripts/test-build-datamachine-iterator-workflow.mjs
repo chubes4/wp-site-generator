@@ -108,7 +108,7 @@ const outcomeAssertions = aiStep.completion_assertions.complete_when_any;
 assert.ok(outcomeAssertions.some((outcome) => outcome.name === 'pull_request_path'), 'PR completion outcome is preserved');
 assert.deepEqual(aiStep.completion_assertions.required_tool_names, ['comment_github_pull_request'], 'source callback remains a direct required tool');
 assert.match(aiStep.system_prompt, /immediately comment back on the source generated-site PR/, 'prompt requires callback immediately after upstream action');
-assert.match(aiStep.user_message, /make the completion decision immediately/, 'iterator prompt prevents repeated existing-issue searches');
+assert.match(aiStep.user_message, /Do not call list_github_issues/, 'iterator prompt prevents repeated existing-issue searches');
 for (const outcome of outcomeAssertions) {
 	assert.ok(
 		outcome.tools.some((tool) => tool.name === 'comment_github_pull_request'),
@@ -116,10 +116,6 @@ for (const outcome of outcomeAssertions) {
 	);
 }
 assert.ok(aiStep.tool_runtime_rules.some((rule) => rule.id === 'iterator-inspection-budget'), 'tool runtime rules are preserved');
-const issueDecisionRule = aiStep.tool_runtime_rules.find((rule) => rule.id === 'iterator-existing-issue-decision');
-assert.ok(issueDecisionRule, 'issue-list decision runtime rule is preserved');
-assert.equal(issueDecisionRule.after_tool, 'list_github_issues');
-assert.deepEqual(issueDecisionRule.limited_tools, ['list_github_issues']);
-assert.deepEqual(issueDecisionRule.then_require_one_of, ['create_github_issue', 'comment_github_pull_request']);
+assert.ok(!aiStep.enabled_tools.includes('list_github_issues'), 'issue-list tool is disabled to avoid fallback search loops');
 
 console.log('build-datamachine-iterator-workflow smoke passed');

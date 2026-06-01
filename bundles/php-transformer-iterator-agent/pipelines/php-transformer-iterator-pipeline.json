@@ -31,21 +31,7 @@
                             "name": "issue_fallback_path",
                             "tools": [
                                 {
-                                    "name": "list_github_issues"
-                                },
-                                {
                                     "name": "create_github_issue"
-                                },
-                                {
-                                    "name": "comment_github_pull_request"
-                                }
-                            ]
-                        },
-                        {
-                            "name": "existing_issue_path",
-                            "tools": [
-                                {
-                                    "name": "list_github_issues"
                                 },
                                 {
                                     "name": "comment_github_pull_request"
@@ -76,20 +62,7 @@
                         "max_calls": 4,
                         "then_require_one_of": [
                             "workspace_edit",
-                            "list_github_issues",
                             "create_github_issue"
-                        ]
-                    },
-                    {
-                        "after_tool": "list_github_issues",
-                        "id": "iterator-existing-issue-decision",
-                        "limited_tools": [
-                            "list_github_issues"
-                        ],
-                        "max_calls": 0,
-                        "then_require_one_of": [
-                            "create_github_issue",
-                            "comment_github_pull_request"
                         ]
                     }
                 ],

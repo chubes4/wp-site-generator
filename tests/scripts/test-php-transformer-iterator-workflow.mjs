@@ -16,14 +16,14 @@ assert.match(workflow, /execute_workflow_path: \.ci\/datamachine-iterator-workfl
 assert.match(workflow, /extra_required_abilities: '\["datamachine\/upsert-github-pull-review-comment"\]'/, 'iterator requires the managed PR comment upsert ability');
 assert.match(workflow, /app_token_repos: .*chubes4\/block-artifact-compiler/, 'iterator token routing includes block-artifact-compiler');
 assert.match(workflow, /success_requires_pr: false/, 'issue-only and existing-issue completion paths do not require a new PR');
-assert.match(workflow, /success_completion_outcomes: '\["pull_request_path","issue_fallback_path","existing_issue_path","no_actionable_findings"\]'/, 'iterator accepts every explicit completion outcome');
+assert.match(workflow, /success_completion_outcomes: '\["pull_request_path","issue_fallback_path","no_actionable_findings"\]'/, 'iterator accepts explicit completion outcomes that require an action');
 assert.doesNotMatch(workflow, /actions_artifact_items/, 'iterator no longer fetches artifact ZIPs inside WordPress runtime');
 assert.doesNotMatch(workflow, /exactly one finding packet per Data Machine child job/, 'iterator prompt must not describe raw per-packet fanout');
 assert.match(iteratorFlow, /fallback issues as durable per source finding/, 'iterator treats fallback issues as durable across reruns');
-assert.match(iteratorFlow, /new validation_run_id or newly worded title is not enough/, 'iterator does not create duplicate issues for new validation runs');
+assert.match(iteratorFlow, /deterministic titles/, 'iterator uses stable fallback issue titles for cleanup');
 assert.match(iteratorFlow, /repair_mode=issue_only/, 'iterator treats aggregate-only packets as issue-only evidence');
 assert.match(iteratorFlow, /block-artifact-compiler/, 'iterator prompt includes artifact compiler routing');
-assert.match(iteratorFlow, /make the completion decision immediately/, 'iterator prompt prevents repeated issue-list loops');
-assert.match(iteratorFlow, /iterator-existing-issue-decision/, 'iterator enforces a terminal action after issue lookup');
+assert.match(iteratorFlow, /Do not call list_github_issues/, 'iterator prompt prevents repeated issue-list loops');
+assert.doesNotMatch(iteratorFlow, /"list_github_issues"/, 'iterator does not expose issue listing in the live tool path');
 
 console.log('php-transformer-iterator workflow smoke passed');

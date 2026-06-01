@@ -41,7 +41,6 @@
                 "workspace_git_add",
                 "workspace_git_commit",
                 "workspace_git_push",
-                "list_github_issues",
                 "get_github_issue",
                 "create_github_issue",
                 "create_github_pull_request",
@@ -68,17 +67,7 @@
                     {
                         "tools": [
                             {
-                                "name": "list_github_issues"
-                            },
-                            {
                                 "name": "create_github_issue"
-                            }
-                        ]
-                    },
-                    {
-                        "tools": [
-                            {
-                                "name": "list_github_issues"
                             }
                         ]
                     }
@@ -103,11 +92,11 @@
                 },
                 {
                     "added_at": "2026-05-10T01:20:00+00:00",
-                    "prompt": "Before opening a fallback issue, call list_github_issues in the owner repository and check for an existing open issue covering the same source PR, validation run, site slug, signal kind, artifact names, or visual parity mismatch. If a matching issue exists, do not create a duplicate; comment back to the source PR with the existing issue URL and evidence summary. Only call create_github_issue when no existing issue covers the finding."
+                    "prompt": "For fallback paths, create a focused upstream issue with the owner repository, source PR, validation run, site slug, signal kind, artifact names, and visual parity or diagnostic evidence, then comment back to the source PR with the issue URL and evidence summary."
                 },
                 {
                     "added_at": "2026-05-12T23:55:00+00:00",
-                    "prompt": "Treat fallback issues as durable per source finding, not per iterator run. A new validation_run_id or newly worded title is not enough to justify a new issue. When list_github_issues returns an open issue with the same source_pr plus the same site slug and signal family, reuse it. For visual parity packets, match any open visual-parity issue for the same source_pr and site slug. For ignored_region or intentionally ignored accessibility chrome, match any open validation or triage issue for the same source_pr/site slug mentioning ignored_region, intentionally ignored, accessibility chrome, or skip link. When reusing, call comment_github_pull_request with the existing issue URL and complete via existing_issue_path."
+                    "prompt": "Treat fallback issues as durable per source finding, not per iterator run. Use deterministic titles that include the source PR, site slug, and signal family so humans can identify duplicates during cleanup. A new validation_run_id or newly worded title is not enough to change the owner or signal family."
                 },
                 {
                     "added_at": "2026-05-12T19:20:00+00:00",
@@ -123,7 +112,7 @@
                 },
                 {
                     "added_at": "2026-06-01T01:00:00+00:00",
-                    "prompt": "After calling list_github_issues for a fallback path, make the completion decision immediately. If a matching open issue exists, call comment_github_pull_request with that issue URL and the source evidence summary. If no matching issue exists, call create_github_issue and then comment_github_pull_request with the new issue URL. Do not call list_github_issues again for the same finding unless a tool error prevented reading the result."
+                    "prompt": "Do not call list_github_issues in the iterator fallback path. The fallback path is complete only after create_github_issue succeeds and comment_github_pull_request posts the created issue URL back to the source PR."
                 }
             ],
             "queue_mode": "static",
@@ -133,29 +122,16 @@
                 {
                     "after_tool": "workspace_worktree_add",
                     "id": "iterator-inspection-budget",
-                    "limited_tools": [
-                        "workspace_grep",
-                        "workspace_read",
-                        "workspace_git_status"
-                    ],
-                    "max_calls": 4,
-                    "then_require_one_of": [
-                        "workspace_edit",
-                        "list_github_issues",
-                        "create_github_issue"
-                    ]
-                },
-                {
-                    "after_tool": "list_github_issues",
-                    "id": "iterator-existing-issue-decision",
-                    "limited_tools": [
-                        "list_github_issues"
-                    ],
-                    "max_calls": 0,
-                    "then_require_one_of": [
-                        "create_github_issue",
-                        "comment_github_pull_request"
-                    ]
+                        "limited_tools": [
+                            "workspace_grep",
+                            "workspace_read",
+                            "workspace_git_status"
+                        ],
+                        "max_calls": 4,
+                        "then_require_one_of": [
+                            "workspace_edit",
+                            "create_github_issue"
+                        ]
                 }
             ]
         }
