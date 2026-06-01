@@ -122,7 +122,7 @@ jobs:
                 "run": [
                   {
                     "type": "wp-cli",
-                    "command": ("wp static-site-importer import-theme /wordpress/wp-content/plugins/wp-site-generator/static-sites/" + $site + "/index.html --slug=" + $site + " --activate --overwrite --keep-source --format=json"),
+                    "command": ("static-site-importer import-theme /wordpress/wp-content/plugins/wp-site-generator/static-sites/" + $site + "/index.html --slug=" + $site + " --activate --overwrite --keep-source --format=json"),
                     "parse": "json"
                   },
                   {
