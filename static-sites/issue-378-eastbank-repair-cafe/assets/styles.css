@@ -247,8 +247,14 @@ h3 {
   margin-top: 2rem;
 }
 
-.button,
-.static-form button {
+.hero-actions > p {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.8rem;
+  margin: 0;
+}
+
+.button {
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -264,15 +270,12 @@ h3 {
 }
 
 .button:hover,
-.button:focus,
-.static-form button:hover,
-.static-form button:focus {
+.button:focus {
   transform: translate(2px, 2px);
   box-shadow: 3px 3px 0 var(--lamp-cord-charcoal);
 }
 
-.button.primary,
-.static-form button {
+.button.primary {
   background: var(--safety-orange);
 }
 
@@ -321,19 +324,16 @@ h3 {
   font-size: clamp(2rem, 4vw, 3.2rem);
 }
 
-.intake-card dl {
+.intake-list {
   margin: 1.2rem 0 0;
   display: grid;
   gap: 0.75rem;
+  padding-left: 1.2rem;
 }
 
-.intake-card dt {
+.intake-list strong {
   color: var(--toolbox-green);
   font-weight: 900;
-}
-
-.intake-card dd {
-  margin: 0;
 }
 
 .quick-strip {
@@ -357,8 +357,12 @@ h3 {
 }
 
 .quick-strip p {
-  margin: 0.25rem 0 0;
+  margin: 0;
   color: rgba(255, 247, 232, 0.85);
+}
+
+.quick-strip p + p {
+  margin-top: 0.25rem;
 }
 
 .section-grid,
@@ -692,27 +696,23 @@ time {
   margin-top: 1.2rem;
 }
 
-.static-form label {
+.form-field strong {
+  display: block;
   color: var(--toolbox-green);
   font-weight: 900;
 }
 
-.static-form input,
-.static-form textarea,
-.static-form select {
-  width: 100%;
+.form-field {
   border: 2px solid var(--lamp-cord-charcoal);
   background: #fffdf6;
   color: var(--lamp-cord-charcoal);
-  font: inherit;
   padding: 0.75rem;
   box-shadow: inset 3px 3px 0 rgba(37, 36, 34, 0.07);
 }
 
-.static-form button {
-  width: fit-content;
-  cursor: pointer;
-  font: inherit;
+.form-field p,
+.static-form > p {
+  margin: 0;
 }
 
 .form-note {
@@ -823,7 +823,7 @@ time {
     width: fit-content;
   }
 
-  .static-form button {
+  .static-form .button {
     width: 100%;
   }
 }

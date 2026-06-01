@@ -44,8 +44,10 @@
         <h1 id="hero-title">Before you replace it, bring it to the bench.</h1>
         <p class="hero-lede">Eastbank Repair Café helps neighbors repair small appliances, lamps, backpacks, zippers, wobbly chairs, and everyday gear with patient technicians and plain-language guidance.</p>
         <div class="hero-actions cta">
-          <a class="button primary" href="#intake">Check walk-in guidance</a>
-          <a class="button secondary" href="#repairs">See accepted repairs</a>
+          <p>
+            <a class="button primary" href="#intake">Check walk-in guidance</a>
+            <a class="button secondary" href="#repairs">See accepted repairs</a>
+          </p>
         </div>
       </div>
 
@@ -54,33 +56,24 @@
         <p class="utility">Open repair counter</p>
         <h2>Saturday, 10–4</h2>
         <p>Walk-ins welcome until 3:15. First assessment is always a conversation at the bench.</p>
-        <dl>
-          <div>
-            <dt>Bring</dt>
-            <dd>The item, charger or cord, loose parts, and any notes about what changed.</dd>
-          </div>
-          <div>
-            <dt>Start here</dt>
-            <dd>15-minute intake, repair estimate, and a realistic next step.</dd>
-          </div>
-        </dl>
+        <ul class="intake-list">
+          <li><strong>Bring:</strong> The item, charger or cord, loose parts, and any notes about what changed.</li>
+          <li><strong>Start here:</strong> 15-minute intake, repair estimate, and a realistic next step.</li>
+        </ul>
       </aside>
     </section>
 
     <section class="quick-strip" aria-label="Essential visitor details">
       <div>
-        <span class="utility">Location</span>
-        <strong>214 Eastbank Avenue</strong>
+        <p><span class="utility">Location</span> <strong>214 Eastbank Avenue</strong></p>
         <p>Side door under the green enamel sign.</p>
       </div>
       <div>
-        <span class="utility">Regular hours</span>
-        <strong>Thu 2–7 · Sat 10–4</strong>
+        <p><span class="utility">Regular hours</span> <strong>Thu 2–7 · Sat 10–4</strong></p>
         <p>Tool-skill nights on the second Tuesday.</p>
       </div>
       <div>
-        <span class="utility">Best for</span>
-        <strong>Small household items</strong>
+        <p><span class="utility">Best for</span> <strong>Small household items</strong></p>
         <p>Objects one person can carry safely.</p>
       </div>
     </section>
@@ -237,23 +230,22 @@
         <p class="label">Before you visit</p>
         <h2 id="contact-title">Tell us what you are bringing.</h2>
         <p>Use this checklist before carrying an item in. It helps us prepare the right bench, tools, and first questions.</p>
-        <form class="static-form" aria-label="Repair intake preview form">
-          <label for="item">Item</label>
-          <input id="item" name="item" type="text" placeholder="Example: desk lamp, toaster, backpack zipper">
-
-          <label for="problem">What changed?</label>
-          <textarea id="problem" name="problem" rows="4" placeholder="Tell us what stopped working, what you tried, and whether parts are loose."></textarea>
-
-          <label for="visit">Preferred visit</label>
-          <select id="visit" name="visit">
-            <option>Thursday afternoon</option>
-            <option>Saturday walk-in counter</option>
-            <option>Next clinic or tool night</option>
-          </select>
-
-          <button type="button">Prepare my bench note</button>
-          <p class="form-note">Static preview only — bring this information with you or call the shop before visiting.</p>
-        </form>
+        <div class="static-form" aria-label="Repair intake checklist">
+          <div class="form-field">
+            <strong>Item</strong>
+            <p>Example: desk lamp, toaster, backpack zipper.</p>
+          </div>
+          <div class="form-field">
+            <strong>What changed?</strong>
+            <p>Note what stopped working, what you tried, and whether parts are loose.</p>
+          </div>
+          <div class="form-field">
+            <strong>Preferred visit</strong>
+            <p>Thursday afternoon, Saturday walk-in counter, or the next clinic or tool night.</p>
+          </div>
+          <p><a class="button primary" href="tel:+15550142">Call before carrying it in</a></p>
+          <p class="form-note">Bring these details with you or call the shop before visiting.</p>
+        </div>
       </div>
       <aside class="access-card">
         <h3>Access and transit</h3>
