@@ -92,53 +92,18 @@ const result = spawnSync(
 assert.equal(result.status, 0, result.stderr || result.stdout);
 
 const payload = JSON.parse(await readFile(outputPath, 'utf8'));
-assert.equal(payload.workflow.steps.length, 2, 'workflow has emit + iterator AI steps');
+assert.equal(payload.workflow.steps.length, 1, 'workflow embeds grouped findings in a single iterator AI step');
 
-const [emitStep, aiStep] = payload.workflow.steps;
-assert.equal(emitStep.step_type, 'system_task', 'first step is system_task');
-assert.equal(emitStep.flow_step_settings.task_type, 'emit_data_packets', 'first step uses emit_data_packets');
-assert.equal(emitStep.flow_step_settings.params.replace_data_packets, true, 'emit step replaces stale upstream packets');
-assert.equal(emitStep.flow_step_settings.params.suppress_result_packet, true, 'emit step suppresses synthetic task result');
-assert.equal(emitStep.flow_step_settings.params.complete_no_items, true, 'empty findings stop as completed_no_items');
-assert.equal(emitStep.flow_step_settings.params.packets.length, 8, 'fixture emits grouped findings for fanout');
-assert.equal(emitStep.flow_step_settings.params.packets[0].type, 'ssi_finding_group', 'grouped packets use ssi_finding_group type');
-assert.ok(emitStep.flow_step_settings.params.packets[0].metadata._engine_data.finding_packet, 'group seeds representative finding_packet into child engine data');
-assert.ok(emitStep.flow_step_settings.params.packets[0].metadata._engine_data.finding_group, 'group seeds full finding_group into child engine data');
-assert.ok(
-	emitStep.flow_step_settings.params.packets.every((packet) => !['ignored_region', 'import_clean'].includes(packet.metadata.kind)),
-	'non-actionable packets are filtered before Data Machine fanout',
-);
-
-const visualPacket = emitStep.flow_step_settings.params.packets.find((packet) => packet.metadata.kind === 'visual_parity_mismatch');
-assert.ok(visualPacket, 'fixture emits a visual parity mismatch packet');
-assert.ok(visualPacket.data.visual_artifact, 'visual packet includes downloaded visual artifact context');
-assert.equal(visualPacket.data.visual_artifact.files.length, 6, 'visual packet lists downloaded visual artifact files');
-assert.equal(visualPacket.data.visual_artifact.visual_diff.dimension_mismatch, true, 'visual packet includes visual-diff summary');
-assert.equal(visualPacket.data.visual_artifact.visual_diff.regions[0].source_matches[0].selector, 'section.hero', 'visual packet includes source selector probe evidence');
-assert.equal(visualPacket.data.visual_artifact.visual_diff.regions[0].layout_deltas[0].style_diffs[0].property, 'display', 'visual packet includes layout deltas');
-assert.match(visualPacket.data.body, /Visual parity artifact context:/, 'visual packet body names visual artifact context');
-assert.match(visualPacket.data.body, /source screenshot:/, 'visual packet body includes screenshot paths');
-assert.match(visualPacket.data.body, /region 1: x=0, y=640, w=1280, h=320/, 'visual packet body includes top visual region');
-assert.match(visualPacket.data.body, /layout delta 1: section\.hero -> main\.wp-block-group/, 'visual packet body includes layout delta summary');
-assert.match(visualPacket.data.body, /style display: source=grid imported=block/, 'visual packet body includes style deltas');
-assert.deepEqual(visualPacket.metadata._engine_data.visual_artifact, visualPacket.data.visual_artifact, 'visual artifact context is mirrored into engine data');
-assert.equal(visualPacket.metadata.candidate_repo, 'chubes4/wp-site-generator', 'visual packet routes to source-site owner');
-assert.equal(visualPacket.metadata.repair_mode, 'pr_or_issue', 'source-site visual defects can take the PR path when source evidence exists');
-assert.match(visualPacket.metadata.route_reason, /wp-site-generator/, 'visual packet carries structured route rationale');
-
-const artifactCompilerPacket = emitStep.flow_step_settings.params.packets.find((packet) => packet.metadata.candidate_repo === 'chubes4/block-artifact-compiler');
-assert.ok(artifactCompilerPacket, 'fixture emits an artifact compiler route');
-assert.equal(artifactCompilerPacket.metadata.kind, 'artifact_schema_violation');
-assert.equal(artifactCompilerPacket.metadata.repair_mode, 'pr_or_issue');
-assert.match(artifactCompilerPacket.metadata.route_reason, /block-artifact-compiler/);
-
-const issueOnlyPacket = emitStep.flow_step_settings.params.packets.find((packet) => packet.metadata.kind === 'ambiguous_import_quality' && packet.data.finding_packet.repair_mode === 'issue_only');
-assert.ok(issueOnlyPacket, 'aggregate freeform packet remains available for issue fallback');
-assert.match(issueOnlyPacket.data.body, /Repair mode: issue_only/, 'issue-only packet body blocks speculative PRs');
-
-assert.equal(aiStep.step_type, 'ai', 'second step is iterator AI');
+const [aiStep] = payload.workflow.steps;
+assert.equal(aiStep.step_type, 'ai', 'only step is iterator AI');
 assert.ok(aiStep.system_prompt.includes('PHP Transformer Iterator Agent'), 'iterator system prompt is preserved');
 assert.ok(aiStep.user_message.includes('Run the PR-first iterator'), 'iterator flow prompt is preserved');
+assert.match(aiStep.user_message, /DataPacket child-job hydration/, 'iterator prompt documents embedded finding context');
+assert.match(aiStep.user_message, /"kind": "visual_parity_mismatch"/, 'visual finding is embedded in the AI prompt');
+assert.match(aiStep.user_message, /"candidate_repo": "chubes4\/block-artifact-compiler"/, 'artifact compiler route is embedded in the AI prompt');
+assert.match(aiStep.user_message, /"repair_mode": "issue_only"/, 'issue-only routing is embedded in the AI prompt');
+assert.match(aiStep.user_message, /"source_screenshot_path": "/, 'visual artifact paths are embedded in the AI prompt');
+assert.match(aiStep.user_message, /"selector": "section\.hero"/, 'visual source selector evidence is embedded in the AI prompt');
 const outcomeAssertions = aiStep.completion_assertions.complete_when_any;
 assert.ok(outcomeAssertions.some((outcome) => outcome.name === 'pull_request_path'), 'PR completion outcome is preserved');
 assert.deepEqual(aiStep.completion_assertions.required_tool_names, ['comment_github_pull_request'], 'source callback remains a direct required tool');
