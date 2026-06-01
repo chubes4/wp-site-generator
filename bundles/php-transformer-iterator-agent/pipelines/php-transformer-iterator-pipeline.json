@@ -21,6 +21,9 @@
                             "tools": [
                                 {
                                     "name": "create_github_pull_request"
+                                },
+                                {
+                                    "name": "comment_github_pull_request"
                                 }
                             ]
                         },
@@ -29,9 +32,15 @@
                             "tools": [
                                 {
                                     "name": "create_github_issue"
+                                },
+                                {
+                                    "name": "comment_github_pull_request"
                                 }
                             ]
                         }
+                    ],
+                    "required_tool_names": [
+                        "comment_github_pull_request"
                     ]
                 },
                 "disabled_tools": [
