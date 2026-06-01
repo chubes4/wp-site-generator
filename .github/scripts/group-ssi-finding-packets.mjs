@@ -350,6 +350,13 @@ function routeRepairMode(packet, candidateRepo) {
 	if (configured) {
 		return configured;
 	}
+	const kind = text(packet.kind).toLowerCase();
+	if (kind === 'bench_failure' || kind === 'report_missing') {
+		return 'issue_only';
+	}
+	if (kind === 'visual_parity_mismatch' && !hasSourceSitePatchEvidence(packet)) {
+		return 'issue_only';
+	}
 	const hasPatchEvidence = Boolean(text(packet.source_html_preview) || text(packet.selector) || text(packet.source_path));
 	if (!hasPatchEvidence) {
 		return 'issue_only';
@@ -374,9 +381,7 @@ function hasSourceSitePatchEvidence(packet) {
 		return true;
 	}
 
-	const evidence = packet.visual_code_evidence && typeof packet.visual_code_evidence === 'object' ? packet.visual_code_evidence : visualCodeEvidence(packet);
-	const sourceEvidence = Array.isArray(evidence.source) ? evidence.source : [];
-	return sourceEvidence.some((probe) => text(probe.html) || (Array.isArray(probe.matched_css_rules) && probe.matched_css_rules.length > 0));
+	return false;
 }
 
 function routeReason(packet, candidateRepo, repairMode) {
