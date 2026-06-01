@@ -16,6 +16,8 @@ const candidateRepo = process.env.CANDIDATE_REPO || 'chubes4/static-site-importe
 const designPath = process.env.DESIGN_JSON_PATH || `static-sites/${site}/design.json`;
 const designDistributionPath = process.env.DESIGN_DISTRIBUTION_PATH || 'homeboy-ci-results/design-distribution.json';
 const visualDiffPath = process.env.VISUAL_DIFF_PATH || `visual-parity-artifacts/${site}/visual-diff.json`;
+const visualSummaryPath = process.env.VISUAL_SUMMARY_PATH || `visual-parity-artifacts/${site}/summary.json`;
+const importReadyPath = process.env.IMPORT_READY_PATH || `visual-parity-artifacts/${site}/import-ready.json`;
 const benchOutcome = (process.env.BENCH_OUTCOME || '').toLowerCase();
 const visualOutcome = (process.env.VISUAL_OUTCOME || '').toLowerCase();
 const generatorRepo = 'chubes4/wp-site-generator';
@@ -47,6 +49,7 @@ async function buildPackets() {
 	} catch (error) {
 		benchReadError = error?.message || String(error);
 	}
+	const recoveredImportReadiness = await loadImportReadiness();
 
 	const packets = [];
 	const benchFailure = detectBenchFailure(bench, benchReadError);
@@ -54,7 +57,7 @@ async function buildPackets() {
 		packets.push(packetFromBenchFailure(benchFailure));
 	}
 
-	const summary = findSsiSummary(bench);
+	const summary = findSsiSummary(bench) || recoveredImportReadiness?.import_report_summary || null;
 	if (!summary) {
 		// Bench did not produce a parseable SSI scenario summary. Always emit
 		// a routing packet so the iterator has at least one finding to act
@@ -62,14 +65,18 @@ async function buildPackets() {
 		packets.push(packetFromMissingSummary(benchFailure, benchReadError));
 	} else {
 		const diagnostics = asArray(summary.diagnostics);
+		const aggregateDiagnostics = aggregateQualityDiagnostics(summary, recoveredImportReadiness);
 		for (const diagnostic of diagnostics) {
+			packets.push(packetFromModernDiagnostic(diagnostic, summary));
+		}
+		for (const diagnostic of aggregateDiagnostics) {
 			packets.push(packetFromModernDiagnostic(diagnostic, summary));
 		}
 		// Even on a clean import emit a baseline
 		// info packet so the grouped payload always carries at least one
 		// candidate-routed entry. The PHP transformer iterator depends on a
 		// non-empty group set to do useful work.
-		if (diagnostics.length === 0) {
+		if (diagnostics.length === 0 && aggregateDiagnostics.length === 0) {
 			packets.push(packetFromCleanImport(summary));
 		}
 	}
@@ -84,7 +91,23 @@ async function buildPackets() {
 	return dedupePackets(packets);
 }
 
-async function loadVisualDiff(inputPath) {
+async function loadImportReadiness() {
+	for (const inputPath of [visualSummaryPath, importReadyPath]) {
+		const data = await loadJson(inputPath);
+		const importReadiness = data?.importReadiness && typeof data.importReadiness === 'object' ? data.importReadiness : data;
+		const importResult = importReadiness?.import_result && typeof importReadiness.import_result === 'object' ? importReadiness.import_result : null;
+		const summary = importResult?.import_report_summary && typeof importResult.import_report_summary === 'object'
+			? importResult.import_report_summary
+			: null;
+		if (summary) {
+			return { import_readiness: importReadiness, import_result: importResult, import_report_summary: summary };
+		}
+	}
+
+	return null;
+}
+
+async function loadJson(inputPath) {
 	try {
 		return JSON.parse(await readFile(inputPath, 'utf8'));
 	} catch {
@@ -92,11 +115,81 @@ async function loadVisualDiff(inputPath) {
 	}
 }
 
+async function loadVisualDiff(inputPath) {
+	return loadJson(inputPath);
+}
+
 function findSsiSummary(bench) {
 	const scenarios = asArray((bench?.data?.payload || bench?.data)?.results?.scenarios);
 	const scenario = scenarios.find((item) => item?.id === 'ssi-import');
 
 	return scenario?.metadata?.import_report_summary || null;
+}
+
+function aggregateQualityDiagnostics(summary, readiness = null) {
+	const diagnostics = [];
+	const quality = summary?.quality && typeof summary.quality === 'object'
+		? summary.quality
+		: readiness?.import_result?.quality && typeof readiness.import_result.quality === 'object'
+			? readiness.import_result.quality
+			: {};
+	const diagnosticRefs = quality.diagnostic_refs && typeof quality.diagnostic_refs === 'object' ? quality.diagnostic_refs : {};
+	const reportPath = text(summary?.path) || text(readiness?.import_result?.report_path) || 'import-report.json';
+	const entryFile = text(summary?.entry_file) || text(readiness?.import_result?.source_dir) || reportPath;
+
+	for (const config of [
+		{
+			metric: 'fallback_count',
+			type: 'unsupported_html_fallback',
+			block_name: '',
+			reason_code: 'unsupported_html_fallback',
+			message: 'Import readiness reported unsupported HTML fallback blocks.',
+		},
+		{
+			metric: 'core_html_block_count',
+			type: 'core_html_block',
+			block_name: 'core/html',
+			reason_code: 'generated_document_contains_core_html',
+			message: 'Import readiness reported generated core/html blocks.',
+		},
+		{
+			metric: 'freeform_block_count',
+			type: 'freeform_block',
+			block_name: 'core/freeform',
+			reason_code: 'generated_document_contains_core_freeform',
+			message: 'Import readiness reported generated core/freeform blocks.',
+		},
+		{
+			metric: 'invalid_block_count',
+			type: 'invalid_block',
+			block_name: '',
+			reason_code: 'generated_document_contains_invalid_block',
+			message: 'Import readiness reported invalid generated blocks.',
+		},
+	]) {
+		const count = numeric(summary?.[config.metric]) ?? numeric(quality?.[config.metric]);
+		if (!count || count <= 0) {
+			continue;
+		}
+		diagnostics.push({
+			diagnostic_id: `${config.type}-${site}`,
+			type: config.type,
+			category: 'fallback_block',
+			reason_code: config.reason_code,
+			suggested_repair_class: 'converter_support',
+			candidate_repo: 'chubes4/html-to-blocks-converter',
+			converter: 'html-to-blocks-converter',
+			stage: 'generated_theme_block_analysis',
+			block_name: config.block_name,
+			source_path: entryFile,
+			message: `${config.message} count=${count}`,
+			excerpt: `${config.metric}=${count}`,
+			diagnostic_refs: asArray(diagnosticRefs[config.metric]),
+			repair_mode: 'issue_only',
+		});
+	}
+
+	return diagnostics;
 }
 
 function detectBenchFailure(bench, benchReadError) {
@@ -691,6 +784,11 @@ function normalizeNumber(value) {
 
 	const number = Number(value);
 	return Number.isFinite(number) ? number : text(value);
+}
+
+function numeric(value) {
+	const number = Number(value);
+	return Number.isFinite(number) ? number : null;
 }
 
 function text(value) {
