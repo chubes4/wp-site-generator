@@ -110,14 +110,11 @@ assert.match(iteratorPrompt, /"source_screenshot_path": "/, 'visual artifact pat
 assert.match(iteratorPrompt, /"selector": "section\.hero"/, 'visual source selector evidence is embedded in the AI prompt');
 const outcomeAssertions = aiStep.completion_assertions.complete_when_any;
 assert.ok(outcomeAssertions.some((outcome) => outcome.name === 'pull_request_path'), 'PR completion outcome is preserved');
-assert.deepEqual(aiStep.completion_assertions.required_tool_names, ['comment_github_pull_request'], 'source callback remains a direct required tool');
+assert.ok(!('required_tool_names' in aiStep.completion_assertions), 'completion stops after the upstream action to avoid duplicate fallbacks');
 assert.match(aiStep.system_prompt, /immediately comment back on the source generated-site PR/, 'prompt requires callback immediately after upstream action');
-for (const outcome of outcomeAssertions) {
-	assert.ok(
-		outcome.tools.some((tool) => tool.name === 'comment_github_pull_request'),
-		`${outcome.name} requires a source callback comment`,
-	);
-}
+assert.match(aiStep.user_message, /Do not call list_github_issues/, 'iterator prompt prevents repeated existing-issue searches');
+assert.ok(outcomeAssertions.find((outcome) => outcome.name === 'issue_fallback_path').tools.some((tool) => tool.name === 'create_github_issue'), 'issue fallback completes on issue creation');
 assert.ok(aiStep.tool_runtime_rules.some((rule) => rule.id === 'iterator-inspection-budget'), 'tool runtime rules are preserved');
+assert.ok(!aiStep.enabled_tools.includes('list_github_issues'), 'issue-list tool is disabled to avoid fallback search loops');
 
 console.log('build-datamachine-iterator-workflow smoke passed');
