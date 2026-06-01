@@ -59,10 +59,12 @@ async function buildPackets() {
 
 	const summary = findSsiSummary(bench) || recoveredImportReadiness?.import_report_summary || null;
 	if (!summary) {
-		// Bench did not produce a parseable SSI scenario summary. Always emit
-		// a routing packet so the iterator has at least one finding to act
-		// on instead of receiving an empty payload.
-		packets.push(packetFromMissingSummary(benchFailure, benchReadError));
+		// If the bench runner itself failed, the generator-routed bench_failure
+		// packet above is the actionable root-cause signal. Do not also route a
+		// synthetic missing-report packet to SSI for a scenario that never ran.
+		if (!benchFailure) {
+			packets.push(packetFromMissingSummary(benchFailure, benchReadError));
+		}
 	} else {
 		const diagnostics = asArray(summary.diagnostics);
 		const aggregateDiagnostics = aggregateQualityDiagnostics(summary, recoveredImportReadiness);
@@ -205,7 +207,11 @@ function detectBenchFailure(bench, benchReadError) {
 	if (!bench || typeof bench !== 'object') {
 		return null;
 	}
-	const data = bench.data && typeof bench.data === 'object' ? bench.data : null;
+	const data = bench.data && typeof bench.data === 'object'
+		? bench.data.payload && typeof bench.data.payload === 'object'
+			? bench.data.payload
+			: bench.data
+		: null;
 	const status = text(data?.status);
 	const exitCode = data?.exit_code;
 	const benchSucceeded = bench.success === true && status !== 'failed' && (exitCode === 0 || exitCode === undefined);

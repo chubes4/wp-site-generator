@@ -51,6 +51,11 @@ if (!ssi) {
 		console.log('_Bench artifact is not valid JSON._');
 		process.exit(0);
 	}
+	const benchFailure = detectBenchFailure(bench);
+	if (benchFailure) {
+		console.log(renderBenchFailure(benchFailure));
+		process.exit(0);
+	}
 	console.log('_SSI workload did not run._');
 	process.exit(0);
 }
@@ -139,6 +144,39 @@ function renderReport(ssi) {
 	sections.push(renderImportReport(importReportSummary));
 
 	return sections.filter(Boolean).join('\n\n');
+}
+
+function detectBenchFailure(bench) {
+	if (!bench || typeof bench !== 'object' || bench.success === true) {
+		return null;
+	}
+	const data = bench.data && typeof bench.data === 'object'
+		? bench.data.payload && typeof bench.data.payload === 'object'
+			? bench.data.payload
+			: bench.data
+		: {};
+	const failure = data.failure && typeof data.failure === 'object' ? data.failure : {};
+
+	return {
+		status: data.status || '',
+		exit_code: data.exit_code ?? '',
+		stderr_tail: failure.stderr_tail || '',
+	};
+}
+
+function renderBenchFailure(failure) {
+	const details = [];
+	if (failure.status) {
+		details.push(`- **Status:** \`${escapeCell(failure.status)}\``);
+	}
+	if (failure.exit_code !== '') {
+		details.push(`- **Exit code:** \`${escapeCell(failure.exit_code)}\``);
+	}
+	if (failure.stderr_tail) {
+		details.push(`- **Stderr tail:** ${escapeCell(failure.stderr_tail)}`);
+	}
+
+	return ['### Homeboy Bench Failure', '_SSI workload did not produce a scenario because the bench runner failed before report diagnostics ran._', ...details].join('\n');
 }
 
 function renderSignalTable(metrics) {
