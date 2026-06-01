@@ -101,6 +101,7 @@ assert.equal(aiStep.queue_mode, 'static', 'iterator AI prompt queue is static');
 assert.equal(aiStep.prompt_queue.length, 1, 'iterator AI prompt queue has one embedded finding prompt');
 const iteratorPrompt = aiStep.prompt_queue[0].prompt;
 assert.ok(iteratorPrompt.includes('Run the PR-first iterator'), 'iterator flow prompt is preserved');
+assert.ok(iteratorPrompt.length < 30000, 'iterator prompt stays bounded for reliable agent runs');
 assert.match(iteratorPrompt, /DataPacket child-job hydration/, 'iterator prompt documents embedded finding context');
 assert.match(iteratorPrompt, /"kind": "visual_parity_mismatch"/, 'visual finding is embedded in the AI prompt');
 assert.match(iteratorPrompt, /"candidate_repo": "chubes4\/block-artifact-compiler"/, 'artifact compiler route is embedded in the AI prompt');
