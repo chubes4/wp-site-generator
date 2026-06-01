@@ -28,7 +28,10 @@ function buildWorkflow(packets, pipelineConfig, flowConfig) {
 
 	const aiConfig = iteratorPipelineStep.step_config || {};
 	const promptQueue = Array.isArray(iteratorFlowStep.prompt_queue) ? iteratorFlowStep.prompt_queue : [];
-	const userMessage = promptQueue.map((item) => item?.prompt || '').filter(Boolean).join('\n\n');
+	const userMessage = [
+		...promptQueue.map((item) => item?.prompt || '').filter(Boolean),
+		formatFindingPrompt(packets),
+	].filter(Boolean).join('\n\n');
 
 	const initialData = {
 		job_source: 'system',
@@ -44,19 +47,6 @@ function buildWorkflow(packets, pipelineConfig, flowConfig) {
 		workflow: {
 			steps: [
 				{
-					step_type: 'system_task',
-					label: 'Emit SSI finding packets',
-					flow_step_settings: {
-						task_type: 'emit_data_packets',
-						params: {
-							packets: packets.map(toDataMachinePacket),
-							replace_data_packets: true,
-							suppress_result_packet: true,
-							complete_no_items: true,
-						},
-					},
-				},
-				{
 					step_type: 'ai',
 					label: aiConfig.label || 'Repair transformer findings',
 					system_prompt: aiConfig.system_prompt || '',
@@ -70,6 +60,77 @@ function buildWorkflow(packets, pipelineConfig, flowConfig) {
 		},
 		initial_data: initialData,
 	};
+}
+
+function formatFindingPrompt(packets) {
+	if (packets.length === 0) {
+		return 'No actionable finding groups were supplied. Finish with the no_actionable_findings outcome.';
+	}
+
+	const summaries = packets.map((item, index) => summarizeFindingForPrompt(item, index));
+	return [
+		'Process these grouped static-site validation findings. They are embedded here so the iterator does not depend on DataPacket child-job hydration.',
+		'For each group: route owner, open or reuse the required upstream issue/PR, and comment back to the source generated-site PR. A run is incomplete until comment_github_pull_request is called.',
+		'Finding groups:',
+		JSON.stringify(summaries, null, 2),
+	].join('\n\n');
+}
+
+function summarizeFindingForPrompt(item, index) {
+	const packet = Array.isArray(item?.packets) ? item.packets[0] || {} : item;
+	const visualArtifact = visualArtifactForPacket(packet);
+	const summary = {
+		index: index + 1,
+		title: Array.isArray(item?.packets)
+			? `${text(item.kind) || text(packet.kind) || 'finding'}: ${text(item.reason) || text(packet.reason) || text(packet.preview)}`
+			: `${text(packet.kind) || 'finding'}: ${text(packet.reason) || text(packet.preview) || text(packet.path)}`,
+		candidate_repo: text(item.candidate_repo) || text(packet.candidate_repo),
+		repair_mode: text(item.repair_mode) || text(packet.repair_mode),
+		route_reason: text(item.route_reason),
+		source_repo: text(packet.source_repo) || 'chubes4/wp-site-generator',
+		source_pr: text(packet.source_pr),
+		source_head_sha: text(packet.source_head_sha),
+		source_branch: text(packet.source_branch),
+		validation_run_id: text(packet.validation_run_id),
+		site: text(packet.site),
+		artifact_names: packet.artifact_names && typeof packet.artifact_names === 'object' ? packet.artifact_names : {},
+		diagnostic_id: text(packet.diagnostic_id),
+		kind: text(packet.kind),
+		category: text(packet.category),
+		reason_code: text(packet.reason_code),
+		suggested_repair_class: text(packet.suggested_repair_class),
+		converter: text(packet.converter),
+		stage: text(packet.stage),
+		source_path: text(packet.source_path) || text(packet.path),
+		selector: text(packet.selector),
+		block_name: text(packet.block_name),
+		block_path: text(packet.block_path),
+		reason: text(packet.reason).slice(0, 1200),
+		preview: text(packet.preview).slice(0, 1200),
+		excerpt: text(packet.excerpt).slice(0, 1200),
+		source_html_preview: text(packet.source_html_preview).slice(0, 1600),
+		emitted_block_preview: text(packet.emitted_block_preview).slice(0, 1600),
+		diagnostic_refs: Array.isArray(packet.diagnostic_refs) ? packet.diagnostic_refs.slice(0, 12) : [],
+		asset_map_refs: Array.isArray(packet.asset_map_refs) ? packet.asset_map_refs.slice(0, 12) : [],
+		group_count: Number(item?.count) || (Array.isArray(item?.packets) ? item.packets.length : 1),
+	};
+
+	if (visualArtifact) {
+		summary.visual_artifact = {
+			artifact_name: visualArtifact.artifact_name,
+			directory: visualArtifact.directory,
+			files: visualArtifact.files,
+			source_screenshot_path: visualArtifact.source_screenshot_path,
+			imported_screenshot_path: visualArtifact.imported_screenshot_path,
+			diff_screenshot_path: visualArtifact.diff_screenshot_path,
+			visual_diff_path: visualArtifact.visual_diff_path,
+			summary_path: visualArtifact.summary_path,
+			comparison_html_path: visualArtifact.comparison_html_path,
+			visual_diff: visualArtifact.visual_diff,
+		};
+	}
+
+	return summary;
 }
 
 function toDataMachinePacket(item, index) {
