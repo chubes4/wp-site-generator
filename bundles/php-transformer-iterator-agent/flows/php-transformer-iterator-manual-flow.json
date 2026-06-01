@@ -128,16 +128,27 @@
                 {
                     "after_tool": "workspace_worktree_add",
                     "id": "iterator-inspection-budget",
-                        "limited_tools": [
-                            "workspace_grep",
-                            "workspace_read",
-                            "workspace_git_status"
-                        ],
-                        "max_calls": 4,
-                        "then_require_one_of": [
-                            "workspace_edit",
-                            "create_github_issue"
-                        ]
+                    "limited_tools": [
+                        "workspace_grep",
+                        "workspace_read",
+                        "workspace_git_status"
+                    ],
+                    "max_calls": 4,
+                    "then_require_one_of": [
+                        "workspace_edit",
+                        "create_github_issue"
+                    ]
+                },
+                {
+                    "after_tool": "create_github_issue",
+                    "blocked_tools": [
+                        "create_github_issue"
+                    ],
+                    "id": "iterator-issue-before-source-callback",
+                    "type": "block_until_tool",
+                    "until_one_of": [
+                        "comment_github_pull_request"
+                    ]
                 }
             ]
         }

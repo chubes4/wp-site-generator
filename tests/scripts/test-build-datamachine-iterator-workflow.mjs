@@ -119,6 +119,17 @@ for (const outcome of outcomeAssertions) {
 	);
 }
 assert.ok(aiStep.tool_runtime_rules.some((rule) => rule.id === 'iterator-inspection-budget'), 'tool runtime rules are preserved');
+assert.ok(
+	aiStep.tool_runtime_rules.some(
+		(rule) =>
+			rule.id === 'iterator-issue-before-source-callback' &&
+			rule.type === 'block_until_tool' &&
+			rule.after_tool === 'create_github_issue' &&
+			rule.blocked_tools.includes('create_github_issue') &&
+			rule.until_one_of.includes('comment_github_pull_request'),
+	),
+	'issue fallback blocks duplicate issue creation until source callback',
+);
 assert.ok(!aiStep.enabled_tools.includes('list_github_issues'), 'issue-list tool is disabled to avoid fallback search loops');
 
 console.log('build-datamachine-iterator-workflow smoke passed');
