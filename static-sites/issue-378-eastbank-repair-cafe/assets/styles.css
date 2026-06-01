@@ -318,6 +318,10 @@ h3 {
   color: var(--rubber-handle-gray);
 }
 
+.intake-card p {
+  margin: 0;
+}
+
 .intake-card h2 {
   margin-bottom: 0.75rem;
   color: var(--toolbox-green);
