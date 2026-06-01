@@ -10,6 +10,8 @@ const outputPath = process.env.DATAMACHINE_WORKFLOW_PATH || process.argv[3] || '
 const pipelinePath = process.env.ITERATOR_PIPELINE_PATH || 'bundles/php-transformer-iterator-agent/pipelines/php-transformer-iterator-pipeline.json';
 const flowPath = process.env.ITERATOR_FLOW_PATH || 'bundles/php-transformer-iterator-agent/flows/php-transformer-iterator-manual-flow.json';
 const visualArtifactDir = process.env.VISUAL_ARTIFACT_DIR || '';
+const maxPromptFindingGroups = numberOrDefault(process.env.ITERATOR_MAX_PROMPT_GROUPS, 12);
+const maxPromptTextLength = numberOrDefault(process.env.ITERATOR_MAX_PROMPT_TEXT_LENGTH, 600);
 
 const findingPackets = normalizeFindingInput(await readJson(resolveRepoPath(packetsPath)));
 const pipeline = await readJson(resolveRepoPath(pipelinePath));
@@ -73,13 +75,16 @@ function formatFindingPrompt(packets) {
 		return 'No actionable finding groups were supplied. Finish with the no_actionable_findings outcome.';
 	}
 
-	const summaries = packets.map((item, index) => summarizeFindingForPrompt(item, index));
+	const visiblePackets = packets.slice(0, maxPromptFindingGroups);
+	const summaries = visiblePackets.map((item, index) => summarizeFindingForPrompt(item, index));
+	const omittedCount = Math.max(0, packets.length - visiblePackets.length);
 	return [
 		'Process these grouped static-site validation findings. They are embedded here so the iterator does not depend on DataPacket child-job hydration.',
 		'For each group: route owner, open or reuse the required upstream issue/PR, and comment back to the source generated-site PR. A run is incomplete until comment_github_pull_request is called.',
+		omittedCount > 0 ? `Only the first ${visiblePackets.length} of ${packets.length} finding groups are embedded. The omitted ${omittedCount} group(s) require a follow-up iterator run.` : '',
 		'Finding groups:',
 		JSON.stringify(summaries, null, 2),
-	].join('\n\n');
+	].filter(Boolean).join('\n\n');
 }
 
 function summarizeFindingForPrompt(item, index) {
@@ -87,12 +92,12 @@ function summarizeFindingForPrompt(item, index) {
 	const visualArtifact = visualArtifactForPacket(packet);
 	const summary = {
 		index: index + 1,
-		title: Array.isArray(item?.packets)
+		title: compactText(Array.isArray(item?.packets)
 			? `${text(item.kind) || text(packet.kind) || 'finding'}: ${text(item.reason) || text(packet.reason) || text(packet.preview)}`
-			: `${text(packet.kind) || 'finding'}: ${text(packet.reason) || text(packet.preview) || text(packet.path)}`,
+			: `${text(packet.kind) || 'finding'}: ${text(packet.reason) || text(packet.preview) || text(packet.path)}`),
 		candidate_repo: text(item.candidate_repo) || text(packet.candidate_repo),
 		repair_mode: text(item.repair_mode) || text(packet.repair_mode),
-		route_reason: text(item.route_reason),
+		route_reason: compactText(item.route_reason, 300),
 		source_repo: text(packet.source_repo) || 'chubes4/wp-site-generator',
 		source_pr: text(packet.source_pr),
 		source_head_sha: text(packet.source_head_sha),
@@ -111,13 +116,13 @@ function summarizeFindingForPrompt(item, index) {
 		selector: text(packet.selector),
 		block_name: text(packet.block_name),
 		block_path: text(packet.block_path),
-		reason: text(packet.reason).slice(0, 1200),
-		preview: text(packet.preview).slice(0, 1200),
-		excerpt: text(packet.excerpt).slice(0, 1200),
-		source_html_preview: text(packet.source_html_preview).slice(0, 1600),
-		emitted_block_preview: text(packet.emitted_block_preview).slice(0, 1600),
-		diagnostic_refs: Array.isArray(packet.diagnostic_refs) ? packet.diagnostic_refs.slice(0, 12) : [],
-		asset_map_refs: Array.isArray(packet.asset_map_refs) ? packet.asset_map_refs.slice(0, 12) : [],
+		reason: compactText(packet.reason),
+		preview: compactText(packet.preview),
+		excerpt: compactText(packet.excerpt),
+		source_html_preview: compactText(packet.source_html_preview),
+		emitted_block_preview: compactText(packet.emitted_block_preview),
+		diagnostic_refs: summarizeRefs(packet.diagnostic_refs, 6),
+		asset_map_refs: summarizeRefs(packet.asset_map_refs, 6),
 		group_count: Number(item?.count) || (Array.isArray(item?.packets) ? item.packets.length : 1),
 	};
 
@@ -254,7 +259,7 @@ function summarizeVisualDiff(diff) {
 		source: imageSummary(diff.source),
 		imported: imageSummary(diff.imported),
 		diff: imageSummary(diff.diff),
-		regions: Array.isArray(diff.regions) ? diff.regions.slice(0, 8).map(summarizeRegion) : [],
+		regions: Array.isArray(diff.regions) ? diff.regions.slice(0, 3).map(summarizeRegion) : [],
 	};
 }
 
@@ -286,11 +291,11 @@ function summarizeRegion(region) {
 
 function summarizeMatches(matches) {
 	return Array.isArray(matches)
-		? matches.slice(0, 3).map((match) => ({
+		? matches.slice(0, 1).map((match) => ({
 			selector: text(match.selector),
 			path: text(match.path),
-			text: text(match.text).slice(0, 180),
-			child_summary: text(match.child_summary).slice(0, 240),
+			text: compactText(match.text, 120),
+			child_summary: compactText(match.child_summary, 160),
 			rect: match.rect && typeof match.rect === 'object'
 				? {
 					x: numberOrNull(match.rect.x),
@@ -305,14 +310,14 @@ function summarizeMatches(matches) {
 
 function summarizeLayoutDeltas(deltas) {
 	return Array.isArray(deltas)
-		? deltas.slice(0, 3).map((delta) => ({
+		? deltas.slice(0, 1).map((delta) => ({
 			pair: numberOrNull(delta.pair),
 			source_selector: text(delta.source_selector),
 			imported_selector: text(delta.imported_selector),
 			source_path: text(delta.source_path),
 			imported_path: text(delta.imported_path),
-			source_child_summary: text(delta.source_child_summary).slice(0, 240),
-			imported_child_summary: text(delta.imported_child_summary).slice(0, 240),
+			source_child_summary: compactText(delta.source_child_summary, 160),
+			imported_child_summary: compactText(delta.imported_child_summary, 160),
 			rect_delta: delta.rect_delta && typeof delta.rect_delta === 'object'
 				? {
 					x: numberOrNull(delta.rect_delta.x),
@@ -322,10 +327,10 @@ function summarizeLayoutDeltas(deltas) {
 				}
 				: null,
 			style_diffs: Array.isArray(delta.style_diffs)
-				? delta.style_diffs.slice(0, 8).map((diff) => ({
+				? delta.style_diffs.slice(0, 3).map((diff) => ({
 					property: text(diff.property),
-					source: text(diff.source).slice(0, 160),
-					imported: text(diff.imported).slice(0, 160),
+					source: compactText(diff.source, 80),
+					imported: compactText(diff.imported, 80),
 				}))
 				: [],
 		}))
@@ -419,6 +424,20 @@ function readJsonSync(inputPath) {
 
 function text(value) {
 	return value === undefined || value === null ? '' : String(value);
+}
+
+function compactText(value, maxLength = maxPromptTextLength) {
+	const compacted = text(value).replace(/\s+/g, ' ').trim();
+	return compacted.length > maxLength ? `${compacted.slice(0, maxLength - 3)}...` : compacted;
+}
+
+function summarizeRefs(value, maxItems) {
+	return Array.isArray(value) ? value.slice(0, maxItems).map((item) => compactText(item, 240)) : [];
+}
+
+function numberOrDefault(value, fallback) {
+	const number = Number(value);
+	return Number.isFinite(number) && number > 0 ? number : fallback;
 }
 
 function numberOrNull(value) {
