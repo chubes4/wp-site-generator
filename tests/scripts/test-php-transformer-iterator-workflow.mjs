@@ -23,5 +23,7 @@ assert.match(iteratorFlow, /fallback issues as durable per source finding/, 'ite
 assert.match(iteratorFlow, /new validation_run_id or newly worded title is not enough/, 'iterator does not create duplicate issues for new validation runs');
 assert.match(iteratorFlow, /repair_mode=issue_only/, 'iterator treats aggregate-only packets as issue-only evidence');
 assert.match(iteratorFlow, /block-artifact-compiler/, 'iterator prompt includes artifact compiler routing');
+assert.match(iteratorFlow, /make the completion decision immediately/, 'iterator prompt prevents repeated issue-list loops');
+assert.match(iteratorFlow, /iterator-existing-issue-decision/, 'iterator enforces a terminal action after issue lookup');
 
 console.log('php-transformer-iterator workflow smoke passed');

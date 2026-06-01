@@ -120,6 +120,10 @@
                 {
                     "added_at": "2026-05-14T00:00:00+00:00",
                     "prompt": "If the fetched finding packet or finding group has repair_mode=issue_only, do not create a worktree, commit, or pull request. Treat the packet as aggregate evidence that needs human narrowing: open or reuse a focused upstream issue with the packet fields, artifact names, source PR, and validation run, then comment back to the source PR."
+                },
+                {
+                    "added_at": "2026-06-01T01:00:00+00:00",
+                    "prompt": "After calling list_github_issues for a fallback path, make the completion decision immediately. If a matching open issue exists, call comment_github_pull_request with that issue URL and the source evidence summary. If no matching issue exists, call create_github_issue and then comment_github_pull_request with the new issue URL. Do not call list_github_issues again for the same finding unless a tool error prevented reading the result."
                 }
             ],
             "queue_mode": "static",
@@ -139,6 +143,18 @@
                         "workspace_edit",
                         "list_github_issues",
                         "create_github_issue"
+                    ]
+                },
+                {
+                    "after_tool": "list_github_issues",
+                    "id": "iterator-existing-issue-decision",
+                    "limited_tools": [
+                        "list_github_issues"
+                    ],
+                    "max_calls": 0,
+                    "then_require_one_of": [
+                        "create_github_issue",
+                        "comment_github_pull_request"
                     ]
                 }
             ]
