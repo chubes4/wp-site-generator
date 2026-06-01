@@ -15,6 +15,8 @@ assert.match(workflow, /VISUAL_ARTIFACT_DIR=\.ci\/visual-parity node \.github\/s
 assert.match(workflow, /execute_workflow_path: \.ci\/datamachine-iterator-workflow\.json/, 'iterator executes the generated workflow payload');
 assert.match(workflow, /extra_required_abilities: '\["datamachine\/upsert-github-pull-review-comment"\]'/, 'iterator requires the managed PR comment upsert ability');
 assert.match(workflow, /app_token_repos: .*chubes4\/block-artifact-compiler/, 'iterator token routing includes block-artifact-compiler');
+assert.match(workflow, /success_requires_pr: false/, 'issue-only and existing-issue completion paths do not require a new PR');
+assert.match(workflow, /success_completion_outcomes: '\["pull_request_path","issue_fallback_path","existing_issue_path","no_actionable_findings"\]'/, 'iterator accepts every explicit completion outcome');
 assert.doesNotMatch(workflow, /actions_artifact_items/, 'iterator no longer fetches artifact ZIPs inside WordPress runtime');
 assert.doesNotMatch(workflow, /exactly one finding packet per Data Machine child job/, 'iterator prompt must not describe raw per-packet fanout');
 assert.match(iteratorFlow, /fallback issues as durable per source finding/, 'iterator treats fallback issues as durable across reruns');
