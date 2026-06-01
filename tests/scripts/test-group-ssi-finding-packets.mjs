@@ -67,7 +67,7 @@ assert.match(ambiguousGroup.route_reason, /insufficient evidence/);
 
 const visualGroup = grouped.groups.find((group) => group.kind === 'visual_parity_mismatch');
 assert.equal(visualGroup.candidate_repo, 'chubes4/wp-site-generator');
-assert.equal(visualGroup.repair_mode, 'pr_or_issue');
+assert.equal(visualGroup.repair_mode, 'issue_only');
 assert.equal(visualGroup.count, 1);
 assert.equal(visualGroup.packets[0].visual_regions.length, 1);
 assert.equal(visualGroup.packets[0].visual_regions[0].source_matches[0].selector, 'section.hero');
