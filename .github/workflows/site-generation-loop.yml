@@ -15,6 +15,18 @@ on:
         description: Data Machine Code ref.
         required: true
         default: main
+      homeboy_ref:
+        description: Homeboy ref with agent-task DAG support.
+        required: true
+        default: main
+      homeboy_extensions_ref:
+        description: Homeboy Extensions ref with Data Machine bundle agent-task support.
+        required: true
+        default: main
+      wp_codebox_ref:
+        description: WP Codebox ref.
+        required: true
+        default: main
 
 permissions:
   contents: write
@@ -26,209 +38,99 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
-  store-idea-agent:
-    name: Generate store idea
-    uses: Extra-Chill/homeboy-extensions/.github/workflows/datamachine-agent-ci.yml@main
-    with:
-      bundle_path: bundles/store-idea-agent
-      agent_slug: store-idea-agent
-      pipeline_slug: store-idea-pipeline
-      flow_slug: store-idea-home-and-craft-flow
-      target_repo: ${{ github.repository }}
-      prompt: ''
-      model: ${{ inputs.openai_model }}
-      data_machine_ref: ${{ inputs.data_machine_ref }}
-      data_machine_code_ref: ${{ inputs.data_machine_code_ref }}
-      success_requires_pr: false
-      max_turns: 6
-      step_budget: 8
-      time_budget_ms: 180000
-      tool_recorders: '[{"tool":"github_issue_publish","record":{"engine_key":"store_idea_agent","fields":{"issue_url":"data.issue_url","issue_number":"data.issue_number"}}}]'
-      engine_data_outputs: '{"issue_url":"metadata.engine_data.store_idea_agent.issue_url","issue_number":"metadata.engine_data.store_idea_agent.issue_number"}'
-      transcript_artifact_name: store-idea-agent-transcript-${{ github.run_id }}
-      comment_pr_summary: false
-    secrets:
-      HOMEBOY_APP_ID: ${{ secrets.HOMEBOY_APP_ID }}
-      HOMEBOY_APP_PRIVATE_KEY: ${{ secrets.HOMEBOY_APP_PRIVATE_KEY }}
-      OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
-
-  website-idea-agent:
-    name: Generate website idea
-    uses: Extra-Chill/homeboy-extensions/.github/workflows/datamachine-agent-ci.yml@main
-    with:
-      bundle_path: bundles/website-idea-agent
-      agent_slug: website-idea-agent
-      pipeline_slug: website-idea-pipeline
-      flow_slug: website-idea-local-business-flow
-      target_repo: ${{ github.repository }}
-      prompt: ''
-      model: ${{ inputs.openai_model }}
-      data_machine_ref: ${{ inputs.data_machine_ref }}
-      data_machine_code_ref: ${{ inputs.data_machine_code_ref }}
-      success_requires_pr: false
-      tool_recorders: '[{"tool":"github_issue_publish","record":{"engine_key":"website_idea_agent","fields":{"issue_url":"data.issue_url","issue_number":"data.issue_number"}}}]'
-      engine_data_outputs: '{"issue_url":"metadata.engine_data.website_idea_agent.issue_url","issue_number":"metadata.engine_data.website_idea_agent.issue_number"}'
-      transcript_artifact_name: website-idea-agent-transcript-${{ github.run_id }}
-      comment_pr_summary: false
-    secrets:
-      HOMEBOY_APP_ID: ${{ secrets.HOMEBOY_APP_ID }}
-      HOMEBOY_APP_PRIVATE_KEY: ${{ secrets.HOMEBOY_APP_PRIVATE_KEY }}
-      OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
-
-  collect-store-issue:
-    name: Collect store idea
-    needs: store-idea-agent
-    if: always()
+  run-site-generation-loop:
+    name: Run Homeboy site generation plan
     runs-on: ubuntu-latest
-    outputs:
-      issue_number: ${{ steps.collect.outputs.issue_number }}
-      has_issue: ${{ steps.collect.outputs.has_issue }}
+    timeout-minutes: 90
+    env:
+      OPENAI_MODEL: ${{ inputs.openai_model }}
+      GITHUB_TOKEN: ${{ github.token }}
+      OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+      HOMEBOY_PLAN_PATH: ${{ github.workspace }}/.ci/site-generation-loop.agent-task-plan.json
+      HOMEBOY_ARTIFACT_ROOT: ${{ github.workspace }}/.ci/homeboy-agent-task-artifacts
     steps:
-      - name: Collect issue number
-        id: collect
-        env:
-          STORE_ENGINE_DATA: ${{ needs.store-idea-agent.outputs.engine_data_json }}
+      - name: Check out wp-site-generator
+        uses: actions/checkout@v4
+
+      - name: Check out Homeboy
+        uses: actions/checkout@v4
+        with:
+          repository: Extra-Chill/homeboy
+          ref: ${{ inputs.homeboy_ref }}
+          path: .ci/homeboy
+
+      - name: Check out Homeboy Extensions
+        uses: actions/checkout@v4
+        with:
+          repository: Extra-Chill/homeboy-extensions
+          ref: ${{ inputs.homeboy_extensions_ref }}
+          path: .ci/homeboy-extensions
+
+      - name: Check out Agents API
+        uses: actions/checkout@v4
+        with:
+          repository: Automattic/agents-api
+          ref: main
+          path: .ci/agents-api
+
+      - name: Check out Data Machine
+        uses: actions/checkout@v4
+        with:
+          repository: Extra-Chill/data-machine
+          ref: ${{ inputs.data_machine_ref }}
+          path: .ci/data-machine
+
+      - name: Check out Data Machine Code
+        uses: actions/checkout@v4
+        with:
+          repository: Extra-Chill/data-machine-code
+          ref: ${{ inputs.data_machine_code_ref }}
+          path: .ci/data-machine-code
+
+      - name: Check out OpenAI provider
+        uses: actions/checkout@v4
+        with:
+          repository: WordPress/ai-provider-for-openai
+          ref: trunk
+          path: .ci/ai-provider-for-openai
+
+      - name: Check out WP Codebox
+        uses: actions/checkout@v4
+        with:
+          repository: Automattic/wp-codebox
+          ref: ${{ inputs.wp_codebox_ref }}
+          path: .ci/wp-codebox
+
+      - name: Build Homeboy
+        run: cargo install --path .ci/homeboy --locked
+
+      - name: Install WordPress extension
+        run: homeboy extension install .ci/homeboy-extensions/wordpress --id wordpress --replace
+
+      - name: Build WP Codebox CLI
+        working-directory: .ci/wp-codebox
+        run: |
+          npm ci
+          npm run build
+
+      - name: Build Homeboy agent-task plan
+        id: plan
         run: |
           set -euo pipefail
-          issue_number="$(printf '%s' "${STORE_ENGINE_DATA:-{}}" | jq -r '.issue_number | tonumber? // empty' 2>/dev/null || true)"
-          if [ -n "$issue_number" ]; then
-            echo "has_issue=true" >> "$GITHUB_OUTPUT"
-            echo "issue_number=$issue_number" >> "$GITHUB_OUTPUT"
-          else
-            echo "has_issue=false" >> "$GITHUB_OUTPUT"
-            echo "issue_number=" >> "$GITHUB_OUTPUT"
-          fi
-          echo "Generated store issue: ${issue_number:-none}"
+          plan_path="$(node .github/scripts/build-homeboy-site-generation-plan.mjs)"
+          echo "path=$plan_path" >> "$GITHUB_OUTPUT"
+          jq empty "$plan_path"
 
-  collect-website-issue:
-    name: Collect website idea
-    needs: website-idea-agent
-    if: always()
-    runs-on: ubuntu-latest
-    outputs:
-      issue_number: ${{ steps.collect.outputs.issue_number }}
-      has_issue: ${{ steps.collect.outputs.has_issue }}
-    steps:
-      - name: Collect issue number
-        id: collect
-        env:
-          WEBSITE_ENGINE_DATA: ${{ needs.website-idea-agent.outputs.engine_data_json }}
-        run: |
-          set -euo pipefail
-          issue_number="$(printf '%s' "${WEBSITE_ENGINE_DATA:-{}}" | jq -r '.issue_number | tonumber? // empty' 2>/dev/null || true)"
-          if [ -n "$issue_number" ]; then
-            echo "has_issue=true" >> "$GITHUB_OUTPUT"
-            echo "issue_number=$issue_number" >> "$GITHUB_OUTPUT"
-          else
-            echo "has_issue=false" >> "$GITHUB_OUTPUT"
-            echo "issue_number=" >> "$GITHUB_OUTPUT"
-          fi
-          echo "Generated website issue: ${issue_number:-none}"
+      - name: Run Homeboy agent-task plan
+        run: homeboy agent-task run-plan --plan "@${{ steps.plan.outputs.path }}" --record-run-id "site-generation-loop-${{ github.run_id }}" --artifact-root "$HOMEBOY_ARTIFACT_ROOT"
 
-  design-store-issue:
-    name: Design store issue #${{ needs.collect-store-issue.outputs.issue_number }}
-    needs: collect-store-issue
-    if: needs.collect-store-issue.outputs.has_issue == 'true'
-    uses: Extra-Chill/homeboy-extensions/.github/workflows/datamachine-agent-ci.yml@main
-    with:
-      bundle_path: bundles/design-agent
-      agent_slug: design-agent
-      pipeline_slug: design-pipeline
-      flow_slug: design-manual-flow
-      target_repo: ${{ github.repository }}
-      prompt: "Decide one visual design direction for GitHub issue #${{ needs.collect-store-issue.outputs.issue_number }}. Read the concept body, post the design.json fenced JSON block as a comment, and toggle the issue label from status:idea-ready to status:design-ready using surgical add_label_to_issue and remove_label_from_issue tool calls. Preserve every other label."
-      model: ${{ inputs.openai_model }}
-      data_machine_ref: ${{ inputs.data_machine_ref }}
-      data_machine_code_ref: ${{ inputs.data_machine_code_ref }}
-      success_requires_pr: false
-      success_completion_outcomes: '["design_comment_and_labels"]'
-      flow_step_patches: '[{"step_type":"fetch","merge":{"handler_configs":{"github":{"issue_number":${{ needs.collect-store-issue.outputs.issue_number }},"max_items":1}}}}]'
-      transcript_artifact_name: design-agent-store-${{ needs.collect-store-issue.outputs.issue_number }}-transcript-${{ github.run_id }}
-      comment_pr_summary: false
-    secrets:
-      HOMEBOY_APP_ID: ${{ secrets.HOMEBOY_APP_ID }}
-      HOMEBOY_APP_PRIVATE_KEY: ${{ secrets.HOMEBOY_APP_PRIVATE_KEY }}
-      OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
-
-  design-website-issue:
-    name: Design website issue #${{ needs.collect-website-issue.outputs.issue_number }}
-    needs: collect-website-issue
-    if: needs.collect-website-issue.outputs.has_issue == 'true'
-    uses: Extra-Chill/homeboy-extensions/.github/workflows/datamachine-agent-ci.yml@main
-    with:
-      bundle_path: bundles/design-agent
-      agent_slug: design-agent
-      pipeline_slug: design-pipeline
-      flow_slug: design-manual-flow
-      target_repo: ${{ github.repository }}
-      prompt: "Decide one visual design direction for GitHub issue #${{ needs.collect-website-issue.outputs.issue_number }}. Read the concept body, post the design.json fenced JSON block as a comment, and toggle the issue label from status:idea-ready to status:design-ready using surgical add_label_to_issue and remove_label_from_issue tool calls. Preserve every other label."
-      model: ${{ inputs.openai_model }}
-      data_machine_ref: ${{ inputs.data_machine_ref }}
-      data_machine_code_ref: ${{ inputs.data_machine_code_ref }}
-      success_requires_pr: false
-      success_completion_outcomes: '["design_comment_and_labels"]'
-      flow_step_patches: '[{"step_type":"fetch","merge":{"handler_configs":{"github":{"issue_number":${{ needs.collect-website-issue.outputs.issue_number }},"max_items":1}}}}]'
-      transcript_artifact_name: design-agent-website-${{ needs.collect-website-issue.outputs.issue_number }}-transcript-${{ github.run_id }}
-      comment_pr_summary: false
-    secrets:
-      HOMEBOY_APP_ID: ${{ secrets.HOMEBOY_APP_ID }}
-      HOMEBOY_APP_PRIVATE_KEY: ${{ secrets.HOMEBOY_APP_PRIVATE_KEY }}
-      OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
-
-  static-store-site:
-    name: Build store site for issue #${{ needs.collect-store-issue.outputs.issue_number }}
-    needs:
-      - collect-store-issue
-      - design-store-issue
-    if: always() && needs.collect-store-issue.outputs.has_issue == 'true' && needs.design-store-issue.result == 'success'
-    uses: Extra-Chill/homeboy-extensions/.github/workflows/datamachine-agent-ci.yml@main
-    with:
-      bundle_path: bundles/static-site-agent
-      agent_slug: static-site-agent
-      pipeline_slug: static-site-pipeline
-      flow_slug: static-site-manual-flow
-      target_repo: ${{ github.repository }}
-      prompt: "Implement GitHub issue #${{ needs.collect-store-issue.outputs.issue_number }} as a static site. Read the issue body and the design agent comment, honor both, and open exactly one static-site PR for that issue."
-      model: ${{ inputs.openai_model }}
-      data_machine_ref: ${{ inputs.data_machine_ref }}
-      data_machine_code_ref: ${{ inputs.data_machine_code_ref }}
-      success_requires_pr: true
-      success_completion_outcomes: '["static_site_pr"]'
-      flow_step_patches: '[{"step_type":"fetch","merge":{"handler_configs":{"github":{"issue_number":${{ needs.collect-store-issue.outputs.issue_number }},"max_items":1}}}}]'
-      tool_recorders: '[{"tool":"github_pull_request_publish","record":{"tool_results_key":"github_tool_results","engine_key":"static_site_agent","fields":{"pr_url":"data.html_url","branch":"data.head","slug":{"paths":["data.head"],"strip_prefix":"static/"}}}}]'
-      engine_data_outputs: '{"static_site_pr_url":"metadata.engine_data.static_site_agent.pr_url","static_site_branch":"metadata.engine_data.static_site_agent.branch","static_site_slug":"metadata.engine_data.static_site_agent.slug"}'
-      transcript_artifact_name: static-site-agent-store-${{ needs.collect-store-issue.outputs.issue_number }}-transcript-${{ github.run_id }}
-      comment_pr_summary: false
-    secrets:
-      HOMEBOY_APP_ID: ${{ secrets.HOMEBOY_APP_ID }}
-      HOMEBOY_APP_PRIVATE_KEY: ${{ secrets.HOMEBOY_APP_PRIVATE_KEY }}
-      OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
-
-  static-website-site:
-    name: Build website site for issue #${{ needs.collect-website-issue.outputs.issue_number }}
-    needs:
-      - collect-website-issue
-      - design-website-issue
-    if: always() && needs.collect-website-issue.outputs.has_issue == 'true' && needs.design-website-issue.result == 'success'
-    uses: Extra-Chill/homeboy-extensions/.github/workflows/datamachine-agent-ci.yml@main
-    with:
-      bundle_path: bundles/static-site-agent
-      agent_slug: static-site-agent
-      pipeline_slug: static-site-pipeline
-      flow_slug: static-site-manual-flow
-      target_repo: ${{ github.repository }}
-      prompt: "Implement GitHub issue #${{ needs.collect-website-issue.outputs.issue_number }} as a static site. Read the issue body and the design agent comment, honor both, and open exactly one static-site PR for that issue."
-      model: ${{ inputs.openai_model }}
-      data_machine_ref: ${{ inputs.data_machine_ref }}
-      data_machine_code_ref: ${{ inputs.data_machine_code_ref }}
-      success_requires_pr: true
-      success_completion_outcomes: '["static_site_pr"]'
-      flow_step_patches: '[{"step_type":"fetch","merge":{"handler_configs":{"github":{"issue_number":${{ needs.collect-website-issue.outputs.issue_number }},"max_items":1}}}}]'
-      tool_recorders: '[{"tool":"github_pull_request_publish","record":{"tool_results_key":"github_tool_results","engine_key":"static_site_agent","fields":{"pr_url":"data.html_url","branch":"data.head","slug":{"paths":["data.head"],"strip_prefix":"static/"}}}}]'
-      engine_data_outputs: '{"static_site_pr_url":"metadata.engine_data.static_site_agent.pr_url","static_site_branch":"metadata.engine_data.static_site_agent.branch","static_site_slug":"metadata.engine_data.static_site_agent.slug"}'
-      transcript_artifact_name: static-site-agent-website-${{ needs.collect-website-issue.outputs.issue_number }}-transcript-${{ github.run_id }}
-      comment_pr_summary: false
-    secrets:
-      HOMEBOY_APP_ID: ${{ secrets.HOMEBOY_APP_ID }}
-      HOMEBOY_APP_PRIVATE_KEY: ${{ secrets.HOMEBOY_APP_PRIVATE_KEY }}
-      OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+      - name: Upload Homeboy artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: site-generation-loop-homeboy-${{ github.run_id }}
+          path: |
+            .ci/site-generation-loop.agent-task-plan.json
+            .ci/homeboy-agent-task-artifacts/**
+            ~/.local/share/homeboy/agent-task-runs/site-generation-loop-${{ github.run_id }}/**
+          if-no-files-found: ignore
