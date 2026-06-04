@@ -1,8 +1,36 @@
-name: Site Generation Loop
+name: Homeboy Agent Task
 
 on:
   workflow_dispatch:
     inputs:
+      task_kind:
+        description: Agent task to run.
+        type: choice
+        required: true
+        options:
+          - store_idea
+          - website_idea
+          - design
+          - static_site
+      issue_number:
+        description: Issue number for design/static_site tasks.
+        required: false
+        default: ''
+      concept_prompt:
+        description: Prompt for store_idea/website_idea tasks.
+        required: false
+        default: ''
+      website_flow_slug:
+        description: Website idea flow slug for website_idea tasks.
+        type: choice
+        options:
+          - website-idea-manual-flow
+          - website-idea-local-business-flow
+          - website-idea-blog-flow
+          - website-idea-portfolio-flow
+          - website-idea-professional-services-flow
+          - website-idea-nonprofit-flow
+        default: website-idea-local-business-flow
       openai_model:
         description: OpenAI model to use for imported agent flows.
         required: true
@@ -34,19 +62,23 @@ permissions:
   issues: write
 
 concurrency:
-  group: site-generation-loop-${{ github.ref }}
+  group: homeboy-agent-task-${{ github.ref }}-${{ inputs.task_kind }}-${{ inputs.issue_number }}
   cancel-in-progress: false
 
 jobs:
-  run-site-generation-loop:
-    name: Run Homeboy site generation plan
+  run-homeboy-agent-task:
+    name: Run ${{ inputs.task_kind }} through Homeboy
     runs-on: ubuntu-latest
-    timeout-minutes: 90
+    timeout-minutes: 45
     env:
+      HOMEBOY_TASK_KIND: ${{ inputs.task_kind }}
+      ISSUE_NUMBER: ${{ inputs.issue_number }}
+      CONCEPT_PROMPT: ${{ inputs.concept_prompt }}
+      WEBSITE_FLOW_SLUG: ${{ inputs.website_flow_slug }}
       OPENAI_MODEL: ${{ inputs.openai_model }}
       GITHUB_TOKEN: ${{ github.token }}
       OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
-      HOMEBOY_PLAN_PATH: ${{ github.workspace }}/.ci/site-generation-loop.agent-task-plan.json
+      HOMEBOY_PLAN_PATH: ${{ github.workspace }}/.ci/homeboy-agent-task.plan.json
       HOMEBOY_ARTIFACT_ROOT: ${{ github.workspace }}/.ci/homeboy-agent-task-artifacts
     steps:
       - name: Check out wp-site-generator
@@ -122,15 +154,15 @@ jobs:
           jq empty "$plan_path"
 
       - name: Run Homeboy agent-task plan
-        run: homeboy agent-task run-plan --plan "@${{ steps.plan.outputs.path }}" --record-run-id "site-generation-loop-${{ github.run_id }}" --artifact-root "$HOMEBOY_ARTIFACT_ROOT"
+        run: homeboy agent-task run-plan --plan "@${{ steps.plan.outputs.path }}" --record-run-id "homeboy-agent-task-${{ github.run_id }}" --artifact-root "$HOMEBOY_ARTIFACT_ROOT"
 
       - name: Upload Homeboy artifacts
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: site-generation-loop-homeboy-${{ github.run_id }}
+          name: homeboy-agent-task-${{ inputs.task_kind }}-${{ github.run_id }}
           path: |
-            .ci/site-generation-loop.agent-task-plan.json
+            .ci/homeboy-agent-task.plan.json
             .ci/homeboy-agent-task-artifacts/**
-            ~/.local/share/homeboy/agent-task-runs/site-generation-loop-${{ github.run_id }}/**
+            ~/.local/share/homeboy/agent-task-runs/homeboy-agent-task-${{ github.run_id }}/**
           if-no-files-found: ignore
