@@ -403,9 +403,9 @@ const loopPlan = {
     },
   },
   options: {
-    max_concurrency: 2,
+    max_concurrency: 1,
     resource_budget: {
-      max_active_units: 2,
+      max_active_units: 1,
       default_task_units: 1,
     },
     retry: {
