@@ -249,13 +249,11 @@ That's the loop. Generate. Design. Build. Validate. Review. Decide. Repeat.
 
 ## Operating The Loop
 
-The primary loop runs in GitHub Actions through the reusable Homeboy Extensions `datamachine-agent-ci.yml` workflow. It imports the Data Machine bundles into a Playground runtime, runs the selected flow/prompt, and writes GitHub issues or PRs back to this repo using the Homeboy GitHub App credentials.
+The primary loop runs in GitHub Actions through `homeboy agent-task run-plan`. The workflow builds a Homeboy plan with output-driven DAG phases, runs the Data Machine bundles through the WordPress Codebox agent-task provider, and writes GitHub issues or PRs back to this repo with the workflow `GITHUB_TOKEN`.
 
 Required GitHub secrets:
 
-1. `HOMEBOY_APP_ID`
-2. `HOMEBOY_APP_PRIVATE_KEY`
-3. `OPENAI_API_KEY`
+1. `OPENAI_API_KEY`
 
 Useful workflow entry points:
 
@@ -263,7 +261,7 @@ Useful workflow entry points:
 2. **`website-idea-agent.yml`** — manually generate one content concept issue from a selected website flow.
 3. **`design-agent.yml`** — attach a design direction to one issue.
 4. **`static-site-agent.yml`** — build one design-ready issue into a static-site PR.
-5. **`site-generation-loop.yml`** — run the current two-lane end-to-end loop: store idea, website idea, design both, build both.
+5. **`site-generation-loop.yml`** — run the current two-lane end-to-end loop with Homeboy agent-task output dependencies: store idea, website idea, design both, build both.
 6. **`static-site-validation.yml`** — automatic PR validation for labeled target-lane static-site PRs.
 7. **`php-transformer-iterator.yml`** — automatic or manual upstream repair loop from validation finding packets.
 
