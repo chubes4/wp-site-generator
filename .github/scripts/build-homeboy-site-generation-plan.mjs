@@ -15,8 +15,8 @@ const ci = (name) => path.join(root, '.ci', name);
 const wpCodeboxBin = process.env.HOMEBOY_WP_CODEBOX_BIN || path.join(ci('wp-codebox'), 'packages', 'cli', 'dist', 'index.js');
 const artifactsRoot = process.env.HOMEBOY_ARTIFACT_ROOT || path.join(root, '.ci', 'homeboy-agent-task-artifacts');
 
-function engineDataPath(engineKey, field) {
-  return `/metadata/codebox/datamachine/workload/scenarios/0/metadata/engine_data/${engineKey}/${field}`;
+function taskOutputPath(field) {
+  return `/outputs/${field}`;
 }
 
 function datamachineConfig({
@@ -367,7 +367,7 @@ const loopPlan = {
       bindings: {
         issue_number: {
           task_id: 'store-idea-agent',
-          path: engineDataPath('store_idea_agent', 'issue_number'),
+          path: taskOutputPath('issue_number'),
           required: true,
         },
       },
@@ -376,7 +376,7 @@ const loopPlan = {
       bindings: {
         issue_number: {
           task_id: 'website-idea-agent',
-          path: engineDataPath('website_idea_agent', 'issue_number'),
+          path: taskOutputPath('issue_number'),
           required: true,
         },
       },
@@ -386,7 +386,7 @@ const loopPlan = {
       bindings: {
         issue_number: {
           task_id: 'store-idea-agent',
-          path: engineDataPath('store_idea_agent', 'issue_number'),
+          path: taskOutputPath('issue_number'),
           required: true,
         },
       },
@@ -396,7 +396,7 @@ const loopPlan = {
       bindings: {
         issue_number: {
           task_id: 'website-idea-agent',
-          path: engineDataPath('website_idea_agent', 'issue_number'),
+          path: taskOutputPath('issue_number'),
           required: true,
         },
       },
