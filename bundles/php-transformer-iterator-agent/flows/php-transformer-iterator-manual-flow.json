@@ -71,15 +71,9 @@
                         "tools": [
                             {
                                 "name": "create_github_issue"
-                            },
-                            {
-                                "name": "comment_github_pull_request"
                             }
                         ]
                     }
-                ],
-                "required_tool_names": [
-                    "comment_github_pull_request"
                 ]
             },
             "disabled_tools": [
@@ -98,7 +92,7 @@
                 },
                 {
                     "added_at": "2026-05-10T01:20:00+00:00",
-                    "prompt": "For fallback paths, create a focused upstream issue with the owner repository, source PR, validation run, site slug, signal kind, artifact names, and visual parity or diagnostic evidence, then comment back to the source PR with the issue URL and evidence summary."
+                    "prompt": "For fallback paths, create one focused upstream issue with the owner repository, source PR, validation run, site slug, signal kind, artifact names, and visual parity or diagnostic evidence."
                 },
                 {
                     "added_at": "2026-05-12T23:55:00+00:00",
@@ -114,11 +108,11 @@
                 },
                 {
                     "added_at": "2026-05-14T00:00:00+00:00",
-                    "prompt": "If the fetched finding packet or finding group has repair_mode=issue_only, do not create a worktree, commit, or pull request. Treat the packet as aggregate evidence that needs human narrowing: open or reuse a focused upstream issue with the packet fields, artifact names, source PR, and validation run, then comment back to the source PR."
+                    "prompt": "If the fetched finding packet or finding group has repair_mode=issue_only, do not create a worktree, commit, or pull request. Treat the packet as aggregate evidence that needs human narrowing: open one focused upstream issue with the packet fields, artifact names, source PR, and validation run."
                 },
                 {
                     "added_at": "2026-06-01T01:00:00+00:00",
-                    "prompt": "Do not call list_github_issues in the iterator fallback path. The fallback path is complete only after create_github_issue succeeds and comment_github_pull_request posts the created issue URL back to the source PR."
+                    "prompt": "Do not call list_github_issues in the iterator fallback path. The fallback path is complete after one create_github_issue call succeeds. Do not create another fallback issue for the same packet in the same run."
                 }
             ],
             "queue_mode": "static",
@@ -144,9 +138,10 @@
                     "blocked_tools": [
                         "create_github_issue"
                     ],
-                    "id": "iterator-issue-before-source-callback",
+                    "id": "iterator-stop-after-issue-fallback",
                     "type": "block_until_tool",
                     "until_one_of": [
+                        "create_github_pull_request",
                         "comment_github_pull_request"
                     ]
                 }

@@ -32,15 +32,9 @@
                             "tools": [
                                 {
                                     "name": "create_github_issue"
-                                },
-                                {
-                                    "name": "comment_github_pull_request"
                                 }
                             ]
                         }
-                    ],
-                    "required_tool_names": [
-                        "comment_github_pull_request"
                     ]
                 },
                 "disabled_tools": [
@@ -70,9 +64,10 @@
                         "blocked_tools": [
                             "create_github_issue"
                         ],
-                        "id": "iterator-issue-before-source-callback",
+                        "id": "iterator-stop-after-issue-fallback",
                         "type": "block_until_tool",
                         "until_one_of": [
+                            "create_github_pull_request",
                             "comment_github_pull_request"
                         ]
                     }
