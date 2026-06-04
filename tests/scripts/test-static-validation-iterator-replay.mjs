@@ -45,6 +45,24 @@ await writeJson(path.join(visualDir, 'summary.json'), {
 				invalid_block_count: 0,
 				content_loss_count: 0,
 				diagnostic_count: 4,
+				diagnostics: [
+					{
+						id: 'diag-002-unsupported_html_fallback-no_transform-indexhtml',
+						type: 'unsupported_html_fallback',
+						severity: 'warning',
+						category: 'unsupported_element',
+						reason_code: 'no_transform',
+						suggested_repair_class: 'replace_unsupported_html',
+						source_path: 'index.html',
+						selector: 'iframe#reservation-widget.embedded.checkout',
+						source_html_preview: '<iframe id="reservation-widget" class="embedded checkout"></iframe>',
+						emitted_block_preview: '<!-- wp:html --><iframe id="reservation-widget" class="embedded checkout"></iframe><!-- /wp:html -->',
+						block_name: 'core/html',
+						converter: 'html-to-blocks-converter',
+						stage: 'html_to_blocks',
+						reason: 'no_transform',
+					},
+				],
 			},
 			quality: {
 				fallback_count: 2,
@@ -116,8 +134,16 @@ assert.ok(packets.some((packet) => packet.kind === 'unsupported_html_fallback'),
 assert.ok(packets.some((packet) => packet.kind === 'core_html_block'), 'core/html count becomes an H2BC-routed quality packet');
 assert.ok(packets.some((packet) => packet.kind === 'visual_parity_mismatch'), 'visual mismatch remains available for WPSG routing');
 assert.ok(
-	packets.filter((packet) => ['unsupported_html_fallback', 'core_html_block'].includes(packet.kind)).every((packet) => packet.candidate_repo === 'chubes4/html-to-blocks-converter' && packet.repair_mode === 'issue_only'),
-	'aggregate quality packets route to H2BC as issue-only follow-up evidence',
+	packets.some((packet) => packet.diagnostic_id === 'diag-002-unsupported_html_fallback-no_transform-indexhtml'
+		&& packet.selector === 'iframe#reservation-widget.embedded.checkout'
+		&& packet.source_html_preview.includes('<iframe')
+		&& packet.emitted_block_preview.includes('wp:html')
+		&& packet.repair_mode === 'pr_or_issue'),
+	'rich SSI summary diagnostics become actionable per-fallback packets',
+);
+assert.ok(
+	packets.filter((packet) => ['unsupported_html_fallback', 'core_html_block'].includes(packet.kind)).every((packet) => packet.candidate_repo === 'chubes4/html-to-blocks-converter'),
+	'quality packets route to H2BC follow-up evidence',
 );
 
 const groupResult = spawnSync(process.execPath, [path.join(repoRoot, '.github/scripts/group-ssi-finding-packets.mjs'), packetsPath], {

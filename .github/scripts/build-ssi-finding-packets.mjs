@@ -261,9 +261,10 @@ function packetFromModernDiagnostic(diagnostic, summary) {
 	const sourcePath = text(diagnostic?.source_path) || text(diagnostic?.path);
 	const suggestedRepairClass = text(diagnostic?.suggested_repair_class) || repairClassFromDiagnostic(type);
 	const repairMode = text(diagnostic?.repair_mode) || repairModeFromDiagnostic(diagnostic, category, suggestedRepairClass);
+	const routedCandidateRepo = candidateRepoFromDiagnostic(diagnostic, type, category, suggestedRepairClass);
 
 	return {
-		...packetBase(text(diagnostic?.candidate_repo)),
+		...packetBase(routedCandidateRepo),
 		diagnostic_id: text(diagnostic?.diagnostic_id) || text(diagnostic?.id),
 		kind: kindFromDiagnostic(type, category, blockName),
 		source_path: sourcePath,
@@ -286,6 +287,30 @@ function packetFromModernDiagnostic(diagnostic, summary) {
 		asset_map_refs: assetMapRefs(diagnostic, summary),
 		repair_mode: repairMode,
 	};
+}
+
+function candidateRepoFromDiagnostic(diagnostic, type, category, suggestedRepairClass) {
+	const explicit = text(diagnostic?.candidate_repo);
+	if (explicit) {
+		return explicit;
+	}
+
+	const converter = text(diagnostic?.converter).toLowerCase();
+	const haystack = `${type} ${category} ${suggestedRepairClass}`.toLowerCase();
+	if (
+		converter === 'html-to-blocks-converter'
+		|| ['unsupported_html_fallback', 'core_html_block', 'freeform_block'].includes(text(type).toLowerCase())
+		|| haystack.includes('fallback_block')
+		|| haystack.includes('replace_unsupported_html')
+		|| haystack.includes('replace_fallback_block')
+	) {
+		return 'chubes4/html-to-blocks-converter';
+	}
+	if (converter === 'block-format-bridge' || haystack.includes('bridge') || haystack.includes('bfb')) {
+		return 'chubes4/block-format-bridge';
+	}
+
+	return '';
 }
 
 function packetFromBenchFailure(failure) {
