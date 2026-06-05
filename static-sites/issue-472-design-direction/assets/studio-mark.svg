@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="84" height="84" viewBox="0 0 84 84" role="img" aria-labelledby="title desc">
+  <title id="title">Canal Clay Studio mark</title>
+  <desc id="desc">A simple kiln-dark circle with clay and canal colored vessel lines.</desc>
+  <circle cx="42" cy="42" r="40" fill="#2F2A25"/>
+  <path d="M20 54c9 7 35 7 44 0" fill="none" stroke="#BFD2C8" stroke-width="4" stroke-linecap="round"/>
+  <path d="M28 48c3 10 25 10 28 0l-4-22H32l-4 22Z" fill="#C98F67"/>
+  <path d="M32 26c4 4 16 4 20 0" fill="none" stroke="#FFF8EA" stroke-width="4" stroke-linecap="round"/>
+  <path d="M31 39h22" stroke="#8F4B36" stroke-width="3" stroke-linecap="round" opacity="0.85"/>
+  <path d="M35 58h14" stroke="#FFF8EA" stroke-width="4" stroke-linecap="round"/>
+</svg>
