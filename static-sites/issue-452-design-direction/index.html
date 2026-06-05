@@ -1,0 +1,66 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Neighborhood Utility Café & Repair Nights</title>
+  <meta name="description" content="A warm neighborhood café notice-board site for daily essentials, simple food, repair nights, item guidance, and volunteer calls.">
+  <link rel="stylesheet" href="assets/styles.css">
+</head>
+<body>
+  <a class="skip-link" href="#main">Skip to main content</a>
+  <header class="site-header">
+    <div class="header-inner">
+      <a class="brand" href="#top" aria-label="Neighborhood Utility Café home">
+        <span class="brand-mark" aria-hidden="true">
+          <svg viewBox="0 0 72 72" role="img"><path d="M18 30h30v15a13 13 0 0 1-13 13h-4a13 13 0 0 1-13-13V30Z" fill="none" stroke="currentColor" stroke-width="3" stroke-linejoin="round"/><path d="M48 34h5a7 7 0 0 1 0 14h-5" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"/><path d="M24 24c-2-4 2-6 0-10M34 24c-2-4 2-6 0-10M44 24c-2-4 2-6 0-10" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/><path d="M19 57h32" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"/></svg>
+        </span>
+        <span><strong>Neighborhood Utility Café</strong><em>coffee, mending, and useful company</em></span>
+      </a>
+      <nav aria-label="Primary navigation"><a href="#today">Today</a><a href="#menu">Menu</a><a href="#repair-night">Repair night</a><a href="#bring">Bring guide</a><a href="#volunteer">Volunteer</a></nav>
+    </div>
+  </header>
+  <main id="main">
+    <section class="hero" id="top" aria-labelledby="hero-title">
+      <div class="hero-grid" aria-hidden="true"></div>
+      <div class="hero-copy">
+        <p class="eyebrow">Open today · shared tables · low-pressure repairs</p>
+        <h1 id="hero-title">Your slow-morning café and practical evening repair bench.</h1>
+        <p class="hero-lede">Drop in for coffee, soup, and clear answers. Come back on repair nights with the lamp, jacket, bike light, or toaster you almost gave up on.</p>
+        <div class="hero-actions" aria-label="Important actions"><a class="button primary" href="#today">See today’s essentials</a><a class="button secondary" href="#bring">Check what to bring</a></div>
+      </div>
+      <aside class="today-card notice-card" id="today" aria-label="Today focused essentials">
+        <span class="tape tape-left" aria-hidden="true"></span><span class="label">Today at a glance</span>
+        <dl class="essentials">
+          <div><dt>Café hours</dt><dd><time datetime="08:00">8:00</time>–<time datetime="16:00">4:00</time></dd></div>
+          <div><dt>Kitchen</dt><dd>toast, soup, bakes</dd></div>
+          <div><dt>Address</dt><dd>18 Brick Lane, beside the old tram stop</dd></div>
+          <div><dt>Next repair night</dt><dd>Thu <time datetime="2026-06-11T18:00">6:00</time>–<time datetime="2026-06-11T20:30">8:30</time></dd></div>
+        </dl>
+      </aside>
+    </section>
+    <section class="notice-board" aria-label="Current notices">
+      <article class="notice-card feature"><span class="label">How it works</span><h2>Order at the counter. Ask at the bench.</h2><p>During the day, the café is a dependable neighborhood habit: coffee, lunch, a quiet corner, and a pin board that stays current. On repair nights, volunteers help diagnose simple fixes while you stay with your item and learn the next step.</p></article>
+      <article class="notice-card shop-note"><span class="label">Accessibility note</span><h2>Clear paths, printed guidance, patient help.</h2><p>Step-free entrance on Brick Lane. Large-print menus and bring-guides are at the till. If the bench is busy, we give you a numbered tag and an honest wait time.</p></article>
+    </section>
+    <section class="collection menu-section" id="menu" aria-labelledby="menu-title">
+      <div class="section-heading"><p class="eyebrow">Menu highlights</p><h2 id="menu-title">Warm, simple things that do their job.</h2></div>
+      <div class="card-grid">
+        <article class="product-card"><div class="icon-circle" aria-hidden="true"><svg viewBox="0 0 64 64"><path d="M18 27h28v12a12 12 0 0 1-12 12h-4a12 12 0 0 1-12-12V27Z"/><path d="M46 31h4a6 6 0 0 1 0 12h-4"/><path d="M24 20c-2-4 2-5 0-9M34 20c-2-4 2-5 0-9"/></svg></div><span class="tag">Counter regular</span><h3>Filter coffee</h3><p>Steady, refill-friendly, served in ceramic unless you need to carry it onward.</p><p class="price">£2.40</p></article>
+        <article class="product-card"><div class="icon-circle" aria-hidden="true"><svg viewBox="0 0 64 64"><path d="M15 30h34l-3 19H18l-3-19Z"/><path d="M22 24c4-5 13-5 17 0"/><path d="M49 33h4a5 5 0 0 1 0 10h-5"/></svg></div><span class="tag">Lunch pot</span><h3>Juniper lentil soup</h3><p>Herby, filling, ladled with yesterday’s good bread toasted crisp.</p><p class="price">£5.80</p></article>
+        <article class="product-card"><div class="icon-circle" aria-hidden="true"><svg viewBox="0 0 64 64"><path d="M16 34c4-10 28-10 32 0v12H16V34Z"/><path d="M19 38h26"/><path d="M26 25h12"/></svg></div><span class="tag">After school</span><h3>Jam toast stack</h3><p>Thick-cut toast, brass-colored butter, rotating jam from nearby kitchens.</p><p class="price">£3.20</p></article>
+      </div>
+    </section>
+    <section class="repair-section" id="repair-night" aria-labelledby="repair-title">
+      <div class="repair-panel"><div class="section-heading"><p class="eyebrow">Next repair night</p><h2 id="repair-title">Thursday, 6:00–8:30. Small fixes, shared patience.</h2></div><p>Bring one carryable item and stay with it. Volunteers can help with diagnosis, simple part swaps, stitching, safety checks, and next-step advice. There is no promise of a perfect fix, only a useful attempt and a clearer path.</p><div class="repair-tags" aria-label="Repair night stations"><span><strong>Station 01</strong> bikes & lights</span><span><strong>Station 02</strong> lamps & small electrics</span><span><strong>Station 03</strong> clothing mends</span><span><strong>Station 04</strong> tool sharpening</span></div></div>
+      <div class="illustration-board" aria-label="Line illustrations of repair objects"><svg viewBox="0 0 460 360" role="img" aria-labelledby="repair-objects-title"><title id="repair-objects-title">Line drawings of a bicycle wheel, lamp, wrench, stitched patch, and mug</title><g fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><circle cx="104" cy="244" r="44" stroke-width="7"/><circle cx="214" cy="244" r="44" stroke-width="7"/><path d="M104 244l45-70 65 70M149 174h37M149 174l-22 70M186 174l28 70" stroke-width="7"/><path d="M292 108h80l-12 46h-56l-12-46ZM320 154v68M294 222h92" stroke-width="7"/><path d="M82 99l54 54M91 90l54 54M123 68l22 22-54 54-22-22 54-54Z" stroke-width="7"/><path d="M274 259h88v54h-88zM286 259c5 12 5 42 0 54M306 259c5 12 5 42 0 54M326 259c5 12 5 42 0 54M274 277c16 5 72 5 88 0M274 297c16 5 72 5 88 0" stroke-width="5"/><path d="M284 42h53v30a23 23 0 0 1-23 23h-7a23 23 0 0 1-23-23V42ZM337 50h9a12 12 0 0 1 0 24h-9M290 99h45" stroke-width="6"/></g></svg></div>
+    </section>
+    <section class="bring-section" id="bring" aria-labelledby="bring-title">
+      <div class="section-heading centered"><p class="eyebrow">Bring-or-don’t-bring guidance</p><h2 id="bring-title">A good repair night starts with the right item.</h2></div>
+      <div class="guidance-grid"><article class="notice-card guidance yes"><span class="label">Bring</span><ul><li>One item you can carry by yourself.</li><li>Chargers, batteries, missing screws, or spare buttons if you have them.</li><li>A clear description of what changed and when.</li><li>Patience for a numbered bench queue.</li></ul></article><article class="notice-card guidance no"><span class="label">Please don’t bring</span><ul><li>Microwaves, gas appliances, or anything leaking fuel.</li><li>Large furniture, built-in fixtures, or heavy appliances.</li><li>Items you need guaranteed fixed the same night.</li><li>More than one item per person when the room is full.</li></ul></article></div>
+    </section>
+    <section class="volunteer-section" id="volunteer" aria-labelledby="volunteer-title"><article class="cta notice-card"><span class="tape tape-right" aria-hidden="true"></span><div><p class="eyebrow">Volunteer call</p><h2 id="volunteer-title">Good with a stitch, a spanner, a soldering iron, or a calm queue?</h2><p>Repair nights need fixers, greeters, note-takers, tea runners, and people who can explain limits kindly. Come for one evening and see where you fit.</p></div><a class="button primary" href="mailto:hello@example.local">Email the bench lead</a></article></section>
+  </main>
+  <footer class="site-footer"><div><strong>Neighborhood Utility Café</strong><p>18 Brick Lane · café Wed–Sun · repair nights every other Thursday</p></div><p class="footer-note">No remote assets. Built with local HTML, CSS, gradients, and inline SVG linework.</p></footer>
+</body>
+</html>
