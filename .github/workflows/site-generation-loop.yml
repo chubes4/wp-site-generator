@@ -124,6 +124,12 @@ jobs:
       - name: Run Homeboy agent-task plan
         run: homeboy agent-task run-plan --plan "@${{ steps.plan.outputs.path }}" --record-run-id "site-generation-loop-${{ github.run_id }}" --artifact-root "$HOMEBOY_ARTIFACT_ROOT"
 
+      - name: Assert semantic proof state
+        run: >-
+          node .github/scripts/assert-site-generation-loop-proof.mjs
+          --aggregate "$HOME/.local/share/homeboy/agent-task-runs/site-generation-loop-${{ github.run_id }}/aggregate.json"
+          --repo "$GITHUB_REPOSITORY"
+
       - name: Upload Homeboy artifacts
         if: always()
         uses: actions/upload-artifact@v4

@@ -32,13 +32,10 @@
             "completion_assertions": {
                 "complete_when_any": [
                     {
-                        "name": "design_comment_and_labels",
+                        "name": "design_issue_and_labels",
                         "tools": [
                             {
-                                "name": "manage_github_issue",
-                                "required_parameters": {
-                                    "action": "comment"
-                                },
+                                "name": "github_issue_publish",
                                 "success": true
                             },
                             {
@@ -61,7 +58,7 @@
             "prompt_queue": [
                 {
                     "added_at": "2026-05-09T22:00:00+00:00",
-                    "prompt": "Decide one design direction for the fetched concept. Honor the concept's audience, offer, and angle. Post the design.json comment using manage_github_issue with action=comment, then transition the lifecycle by calling remove_label_from_issue with label=\"status:idea-ready\" and add_label_to_issue with label=\"status:design-ready\"."
+                    "prompt": "Decide one design direction for the fetched concept. Honor the concept's title, audience, offer, and angle. Create a separate design-direction issue with the source concept issue number, source title, and a fenced design.json block. Preserve the source concept title and body exactly, then transition only the source concept lifecycle by calling remove_label_from_issue with label=\"status:idea-ready\" and add_label_to_issue with label=\"status:design-ready\"."
                 }
             ],
             "queue_mode": "static",
