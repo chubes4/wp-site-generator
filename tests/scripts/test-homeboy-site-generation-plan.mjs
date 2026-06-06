@@ -38,6 +38,41 @@ try {
 
   assert.equal(plan.output_dependencies['static-store-site'].depends_on[0], 'design-store-issue');
   assert.equal(plan.output_dependencies['static-website-site'].depends_on[0], 'design-website-issue');
+
+  assert.equal(
+    plan.output_dependencies['static-store-site'].bindings.design_issue_number.path,
+    '/outputs/design_issue_number',
+    'static store task binds to design issue output'
+  );
+  assert.equal(
+    plan.output_dependencies['static-store-site'].bindings.design_issue_number.task_id,
+    'design-store-issue',
+    'static store task receives design issue from design task'
+  );
+  assert.equal(
+    plan.output_dependencies['static-website-site'].bindings.design_issue_number.path,
+    '/outputs/design_issue_number',
+    'static website task binds to design issue output'
+  );
+  assert.equal(
+    plan.output_dependencies['static-website-site'].bindings.design_issue_number.task_id,
+    'design-website-issue',
+    'static website task receives design issue from design task'
+  );
+
+  for (const taskId of ['design-store-issue', 'design-website-issue']) {
+    const config = plan.tasks.find((task) => task.task_id === taskId).executor.config;
+    assert.deepEqual(config.success_completion_outcomes, ['design_issue_and_labels'], `${taskId} requires design issue completion`);
+    assert.match(config.prompt, /create a separate design-direction issue/, `${taskId} creates a separate design issue`);
+    assert.equal(config.engine_data_outputs.design_issue_number, 'metadata.engine_data.design_agent.issue_number');
+  }
+
+  for (const taskId of ['static-store-site', 'static-website-site']) {
+    const config = plan.tasks.find((task) => task.task_id === taskId).executor.config;
+    assert.match(config.prompt, /design-direction issue #\{\{outputs\.design_issue_number\}\}/, `${taskId} receives design issue number`);
+    assert.match(config.prompt, /PR title, branch, static-sites directory, and Closes reference must derive from concept issue/, `${taskId} protects source concept identity`);
+    assert.match(config.prompt, /missing the concept sections Recommended Concept, Who It Serves, What It Offers, and Why It Could Work/, `${taskId} rejects corrupted concepts`);
+  }
 } finally {
   await rm(tempDir, { recursive: true, force: true });
 }

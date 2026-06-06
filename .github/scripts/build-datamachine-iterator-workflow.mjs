@@ -34,6 +34,27 @@ function buildWorkflow(packets, pipelineConfig, flowConfig) {
 		...promptQueue.map((item) => item?.prompt || '').filter(Boolean),
 		formatFindingPrompt(packets),
 	].filter(Boolean).join('\n\n');
+	const completionAssertions = {
+		...(aiConfig.completion_assertions || iteratorFlowStep.completion_assertions || {}),
+	};
+	completionAssertions.required_tool_names = completionAssertions.required_tool_names || ['comment_github_pull_request'];
+	completionAssertions.complete_when_any = (completionAssertions.complete_when_any || []).map((outcome) => {
+		const tools = Array.isArray(outcome.tools) ? [...outcome.tools] : [];
+		if (!tools.some((tool) => tool?.name === 'comment_github_pull_request')) {
+			tools.push({ name: 'comment_github_pull_request' });
+		}
+		return { ...outcome, tools };
+	});
+	const toolRuntimeRules = [...(aiConfig.tool_runtime_rules || iteratorFlowStep.tool_runtime_rules || [])];
+	if (!toolRuntimeRules.some((rule) => rule?.id === 'iterator-issue-before-source-callback')) {
+		toolRuntimeRules.push({
+			id: 'iterator-issue-before-source-callback',
+			type: 'block_until_tool',
+			after_tool: 'create_github_issue',
+			blocked_tools: ['create_github_issue'],
+			until_one_of: ['comment_github_pull_request'],
+		});
+	}
 
 	const initialData = {
 		job_source: 'system',
@@ -61,8 +82,8 @@ function buildWorkflow(packets, pipelineConfig, flowConfig) {
 					queue_mode: 'static',
 					enabled_tools: iteratorFlowStep.enabled_tools || [],
 					disabled_tools: aiConfig.disabled_tools || iteratorFlowStep.disabled_tools || [],
-					completion_assertions: aiConfig.completion_assertions || iteratorFlowStep.completion_assertions || {},
-					tool_runtime_rules: aiConfig.tool_runtime_rules || iteratorFlowStep.tool_runtime_rules || [],
+					completion_assertions: completionAssertions,
+					tool_runtime_rules: toolRuntimeRules,
 				},
 			],
 		},
