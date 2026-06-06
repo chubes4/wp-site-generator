@@ -35,8 +35,8 @@ Concurrency is the strategy. The system is designed to produce many credible sta
                            +---------+----------+
                                      |
                                      v
-                          posts design.json comment
-                          on the same issue
+                           opens design-direction issue
+                           with source issue metadata
                           toggles label: status:idea-ready
                                        -> status:design-ready
                                      |
@@ -131,11 +131,11 @@ Same shape, different lane. Generates **non-commerce website concepts** (blog, l
 
 ### `design-agent`
 
-The bridge between the idea agents and the build agent. Reads one open `status:idea-ready` issue, decides one visual design direction (palette, typography, design system, layout direction, mood), posts it back as a fenced `json` block in a comment on the same issue, and toggles the issue from `status:idea-ready` to `status:design-ready`. Does not write code. Does not open PRs. Does not pick slugs. The design comment's field set is the agent's call per concept; there is no rigid schema.
+The bridge between the idea agents and the build agent. Reads one open `status:idea-ready` source concept issue, decides one visual design direction (palette, typography, design system, layout direction, mood), opens a separate design-direction issue containing source issue metadata plus a fenced `json` block, and toggles the source concept from `status:idea-ready` to `status:design-ready`. Does not edit the source concept title/body. Does not write code. Does not open PRs. Does not pick slugs. The design issue's field set is the agent's call per concept; there is no rigid schema beyond source issue/title metadata and parseable design JSON.
 
 ### `static-site-agent`
 
-Reads one open `status:design-ready` issue (concept body + design-agent comment) and authors a **static HTML/CSS site PR**. Files live under `static-sites/<slug>/`. The exact set of files is the agent's call based on what the design needs; there is no required file list and no forbidden file list. PRs open with `target:wordpress` for content concepts or `target:woocommerce` for commerce concepts. Validation happens in CI.
+Reads one open `status:design-ready` source concept issue plus the separate design-direction issue recorded by the design task, then authors a **static HTML/CSS site PR**. The source concept remains the identity contract: PR title, branch, static-site directory, and `Closes #...` derive from the concept issue, not the design issue. Files live under `static-sites/<slug>/`. The exact set of files is the agent's call based on what the design needs; there is no required file list and no forbidden file list. PRs open with `target:wordpress` for content concepts or `target:woocommerce` for commerce concepts. Validation happens in CI.
 
 PR title shape: `🧱 <Concept Name> — static site`. Branch: `static/<slug>`.
 
@@ -152,7 +152,7 @@ Consumes grouped SSI finding packets from a generated-site PR's validation run a
 | Label | Meaning |
 | --- | --- |
 | `status:idea-ready` | An idea agent published a concept; design has not been picked yet. |
-| `status:design-ready` | The design agent attached a `design.json` comment; the build agent can pick it up. |
+| `status:design-ready` | The design agent created a separate design-direction issue for the source concept; the build agent can pick it up. |
 | `status:built` | A target-lane PR currently claims the concept or the generated-site PR has merged and closed it. |
 | `status:abandoned` | The most recent target-lane PR for this concept closed without merging and no other open target-lane PR still claims it. |
 
