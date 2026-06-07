@@ -122,7 +122,7 @@ jobs:
       data_machine_code_ref: ${{ inputs.data_machine_code_ref }}
       extra_required_abilities: |
         [
-          "datamachine/workspace-worktree-add"
+          "datamachine-code/workspace-worktree-add"
         ]
       success_requires_pr: false
       max_turns: 24

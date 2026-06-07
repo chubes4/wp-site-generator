@@ -13,7 +13,7 @@ assert.match(workflow, /"dir":"\.ci\/visual-parity"/, 'iterator stores visual pa
 assert.match(workflow, /group-ssi-finding-packets\.mjs \.ci\/finding-packets\/finding-packets\.json/, 'iterator groups downloaded packets before Data Machine fanout');
 assert.match(workflow, /VISUAL_ARTIFACT_DIR=\.ci\/visual-parity node \.github\/scripts\/build-datamachine-iterator-workflow\.mjs \.ci\/finding-packets\/grouped-finding-packets\.json \.ci\/datamachine-iterator-workflow\.json/, 'iterator builds DataPackets with visual artifact context');
 assert.match(workflow, /execute_workflow_path: \.ci\/datamachine-iterator-workflow\.json/, 'iterator executes the generated workflow payload');
-assert.match(workflow, /extra_required_abilities: '\["datamachine\/upsert-github-pull-review-comment"\]'/, 'iterator requires the managed PR comment upsert ability');
+assert.match(workflow, /extra_required_abilities: '\["datamachine-code\/upsert-github-pull-review-comment"\]'/, 'iterator requires the managed PR comment upsert ability');
 assert.match(workflow, /app_token_repos: .*chubes4\/block-artifact-compiler/, 'iterator token routing includes block-artifact-compiler');
 assert.match(workflow, /success_requires_pr: false/, 'issue-only and existing-issue completion paths do not require a new PR');
 assert.match(workflow, /success_completion_outcomes: '\["pull_request_path","issue_fallback_path","no_actionable_findings"\]'/, 'iterator accepts explicit completion outcomes that require an action');
