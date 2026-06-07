@@ -75,9 +75,11 @@ try {
     assert.match(config.prompt, /create_github_issue/, `${taskId} creates a separate design issue with the direct GitHub issue tool`);
     assert.doesNotMatch(config.prompt, /add_label_to_issue|remove_label_from_issue/, `${taskId} does not ask the AI to mutate labels`);
     assert.equal(config.tool_recorders[0].tool, 'create_github_issue', `${taskId} records direct GitHub issue creation`);
-    assert.equal(config.tool_recorders[0].record.fields.issue_number, 'metadata.tool_result_data.issue_number', `${taskId} records issue number from non-handler tool result metadata`);
-    assert.equal(config.tool_recorders[0].record.fields.issue_url, 'metadata.tool_result_data.issue_url', `${taskId} records issue URL from non-handler tool result metadata`);
+    assert.equal(config.tool_recorders[0].record.fields.issue_number, 'tool_result_data.issue_number', `${taskId} records issue number from non-handler tool result data`);
+    assert.equal(config.tool_recorders[0].record.fields.issue_url, 'tool_result_data.issue_url', `${taskId} records issue URL from non-handler tool result data`);
     assert.equal(config.engine_data_outputs.design_issue_number, 'metadata.engine_data.design_agent.issue_number');
+    const systemTaskPatch = config.flow_step_patches.find((patch) => patch.step_type === 'system_task');
+    assert.equal(systemTaskPatch.merge.flow_step_settings.params.issue_number, '{{outputs.issue_number}}', `${taskId} patches deterministic label task with the source issue number`);
   }
 
   for (const taskId of ['static-store-site', 'static-website-site']) {
