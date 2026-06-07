@@ -11,6 +11,8 @@ assert.match(workflow, /HOMEBOY_PLAN_PATH:/, 'workflow writes an explicit Homebo
 assert.match(workflow, /Build Homeboy agent-task plan/, 'workflow builds the Homeboy agent-task plan');
 assert.match(workflow, /node \.github\/scripts\/build-homeboy-site-generation-plan\.mjs/, 'workflow delegates plan shape to the plan builder');
 assert.match(workflow, /homeboy agent-task run-plan --plan "@\$\{\{ steps\.plan\.outputs\.path \}\}"/, 'workflow runs the generated Homeboy agent-task plan');
+assert.match(workflow, /Assert semantic proof state/, 'workflow asserts semantic proof state after the Homeboy run');
+assert.match(workflow, /assert-site-generation-loop-proof\.mjs/, 'workflow delegates semantic proof checks to the proof assertion script');
 assert.match(workflow, /HOMEBOY_ARTIFACT_ROOT:/, 'workflow captures Homeboy task artifacts');
 assert.match(workflow, /site-generation-loop-homeboy-\$\{\{ github\.run_id \}\}/, 'workflow uploads Homeboy artifacts for review');
 assert.doesNotMatch(workflow, /collect-store-issue:/, 'workflow no longer has bespoke store issue collection');

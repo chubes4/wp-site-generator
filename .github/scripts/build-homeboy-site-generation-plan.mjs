@@ -143,6 +143,9 @@ const prRecorder = [
   },
 ];
 
+const loopDesignPrompt = 'Decide one visual design direction for GitHub issue #{{outputs.issue_number}}. Read the concept title and body, create a separate design-direction issue with the source concept issue number, source title, and a design.json fenced JSON block, then toggle only the source concept lifecycle label from status:idea-ready to status:design-ready using surgical add_label_to_issue and remove_label_from_issue tool calls. Preserve the source concept title, body, and every non-lifecycle label.';
+const loopStaticPrompt = 'Implement GitHub concept issue #{{outputs.issue_number}} as a static site using design-direction issue #{{outputs.design_issue_number}}. Read the fetched concept issue body and reject the run if it is missing the concept sections Recommended Concept, Who It Serves, What It Offers, and Why It Could Work, or if its title/body look like a design handoff instead of a concept. Read the separate design-direction issue, honor its design.json block, and open exactly one static-site PR for the source concept issue. The PR title, branch, static-sites directory, and Closes reference must derive from concept issue #{{outputs.issue_number}}, not from design issue #{{outputs.design_issue_number}}.';
+
 function storeIdeaTask({ id = 'store-idea-agent', flow = 'store-idea-home-and-craft-flow', prompt = ' ', title = 'Generate store idea' } = {}) {
   return task({
     id,
@@ -191,7 +194,7 @@ function websiteIdeaTask({ id = 'website-idea-agent', flow = 'website-idea-local
 }
 
 function designTask({ id, issueNumber, title }) {
-  const prompt = `Decide one visual design direction for GitHub issue #${issueNumber}. Read the concept body, post the design.json fenced JSON block as a comment, and toggle the issue label from status:idea-ready to status:design-ready using surgical add_label_to_issue and remove_label_from_issue tool calls. Preserve every other label.`;
+  const prompt = `Decide one visual design direction for GitHub issue #${issueNumber}. Read the concept title and body, create a separate design-direction issue with the source concept issue number, source title, and a design.json fenced JSON block, then toggle only the source concept lifecycle label from status:idea-ready to status:design-ready using surgical add_label_to_issue and remove_label_from_issue tool calls. Preserve the source concept title, body, and every non-lifecycle label.`;
   return task({
     id,
     title,
@@ -203,15 +206,20 @@ function designTask({ id, issueNumber, title }) {
       flow: 'design-manual-flow',
       prompt,
       successRequiresPr: false,
-      successCompletionOutcomes: ['design_comment_and_labels'],
+      successCompletionOutcomes: ['design_issue_and_labels'],
       flowStepPatches: issueFetchPatch(issueNumber),
+      toolRecorders: issueRecorder('design_agent'),
+      engineDataOutputs: {
+        design_issue_url: 'metadata.engine_data.design_agent.issue_url',
+        design_issue_number: 'metadata.engine_data.design_agent.issue_number',
+      },
       transcriptArtifactName: `${id}-transcript-${runId}`,
     }),
   });
 }
 
-function staticSiteTask({ id, issueNumber, title }) {
-  const prompt = `Implement GitHub issue #${issueNumber} as a static site. Read the issue body and the design agent comment, honor both, and open exactly one static-site PR for that issue.`;
+function staticSiteTask({ id, issueNumber, designIssueNumber, title }) {
+  const prompt = `Implement GitHub concept issue #${issueNumber} as a static site using design-direction issue #${designIssueNumber}. Read the fetched concept issue body and reject the run if it is missing the concept sections Recommended Concept, Who It Serves, What It Offers, and Why It Could Work, or if its title/body look like a design handoff instead of a concept. Read the separate design-direction issue, honor its design.json block, and open exactly one static-site PR for the source concept issue. The PR title, branch, static-sites directory, and Closes reference must derive from concept issue #${issueNumber}, not from design issue #${designIssueNumber}.`;
   return task({
     id,
     title,
@@ -240,12 +248,13 @@ function staticSiteTask({ id, issueNumber, title }) {
 function manualPlan() {
   const conceptPrompt = process.env.CONCEPT_PROMPT || '';
   const issueNumber = process.env.ISSUE_NUMBER || '';
+  const designIssueNumber = process.env.DESIGN_ISSUE_NUMBER || '';
   const websiteFlow = process.env.WEBSITE_FLOW_SLUG || 'website-idea-local-business-flow';
   const taskByKind = {
     store_idea: () => storeIdeaTask({ id: 'store-idea-agent', flow: 'store-idea-manual-flow', prompt: conceptPrompt, title: 'Generate store idea' }),
     website_idea: () => websiteIdeaTask({ id: 'website-idea-agent', flow: websiteFlow, prompt: conceptPrompt, title: 'Generate website idea' }),
     design: () => designTask({ id: 'design-agent', issueNumber, title: `Design issue #${issueNumber}` }),
-    static_site: () => staticSiteTask({ id: 'static-site-agent', issueNumber, title: `Build site for issue #${issueNumber}` }),
+    static_site: () => staticSiteTask({ id: 'static-site-agent', issueNumber, designIssueNumber, title: `Build site for issue #${issueNumber}` }),
   };
 
   if (!taskByKind[manualTaskKind]) {
@@ -253,6 +262,9 @@ function manualPlan() {
   }
   if ((manualTaskKind === 'design' || manualTaskKind === 'static_site') && !/^[1-9][0-9]*$/.test(issueNumber)) {
     throw new Error(`ISSUE_NUMBER must be a positive integer for ${manualTaskKind}.`);
+  }
+  if (manualTaskKind === 'static_site' && !/^[1-9][0-9]*$/.test(designIssueNumber)) {
+    throw new Error('DESIGN_ISSUE_NUMBER must be a positive integer for static_site.');
   }
 
   return {
@@ -286,46 +298,56 @@ const loopPlan = {
     task({
       id: 'design-store-issue',
       title: 'Design store issue #{{outputs.issue_number}}',
-      instructions: 'Decide one visual design direction for GitHub issue #{{outputs.issue_number}}. Read the concept body, post the design.json fenced JSON block as a comment, and toggle the issue label from status:idea-ready to status:design-ready using surgical add_label_to_issue and remove_label_from_issue tool calls. Preserve every other label.',
+      instructions: loopDesignPrompt,
       config: datamachineConfig({
         bundle: 'bundles/design-agent',
         agent: 'design-agent',
         pipeline: 'design-pipeline',
         flow: 'design-manual-flow',
-        prompt: 'Decide one visual design direction for GitHub issue #{{outputs.issue_number}}. Read the concept body, post the design.json fenced JSON block as a comment, and toggle the issue label from status:idea-ready to status:design-ready using surgical add_label_to_issue and remove_label_from_issue tool calls. Preserve every other label.',
+        prompt: loopDesignPrompt,
         successRequiresPr: false,
-        successCompletionOutcomes: ['design_comment_and_labels'],
+        successCompletionOutcomes: ['design_issue_and_labels'],
         flowStepPatches: issueFetchPatch('{{outputs.issue_number}}'),
+        toolRecorders: issueRecorder('design_agent'),
+        engineDataOutputs: {
+          design_issue_url: 'metadata.engine_data.design_agent.issue_url',
+          design_issue_number: 'metadata.engine_data.design_agent.issue_number',
+        },
         transcriptArtifactName: `design-agent-store-{{outputs.issue_number}}-transcript-${runId}`,
       }),
     }),
     task({
       id: 'design-website-issue',
       title: 'Design website issue #{{outputs.issue_number}}',
-      instructions: 'Decide one visual design direction for GitHub issue #{{outputs.issue_number}}. Read the concept body, post the design.json fenced JSON block as a comment, and toggle the issue label from status:idea-ready to status:design-ready using surgical add_label_to_issue and remove_label_from_issue tool calls. Preserve every other label.',
+      instructions: loopDesignPrompt,
       config: datamachineConfig({
         bundle: 'bundles/design-agent',
         agent: 'design-agent',
         pipeline: 'design-pipeline',
         flow: 'design-manual-flow',
-        prompt: 'Decide one visual design direction for GitHub issue #{{outputs.issue_number}}. Read the concept body, post the design.json fenced JSON block as a comment, and toggle the issue label from status:idea-ready to status:design-ready using surgical add_label_to_issue and remove_label_from_issue tool calls. Preserve every other label.',
+        prompt: loopDesignPrompt,
         successRequiresPr: false,
-        successCompletionOutcomes: ['design_comment_and_labels'],
+        successCompletionOutcomes: ['design_issue_and_labels'],
         flowStepPatches: issueFetchPatch('{{outputs.issue_number}}'),
+        toolRecorders: issueRecorder('design_agent'),
+        engineDataOutputs: {
+          design_issue_url: 'metadata.engine_data.design_agent.issue_url',
+          design_issue_number: 'metadata.engine_data.design_agent.issue_number',
+        },
         transcriptArtifactName: `design-agent-website-{{outputs.issue_number}}-transcript-${runId}`,
       }),
     }),
     task({
       id: 'static-store-site',
       title: 'Build store site for issue #{{outputs.issue_number}}',
-      instructions: 'Implement GitHub issue #{{outputs.issue_number}} as a static site. Read the issue body and the design agent comment, honor both, and open exactly one static-site PR for that issue.',
+      instructions: loopStaticPrompt,
       expectedArtifacts: ['datamachine-transcript', 'datamachine-pull-request'],
       config: datamachineConfig({
         bundle: 'bundles/static-site-agent',
         agent: 'static-site-agent',
         pipeline: 'static-site-pipeline',
         flow: 'static-site-manual-flow',
-        prompt: 'Implement GitHub issue #{{outputs.issue_number}} as a static site. Read the issue body and the design agent comment, honor both, and open exactly one static-site PR for that issue.',
+        prompt: loopStaticPrompt,
         successRequiresPr: true,
         successCompletionOutcomes: ['static_site_pr'],
         flowStepPatches: issueFetchPatch('{{outputs.issue_number}}'),
@@ -341,14 +363,14 @@ const loopPlan = {
     task({
       id: 'static-website-site',
       title: 'Build website site for issue #{{outputs.issue_number}}',
-      instructions: 'Implement GitHub issue #{{outputs.issue_number}} as a static site. Read the issue body and the design agent comment, honor both, and open exactly one static-site PR for that issue.',
+      instructions: loopStaticPrompt,
       expectedArtifacts: ['datamachine-transcript', 'datamachine-pull-request'],
       config: datamachineConfig({
         bundle: 'bundles/static-site-agent',
         agent: 'static-site-agent',
         pipeline: 'static-site-pipeline',
         flow: 'static-site-manual-flow',
-        prompt: 'Implement GitHub issue #{{outputs.issue_number}} as a static site. Read the issue body and the design agent comment, honor both, and open exactly one static-site PR for that issue.',
+        prompt: loopStaticPrompt,
         successRequiresPr: true,
         successCompletionOutcomes: ['static_site_pr'],
         flowStepPatches: issueFetchPatch('{{outputs.issue_number}}'),
@@ -389,6 +411,11 @@ const loopPlan = {
           path: taskOutputPath('issue_number'),
           required: true,
         },
+        design_issue_number: {
+          task_id: 'design-store-issue',
+          path: taskOutputPath('design_issue_number'),
+          required: true,
+        },
       },
     },
     'static-website-site': {
@@ -397,6 +424,11 @@ const loopPlan = {
         issue_number: {
           task_id: 'website-idea-agent',
           path: taskOutputPath('issue_number'),
+          required: true,
+        },
+        design_issue_number: {
+          task_id: 'design-website-issue',
+          path: taskOutputPath('design_issue_number'),
           required: true,
         },
       },
