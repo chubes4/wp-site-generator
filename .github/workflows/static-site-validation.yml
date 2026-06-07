@@ -204,14 +204,29 @@ jobs:
           HOMEBOY_SETTINGS_JSON: ${{ steps.settings.outputs.settings }}
           HOMEBOY_BENCH_ITERATIONS: '1'
 
-      - name: Install visual parity tooling
+      - name: Check out WP Codebox
+        if: always()
+        uses: actions/checkout@v4
+        with:
+          repository: Automattic/wp-codebox
+          ref: main
+          path: .ci/wp-codebox
+
+      - name: Build WP Codebox CLI
+        if: always()
+        working-directory: .ci/wp-codebox
+        run: |
+          set -euo pipefail
+          npm ci
+          npm run build
+
+      - name: Install visual parity helper dependency
         if: always()
         shell: bash
         run: |
           set -euo pipefail
           git clone --depth 1 https://github.com/Extra-Chill/homeboy-extensions .homeboy-extensions
-          npm install --no-save --prefix "$PWD" playwright @wp-playground/cli@latest pixelmatch pngjs ./.homeboy-extensions/wordpress
-          ./node_modules/.bin/playwright install --with-deps chromium
+          npm install --no-save --prefix "$PWD" ./.homeboy-extensions/wordpress
 
       - name: Prepare visual parity artifact directory
         if: always()
