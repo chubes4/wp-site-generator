@@ -112,6 +112,22 @@ function issueFetchPatch(issueNumberTemplate) {
   ];
 }
 
+function designFlowPatches(issueNumberTemplate) {
+  return [
+    ...issueFetchPatch(issueNumberTemplate),
+    {
+      step_type: 'system_task',
+      merge: {
+        flow_step_settings: {
+          params: {
+            issue_number: issueNumberTemplate,
+          },
+        },
+      },
+    },
+  ];
+}
+
 const issueRecorder = (engineKey, tool = 'github_issue_publish', fields = { issue_url: 'data.issue_url', issue_number: 'data.issue_number' }) => [
   {
     tool,
@@ -123,8 +139,8 @@ const issueRecorder = (engineKey, tool = 'github_issue_publish', fields = { issu
 ];
 
 const designIssueRecorder = issueRecorder('design_agent', 'create_github_issue', {
-  issue_url: 'metadata.tool_result_data.issue_url',
-  issue_number: 'metadata.tool_result_data.issue_number',
+  issue_url: 'tool_result_data.issue_url',
+  issue_number: 'tool_result_data.issue_number',
 });
 
 const prRecorder = [
@@ -209,7 +225,7 @@ function designTask({ id, issueNumber, title }) {
       prompt,
       successRequiresPr: false,
       successCompletionOutcomes: ['design_issue'],
-      flowStepPatches: issueFetchPatch(issueNumber),
+      flowStepPatches: designFlowPatches(issueNumber),
       toolRecorders: designIssueRecorder,
       engineDataOutputs: {
         design_issue_url: 'metadata.engine_data.design_agent.issue_url',
@@ -309,7 +325,7 @@ const loopPlan = {
         prompt: loopDesignPrompt,
         successRequiresPr: false,
         successCompletionOutcomes: ['design_issue'],
-        flowStepPatches: issueFetchPatch('{{outputs.issue_number}}'),
+        flowStepPatches: designFlowPatches('{{outputs.issue_number}}'),
         toolRecorders: designIssueRecorder,
         engineDataOutputs: {
           design_issue_url: 'metadata.engine_data.design_agent.issue_url',
@@ -330,7 +346,7 @@ const loopPlan = {
         prompt: loopDesignPrompt,
         successRequiresPr: false,
         successCompletionOutcomes: ['design_issue'],
-        flowStepPatches: issueFetchPatch('{{outputs.issue_number}}'),
+        flowStepPatches: designFlowPatches('{{outputs.issue_number}}'),
         toolRecorders: designIssueRecorder,
         engineDataOutputs: {
           design_issue_url: 'metadata.engine_data.design_agent.issue_url',
