@@ -65,6 +65,8 @@ try {
     assert.deepEqual(config.success_completion_outcomes, ['design_issue_and_labels'], `${taskId} requires design issue completion`);
     assert.match(config.prompt, /create_github_issue/, `${taskId} creates a separate design issue with the direct GitHub issue tool`);
     assert.equal(config.tool_recorders[0].tool, 'create_github_issue', `${taskId} records direct GitHub issue creation`);
+    assert.equal(config.tool_recorders[0].record.fields.issue_number, 'metadata.tool_result_data.issue_number', `${taskId} records issue number from non-handler tool result metadata`);
+    assert.equal(config.tool_recorders[0].record.fields.issue_url, 'metadata.tool_result_data.issue_url', `${taskId} records issue URL from non-handler tool result metadata`);
     assert.equal(config.engine_data_outputs.design_issue_number, 'metadata.engine_data.design_agent.issue_number');
   }
 
