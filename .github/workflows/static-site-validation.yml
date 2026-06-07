@@ -96,6 +96,10 @@ jobs:
         with:
           app-id: ${{ secrets.HOMEBOY_APP_ID }}
           private-key: ${{ secrets.HOMEBOY_APP_PRIVATE_KEY }}
+          owner: chubes4
+          repositories: wp-site-generator
+          permission-issues: write
+          permission-pull-requests: write
 
       - name: Synthesize Homeboy settings for site
         id: settings
