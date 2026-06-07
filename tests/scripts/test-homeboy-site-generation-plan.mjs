@@ -63,7 +63,8 @@ try {
   for (const taskId of ['design-store-issue', 'design-website-issue']) {
     const config = plan.tasks.find((task) => task.task_id === taskId).executor.config;
     assert.deepEqual(config.success_completion_outcomes, ['design_issue_and_labels'], `${taskId} requires design issue completion`);
-    assert.match(config.prompt, /create a separate design-direction issue/, `${taskId} creates a separate design issue`);
+    assert.match(config.prompt, /create_github_issue/, `${taskId} creates a separate design issue with the direct GitHub issue tool`);
+    assert.equal(config.tool_recorders[0].tool, 'create_github_issue', `${taskId} records direct GitHub issue creation`);
     assert.equal(config.engine_data_outputs.design_issue_number, 'metadata.engine_data.design_agent.issue_number');
   }
 
