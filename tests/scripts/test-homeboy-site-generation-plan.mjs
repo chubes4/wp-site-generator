@@ -34,10 +34,6 @@ try {
       '/outputs/issue_number',
       `${taskId} binds to semantic issue_number output`
     );
-    const config = plan.tasks.find((task) => task.task_id === taskId).executor.config;
-    assert.equal(config.github_token_env, 'HOMEBOY_GITHUB_APP_TOKEN', `${taskId} uses app token for GitHub write events`);
-    assert.equal(config.github_repository_token_env, 'GITHUB_TOKEN', `${taskId} keeps repository token separate`);
-    assert.ok(config.secret_env.includes('HOMEBOY_GITHUB_APP_TOKEN'), `${taskId} passes app token into runtime`);
   }
 
   assert.equal(plan.output_dependencies['static-store-site'].depends_on[0], 'design-store-issue');
@@ -98,6 +94,14 @@ try {
   const staticAiStep = staticPipeline.steps.find((step) => step.step_type === 'ai');
   assert.match(staticAiStep.step_config.system_prompt, /preserve the remaining title text verbatim/, 'static agent preserves full source concept title text');
   assert.match(staticAiStep.step_config.system_prompt, /full source concept title without its leading emoji\/icon marker/, 'static agent PR title formula keeps full source concept title');
+
+  const loopWorkflow = await readFile(path.join(repoRoot, '.github/workflows/site-generation-loop.yml'), 'utf8');
+  assert.match(loopWorkflow, /actions:\s+write/, 'site generation loop can dispatch validation workflows');
+  assert.match(loopWorkflow, /dispatch-static-validation\.mjs/, 'site generation loop dispatches static validation for generated PRs');
+
+  const validationWorkflow = await readFile(path.join(repoRoot, '.github/workflows/static-site-validation.yml'), 'utf8');
+  assert.match(validationWorkflow, /workflow_dispatch:[\s\S]*pr_number:/, 'static validation supports explicit PR dispatch');
+  assert.match(validationWorkflow, /gh pr diff "\$PR_NUMBER"/, 'static validation detects changed sites from dispatched PR number');
 } finally {
   await rm(tempDir, { recursive: true, force: true });
 }
