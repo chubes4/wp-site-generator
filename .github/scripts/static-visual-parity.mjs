@@ -104,6 +104,19 @@ const blueprint = {
 			step: 'installPlugin',
 			pluginData: {
 				resource: 'git:directory',
+				url: 'https://github.com/chubes4/block-artifact-compiler',
+				ref: 'main',
+				refType: 'branch',
+			},
+			options: {
+				activate: true,
+				targetFolderName: 'block-artifact-compiler',
+			},
+		},
+		{
+			step: 'installPlugin',
+			pluginData: {
+				resource: 'git:directory',
 				url: 'https://github.com/chubes4/block-format-bridge',
 				ref: 'main',
 				refType: 'branch',
