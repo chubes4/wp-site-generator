@@ -86,8 +86,14 @@ try {
     const config = plan.tasks.find((task) => task.task_id === taskId).executor.config;
     assert.match(config.prompt, /design-direction issue #\{\{outputs\.design_issue_number\}\}/, `${taskId} receives design issue number`);
     assert.match(config.prompt, /PR title, branch, static-sites directory, and Closes reference must derive from concept issue/, `${taskId} protects source concept identity`);
+    assert.match(config.prompt, /PR title must preserve the full source concept title after removing only one leading emoji\/icon marker/, `${taskId} preserves full source concept title for PR title`);
     assert.match(config.prompt, /missing the concept sections Recommended Concept, Who It Serves, What It Offers, and Why It Could Work/, `${taskId} rejects corrupted concepts`);
   }
+
+  const staticPipeline = JSON.parse(await readFile(path.join(repoRoot, 'bundles/static-site-agent/pipelines/static-site-pipeline.json'), 'utf8'));
+  const staticAiStep = staticPipeline.steps.find((step) => step.step_type === 'ai');
+  assert.match(staticAiStep.step_config.system_prompt, /preserve the remaining title text verbatim/, 'static agent preserves full source concept title text');
+  assert.match(staticAiStep.step_config.system_prompt, /full source concept title without its leading emoji\/icon marker/, 'static agent PR title formula keeps full source concept title');
 } finally {
   await rm(tempDir, { recursive: true, force: true });
 }
