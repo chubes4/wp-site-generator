@@ -112,18 +112,20 @@ function issueFetchPatch(issueNumberTemplate) {
   ];
 }
 
-const issueRecorder = (engineKey, tool = 'github_issue_publish') => [
+const issueRecorder = (engineKey, tool = 'github_issue_publish', fields = { issue_url: 'data.issue_url', issue_number: 'data.issue_number' }) => [
   {
     tool,
     record: {
       engine_key: engineKey,
-      fields: {
-        issue_url: 'data.issue_url',
-        issue_number: 'data.issue_number',
-      },
+      fields,
     },
   },
 ];
+
+const designIssueRecorder = issueRecorder('design_agent', 'create_github_issue', {
+  issue_url: 'metadata.tool_result_data.issue_url',
+  issue_number: 'metadata.tool_result_data.issue_number',
+});
 
 const prRecorder = [
   {
@@ -208,7 +210,7 @@ function designTask({ id, issueNumber, title }) {
       successRequiresPr: false,
       successCompletionOutcomes: ['design_issue_and_labels'],
       flowStepPatches: issueFetchPatch(issueNumber),
-      toolRecorders: issueRecorder('design_agent', 'create_github_issue'),
+      toolRecorders: designIssueRecorder,
       engineDataOutputs: {
         design_issue_url: 'metadata.engine_data.design_agent.issue_url',
         design_issue_number: 'metadata.engine_data.design_agent.issue_number',
@@ -308,7 +310,7 @@ const loopPlan = {
         successRequiresPr: false,
         successCompletionOutcomes: ['design_issue_and_labels'],
         flowStepPatches: issueFetchPatch('{{outputs.issue_number}}'),
-        toolRecorders: issueRecorder('design_agent', 'create_github_issue'),
+        toolRecorders: designIssueRecorder,
         engineDataOutputs: {
           design_issue_url: 'metadata.engine_data.design_agent.issue_url',
           design_issue_number: 'metadata.engine_data.design_agent.issue_number',
@@ -329,7 +331,7 @@ const loopPlan = {
         successRequiresPr: false,
         successCompletionOutcomes: ['design_issue_and_labels'],
         flowStepPatches: issueFetchPatch('{{outputs.issue_number}}'),
-        toolRecorders: issueRecorder('design_agent', 'create_github_issue'),
+        toolRecorders: designIssueRecorder,
         engineDataOutputs: {
           design_issue_url: 'metadata.engine_data.design_agent.issue_url',
           design_issue_number: 'metadata.engine_data.design_agent.issue_number',
