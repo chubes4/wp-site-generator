@@ -112,9 +112,9 @@ function issueFetchPatch(issueNumberTemplate) {
   ];
 }
 
-const issueRecorder = (engineKey) => [
+const issueRecorder = (engineKey, tool = 'github_issue_publish') => [
   {
-    tool: 'github_issue_publish',
+    tool,
     record: {
       engine_key: engineKey,
       fields: {
@@ -143,7 +143,7 @@ const prRecorder = [
   },
 ];
 
-const loopDesignPrompt = 'Decide one visual design direction for GitHub issue #{{outputs.issue_number}}. Read the concept title and body, create a separate design-direction issue with the source concept issue number, source title, and a design.json fenced JSON block, then toggle only the source concept lifecycle label from status:idea-ready to status:design-ready using surgical add_label_to_issue and remove_label_from_issue tool calls. Preserve the source concept title, body, and every non-lifecycle label.';
+const loopDesignPrompt = 'Decide one visual design direction for GitHub issue #{{outputs.issue_number}}. Read the concept title and body, create a separate design-direction issue with create_github_issue containing the source concept issue number, source title, and a design.json fenced JSON block, then toggle only the source concept lifecycle label from status:idea-ready to status:design-ready using surgical add_label_to_issue and remove_label_from_issue tool calls. Preserve the source concept title, body, and every non-lifecycle label.';
 const loopStaticPrompt = 'Implement GitHub concept issue #{{outputs.issue_number}} as a static site using design-direction issue #{{outputs.design_issue_number}}. Read the fetched concept issue body and reject the run if it is missing the concept sections Recommended Concept, Who It Serves, What It Offers, and Why It Could Work, or if its title/body look like a design handoff instead of a concept. Read the separate design-direction issue, honor its design.json block, and open exactly one static-site PR for the source concept issue. The PR title, branch, static-sites directory, and Closes reference must derive from concept issue #{{outputs.issue_number}}, not from design issue #{{outputs.design_issue_number}}.';
 
 function storeIdeaTask({ id = 'store-idea-agent', flow = 'store-idea-home-and-craft-flow', prompt = ' ', title = 'Generate store idea' } = {}) {
@@ -194,7 +194,7 @@ function websiteIdeaTask({ id = 'website-idea-agent', flow = 'website-idea-local
 }
 
 function designTask({ id, issueNumber, title }) {
-  const prompt = `Decide one visual design direction for GitHub issue #${issueNumber}. Read the concept title and body, create a separate design-direction issue with the source concept issue number, source title, and a design.json fenced JSON block, then toggle only the source concept lifecycle label from status:idea-ready to status:design-ready using surgical add_label_to_issue and remove_label_from_issue tool calls. Preserve the source concept title, body, and every non-lifecycle label.`;
+  const prompt = `Decide one visual design direction for GitHub issue #${issueNumber}. Read the concept title and body, create a separate design-direction issue with create_github_issue containing the source concept issue number, source title, and a design.json fenced JSON block, then toggle only the source concept lifecycle label from status:idea-ready to status:design-ready using surgical add_label_to_issue and remove_label_from_issue tool calls. Preserve the source concept title, body, and every non-lifecycle label.`;
   return task({
     id,
     title,
@@ -208,7 +208,7 @@ function designTask({ id, issueNumber, title }) {
       successRequiresPr: false,
       successCompletionOutcomes: ['design_issue_and_labels'],
       flowStepPatches: issueFetchPatch(issueNumber),
-      toolRecorders: issueRecorder('design_agent'),
+      toolRecorders: issueRecorder('design_agent', 'create_github_issue'),
       engineDataOutputs: {
         design_issue_url: 'metadata.engine_data.design_agent.issue_url',
         design_issue_number: 'metadata.engine_data.design_agent.issue_number',
@@ -308,7 +308,7 @@ const loopPlan = {
         successRequiresPr: false,
         successCompletionOutcomes: ['design_issue_and_labels'],
         flowStepPatches: issueFetchPatch('{{outputs.issue_number}}'),
-        toolRecorders: issueRecorder('design_agent'),
+        toolRecorders: issueRecorder('design_agent', 'create_github_issue'),
         engineDataOutputs: {
           design_issue_url: 'metadata.engine_data.design_agent.issue_url',
           design_issue_number: 'metadata.engine_data.design_agent.issue_number',
@@ -329,7 +329,7 @@ const loopPlan = {
         successRequiresPr: false,
         successCompletionOutcomes: ['design_issue_and_labels'],
         flowStepPatches: issueFetchPatch('{{outputs.issue_number}}'),
-        toolRecorders: issueRecorder('design_agent'),
+        toolRecorders: issueRecorder('design_agent', 'create_github_issue'),
         engineDataOutputs: {
           design_issue_url: 'metadata.engine_data.design_agent.issue_url',
           design_issue_number: 'metadata.engine_data.design_agent.issue_number',
