@@ -32,18 +32,10 @@
             "completion_assertions": {
                 "complete_when_any": [
                     {
-                        "name": "design_issue_and_labels",
+                        "name": "design_issue",
                         "tools": [
                             {
                                 "name": "create_github_issue",
-                                "success": true
-                            },
-                            {
-                                "name": "remove_label_from_issue",
-                                "success": true
-                            },
-                            {
-                                "name": "add_label_to_issue",
                                 "success": true
                             }
                         ]
@@ -55,20 +47,39 @@
                 "defer_item"
             ],
             "enabled_tools": [
-                "create_github_issue",
-                "remove_label_from_issue",
-                "add_label_to_issue"
+                "create_github_issue"
             ],
             "handler_configs": {},
             "prompt_queue": [
                 {
                     "added_at": "2026-05-09T22:00:00+00:00",
-                    "prompt": "Decide one design direction for the fetched concept. Honor the concept's title, audience, offer, and angle. Create a separate design-direction issue with the source concept issue number, source title, and a fenced design.json block by calling create_github_issue. Preserve the source concept title and body exactly, then transition only the source concept lifecycle by calling remove_label_from_issue with label=\"status:idea-ready\" and add_label_to_issue with label=\"status:design-ready\"."
+                    "prompt": "Decide one design direction for the fetched concept. Honor the concept's title, audience, offer, and angle. Create a separate design-direction issue with the source concept issue number, source title, and a fenced design.json block by calling create_github_issue. Preserve the source concept title and body exactly."
                 }
             ],
             "queue_mode": "static",
             "step_position": 1,
             "step_type": "ai"
+        },
+        {
+            "disabled_tools": [],
+            "enabled": true,
+            "flow_step_settings": {
+                "task_type": "github_update_issue_labels",
+                "params": {
+                    "repo": "chubes4/wp-site-generator",
+                    "remove_labels": [
+                        "status:idea-ready"
+                    ],
+                    "add_labels": [
+                        "status:design-ready"
+                    ]
+                }
+            },
+            "handler_configs": {},
+            "prompt_queue": [],
+            "queue_mode": "static",
+            "step_position": 2,
+            "step_type": "system_task"
         }
     ]
 }

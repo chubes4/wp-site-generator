@@ -60,10 +60,20 @@ try {
     'static website task receives design issue from design task'
   );
 
+  const designFlow = JSON.parse(await readFile(path.join(repoRoot, 'bundles/design-agent/flows/design-manual-flow.json'), 'utf8'));
+  const designAiStep = designFlow.steps.find((step) => step.step_type === 'ai');
+  const designSystemTaskStep = designFlow.steps.find((step) => step.step_type === 'system_task');
+  assert.deepEqual(designAiStep.enabled_tools, ['create_github_issue'], 'design AI can only create the design handoff issue');
+  assert.deepEqual(designAiStep.completion_assertions.complete_when_any[0].tools, [{ name: 'create_github_issue', success: true }], 'design AI completion only requires handoff issue creation');
+  assert.equal(designSystemTaskStep.flow_step_settings.task_type, 'github_update_issue_labels', 'design flow uses deterministic label update task');
+  assert.deepEqual(designSystemTaskStep.flow_step_settings.params.remove_labels, ['status:idea-ready'], 'design flow removes idea-ready deterministically');
+  assert.deepEqual(designSystemTaskStep.flow_step_settings.params.add_labels, ['status:design-ready'], 'design flow adds design-ready deterministically');
+
   for (const taskId of ['design-store-issue', 'design-website-issue']) {
     const config = plan.tasks.find((task) => task.task_id === taskId).executor.config;
-    assert.deepEqual(config.success_completion_outcomes, ['design_issue_and_labels'], `${taskId} requires design issue completion`);
+    assert.deepEqual(config.success_completion_outcomes, ['design_issue'], `${taskId} requires design issue completion`);
     assert.match(config.prompt, /create_github_issue/, `${taskId} creates a separate design issue with the direct GitHub issue tool`);
+    assert.doesNotMatch(config.prompt, /add_label_to_issue|remove_label_from_issue/, `${taskId} does not ask the AI to mutate labels`);
     assert.equal(config.tool_recorders[0].tool, 'create_github_issue', `${taskId} records direct GitHub issue creation`);
     assert.equal(config.tool_recorders[0].record.fields.issue_number, 'metadata.tool_result_data.issue_number', `${taskId} records issue number from non-handler tool result metadata`);
     assert.equal(config.tool_recorders[0].record.fields.issue_url, 'metadata.tool_result_data.issue_url', `${taskId} records issue URL from non-handler tool result metadata`);
