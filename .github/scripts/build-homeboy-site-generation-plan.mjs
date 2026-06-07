@@ -58,10 +58,7 @@ function datamachineConfig({
     tool_recorders: toolRecorders,
     engine_data_outputs: engineDataOutputs,
     transcript_artifact_name: transcriptArtifactName,
-    github_token_env: 'HOMEBOY_GITHUB_APP_TOKEN',
-    github_repository_token_env: 'GITHUB_TOKEN',
-    github_profile_id: `${agent}-site-generation-loop`,
-    secret_env: ['OPENAI_API_KEY', 'GITHUB_TOKEN', 'HOMEBOY_GITHUB_APP_TOKEN'],
+    secret_env: ['OPENAI_API_KEY', 'GITHUB_TOKEN'],
     artifacts: path.join(artifactsRoot, agent, transcriptArtifactName || flow),
   };
 

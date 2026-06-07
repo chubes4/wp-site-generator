@@ -29,6 +29,7 @@ on:
         default: main
 
 permissions:
+  actions: write
   contents: write
   pull-requests: write
   issues: write
@@ -113,33 +114,6 @@ jobs:
           npm ci
           npm run build
 
-      - name: Require Homeboy app credentials
-        env:
-          HOMEBOY_APP_ID: ${{ secrets.HOMEBOY_APP_ID }}
-          HOMEBOY_APP_PRIVATE_KEY: ${{ secrets.HOMEBOY_APP_PRIVATE_KEY }}
-        run: |
-          set -euo pipefail
-          if [ -z "$HOMEBOY_APP_ID" ] || [ -z "$HOMEBOY_APP_PRIVATE_KEY" ]; then
-            cat >&2 <<'EOF'
-            HOMEBOY_APP_ID and HOMEBOY_APP_PRIVATE_KEY are required for Site Generation Loop.
-            Agent-created static PRs must use the Homeboy GitHub App token so pull_request
-            validation workflows run and publish import metrics comments.
-            EOF
-            exit 1
-          fi
-
-      - name: Generate Homeboy app token
-        id: app-token
-        uses: actions/create-github-app-token@v1
-        with:
-          app-id: ${{ secrets.HOMEBOY_APP_ID }}
-          private-key: ${{ secrets.HOMEBOY_APP_PRIVATE_KEY }}
-          owner: chubes4
-          repositories: wp-site-generator
-          permission-contents: write
-          permission-issues: write
-          permission-pull-requests: write
-
       - name: Build Homeboy agent-task plan
         id: plan
         run: |
@@ -149,9 +123,14 @@ jobs:
           jq empty "$plan_path"
 
       - name: Run Homeboy agent-task plan
-        env:
-          HOMEBOY_GITHUB_APP_TOKEN: ${{ steps.app-token.outputs.token }}
         run: homeboy agent-task run-plan --plan "@${{ steps.plan.outputs.path }}" --record-run-id "site-generation-loop-${{ github.run_id }}" --artifact-root "$HOMEBOY_ARTIFACT_ROOT"
+
+      - name: Dispatch static validation for generated PRs
+        run: >-
+          node .github/scripts/dispatch-static-validation.mjs
+          --aggregate "$HOME/.local/share/homeboy/agent-task-runs/site-generation-loop-${{ github.run_id }}/aggregate.json"
+          --repo "$GITHUB_REPOSITORY"
+          --ref main
 
       - name: Assert semantic proof state
         run: >-
