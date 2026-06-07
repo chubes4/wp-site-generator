@@ -102,6 +102,13 @@ try {
   const validationWorkflow = await readFile(path.join(repoRoot, '.github/workflows/static-site-validation.yml'), 'utf8');
   assert.match(validationWorkflow, /workflow_dispatch:[\s\S]*pr_number:/, 'static validation supports explicit PR dispatch');
   assert.match(validationWorkflow, /gh pr diff "\$PR_NUMBER"/, 'static validation detects changed sites from dispatched PR number');
+  assert.match(validationWorkflow, /block-format-bridge/, 'static validation installs Block Format Bridge before Static Site Importer');
+
+  const visualParity = await readFile(path.join(repoRoot, '.github/scripts/static-visual-parity.mjs'), 'utf8');
+  assert.match(visualParity, /block-format-bridge/, 'visual parity recipe installs Block Format Bridge before Static Site Importer');
+
+  const pluginShim = await readFile(path.join(repoRoot, 'wp-site-generator.php'), 'utf8');
+  assert.match(pluginShim, /Plugin Name:\s*WP Site Generator CI Fixture/, 'repo exposes a plugin header for Homeboy bench component mounting');
 } finally {
   await rm(tempDir, { recursive: true, force: true });
 }
