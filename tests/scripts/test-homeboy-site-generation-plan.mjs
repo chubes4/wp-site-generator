@@ -34,6 +34,10 @@ try {
       '/outputs/issue_number',
       `${taskId} binds to semantic issue_number output`
     );
+    const config = plan.tasks.find((task) => task.task_id === taskId).executor.config;
+    assert.equal(config.github_token_env, 'HOMEBOY_GITHUB_APP_TOKEN', `${taskId} uses app token for GitHub write events`);
+    assert.equal(config.github_repository_token_env, 'GITHUB_TOKEN', `${taskId} keeps repository token separate`);
+    assert.ok(config.secret_env.includes('HOMEBOY_GITHUB_APP_TOKEN'), `${taskId} passes app token into runtime`);
   }
 
   assert.equal(plan.output_dependencies['static-store-site'].depends_on[0], 'design-store-issue');

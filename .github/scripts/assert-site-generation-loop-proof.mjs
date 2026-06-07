@@ -13,6 +13,8 @@ const aggregatePath = args.get('--aggregate') || path.join(repoRoot, '.ci', 'hom
 const fixturePath = args.get('--fixture-state') || '';
 const repo = args.get('--repo') || process.env.GITHUB_REPOSITORY || 'chubes4/wp-site-generator';
 const token = process.env.GITHUB_TOKEN || process.env.GH_TOKEN || '';
+const validationWaitMs = Number(process.env.STATIC_VALIDATION_WAIT_MS || 15 * 60 * 1000);
+const validationPollMs = Number(process.env.STATIC_VALIDATION_POLL_MS || 15 * 1000);
 
 const requiredConceptSections = ['Recommended Concept', 'Who It Serves', 'What It Offers', 'Why It Could Work'];
 const lanes = [
@@ -106,11 +108,14 @@ async function githubJson(kind, number) {
     return value;
   }
 
+  return githubApi(kind === 'issue' ? `issues/${number}` : `pulls/${number}`);
+}
+
+async function githubApi(endpoint) {
   if (!token) {
     fail('GITHUB_TOKEN or GH_TOKEN is required for live proof assertions');
   }
 
-  const endpoint = kind === 'issue' ? `issues/${number}` : `pulls/${number}`;
   const response = await fetch(`https://api.github.com/repos/${repo}/${endpoint}`, {
     headers: {
       Authorization: `Bearer ${token}`,
@@ -119,9 +124,13 @@ async function githubJson(kind, number) {
     },
   });
   if (!response.ok) {
-    fail(`GitHub ${kind} #${number} fetch failed: ${response.status} ${await response.text()}`);
+    fail(`GitHub API ${endpoint} fetch failed: ${response.status} ${await response.text()}`);
   }
   return response.json();
+}
+
+function sleep(ms) {
+  return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
 function assertNoRuntimeFailures() {
@@ -182,6 +191,8 @@ async function assertLane(lane) {
   assert.match(pr.body || '', new RegExp(`Closes #${conceptNumber}\\b`), `${lane.name} static PR closes source concept issue`);
   assert.equal((pr.body || '').includes(`Closes #${designNumber}`), false, `${lane.name} static PR does not close design issue`);
   assert.equal(prLabels.some((label) => label === 'target:wordpress' || label === 'target:woocommerce'), true, `${lane.name} static PR has target validation label`);
+
+  return { lane: lane.name, staticPrNumber };
 }
 
 function escapeRegExp(value) {
@@ -195,10 +206,50 @@ async function assertImportAndIteratorWorkflow() {
   assert.match(workflow, /gh workflow run php-transformer-iterator\.yml/, 'static validation dispatches transformer iterator');
 }
 
+async function assertStaticValidationComments(staticPrs) {
+  if (fixture) {
+    return;
+  }
+
+  const pending = new Map(staticPrs.map((item) => [item.staticPrNumber, item.lane]));
+  const deadline = Date.now() + validationWaitMs;
+
+  while (pending.size > 0 && Date.now() <= deadline) {
+    for (const [prNumber, laneName] of [...pending.entries()]) {
+      const comments = await githubApi(`issues/${prNumber}/comments?per_page=100`);
+      const validationComment = comments.find((comment) => {
+        const body = String(comment.body || '');
+        return body.includes('## Static site validation:') && body.includes('### SSI Signals');
+      });
+
+      if (!validationComment) {
+        continue;
+      }
+
+      const body = String(validationComment.body || '');
+      assert.equal(body.includes('_No bench artifact found._'), false, `${laneName} static PR validation has bench artifact`);
+      assert.equal(body.includes('_SSI workload did not run._'), false, `${laneName} static PR validation ran SSI workload`);
+      assert.equal(body.includes('_No SSI metrics emitted yet._'), false, `${laneName} static PR validation emitted SSI metrics`);
+      assert.match(body, /\*\*Playground preview:\*\*/, `${laneName} static PR validation includes Playground preview`);
+      pending.delete(prNumber);
+    }
+
+    if (pending.size > 0) {
+      await sleep(validationPollMs);
+    }
+  }
+
+  if (pending.size > 0) {
+    fail(`static validation metrics comments missing for PR(s): ${[...pending.keys()].map((number) => `#${number}`).join(', ')}`);
+  }
+}
+
 assertNoRuntimeFailures();
+const staticPrs = [];
 for (const lane of lanes) {
-  await assertLane(lane);
+  staticPrs.push(await assertLane(lane));
 }
 await assertImportAndIteratorWorkflow();
+await assertStaticValidationComments(staticPrs);
 
 console.log('site generation loop semantic proof passed');
