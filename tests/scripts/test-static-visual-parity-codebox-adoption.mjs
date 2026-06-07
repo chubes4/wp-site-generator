@@ -14,6 +14,7 @@ assert.doesNotMatch(script, /from 'pngjs'/, 'WPSG no longer owns PNG normalizati
 
 assert.match(workflow, /repository: Automattic\/wp-codebox/, 'validation workflow checks out WP Codebox');
 assert.match(workflow, /npm run build/, 'validation workflow builds the WP Codebox CLI before visual compare');
+assert.match(workflow, /npx playwright install --with-deps chromium/, 'validation workflow installs the Chromium browser binary required by WP Codebox visual compare');
 assert.doesNotMatch(workflow, /npm install --no-save --prefix "\$PWD"[^\n]*(?:playwright|pixelmatch|pngjs)/, 'validation workflow no longer installs duplicated visual diff libraries');
 
 console.log('static visual parity WP Codebox adoption smoke passed');

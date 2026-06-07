@@ -46,7 +46,7 @@ if ( ! class_exists( 'WC_Site_Generator_PHP_Transformer_Iterator_Tool_Recorder' 
 			$response = self::handle_ability_tool_call(
 				$parameters,
 				$tool_def + array(
-					'ability'   => 'datamachine/create-github-pull-request',
+					'ability'   => 'datamachine-code/create-github-pull-request',
 					'tool_name' => 'create_github_pull_request',
 				)
 			);
@@ -60,7 +60,7 @@ if ( ! class_exists( 'WC_Site_Generator_PHP_Transformer_Iterator_Tool_Recorder' 
 			$response = self::handle_ability_tool_call(
 				$parameters,
 				$tool_def + array(
-					'ability'   => 'datamachine/create-github-issue',
+					'ability'   => 'datamachine-code/create-github-issue',
 					'tool_name' => 'create_github_issue',
 				)
 			);
@@ -76,7 +76,7 @@ if ( ! class_exists( 'WC_Site_Generator_PHP_Transformer_Iterator_Tool_Recorder' 
 				$response   = self::handle_ability_tool_call(
 					$parameters,
 					$tool_def + array(
-						'ability'   => 'datamachine/upsert-github-pull-review-comment',
+						'ability'   => 'datamachine-code/upsert-github-pull-review-comment',
 						'tool_name' => 'comment_github_pull_request',
 					)
 				);
@@ -89,7 +89,7 @@ if ( ! class_exists( 'WC_Site_Generator_PHP_Transformer_Iterator_Tool_Recorder' 
 			$response = self::handle_ability_tool_call(
 				$parameters,
 				$tool_def + array(
-					'ability'   => 'datamachine/comment-github-pull-request',
+					'ability'   => 'datamachine-code/comment-github-pull-request',
 					'tool_name' => 'comment_github_pull_request',
 				)
 			);
@@ -264,14 +264,14 @@ add_filter(
 	'datamachine_resolved_tools',
 	static function ( array $tools ): array {
 		$workspace_tools = array(
-			'workspace_clone'        => 'datamachine/workspace-clone',
-			'workspace_worktree_add' => 'datamachine/workspace-worktree-add',
-			'workspace_read'         => 'datamachine/workspace-read',
-			'workspace_write'        => 'datamachine/workspace-write',
-			'workspace_edit'         => 'datamachine/workspace-edit',
-			'workspace_git_status'   => 'datamachine/workspace-git-status',
-			'workspace_git_commit'   => 'datamachine/workspace-git-commit',
-			'workspace_git_push'     => 'datamachine/workspace-git-push',
+			'workspace_clone'        => 'datamachine-code/workspace-clone',
+			'workspace_worktree_add' => 'datamachine-code/workspace-worktree-add',
+			'workspace_read'         => 'datamachine-code/workspace-read',
+			'workspace_write'        => 'datamachine-code/workspace-write',
+			'workspace_edit'         => 'datamachine-code/workspace-edit',
+			'workspace_git_status'   => 'datamachine-code/workspace-git-status',
+			'workspace_git_commit'   => 'datamachine-code/workspace-git-commit',
+			'workspace_git_push'     => 'datamachine-code/workspace-git-push',
 		);
 
 		foreach ( $workspace_tools as $tool_name => $ability_name ) {
@@ -288,26 +288,26 @@ add_filter(
 		$tools['create_github_pull_request'] = array(
 			'class'       => 'WC_Site_Generator_PHP_Transformer_Iterator_Tool_Recorder',
 			'method'      => 'handle_pull_request_tool_call',
-			'ability'     => 'datamachine/create-github-pull-request',
+			'ability'     => 'datamachine-code/create-github-pull-request',
 			'tool_name'   => 'create_github_pull_request',
 			'description' => 'Open the focused upstream transformer repair pull request after pushing the worktree branch.',
-			'parameters'  => wp_site_generator_iterator_ability_schema( 'datamachine/create-github-pull-request' ),
+			'parameters'  => wp_site_generator_iterator_ability_schema( 'datamachine-code/create-github-pull-request' ),
 		);
 		$tools['create_github_issue']        = array(
 			'class'       => 'WC_Site_Generator_PHP_Transformer_Iterator_Tool_Recorder',
 			'method'      => 'handle_issue_tool_call',
-			'ability'     => 'datamachine/create-github-issue',
+			'ability'     => 'datamachine-code/create-github-issue',
 			'tool_name'   => 'create_github_issue',
 			'description' => 'Fallback only: open a focused issue when no safe upstream patch path exists.',
-			'parameters'  => wp_site_generator_iterator_ability_schema( 'datamachine/create-github-issue' ),
+			'parameters'  => wp_site_generator_iterator_ability_schema( 'datamachine-code/create-github-issue' ),
 		);
 		$tools['comment_github_pull_request'] = array(
 			'class'       => 'WC_Site_Generator_PHP_Transformer_Iterator_Tool_Recorder',
 			'method'      => 'handle_comment_tool_call',
-			'ability'     => 'datamachine/comment-github-pull-request',
+			'ability'     => 'datamachine-code/comment-github-pull-request',
 			'tool_name'   => 'comment_github_pull_request',
 			'description' => 'Post the required callback comment on the source generated-site pull request.',
-			'parameters'  => wp_site_generator_iterator_ability_schema( 'datamachine/comment-github-pull-request' ),
+			'parameters'  => wp_site_generator_iterator_ability_schema( 'datamachine-code/comment-github-pull-request' ),
 		);
 
 		return $tools;

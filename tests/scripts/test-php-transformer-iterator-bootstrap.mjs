@@ -7,8 +7,13 @@ const bootstrap = await readFile(path.join(repoRoot, 'tests/playground-ci/worklo
 
 assert.match(
 	bootstrap,
-	/datamachine\/upsert-github-pull-review-comment/,
+	/datamachine-code\/upsert-github-pull-review-comment/,
 	'source PR callbacks use the managed upsert comment ability',
+);
+assert.doesNotMatch(
+	bootstrap,
+	/datamachine\/(create-github|comment-github|upsert-github|workspace-)/,
+	'iterator uses Data Machine Code ability namespaces for GitHub and workspace tools',
 );
 assert.match(
 	bootstrap,
