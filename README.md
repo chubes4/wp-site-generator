@@ -73,6 +73,13 @@ Concurrency is the strategy. The system is designed to produce many credible sta
                             | (upstream fixes or |
                             |  fallback issues)  |
                             +--------------------+
+                                      |
+                                      v
+                            +---------+----------+
+                            | ssi-stack-reviewer |
+                            | agent              |
+                            | (upstream PR gate) |
+                            +--------------------+
 ```
 
 Every layer is intentionally generic on its own:
@@ -142,6 +149,10 @@ PR title shape: `🧱 <Concept Name> — static site`. Branch: `static/<slug>`.
 ### `php-transformer-iterator-agent`
 
 Consumes grouped SSI finding packets from a generated-site PR's validation run and routes each actionable finding to the owning upstream transformer repo (`static-site-importer`, `html-to-blocks-converter`, or `block-format-bridge`). It opens a focused upstream PR when the evidence is patchable, opens a fallback upstream issue when human narrowing is safer, and comments back on the generated-site PR with the upstream action. It is a repair loop for importer/transformer gaps, not a site-generation agent.
+
+### `ssi-stack-reviewer-agent`
+
+Reviews an upstream iterator PR before merge or promotion. It consumes the upstream PR URL plus finding-packet context and leaves a review/comment on that PR. It checks owner repo, generic transformer behavior, SSI layer purity, generator-specific leakage, regression coverage, and bootstrap-helper patches. It does not repair findings, open PRs, create issues, or duplicate the iterator role.
 
 ---
 
@@ -214,12 +225,14 @@ wp-site-generator/
       site-generation-loop.yml       end-to-end idea -> design -> static-site PR loop
       playground-stage-5.yml         Data Machine idea-agent proof in Playground CI
       php-transformer-iterator.yml   upstream transformer repair loop from findings
+      ssi-stack-reviewer.yml         review-only gate for upstream iterator PRs
   bundles/
     store-idea-agent/                Data Machine bundle: commerce concept generation
     website-idea-agent/              Data Machine bundle: non-commerce concept generation
     design-agent/                    Data Machine bundle: visual design direction
     static-site-agent/               Data Machine bundle: static HTML/CSS implementation
     php-transformer-iterator-agent/  Data Machine bundle: upstream transformer fixes
+    ssi-stack-reviewer-agent/        Data Machine bundle: upstream PR review gate
   static-sites/                      generated raw HTML/CSS sites for SSI validation
     <slug>/
       index.html
@@ -229,7 +242,7 @@ wp-site-generator/
   scripts/                           optional dev helpers
 ```
 
-The agents are portable Data Machine bundles. The idea role is split into two bundles, so five bundles are tracked here for four agent roles.
+The agents are portable Data Machine bundles. Six focused bundles are tracked here.
 
 ---
 
@@ -240,8 +253,9 @@ You don't need any of the agent infrastructure to review a generated site. From 
 1. Inspect the generated static site files or artifact linked from the PR body.
 2. Review the Homeboy/SSI metrics, visual parity artifact, import report, and finding packets posted by CI.
 3. If validation found importer/transformer gaps, follow the iterator callback to the upstream PR or fallback issue before judging the generated site itself.
-4. If you like it, merge the PR. The source idea issue auto-closes via `Closes #<issue>` and remains `status:built`.
-5. If it misses the concept or design, close the PR without merging. If no other open target-lane PR still claims the idea, the lifecycle workflow moves the issue to `status:abandoned`; reopen the issue to return it to `status:idea-ready` for another pass.
+4. For upstream iterator PRs, run `ssi-stack-reviewer.yml` with the upstream PR URL and finding-packet context before merge or promotion.
+5. If you like it, merge the PR. The source idea issue auto-closes via `Closes #<issue>` and remains `status:built`.
+6. If it misses the concept or design, close the PR without merging. If no other open target-lane PR still claims the idea, the lifecycle workflow moves the issue to `status:abandoned`; reopen the issue to return it to `status:idea-ready` for another pass.
 
 That's the loop. Generate. Design. Build. Validate. Review. Decide. Repeat.
 
@@ -264,6 +278,7 @@ Useful workflow entry points:
 5. **`site-generation-loop.yml`** — run the current two-lane end-to-end loop with Homeboy agent-task output dependencies: store idea, website idea, design both, build both.
 6. **`static-site-validation.yml`** — automatic PR validation for labeled target-lane static-site PRs.
 7. **`php-transformer-iterator.yml`** — automatic or manual upstream repair loop from validation finding packets.
+8. **`ssi-stack-reviewer.yml`** — manual review-only gate for upstream iterator PRs before merge or promotion.
 
 Local Studio remains useful for bundle development or manual runtime experiments. A local host needs:
 
@@ -280,6 +295,7 @@ studio wp datamachine agent install bundles/website-idea-agent
 studio wp datamachine agent install bundles/design-agent
 studio wp datamachine agent install bundles/static-site-agent
 studio wp datamachine agent install bundles/php-transformer-iterator-agent
+studio wp datamachine agent install bundles/ssi-stack-reviewer-agent
 ```
 
 Run a flow manually:
@@ -300,6 +316,7 @@ There is no auto-merge step. Merging is a human decision, and generated-site PRs
 2. Keep WordPress import, visual parity, and diagnostics in CI.
 3. Convert actionable failures into compact finding packets.
 4. Let the PHP transformer iterator open focused upstream fixes or fallback issues.
-5. Re-run the generated-site PR against the improved importer stack until the WordPress result is reviewable.
+5. Gate upstream iterator PRs with the SSI stack reviewer before merge or promotion.
+6. Re-run the generated-site PR against the improved importer stack until the WordPress result is reviewable.
 
 The repo exercises both sides of the loop: generation and validation in CI, plus upstream repair from validation evidence.

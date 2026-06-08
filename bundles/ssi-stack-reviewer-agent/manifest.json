@@ -1,0 +1,51 @@
+{
+    "agent": {
+        "agent_config": {
+            "description": "Audits upstream SSI stack iterator PRs before merge or promotion for owner routing, generic transformer behavior, layer purity, narrow regression coverage, and bootstrap-helper avoidance. Leaves a review comment only; it does not repair findings.",
+            "mode_models": {
+                "chat": {
+                    "model": "gpt-5.5",
+                    "provider": "openai"
+                },
+                "pipeline": {
+                    "model": "gpt-5.5",
+                    "provider": "openai"
+                },
+                "system": {
+                    "model": "gpt-5.5",
+                    "provider": "openai"
+                }
+            }
+        },
+        "description": "Review-only gate for upstream SSI stack iterator PRs.",
+        "label": "SSI Stack Reviewer Agent",
+        "slug": "ssi-stack-reviewer-agent"
+    },
+    "bundle_slug": "ssi-stack-reviewer-agent",
+    "bundle_version": "1",
+    "exported_at": "2026-06-08T00:00:00+00:00",
+    "exported_by": "wp-site-generator",
+    "included": {
+        "auth_refs": [],
+        "extensions": [
+            "extensions/datamachine-code/workspace_preload/ssi-stack-repos.json"
+        ],
+        "flows": [
+            "ssi-stack-reviewer-manual-flow"
+        ],
+        "handler_auth": "refs",
+        "memory": [
+            "agent/SOUL.md"
+        ],
+        "pipelines": [
+            "ssi-stack-reviewer-pipeline"
+        ],
+        "prompts": [],
+        "rubrics": [],
+        "seed_queues": [],
+        "tool_policies": []
+    },
+    "schema_version": 1,
+    "source_ref": "",
+    "source_revision": ""
+}

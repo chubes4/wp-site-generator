@@ -1,0 +1,83 @@
+name: SSI stack reviewer gate
+
+on:
+  workflow_dispatch:
+    inputs:
+      upstream_pr_url:
+        description: Upstream iterator PR URL to review.
+        required: true
+      source_pr_url:
+        description: Generated-site PR URL that produced the finding packet context.
+        required: false
+        default: ''
+      finding_packet_context:
+        description: Finding packet JSON or concise context from the validation run.
+        required: true
+      reviewer_context:
+        description: Optional PR diff/test summary or maintainer notes for the reviewer gate.
+        required: false
+        default: ''
+      openai_model:
+        description: OpenAI model to use for the imported agent flow.
+        required: true
+        default: gpt-5.5
+      data_machine_ref:
+        description: Data Machine ref.
+        required: true
+        default: main
+      data_machine_code_ref:
+        description: Data Machine Code ref.
+        required: true
+        default: main
+
+permissions:
+  contents: read
+  issues: write
+  pull-requests: write
+
+jobs:
+  reviewer:
+    name: Review upstream iterator PR
+    uses: Extra-Chill/homeboy-extensions/.github/workflows/datamachine-agent-ci.yml@main
+    with:
+      bundle_path: bundles/ssi-stack-reviewer-agent
+      agent_slug: ssi-stack-reviewer-agent
+      pipeline_slug: ssi-stack-reviewer-pipeline
+      flow_slug: ssi-stack-reviewer-manual-flow
+      target_repo: chubes4/wp-site-generator
+      prompt: Review the upstream SSI stack iterator PR from the supplied workflow input and leave exactly one gate comment.
+      model: ${{ inputs.openai_model }}
+      app_token_repos: chubes4/wp-site-generator,chubes4/static-site-importer,chubes4/html-to-blocks-converter,chubes4/block-format-bridge,chubes4/block-artifact-compiler
+      data_machine_ref: ${{ inputs.data_machine_ref }}
+      data_machine_code_ref: ${{ inputs.data_machine_code_ref }}
+      success_requires_pr: false
+      success_completion_outcomes: '["review_comment_path"]'
+      max_turns: 8
+      step_budget: 8
+      time_budget_ms: 300000
+      extra_required_abilities: '["datamachine-code/upsert-github-pull-review-comment"]'
+      execute_workflow_builder_command: |
+        export UPSTREAM_PR_URL SOURCE_PR_URL FINDING_PACKET_CONTEXT REVIEWER_CONTEXT
+        UPSTREAM_PR_URL=$(cat <<'SSI_STACK_REVIEWER_INPUT'
+        ${{ inputs.upstream_pr_url }}
+        SSI_STACK_REVIEWER_INPUT
+        )
+        SOURCE_PR_URL=$(cat <<'SSI_STACK_REVIEWER_INPUT'
+        ${{ inputs.source_pr_url }}
+        SSI_STACK_REVIEWER_INPUT
+        )
+        FINDING_PACKET_CONTEXT=$(cat <<'SSI_STACK_REVIEWER_INPUT'
+        ${{ inputs.finding_packet_context }}
+        SSI_STACK_REVIEWER_INPUT
+        )
+        REVIEWER_CONTEXT=$(cat <<'SSI_STACK_REVIEWER_INPUT'
+        ${{ inputs.reviewer_context }}
+        SSI_STACK_REVIEWER_INPUT
+        )
+        node .github/scripts/build-ssi-stack-reviewer-workflow.mjs .ci/ssi-stack-reviewer-workflow.json
+      execute_workflow_path: .ci/ssi-stack-reviewer-workflow.json
+      transcript_artifact_name: ssi-stack-reviewer-transcript-${{ github.run_id }}
+    secrets:
+      HOMEBOY_APP_ID: ${{ secrets.HOMEBOY_APP_ID }}
+      HOMEBOY_APP_PRIVATE_KEY: ${{ secrets.HOMEBOY_APP_PRIVATE_KEY }}
+      OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
