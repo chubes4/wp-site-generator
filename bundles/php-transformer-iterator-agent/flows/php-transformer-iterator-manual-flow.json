@@ -111,6 +111,10 @@
                     "prompt": "If the fetched finding packet or finding group has repair_mode=issue_only, do not create a worktree, commit, or pull request. Treat the packet as aggregate evidence that needs human narrowing: open one focused upstream issue with the packet fields, artifact names, source PR, and validation run."
                 },
                 {
+                    "added_at": "2026-06-08T00:00:00+00:00",
+                    "prompt": "After workspace_git_push succeeds, create_github_pull_request is the next lifecycle action. A fallback issue is valid before code changes when evidence cannot support a patch; it is not valid after a branch has been pushed."
+                },
+                {
                     "added_at": "2026-06-01T01:00:00+00:00",
                     "prompt": "Do not call list_github_issues in the iterator fallback path. The fallback path is complete after one create_github_issue call succeeds. Do not create another fallback issue for the same packet in the same run."
                 }
@@ -143,6 +147,17 @@
                     "until_one_of": [
                         "create_github_pull_request",
                         "comment_github_pull_request"
+                    ]
+                },
+                {
+                    "after_tool": "workspace_git_push",
+                    "blocked_tools": [
+                        "create_github_issue"
+                    ],
+                    "id": "iterator-pr-after-push",
+                    "type": "block_until_tool",
+                    "until_one_of": [
+                        "create_github_pull_request"
                     ]
                 }
             ]
