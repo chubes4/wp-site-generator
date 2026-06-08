@@ -63,7 +63,8 @@ jobs:
       step_budget: 20
       time_budget_ms: 600000
       engine_data_outputs: '{"upstream_action_url":"metadata.engine_data.php_transformer_iterator.upstream_action_url","source_callback_url":"metadata.engine_data.php_transformer_iterator.source_callback_url"}'
-      extra_required_abilities: '["datamachine-code/upsert-github-pull-review-comment"]'
+      extra_required_abilities: '["datamachine-code/create-github-pull-request","datamachine-code/upsert-github-pull-review-comment"]'
+      tool_recorders: '[{"tool":"create_github_pull_request"}]'
       actions_artifact_downloads: '[{"repo":"${{ inputs.source_repo }}","run_id":"${{ inputs.validation_run_id }}","name":"${{ inputs.artifact_name }}","dir":".ci/finding-packets"},{"repo":"${{ inputs.source_repo }}","run_id":"${{ inputs.validation_run_id }}","name":"${{ inputs.visual_artifact_name }}","dir":".ci/visual-parity"}]'
       execute_workflow_builder_command: FINDING_GROUPS_PATH=.ci/finding-packets/grouped-finding-packets.json node .github/scripts/group-ssi-finding-packets.mjs .ci/finding-packets/finding-packets.json && VISUAL_ARTIFACT_DIR=.ci/visual-parity node .github/scripts/build-datamachine-iterator-workflow.mjs .ci/finding-packets/grouped-finding-packets.json .ci/datamachine-iterator-workflow.json
       execute_workflow_path: .ci/datamachine-iterator-workflow.json

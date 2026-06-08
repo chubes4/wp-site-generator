@@ -122,8 +122,10 @@ jobs:
       data_machine_code_ref: ${{ inputs.data_machine_code_ref }}
       extra_required_abilities: |
         [
+          "datamachine-code/create-github-pull-request",
           "datamachine-code/workspace-worktree-add"
         ]
+      tool_recorders: '[{"tool":"create_github_pull_request"}]'
       success_requires_pr: true
       success_completion_outcomes: '["pull_request_path"]'
       max_turns: 24
