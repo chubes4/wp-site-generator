@@ -124,7 +124,8 @@ jobs:
         [
           "datamachine-code/workspace-worktree-add"
         ]
-      success_requires_pr: false
+      success_requires_pr: true
+      success_completion_outcomes: '["pull_request_path"]'
       max_turns: 24
       step_budget: 20
       time_budget_ms: 600000

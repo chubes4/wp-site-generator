@@ -57,8 +57,8 @@ jobs:
       app_token_repos: chubes4/wp-site-generator,chubes4/static-site-importer,chubes4/html-to-blocks-converter,chubes4/block-format-bridge,chubes4/block-artifact-compiler
       data_machine_ref: ${{ inputs.data_machine_ref }}
       data_machine_code_ref: ${{ inputs.data_machine_code_ref }}
-      success_requires_pr: false
-      success_completion_outcomes: '["pull_request_path","issue_fallback_path","no_actionable_findings"]'
+      success_requires_pr: true
+      success_completion_outcomes: '["pull_request_path"]'
       max_turns: 24
       step_budget: 20
       time_budget_ms: 600000
