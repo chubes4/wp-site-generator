@@ -1,0 +1,28 @@
+{
+    "artifact_id": "ssi-stack-repos",
+    "artifact_type": "datamachine-code/workspace_preload",
+    "payload": {
+        "repositories": [
+            {
+                "name": "static-site-importer",
+                "url": "https://github.com/chubes4/static-site-importer.git"
+            },
+            {
+                "name": "html-to-blocks-converter",
+                "url": "https://github.com/chubes4/html-to-blocks-converter.git"
+            },
+            {
+                "name": "block-format-bridge",
+                "url": "https://github.com/chubes4/block-format-bridge.git"
+            },
+            {
+                "name": "block-artifact-compiler",
+                "url": "https://github.com/chubes4/block-artifact-compiler.git"
+            },
+            {
+                "name": "wp-site-generator",
+                "url": "https://github.com/chubes4/wp-site-generator.git"
+            }
+        ]
+    }
+}

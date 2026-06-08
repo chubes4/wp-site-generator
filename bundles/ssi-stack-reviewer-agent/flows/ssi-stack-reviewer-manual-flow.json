@@ -1,0 +1,58 @@
+{
+    "max_items": [],
+    "name": "SSI Stack Reviewer — Manual",
+    "pipeline_slug": "ssi-stack-reviewer-pipeline",
+    "schedule": "manual",
+    "schema_version": 1,
+    "slug": "ssi-stack-reviewer-manual-flow",
+    "steps": [
+        {
+            "completion_assertions": {
+                "complete_when_any": [
+                    {
+                        "name": "review_comment_path",
+                        "tools": [
+                            {
+                                "name": "comment_github_pull_request"
+                            }
+                        ]
+                    }
+                ],
+                "required_tool_names": [
+                    "comment_github_pull_request"
+                ]
+            },
+            "disabled_tools": [
+                "create_github_issue",
+                "create_github_pull_request",
+                "workspace_worktree_add",
+                "workspace_write",
+                "workspace_edit",
+                "workspace_apply_patch",
+                "workspace_git_add",
+                "workspace_git_commit",
+                "workspace_git_push"
+            ],
+            "enabled_tools": [
+                "get_github_issue",
+                "comment_github_pull_request",
+                "workspace_show",
+                "workspace_ls",
+                "workspace_read",
+                "workspace_grep",
+                "workspace_git_status",
+                "workspace_git_diff"
+            ],
+            "handler_configs": {},
+            "prompt_queue": [
+                {
+                    "added_at": "2026-06-08T00:00:00+00:00",
+                    "prompt": "Run the SSI stack reviewer gate against the supplied upstream PR URL and finding-packet context. Leave one comment on the upstream PR. Do not repair, create worktrees, edit files, create issues, or open PRs. Fail closed with INSUFFICIENT EVIDENCE when the prompt does not include enough PR diff, changed-file, test, or finding context to decide."
+                }
+            ],
+            "queue_mode": "static",
+            "step_position": 0,
+            "step_type": "ai"
+        }
+    ]
+}
