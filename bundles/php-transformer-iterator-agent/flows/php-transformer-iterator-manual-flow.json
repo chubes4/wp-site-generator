@@ -42,35 +42,19 @@
                 "workspace_git_commit",
                 "workspace_git_push",
                 "get_github_issue",
-                "create_github_issue",
                 "create_github_pull_request",
                 "comment_github_pull_request"
             ],
             "completion_assertions": {
                 "complete_when_any": [
                     {
+                        "name": "pull_request_path",
                         "tools": [
-                            {
-                                "name": "workspace_edit"
-                            },
-                            {
-                                "name": "workspace_git_commit"
-                            },
-                            {
-                                "name": "workspace_git_push"
-                            },
                             {
                                 "name": "create_github_pull_request"
                             },
                             {
                                 "name": "comment_github_pull_request"
-                            }
-                        ]
-                    },
-                    {
-                        "tools": [
-                            {
-                                "name": "create_github_issue"
                             }
                         ]
                     }
@@ -84,19 +68,19 @@
             "prompt_queue": [
                 {
                     "added_at": "2026-05-07T00:00:00+00:00",
-                    "prompt": "Run the PR-first iterator against the fetched schema v3 SSI/BFB diagnostic finding packet item supplied by the fetch step. The transformer primary workspaces are preloaded by the bundle; do not call workspace_clone for static-site-importer, html-to-blocks-converter, or block-format-bridge. First classify the root owner repo from diagnostic_id, source_path, category, reason_code, suggested_repair_class, converter, stage, diagnostic_refs, and asset_map_refs: converter=html-to-blocks-converter plus converter_support belongs to html-to-blocks-converter; BFB adapter/report/scope diagnostics belong to block-format-bridge; SSI import, source-selection, and asset-map diagnostics belong to static-site-importer; visual parity and generator policy findings belong to wp-site-generator unless packet evidence identifies a narrower upstream owner. Before creating a worktree, inspect the preloaded primary handle with read-only tools; prefer workspace_grep to find exact architecture anchors and nearby smoke tests, then workspace_read the matched path/offset. Call workspace_worktree_add only after you have a grounded patch path and exact source anchor. Open a focused upstream PR with regression coverage when a safe generalized patch path exists; use a fallback issue when evidence cannot support a grounded patch. Workspace preparation is not completion: after successful workspace_worktree_add, use at most four inspection tools including workspace_grep to identify the nearest existing transform family and regression-test style, then the next tool must be workspace_edit or create_github_issue. For html-to-blocks-converter transform behavior, grep/read includes/class-transform-registry.php and tests/smoke-*.php before raw-handler pipeline mechanics. Do not invent files, methods, or classes. Never add standalone global helper functions to plugin bootstrap files as transformer fixes. If two workspace_edit attempts fail with old_string not found, or if no exact architecture anchor is found, stop the PR path and open a focused issue. Continue through status, commit, push, upstream PR or fallback issue, and source PR callback. Do not hardcode generated fixture class names or artifact-specific selectors into runtime code unless they already represent a reusable semantic contract in the target repository."
+                    "prompt": "Run the PR-first iterator against the fetched schema v3 SSI/BFB diagnostic finding packet item supplied by the fetch step. The transformer primary workspaces are preloaded by the bundle; do not call workspace_clone for static-site-importer, html-to-blocks-converter, or block-format-bridge. First classify the root owner repo from diagnostic_id, source_path, category, reason_code, suggested_repair_class, converter, stage, diagnostic_refs, and asset_map_refs: converter=html-to-blocks-converter plus converter_support belongs to html-to-blocks-converter; BFB adapter/report/scope diagnostics belong to block-format-bridge; SSI import, source-selection, and asset-map diagnostics belong to static-site-importer; visual parity and generator policy findings belong to wp-site-generator unless packet evidence identifies a narrower upstream owner. Before creating a worktree, inspect the preloaded primary handle with read-only tools; prefer workspace_grep to find exact architecture anchors and nearby smoke tests, then workspace_read the matched path/offset. Call workspace_worktree_add only after you have a grounded patch path and exact source anchor. Open a focused upstream PR with regression coverage or an evidence-preserving test/TODO fixture when a production fix needs maintainer narrowing. Workspace preparation is not completion: after successful workspace_worktree_add, use at most four inspection tools including workspace_grep to identify the nearest existing transform family and regression-test style, then the next tool must be workspace_edit. For html-to-blocks-converter transform behavior, grep/read includes/class-transform-registry.php and tests/smoke-*.php before raw-handler pipeline mechanics. Do not invent files, methods, or classes. Never add standalone global helper functions to plugin bootstrap files as transformer fixes. If two workspace_edit attempts fail with old_string not found, or if no exact architecture anchor is found, stop the PR path and open a focused issue. Continue through status, commit, push, upstream PR , and source PR callback. Do not hardcode generated fixture class names or artifact-specific selectors into runtime code unless they already represent a reusable semantic contract in the target repository."
                 },
                 {
                     "added_at": "2026-05-31T00:00:00+00:00",
-                    "prompt": "Broaden iterator routing across all static-site validation owners. Treat structured candidate_repo, repair_mode, and route_reason fields as authoritative routing evidence. block-artifact-compiler is a legal owner for artifact schema, artifact contract, and compiler diagnostics, and it is preloaded by the bundle. wp-site-generator is a legal PR owner for visual parity packets when the packet evidence points to generated source HTML/CSS brittleness; otherwise visual parity groups use focused issue fallback."
+                    "prompt": "Broaden iterator routing across all static-site validation owners. Treat structured candidate_repo, repair_mode, and route_reason fields as authoritative routing evidence. block-artifact-compiler is a legal owner for artifact schema, artifact contract, and compiler diagnostics, and it is preloaded by the bundle. wp-site-generator is a legal PR owner for visual parity packets when the packet evidence points to generated source HTML/CSS brittleness."
                 },
                 {
                     "added_at": "2026-05-10T01:20:00+00:00",
-                    "prompt": "For fallback paths, create one focused upstream issue with the owner repository, source PR, validation run, site slug, signal kind, artifact names, and visual parity or diagnostic evidence."
+                    "prompt": "For uncertain repair paths, create a focused upstream pull request with the owner repository, source PR, validation run, site slug, signal kind, artifact names, and visual parity or diagnostic evidence in the PR body."
                 },
                 {
                     "added_at": "2026-05-12T23:55:00+00:00",
-                    "prompt": "Treat fallback issues as durable per source finding, not per iterator run. Use deterministic titles that include the source PR, site slug, and signal family so humans can identify duplicates during cleanup. A new validation_run_id or newly worded title is not enough to change the owner or signal family."
+                    "prompt": "Treat upstream pull requests as durable per source finding, not per iterator run. Use deterministic titles that include the source PR, site slug, and signal family so humans can identify duplicates during cleanup. A new validation_run_id or newly worded title is not enough to change the owner or signal family."
                 },
                 {
                     "added_at": "2026-05-12T19:20:00+00:00",
@@ -104,15 +88,19 @@
                 },
                 {
                     "added_at": "2026-05-14T00:00:00+00:00",
-                    "prompt": "For visual parity packets, inspect the packet's visual_artifact context before deciding whether to open a PR or fallback issue. The context includes downloaded artifact paths plus a bounded visual-diff summary with screenshot dimensions, mismatch regions, and source/imported selector probes. Use that evidence to identify the root owner when it is specific enough; otherwise open or reuse a fallback issue that quotes the artifact paths and top-region evidence."
+                    "prompt": "For visual parity packets, inspect the packet's visual_artifact context before opening a PR. The context includes downloaded artifact paths plus a bounded visual-diff summary with screenshot dimensions, mismatch regions, and source/imported selector probes. Use that evidence to identify the root owner and quote the artifact paths and top-region evidence in the PR body."
                 },
                 {
                     "added_at": "2026-05-14T00:00:00+00:00",
-                    "prompt": "If the fetched finding packet or finding group has repair_mode=issue_only, do not create a worktree, commit, or pull request. Treat the packet as aggregate evidence that needs human narrowing: open one focused upstream issue with the packet fields, artifact names, source PR, and validation run."
+                    "prompt": "If the fetched finding packet or finding group has repair_mode=issue_only, keep the PR-first contract for this iterator run: inspect the owner repository, create a narrow branch with the smallest defensible regression or evidence-preserving change, push it, open a pull request, and comment back to the source PR. The PR may explain remaining human narrowing needed, but issue-only fallback is not a successful completion path for this workflow."
+                },
+                {
+                    "added_at": "2026-06-08T00:00:00+00:00",
+                    "prompt": "This workflow succeeds only through a pull request. After workspace_worktree_add, continue through workspace_edit, workspace_git_status, workspace_git_commit, workspace_git_push, create_github_pull_request, and comment_github_pull_request. After workspace_git_push succeeds, create_github_pull_request is the next lifecycle action. If tests can be run through the available workspace surface, include the command and result in the PR; if they cannot, state that limitation in the PR body."
                 },
                 {
                     "added_at": "2026-06-01T01:00:00+00:00",
-                    "prompt": "Do not call list_github_issues in the iterator fallback path. The fallback path is complete after one create_github_issue call succeeds. Do not create another fallback issue for the same packet in the same run."
+                    "prompt": "Do not call list_github_issues in the iterator path. Do not create fallback issues for fetched findings in this PR-first workflow; source PR callback is complete after one comment_github_pull_request call succeeds following create_github_pull_request."
                 }
             ],
             "queue_mode": "static",
@@ -129,19 +117,68 @@
                     ],
                     "max_calls": 4,
                     "then_require_one_of": [
-                        "workspace_edit",
-                        "create_github_issue"
+                        "workspace_edit"
                     ]
                 },
                 {
-                    "after_tool": "create_github_issue",
+                    "after_tool": "workspace_edit",
+                    "blocked_tools": [
+                        "create_github_issue",
+                        "create_github_pull_request",
+                        "comment_github_pull_request"
+                    ],
+                    "id": "iterator-status-after-edit",
+                    "type": "block_until_tool",
+                    "until_one_of": [
+                        "workspace_git_status"
+                    ]
+                },
+                {
+                    "after_tool": "workspace_git_status",
+                    "blocked_tools": [
+                        "create_github_issue",
+                        "create_github_pull_request",
+                        "comment_github_pull_request"
+                    ],
+                    "id": "iterator-commit-after-status",
+                    "type": "block_until_tool",
+                    "until_one_of": [
+                        "workspace_git_commit"
+                    ]
+                },
+                {
+                    "after_tool": "workspace_git_commit",
+                    "blocked_tools": [
+                        "create_github_issue",
+                        "create_github_pull_request",
+                        "comment_github_pull_request"
+                    ],
+                    "id": "iterator-push-after-commit",
+                    "type": "block_until_tool",
+                    "until_one_of": [
+                        "workspace_git_push"
+                    ]
+                },
+                {
+                    "after_tool": "workspace_git_push",
+                    "blocked_tools": [
+                        "create_github_issue",
+                        "comment_github_pull_request"
+                    ],
+                    "id": "iterator-pr-after-push",
+                    "type": "block_until_tool",
+                    "until_one_of": [
+                        "create_github_pull_request"
+                    ]
+                },
+                {
+                    "after_tool": "create_github_pull_request",
                     "blocked_tools": [
                         "create_github_issue"
                     ],
-                    "id": "iterator-stop-after-issue-fallback",
+                    "id": "iterator-comment-after-pr",
                     "type": "block_until_tool",
                     "until_one_of": [
-                        "create_github_pull_request",
                         "comment_github_pull_request"
                     ]
                 }
