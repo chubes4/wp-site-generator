@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 96 96" role="img" aria-label="Hearthline Repair Co. stitched house mark">
+  <rect width="96" height="96" rx="28" fill="#fff8eb"/>
+  <path d="M19 49 48 24l29 25v29a5 5 0 0 1-5 5H24a5 5 0 0 1-5-5V49Z" fill="#f1dfc3" stroke="#2e261d" stroke-width="4" stroke-linejoin="round"/>
+  <path d="M31 55h34" stroke="#274d68" stroke-width="5" stroke-linecap="round" stroke-dasharray="2 9"/>
+  <path d="M33 67h30" stroke="#a84f3d" stroke-width="5" stroke-linecap="round" stroke-dasharray="2 8"/>
+  <path d="M48 24v59" stroke="#d2a54c" stroke-width="3" stroke-linecap="round" stroke-dasharray="1 8"/>
+  <path d="M34 38c8 7 20 7 28 0" fill="none" stroke="#5d3b2c" stroke-width="4" stroke-linecap="round"/>
+</svg>
