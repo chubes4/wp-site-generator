@@ -1,0 +1,20 @@
+{
+    "max_items": {},
+    "name": "Design Artifact",
+    "pipeline_slug": "design-artifact-pipeline",
+    "schedule": "manual",
+    "schema_version": 1,
+    "slug": "design-artifact-flow",
+    "steps": [
+        {
+            "disabled_tools": [
+                "create_github_issue"
+            ],
+            "handler_configs": {},
+            "prompt_queue": [],
+            "queue_mode": "static",
+            "step_position": 0,
+            "step_type": "ai"
+        }
+    ]
+}

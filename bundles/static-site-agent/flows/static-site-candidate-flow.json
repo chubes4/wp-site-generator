@@ -1,0 +1,20 @@
+{
+    "max_items": {},
+    "name": "Static Site Candidate",
+    "pipeline_slug": "static-site-candidate-pipeline",
+    "schedule": "manual",
+    "schema_version": 1,
+    "slug": "static-site-candidate-flow",
+    "steps": [
+        {
+            "disabled_tools": [
+                "github_pull_request_publish"
+            ],
+            "handler_configs": {},
+            "prompt_queue": [],
+            "queue_mode": "static",
+            "step_position": 0,
+            "step_type": "ai"
+        }
+    ]
+}

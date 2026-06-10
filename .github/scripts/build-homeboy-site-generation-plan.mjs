@@ -20,18 +20,19 @@ function taskOutputPath(field) {
 }
 
 function datamachineConfig({
-  bundle,
-  agent,
-  pipeline,
-  flow,
-  prompt = '',
-  successRequiresPr = false,
-  successCompletionOutcomes = [],
-  maxTurns,
-  stepBudget,
-  timeBudgetMs,
-  flowStepPatches = [],
-  toolRecorders = [],
+	bundle,
+	agent,
+	pipeline,
+	flow,
+	prompt = '',
+	successRequiresPr = false,
+	successCompletionOutcomes = [],
+	artifactOutputs = {},
+	maxTurns,
+	stepBudget,
+	timeBudgetMs,
+	flowStepPatches = [],
+	toolRecorders = [],
   engineDataOutputs = {},
   transcriptArtifactName,
 }) {
@@ -52,9 +53,10 @@ function datamachineConfig({
     flow_slug: flow,
     target_repo: repository,
     prompt,
-    success_requires_pr: successRequiresPr,
-    success_completion_outcomes: successCompletionOutcomes,
-    flow_step_patches: flowStepPatches,
+		success_requires_pr: successRequiresPr,
+		success_completion_outcomes: successCompletionOutcomes,
+		artifact_outputs: artifactOutputs,
+		flow_step_patches: flowStepPatches,
     tool_recorders: toolRecorders,
     engine_data_outputs: engineDataOutputs,
     transcript_artifact_name: transcriptArtifactName,
@@ -96,52 +98,25 @@ function task({ id, title, config, instructions, expectedArtifacts = ['datamachi
   };
 }
 
-function issueFetchPatch(issueNumberTemplate) {
-  return [
-    {
-      step_type: 'fetch',
-      merge: {
-        handler_configs: {
-          github: {
-            issue_number: issueNumberTemplate,
-            max_items: 1,
-          },
-        },
-      },
-    },
-  ];
+function artifactOutput(schema, fileName) {
+	return {
+		schema,
+		path: `/artifacts/${fileName}`,
+	};
 }
 
-function designFlowPatches(issueNumberTemplate) {
-  return [
-    ...issueFetchPatch(issueNumberTemplate),
-    {
-      step_type: 'system_task',
-      merge: {
-        flow_step_settings: {
-          params: {
-            issue_number: issueNumberTemplate,
-          },
-        },
-      },
-    },
-  ];
+const conceptPacketOutput = artifactOutput('wp-site-generator/ConceptPacket/v1', 'ConceptPacket.json');
+const designPacketOutput = artifactOutput('wp-site-generator/DesignPacket/v1', 'DesignPacket.json');
+const staticSiteCandidateOutput = artifactOutput('wp-site-generator/StaticSiteCandidate/v1', 'StaticSiteCandidate.json');
+const importValidationResultOutput = artifactOutput('wp-site-generator/ImportValidationResult/v1', 'ImportValidationResult.json');
+
+function artifactBinding(taskId, field, required = true) {
+	return {
+		task_id: taskId,
+		path: taskOutputPath(field),
+		required,
+	};
 }
-
-const issueRecorder = (engineKey, tool = 'github_issue_publish', fields = { issue_url: 'data.issue_url', issue_number: 'data.issue_number' }) => [
-  {
-    tool,
-    record: {
-      engine_key: engineKey,
-      fields,
-    },
-  },
-];
-
-const designIssueRecorder = issueRecorder('design_agent', 'create_github_issue', {
-  issue_url: 'tool_result_data.issue_url',
-  issue_number: 'tool_result_data.issue_number',
-});
 
 const prRecorder = [
   {
@@ -161,129 +136,191 @@ const prRecorder = [
   },
 ];
 
-const loopDesignPrompt = 'Decide one visual design direction for GitHub issue #{{outputs.issue_number}}. Read the concept title and body, then create a separate design-direction issue with create_github_issue containing the source concept issue number, source title, and a design.json fenced JSON block. Preserve the source concept title, body, and every non-lifecycle label; lifecycle labels are transitioned by the deterministic workflow step after your turn.';
-const loopStaticPrompt = 'Implement GitHub concept issue #{{outputs.issue_number}} as a static site using design-direction issue #{{outputs.design_issue_number}}. Read the fetched concept issue body and reject the run if it is missing the concept sections Recommended Concept, Who It Serves, What It Offers, and Why It Could Work, or if its title/body look like a design handoff instead of a concept. Read the separate design-direction issue, honor its design.json block, and open exactly one static-site PR for the source concept issue. The PR title, branch, static-sites directory, and Closes reference must derive from concept issue #{{outputs.issue_number}}, not from design issue #{{outputs.design_issue_number}}. The PR title must preserve the full source concept title after removing only one leading emoji/icon marker, then append " — static site".';
+const conceptPacketPrompt = 'Generate one buildable concept and emit a ConceptPacket artifact. Include title, body sections, lane labels, concept kind, and source provenance. Do not create GitHub issues or pull requests; Homeboy owns orchestration and GitHub publication happens only after a validated static-site candidate exists.';
+const loopDesignPrompt = 'Consume ConceptPacket {{outputs.concept_packet}} and emit one DesignPacket artifact. Preserve the concept title, body sections, lane labels, and provenance. Include palette, typography, layout direction, mood, accessibility notes, and any implementation constraints needed by the static-site candidate generator. Do not create GitHub issues or pull requests.';
+const loopCandidatePrompt = 'Consume ConceptPacket {{outputs.concept_packet}} and DesignPacket {{outputs.design_packet}}, then generate a StaticSiteCandidate artifact containing the complete static-sites file set or patch, site metadata, source concept/design references, branch/title proposal, and reproduction context. Do not create a pull request; validation must run before publication.';
+const loopPublishPrompt = 'Consume StaticSiteCandidate {{outputs.static_site_candidate}} and ImportValidationResult {{outputs.import_validation_result}}, then publish exactly one static-site PR. Use the candidate files and metadata as source of truth. Render the PR body with .github/scripts/render-static-site-pr-body.mjs so the initial PR body includes the import validation summary, fallback block count, conversion finding counts, and artifact references. Do not add a separate follow-up metrics comment in the normal flow.';
 
-function storeIdeaTask({ id = 'store-idea-agent', flow = 'store-idea-home-and-craft-flow', prompt = ' ', title = 'Generate store idea' } = {}) {
-  return task({
-    id,
-    title,
-    instructions: 'Generate one store concept issue.',
-    config: datamachineConfig({
-      bundle: 'bundles/store-idea-agent',
-      agent: 'store-idea-agent',
-      pipeline: 'store-idea-pipeline',
-      flow,
-      prompt,
-      successRequiresPr: false,
-      maxTurns: 6,
-      stepBudget: 8,
-      timeBudgetMs: 180000,
-      toolRecorders: issueRecorder('store_idea_agent'),
-      engineDataOutputs: {
-        issue_url: 'metadata.engine_data.store_idea_agent.issue_url',
-        issue_number: 'metadata.engine_data.store_idea_agent.issue_number',
-      },
-      transcriptArtifactName: `${id}-transcript-${runId}`,
-    }),
-  });
+function storeIdeaTask({ id = 'store-idea-agent', flow = 'store-idea-artifact-flow', prompt = ' ', title = 'Generate store idea' } = {}) {
+	const taskPrompt = [conceptPacketPrompt, prompt].filter(Boolean).join('\n\n');
+	return task({
+		id,
+		title,
+		instructions: 'Generate one store ConceptPacket artifact.',
+		expectedArtifacts: ['datamachine-transcript', 'ConceptPacket'],
+		config: datamachineConfig({
+			bundle: 'bundles/store-idea-agent',
+			agent: 'store-idea-agent',
+			pipeline: 'store-idea-artifact-pipeline',
+			flow,
+			prompt: taskPrompt,
+			successRequiresPr: false,
+			successCompletionOutcomes: ['concept_packet'],
+			artifactOutputs: {
+				concept_packet: conceptPacketOutput,
+			},
+			maxTurns: 6,
+			stepBudget: 8,
+			timeBudgetMs: 180000,
+			engineDataOutputs: {
+				concept_packet: 'metadata.artifacts.ConceptPacket',
+			},
+			transcriptArtifactName: `${id}-transcript-${runId}`,
+		}),
+	});
 }
 
-function websiteIdeaTask({ id = 'website-idea-agent', flow = 'website-idea-local-business-flow', prompt = '', title = 'Generate website idea' } = {}) {
-  return task({
-    id,
-    title,
-    instructions: 'Generate one website concept issue.',
-    config: datamachineConfig({
-      bundle: 'bundles/website-idea-agent',
-      agent: 'website-idea-agent',
-      pipeline: 'website-idea-pipeline',
-      flow,
-      prompt,
-      successRequiresPr: false,
-      toolRecorders: issueRecorder('website_idea_agent'),
-      engineDataOutputs: {
-        issue_url: 'metadata.engine_data.website_idea_agent.issue_url',
-        issue_number: 'metadata.engine_data.website_idea_agent.issue_number',
-      },
-      transcriptArtifactName: `${id}-transcript-${runId}`,
-    }),
-  });
+function websiteIdeaTask({ id = 'website-idea-agent', flow = 'website-idea-artifact-flow', prompt = '', title = 'Generate website idea' } = {}) {
+	const taskPrompt = [conceptPacketPrompt, prompt].filter(Boolean).join('\n\n');
+	return task({
+		id,
+		title,
+		instructions: 'Generate one website ConceptPacket artifact.',
+		expectedArtifacts: ['datamachine-transcript', 'ConceptPacket'],
+		config: datamachineConfig({
+			bundle: 'bundles/website-idea-agent',
+			agent: 'website-idea-agent',
+			pipeline: 'website-idea-artifact-pipeline',
+			flow,
+			prompt: taskPrompt,
+			successRequiresPr: false,
+			successCompletionOutcomes: ['concept_packet'],
+			artifactOutputs: {
+				concept_packet: conceptPacketOutput,
+			},
+			engineDataOutputs: {
+				concept_packet: 'metadata.artifacts.ConceptPacket',
+			},
+			transcriptArtifactName: `${id}-transcript-${runId}`,
+		}),
+	});
 }
 
-function designTask({ id, issueNumber, title }) {
-  const prompt = `Decide one visual design direction for GitHub issue #${issueNumber}. Read the concept title and body, then create a separate design-direction issue with create_github_issue containing the source concept issue number, source title, and a design.json fenced JSON block. Preserve the source concept title, body, and every non-lifecycle label; lifecycle labels are transitioned by the deterministic workflow step after your turn.`;
-  return task({
-    id,
-    title,
-    instructions: prompt,
-    config: datamachineConfig({
-      bundle: 'bundles/design-agent',
-      agent: 'design-agent',
-      pipeline: 'design-pipeline',
-      flow: 'design-manual-flow',
-      prompt,
-      successRequiresPr: false,
-      successCompletionOutcomes: ['design_issue'],
-      flowStepPatches: designFlowPatches(issueNumber),
-      toolRecorders: designIssueRecorder,
-      engineDataOutputs: {
-        design_issue_url: 'metadata.engine_data.design_agent.issue_url',
-        design_issue_number: 'metadata.engine_data.design_agent.issue_number',
-      },
-      transcriptArtifactName: `${id}-transcript-${runId}`,
-    }),
-  });
+function designTask({ id, conceptPacket = '{{outputs.concept_packet}}', title }) {
+	const prompt = `Consume ConceptPacket ${conceptPacket} and emit one DesignPacket artifact. Preserve source concept identity and lane metadata. Do not create GitHub issues or pull requests.`;
+	return task({
+		id,
+		title,
+		instructions: prompt,
+		expectedArtifacts: ['datamachine-transcript', 'DesignPacket'],
+		config: datamachineConfig({
+			bundle: 'bundles/design-agent',
+			agent: 'design-agent',
+			pipeline: 'design-artifact-pipeline',
+			flow: 'design-artifact-flow',
+			prompt,
+			successRequiresPr: false,
+			successCompletionOutcomes: ['design_packet'],
+			artifactOutputs: {
+				design_packet: designPacketOutput,
+			},
+			engineDataOutputs: {
+				design_packet: 'metadata.artifacts.DesignPacket',
+			},
+			transcriptArtifactName: `${id}-transcript-${runId}`,
+		}),
+	});
 }
 
-function staticSiteTask({ id, issueNumber, designIssueNumber, title }) {
-  const prompt = `Implement GitHub concept issue #${issueNumber} as a static site using design-direction issue #${designIssueNumber}. Read the fetched concept issue body and reject the run if it is missing the concept sections Recommended Concept, Who It Serves, What It Offers, and Why It Could Work, or if its title/body look like a design handoff instead of a concept. Read the separate design-direction issue, honor its design.json block, and open exactly one static-site PR for the source concept issue. The PR title, branch, static-sites directory, and Closes reference must derive from concept issue #${issueNumber}, not from design issue #${designIssueNumber}. The PR title must preserve the full source concept title after removing only one leading emoji/icon marker, then append " — static site".`;
-  return task({
-    id,
-    title,
-    instructions: prompt,
-    expectedArtifacts: ['datamachine-transcript', 'datamachine-pull-request'],
-    config: datamachineConfig({
-      bundle: 'bundles/static-site-agent',
-      agent: 'static-site-agent',
-      pipeline: 'static-site-pipeline',
-      flow: 'static-site-manual-flow',
-      prompt,
-      successRequiresPr: true,
-      successCompletionOutcomes: ['static_site_pr'],
-      flowStepPatches: issueFetchPatch(issueNumber),
-      toolRecorders: prRecorder,
-      engineDataOutputs: {
-        static_site_pr_url: 'metadata.engine_data.static_site_agent.pr_url',
-        static_site_branch: 'metadata.engine_data.static_site_agent.branch',
-        static_site_slug: 'metadata.engine_data.static_site_agent.slug',
-      },
-      transcriptArtifactName: `${id}-transcript-${runId}`,
-    }),
-  });
+function staticSiteCandidateTask({ id, conceptPacket = '{{outputs.concept_packet}}', designPacket = '{{outputs.design_packet}}', title }) {
+	const prompt = `Consume ConceptPacket ${conceptPacket} and DesignPacket ${designPacket}. Emit one StaticSiteCandidate artifact with generated files, metadata, branch/title proposal, and reproduction context. Do not open a pull request.`;
+	return task({
+		id,
+		title,
+		instructions: prompt,
+		expectedArtifacts: ['datamachine-transcript', 'StaticSiteCandidate'],
+		config: datamachineConfig({
+			bundle: 'bundles/static-site-agent',
+			agent: 'static-site-agent',
+			pipeline: 'static-site-candidate-pipeline',
+			flow: 'static-site-candidate-flow',
+			prompt,
+			successRequiresPr: false,
+			successCompletionOutcomes: ['static_site_candidate'],
+			artifactOutputs: {
+				static_site_candidate: staticSiteCandidateOutput,
+			},
+			engineDataOutputs: {
+				static_site_candidate: 'metadata.artifacts.StaticSiteCandidate',
+			},
+			transcriptArtifactName: `${id}-transcript-${runId}`,
+		}),
+	});
+}
+
+function importValidationTask({ id, title, candidate = '{{outputs.static_site_candidate}}' }) {
+	return task({
+		id,
+		title,
+		instructions: `Import and validate StaticSiteCandidate ${candidate}. Emit one ImportValidationResult artifact with pass/fail summary, fallback block count, conversion finding counts, and artifact references.`,
+		expectedArtifacts: ['ImportValidationResult'],
+		config: {
+			execution_kind: 'static_site_import_validation_adapter',
+			candidate_artifact: candidate,
+			artifact_outputs: {
+				import_validation_result: importValidationResultOutput,
+			},
+			engine_data_outputs: {
+				import_validation_result: 'metadata.artifacts.ImportValidationResult',
+			},
+			task_timeout_seconds: 1800,
+		},
+	});
+}
+
+function staticSitePublishTask({ id, title, candidate = '{{outputs.static_site_candidate}}', validation = '{{outputs.import_validation_result}}' }) {
+	const prompt = `Publish StaticSiteCandidate ${candidate} after reading ImportValidationResult ${validation}. Create one static-site PR with candidate files, and render the initial PR body with validation metrics from .github/scripts/render-static-site-pr-body.mjs.`;
+	return task({
+		id,
+		title,
+		instructions: prompt,
+		expectedArtifacts: ['datamachine-transcript', 'datamachine-pull-request'],
+		config: datamachineConfig({
+			bundle: 'bundles/static-site-agent',
+			agent: 'static-site-agent',
+			pipeline: 'static-site-publish-pipeline',
+			flow: 'static-site-publish-flow',
+			prompt,
+			successRequiresPr: true,
+			successCompletionOutcomes: ['static_site_pr'],
+			toolRecorders: prRecorder,
+			engineDataOutputs: {
+				static_site_pr_url: 'metadata.engine_data.static_site_agent.pr_url',
+				static_site_branch: 'metadata.engine_data.static_site_agent.branch',
+				static_site_slug: 'metadata.engine_data.static_site_agent.slug',
+			},
+			transcriptArtifactName: `${id}-transcript-${runId}`,
+		}),
+	});
 }
 
 function manualPlan() {
-  const conceptPrompt = process.env.CONCEPT_PROMPT || '';
-  const issueNumber = process.env.ISSUE_NUMBER || '';
-  const designIssueNumber = process.env.DESIGN_ISSUE_NUMBER || '';
-  const websiteFlow = process.env.WEBSITE_FLOW_SLUG || 'website-idea-local-business-flow';
-  const taskByKind = {
-    store_idea: () => storeIdeaTask({ id: 'store-idea-agent', flow: 'store-idea-manual-flow', prompt: conceptPrompt, title: 'Generate store idea' }),
-    website_idea: () => websiteIdeaTask({ id: 'website-idea-agent', flow: websiteFlow, prompt: conceptPrompt, title: 'Generate website idea' }),
-    design: () => designTask({ id: 'design-agent', issueNumber, title: `Design issue #${issueNumber}` }),
-    static_site: () => staticSiteTask({ id: 'static-site-agent', issueNumber, designIssueNumber, title: `Build site for issue #${issueNumber}` }),
-  };
+	const conceptPrompt = process.env.CONCEPT_PROMPT || '';
+	const conceptPacket = process.env.CONCEPT_PACKET || '';
+	const designPacket = process.env.DESIGN_PACKET || '';
+	const staticSiteCandidate = process.env.STATIC_SITE_CANDIDATE || '';
+	const importValidationResult = process.env.IMPORT_VALIDATION_RESULT || '';
+	const websiteFlow = process.env.WEBSITE_FLOW_SLUG || 'website-idea-artifact-flow';
+	const taskByKind = {
+		store_idea: () => storeIdeaTask({ id: 'store-idea-agent', flow: 'store-idea-artifact-flow', prompt: conceptPrompt, title: 'Generate store idea' }),
+		website_idea: () => websiteIdeaTask({ id: 'website-idea-agent', flow: websiteFlow, prompt: conceptPrompt, title: 'Generate website idea' }),
+		design: () => designTask({ id: 'design-agent', conceptPacket, title: 'Generate design packet' }),
+		generate_candidate: () => staticSiteCandidateTask({ id: 'static-site-candidate-agent', conceptPacket, designPacket, title: 'Generate static site candidate' }),
+		publish_pr: () => staticSitePublishTask({ id: 'static-site-publish-agent', candidate: staticSiteCandidate, validation: importValidationResult, title: 'Publish static site PR' }),
+	};
 
-  if (!taskByKind[manualTaskKind]) {
-    throw new Error(`Unsupported HOMEBOY_TASK_KIND: ${manualTaskKind}`);
-  }
-  if ((manualTaskKind === 'design' || manualTaskKind === 'static_site') && !/^[1-9][0-9]*$/.test(issueNumber)) {
-    throw new Error(`ISSUE_NUMBER must be a positive integer for ${manualTaskKind}.`);
-  }
-  if (manualTaskKind === 'static_site' && !/^[1-9][0-9]*$/.test(designIssueNumber)) {
-    throw new Error('DESIGN_ISSUE_NUMBER must be a positive integer for static_site.');
-  }
+	if (!taskByKind[manualTaskKind]) {
+		throw new Error(`Unsupported HOMEBOY_TASK_KIND: ${manualTaskKind}`);
+	}
+	if (manualTaskKind === 'design' && !conceptPacket) {
+		throw new Error('CONCEPT_PACKET is required for design.');
+	}
+	if (manualTaskKind === 'generate_candidate' && (!conceptPacket || !designPacket)) {
+		throw new Error('CONCEPT_PACKET and DESIGN_PACKET are required for generate_candidate.');
+	}
+	if (manualTaskKind === 'publish_pr' && (!staticSiteCandidate || !importValidationResult)) {
+		throw new Error('STATIC_SITE_CANDIDATE and IMPORT_VALIDATION_RESULT are required for publish_pr.');
+	}
 
   return {
     schema: 'homeboy/agent-task-plan/v1',
@@ -299,159 +336,124 @@ function manualPlan() {
         max_attempts: 0,
       },
     },
-    metadata: {
-      source: 'wp-site-generator manual agent task',
-      task_kind: manualTaskKind,
-      generated_by: '.github/scripts/build-homeboy-site-generation-plan.mjs',
-    },
-  };
+		metadata: {
+			source: 'wp-site-generator manual agent task',
+			task_kind: manualTaskKind,
+			artifact_driven: true,
+			generated_by: '.github/scripts/build-homeboy-site-generation-plan.mjs',
+		},
+	};
 }
 
 const loopPlan = {
   schema: 'homeboy/agent-task-plan/v1',
   plan_id: planId,
-  tasks: [
-    storeIdeaTask({ prompt: ' ', title: 'Generate store idea' }),
-    websiteIdeaTask({ prompt: ' ', title: 'Generate website idea' }),
-    task({
-      id: 'design-store-issue',
-      title: 'Design store issue #{{outputs.issue_number}}',
-      instructions: loopDesignPrompt,
-      config: datamachineConfig({
-        bundle: 'bundles/design-agent',
-        agent: 'design-agent',
-        pipeline: 'design-pipeline',
-        flow: 'design-manual-flow',
-        prompt: loopDesignPrompt,
-        successRequiresPr: false,
-        successCompletionOutcomes: ['design_issue'],
-        flowStepPatches: designFlowPatches('{{outputs.issue_number}}'),
-        toolRecorders: designIssueRecorder,
-        engineDataOutputs: {
-          design_issue_url: 'metadata.engine_data.design_agent.issue_url',
-          design_issue_number: 'metadata.engine_data.design_agent.issue_number',
-        },
-        transcriptArtifactName: `design-agent-store-{{outputs.issue_number}}-transcript-${runId}`,
-      }),
-    }),
-    task({
-      id: 'design-website-issue',
-      title: 'Design website issue #{{outputs.issue_number}}',
-      instructions: loopDesignPrompt,
-      config: datamachineConfig({
-        bundle: 'bundles/design-agent',
-        agent: 'design-agent',
-        pipeline: 'design-pipeline',
-        flow: 'design-manual-flow',
-        prompt: loopDesignPrompt,
-        successRequiresPr: false,
-        successCompletionOutcomes: ['design_issue'],
-        flowStepPatches: designFlowPatches('{{outputs.issue_number}}'),
-        toolRecorders: designIssueRecorder,
-        engineDataOutputs: {
-          design_issue_url: 'metadata.engine_data.design_agent.issue_url',
-          design_issue_number: 'metadata.engine_data.design_agent.issue_number',
-        },
-        transcriptArtifactName: `design-agent-website-{{outputs.issue_number}}-transcript-${runId}`,
-      }),
-    }),
-    task({
-      id: 'static-store-site',
-      title: 'Build store site for issue #{{outputs.issue_number}}',
-      instructions: loopStaticPrompt,
-      expectedArtifacts: ['datamachine-transcript', 'datamachine-pull-request'],
-      config: datamachineConfig({
-        bundle: 'bundles/static-site-agent',
-        agent: 'static-site-agent',
-        pipeline: 'static-site-pipeline',
-        flow: 'static-site-manual-flow',
-        prompt: loopStaticPrompt,
-        successRequiresPr: true,
-        successCompletionOutcomes: ['static_site_pr'],
-        flowStepPatches: issueFetchPatch('{{outputs.issue_number}}'),
-        toolRecorders: prRecorder,
-        engineDataOutputs: {
-          static_site_pr_url: 'metadata.engine_data.static_site_agent.pr_url',
-          static_site_branch: 'metadata.engine_data.static_site_agent.branch',
-          static_site_slug: 'metadata.engine_data.static_site_agent.slug',
-        },
-        transcriptArtifactName: `static-site-agent-store-{{outputs.issue_number}}-transcript-${runId}`,
-      }),
-    }),
-    task({
-      id: 'static-website-site',
-      title: 'Build website site for issue #{{outputs.issue_number}}',
-      instructions: loopStaticPrompt,
-      expectedArtifacts: ['datamachine-transcript', 'datamachine-pull-request'],
-      config: datamachineConfig({
-        bundle: 'bundles/static-site-agent',
-        agent: 'static-site-agent',
-        pipeline: 'static-site-pipeline',
-        flow: 'static-site-manual-flow',
-        prompt: loopStaticPrompt,
-        successRequiresPr: true,
-        successCompletionOutcomes: ['static_site_pr'],
-        flowStepPatches: issueFetchPatch('{{outputs.issue_number}}'),
-        toolRecorders: prRecorder,
-        engineDataOutputs: {
-          static_site_pr_url: 'metadata.engine_data.static_site_agent.pr_url',
-          static_site_branch: 'metadata.engine_data.static_site_agent.branch',
-          static_site_slug: 'metadata.engine_data.static_site_agent.slug',
-        },
-        transcriptArtifactName: `static-site-agent-website-{{outputs.issue_number}}-transcript-${runId}`,
-      }),
-    }),
-  ],
-  output_dependencies: {
-    'design-store-issue': {
-      bindings: {
-        issue_number: {
-          task_id: 'store-idea-agent',
-          path: taskOutputPath('issue_number'),
-          required: true,
-        },
-      },
-    },
-    'design-website-issue': {
-      bindings: {
-        issue_number: {
-          task_id: 'website-idea-agent',
-          path: taskOutputPath('issue_number'),
-          required: true,
-        },
-      },
-    },
-    'static-store-site': {
-      depends_on: ['design-store-issue'],
-      bindings: {
-        issue_number: {
-          task_id: 'store-idea-agent',
-          path: taskOutputPath('issue_number'),
-          required: true,
-        },
-        design_issue_number: {
-          task_id: 'design-store-issue',
-          path: taskOutputPath('design_issue_number'),
-          required: true,
-        },
-      },
-    },
-    'static-website-site': {
-      depends_on: ['design-website-issue'],
-      bindings: {
-        issue_number: {
-          task_id: 'website-idea-agent',
-          path: taskOutputPath('issue_number'),
-          required: true,
-        },
-        design_issue_number: {
-          task_id: 'design-website-issue',
-          path: taskOutputPath('design_issue_number'),
-          required: true,
-        },
-      },
-    },
-  },
+	tasks: [
+		storeIdeaTask({ prompt: ' ', title: 'Generate store idea' }),
+		websiteIdeaTask({ prompt: ' ', title: 'Generate website idea' }),
+		task({
+			id: 'design-store-packet',
+			title: 'Design store concept packet',
+			instructions: loopDesignPrompt,
+			expectedArtifacts: ['datamachine-transcript', 'DesignPacket'],
+			config: datamachineConfig({
+				bundle: 'bundles/design-agent',
+				agent: 'design-agent',
+				pipeline: 'design-artifact-pipeline',
+				flow: 'design-artifact-flow',
+				prompt: loopDesignPrompt,
+				successRequiresPr: false,
+				successCompletionOutcomes: ['design_packet'],
+				artifactOutputs: {
+					design_packet: designPacketOutput,
+				},
+				engineDataOutputs: {
+					design_packet: 'metadata.artifacts.DesignPacket',
+				},
+				transcriptArtifactName: `design-agent-store-transcript-${runId}`,
+			}),
+		}),
+		task({
+			id: 'design-website-packet',
+			title: 'Design website concept packet',
+			instructions: loopDesignPrompt,
+			expectedArtifacts: ['datamachine-transcript', 'DesignPacket'],
+			config: datamachineConfig({
+				bundle: 'bundles/design-agent',
+				agent: 'design-agent',
+				pipeline: 'design-artifact-pipeline',
+				flow: 'design-artifact-flow',
+				prompt: loopDesignPrompt,
+				successRequiresPr: false,
+				successCompletionOutcomes: ['design_packet'],
+				artifactOutputs: {
+					design_packet: designPacketOutput,
+				},
+				engineDataOutputs: {
+					design_packet: 'metadata.artifacts.DesignPacket',
+				},
+				transcriptArtifactName: `design-agent-website-transcript-${runId}`,
+			}),
+		}),
+		staticSiteCandidateTask({ id: 'generate-store-candidate', title: 'Generate store static-site candidate' }),
+		staticSiteCandidateTask({ id: 'generate-website-candidate', title: 'Generate website static-site candidate' }),
+		importValidationTask({ id: 'validate-store-candidate', title: 'Validate store static-site candidate' }),
+		importValidationTask({ id: 'validate-website-candidate', title: 'Validate website static-site candidate' }),
+		staticSitePublishTask({ id: 'publish-store-pr', title: 'Publish store static-site PR' }),
+		staticSitePublishTask({ id: 'publish-website-pr', title: 'Publish website static-site PR' }),
+	],
+	output_dependencies: {
+		'design-store-packet': {
+			bindings: {
+				concept_packet: artifactBinding('store-idea-agent', 'concept_packet'),
+			},
+		},
+		'design-website-packet': {
+			bindings: {
+				concept_packet: artifactBinding('website-idea-agent', 'concept_packet'),
+			},
+		},
+		'generate-store-candidate': {
+			depends_on: ['design-store-packet'],
+			bindings: {
+				concept_packet: artifactBinding('store-idea-agent', 'concept_packet'),
+				design_packet: artifactBinding('design-store-packet', 'design_packet'),
+			},
+		},
+		'generate-website-candidate': {
+			depends_on: ['design-website-packet'],
+			bindings: {
+				concept_packet: artifactBinding('website-idea-agent', 'concept_packet'),
+				design_packet: artifactBinding('design-website-packet', 'design_packet'),
+			},
+		},
+		'validate-store-candidate': {
+			depends_on: ['generate-store-candidate'],
+			bindings: {
+				static_site_candidate: artifactBinding('generate-store-candidate', 'static_site_candidate'),
+			},
+		},
+		'validate-website-candidate': {
+			depends_on: ['generate-website-candidate'],
+			bindings: {
+				static_site_candidate: artifactBinding('generate-website-candidate', 'static_site_candidate'),
+			},
+		},
+		'publish-store-pr': {
+			depends_on: ['generate-store-candidate', 'validate-store-candidate'],
+			bindings: {
+				static_site_candidate: artifactBinding('generate-store-candidate', 'static_site_candidate'),
+				import_validation_result: artifactBinding('validate-store-candidate', 'import_validation_result'),
+			},
+		},
+		'publish-website-pr': {
+			depends_on: ['generate-website-candidate', 'validate-website-candidate'],
+			bindings: {
+				static_site_candidate: artifactBinding('generate-website-candidate', 'static_site_candidate'),
+				import_validation_result: artifactBinding('validate-website-candidate', 'import_validation_result'),
+			},
+		},
+	},
   options: {
     max_concurrency: 1,
     resource_budget: {
@@ -462,10 +464,12 @@ const loopPlan = {
       max_attempts: 0,
     },
   },
-  metadata: {
-    source: 'wp-site-generator site-generation-loop',
-    generated_by: '.github/scripts/build-homeboy-site-generation-plan.mjs',
-  },
+	metadata: {
+		source: 'wp-site-generator site-generation-loop',
+		artifact_driven: true,
+		artifact_stages: ['ConceptPacket', 'DesignPacket', 'StaticSiteCandidate', 'ImportValidationResult', 'StaticSitePullRequest'],
+		generated_by: '.github/scripts/build-homeboy-site-generation-plan.mjs',
+	},
 };
 
 const plan = manualTaskKind ? manualPlan() : loopPlan;

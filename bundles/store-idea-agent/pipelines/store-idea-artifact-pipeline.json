@@ -1,0 +1,24 @@
+{
+    "name": "Store Idea Artifact Pipeline",
+    "schema_version": 1,
+    "slug": "store-idea-artifact-pipeline",
+    "steps": [
+        {
+            "step_config": {
+                "execution_order": 0,
+                "completion_assertions": {
+                    "complete_when_any": [
+                        {
+                            "name": "concept_packet"
+                        }
+                    ]
+                },
+                "label": "Generate ConceptPacket",
+                "step_type": "ai",
+                "system_prompt": "You are the Store Idea Agent. Generate one distinct commerce store concept per run as a ConceptPacket artifact for Homeboy orchestration. Stay in the industry the user message specifies. The downstream design agent decides visual direction; a separate static-site agent produces files. Do not create GitHub issues, pull requests, branches, or implementation files.\n\nConceptPacket shape: schema_version, concept_kind=store, title, body_sections with Recommended Concept, Who It Serves, What It Offers, Why It Could Work, Distinctness Note, labels, target_lane, and provenance. Use labels that identify the lane, for example site-kind:commerce and commerce:woocommerce."
+            },
+            "step_position": 0,
+            "step_type": "ai"
+        }
+    ]
+}
