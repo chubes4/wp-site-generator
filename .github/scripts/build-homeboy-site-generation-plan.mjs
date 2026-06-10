@@ -253,15 +253,23 @@ function importValidationTask({ id, title, candidate = '{{outputs.static_site_ca
 		id,
 		title,
 		instructions: `Import and validate StaticSiteCandidate ${candidate}. Emit one ImportValidationResult artifact with pass/fail summary, fallback block count, conversion finding counts, and artifact references.`,
-		expectedArtifacts: ['ImportValidationResult'],
+		expectedArtifacts: ['ImportValidationResult', 'FindingPacketSet'],
 		config: {
-			execution_kind: 'static_site_import_validation_adapter',
-			candidate_artifact: candidate,
+			execution_kind: 'wp_codebox_ability',
+			ability: 'static-site-importer/import-website-artifact',
+			ability_input: {
+				artifact: candidate,
+			},
+			output_mappings: {
+				import_validation_result: 'result.import_validation_result',
+				finding_packets: 'result.finding_packets',
+			},
 			artifact_outputs: {
 				import_validation_result: importValidationResultOutput,
 			},
 			engine_data_outputs: {
-				import_validation_result: 'metadata.artifacts.ImportValidationResult',
+				import_validation_result: 'outputs.import_validation_result',
+				finding_packets: 'outputs.finding_packets',
 			},
 			task_timeout_seconds: 1800,
 		},

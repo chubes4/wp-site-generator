@@ -87,8 +87,14 @@ try {
 
 	for (const taskId of ['validate-store-candidate', 'validate-website-candidate']) {
 		const config = plan.tasks.find((task) => task.task_id === taskId).executor.config;
-		assert.equal(config.execution_kind, 'static_site_import_validation_adapter', `${taskId} delegates validation to Homeboy adapter`);
+		assert.equal(config.execution_kind, 'wp_codebox_ability', `${taskId} delegates validation to WP Codebox ability bridge`);
+		assert.equal(config.ability, 'static-site-importer/import-website-artifact', `${taskId} calls SSI artifact import ability`);
+		assert.equal(config.ability_input.artifact, '{{outputs.static_site_candidate}}', `${taskId} passes StaticSiteCandidate as ability input`);
+		assert.equal(config.output_mappings.import_validation_result, 'result.import_validation_result', `${taskId} maps SSI validation result`);
+		assert.equal(config.output_mappings.finding_packets, 'result.finding_packets', `${taskId} maps SSI finding packets`);
 		assert.equal(config.artifact_outputs.import_validation_result.schema, 'wp-site-generator/ImportValidationResult/v1');
+		assert.equal(config.engine_data_outputs.import_validation_result, 'outputs.import_validation_result', `${taskId} requires mapped validation output`);
+		assert.equal(config.engine_data_outputs.finding_packets, 'outputs.finding_packets', `${taskId} requires mapped finding packets`);
 	}
 
 	for (const taskId of ['publish-store-pr', 'publish-website-pr']) {
