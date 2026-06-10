@@ -11,9 +11,26 @@ on:
           - store_idea
           - website_idea
           - design
-          - static_site
+          - generate_candidate
+          - publish_pr
       issue_number:
-        description: Issue number for design/static_site tasks.
+        description: Legacy issue number input; artifact-driven tasks use packet inputs.
+        required: false
+        default: ''
+      concept_packet:
+        description: ConceptPacket artifact reference for design/generate_candidate tasks.
+        required: false
+        default: ''
+      design_packet:
+        description: DesignPacket artifact reference for generate_candidate tasks.
+        required: false
+        default: ''
+      static_site_candidate:
+        description: StaticSiteCandidate artifact reference for publish_pr tasks.
+        required: false
+        default: ''
+      import_validation_result:
+        description: ImportValidationResult artifact reference for publish_pr tasks.
         required: false
         default: ''
       concept_prompt:
@@ -24,13 +41,8 @@ on:
         description: Website idea flow slug for website_idea tasks.
         type: choice
         options:
-          - website-idea-manual-flow
-          - website-idea-local-business-flow
-          - website-idea-blog-flow
-          - website-idea-portfolio-flow
-          - website-idea-professional-services-flow
-          - website-idea-nonprofit-flow
-        default: website-idea-local-business-flow
+          - website-idea-artifact-flow
+        default: website-idea-artifact-flow
       openai_model:
         description: OpenAI model to use for imported agent flows.
         required: true
@@ -73,6 +85,10 @@ jobs:
     env:
       HOMEBOY_TASK_KIND: ${{ inputs.task_kind }}
       ISSUE_NUMBER: ${{ inputs.issue_number }}
+      CONCEPT_PACKET: ${{ inputs.concept_packet }}
+      DESIGN_PACKET: ${{ inputs.design_packet }}
+      STATIC_SITE_CANDIDATE: ${{ inputs.static_site_candidate }}
+      IMPORT_VALIDATION_RESULT: ${{ inputs.import_validation_result }}
       CONCEPT_PROMPT: ${{ inputs.concept_prompt }}
       WEBSITE_FLOW_SLUG: ${{ inputs.website_flow_slug }}
       OPENAI_MODEL: ${{ inputs.openai_model }}

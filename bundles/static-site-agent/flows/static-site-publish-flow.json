@@ -1,0 +1,37 @@
+{
+    "max_items": {},
+    "name": "Static Site Publish",
+    "pipeline_slug": "static-site-publish-pipeline",
+    "schedule": "manual",
+    "schema_version": 1,
+    "slug": "static-site-publish-flow",
+    "steps": [
+        {
+            "disabled_tools": [],
+            "handler_configs": {},
+            "prompt_queue": [],
+            "queue_mode": "static",
+            "step_position": 0,
+            "step_type": "ai"
+        },
+        {
+            "disabled_tools": [],
+            "enabled": true,
+            "handler_configs": {
+                "github_pull_request": {
+                    "base": "main",
+                    "draft": false,
+                    "maintainer_can_modify": false,
+                    "repo": "chubes4/wp-site-generator"
+                }
+            },
+            "handler_slugs": [
+                "github_pull_request"
+            ],
+            "prompt_queue": [],
+            "queue_mode": "static",
+            "step_position": 1,
+            "step_type": "publish"
+        }
+    ]
+}

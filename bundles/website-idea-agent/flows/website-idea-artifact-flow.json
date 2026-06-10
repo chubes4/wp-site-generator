@@ -1,0 +1,26 @@
+{
+    "max_items": [],
+    "name": "Website Idea Artifact",
+    "pipeline_slug": "website-idea-artifact-pipeline",
+    "schedule": "manual",
+    "schema_version": 1,
+    "slug": "website-idea-artifact-flow",
+    "steps": [
+        {
+            "disabled_tools": [
+                "list_github_issues",
+                "github_issue_publish"
+            ],
+            "handler_configs": [],
+            "prompt_queue": [
+                {
+                    "added_at": "2026-06-10T00:00:00+00:00",
+                    "prompt": "Space: open non-commerce. Generate one distinct, buildable website ConceptPacket artifact. Treat this as a pre-publication artifact stage; GitHub remains empty until a validated StaticSiteCandidate is published."
+                }
+            ],
+            "queue_mode": "static",
+            "step_position": 0,
+            "step_type": "ai"
+        }
+    ]
+}

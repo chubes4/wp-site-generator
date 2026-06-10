@@ -29,6 +29,7 @@
         "auth_refs": [],
         "extensions": [],
         "flows": [
+            "store-idea-artifact-flow",
             "store-idea-manual-flow",
             "store-idea-food-and-beverage-flow",
             "store-idea-home-and-craft-flow",
@@ -44,6 +45,7 @@
             "agent/SOUL.md"
         ],
         "pipelines": [
+            "store-idea-artifact-pipeline",
             "store-idea-pipeline"
         ],
         "prompts": [],

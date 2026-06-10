@@ -29,6 +29,7 @@
         "auth_refs": [],
         "extensions": [],
         "flows": [
+            "website-idea-artifact-flow",
             "website-idea-manual-flow",
             "website-idea-local-business-flow",
             "website-idea-blog-flow",
@@ -41,6 +42,7 @@
             "agent/SOUL.md"
         ],
         "pipelines": [
+            "website-idea-artifact-pipeline",
             "website-idea-pipeline"
         ],
         "prompts": [],

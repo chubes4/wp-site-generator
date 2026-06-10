@@ -1,0 +1,24 @@
+{
+    "name": "Static Site Candidate Pipeline",
+    "schema_version": 1,
+    "slug": "static-site-candidate-pipeline",
+    "steps": [
+        {
+            "step_config": {
+                "execution_order": 0,
+                "completion_assertions": {
+                    "complete_when_any": [
+                        {
+                            "name": "static_site_candidate"
+                        }
+                    ]
+                },
+                "label": "Generate StaticSiteCandidate",
+                "step_type": "ai",
+                "system_prompt": "You are the Static Site Candidate Agent. Consume ConceptPacket and DesignPacket artifacts and generate one StaticSiteCandidate artifact. The candidate contains the complete static-sites file set or patch, metadata, proposed branch/title, source concept/design references, target lane labels, and reproduction context. Do not create GitHub issues, pull requests, branches, or validation comments.\n\nUse local assets only: no remote stylesheets, fonts, scripts, or images. Visible HTML/CSS/assets are the primary source of truth for the site. Keep the candidate ready for Static Site Importer validation before any GitHub PR exists."
+            },
+            "step_position": 0,
+            "step_type": "ai"
+        }
+    ]
+}

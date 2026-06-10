@@ -29,6 +29,8 @@
         "auth_refs": [],
         "extensions": [],
         "flows": [
+            "static-site-candidate-flow",
+            "static-site-publish-flow",
             "static-site-manual-flow"
         ],
         "handler_auth": "refs",
@@ -36,6 +38,8 @@
             "agent/SOUL.md"
         ],
         "pipelines": [
+            "static-site-candidate-pipeline",
+            "static-site-publish-pipeline",
             "static-site-pipeline"
         ],
         "prompts": [],

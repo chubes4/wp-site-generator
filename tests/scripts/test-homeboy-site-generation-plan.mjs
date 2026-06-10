@@ -28,67 +28,76 @@ try {
   assert.doesNotMatch(serialized, /metadata\/codebox\/datamachine/);
   assert.doesNotMatch(serialized, /scenarios\/0/);
 
-  for (const taskId of ['design-store-issue', 'design-website-issue', 'static-store-site', 'static-website-site']) {
-    assert.equal(
-      plan.output_dependencies[taskId].bindings.issue_number.path,
-      '/outputs/issue_number',
-      `${taskId} binds to semantic issue_number output`
-    );
-  }
+	assert.equal(plan.metadata.artifact_driven, true, 'normal loop is artifact-driven');
+	assert.deepEqual(plan.metadata.artifact_stages, ['ConceptPacket', 'DesignPacket', 'StaticSiteCandidate', 'ImportValidationResult', 'StaticSitePullRequest']);
 
-  assert.equal(plan.output_dependencies['static-store-site'].depends_on[0], 'design-store-issue');
-  assert.equal(plan.output_dependencies['static-website-site'].depends_on[0], 'design-website-issue');
+	for (const taskId of ['design-store-packet', 'design-website-packet']) {
+		assert.equal(
+			plan.output_dependencies[taskId].bindings.concept_packet.path,
+			'/outputs/concept_packet',
+			`${taskId} binds to ConceptPacket output`
+		);
+	}
 
-  assert.equal(
-    plan.output_dependencies['static-store-site'].bindings.design_issue_number.path,
-    '/outputs/design_issue_number',
-    'static store task binds to design issue output'
-  );
-  assert.equal(
-    plan.output_dependencies['static-store-site'].bindings.design_issue_number.task_id,
-    'design-store-issue',
-    'static store task receives design issue from design task'
-  );
-  assert.equal(
-    plan.output_dependencies['static-website-site'].bindings.design_issue_number.path,
-    '/outputs/design_issue_number',
-    'static website task binds to design issue output'
-  );
-  assert.equal(
-    plan.output_dependencies['static-website-site'].bindings.design_issue_number.task_id,
-    'design-website-issue',
-    'static website task receives design issue from design task'
-  );
+	assert.equal(plan.output_dependencies['generate-store-candidate'].depends_on[0], 'design-store-packet');
+	assert.equal(plan.output_dependencies['generate-website-candidate'].depends_on[0], 'design-website-packet');
+	assert.equal(
+		plan.output_dependencies['generate-store-candidate'].bindings.design_packet.task_id,
+		'design-store-packet',
+		'store candidate receives DesignPacket from design task'
+	);
+	assert.equal(
+		plan.output_dependencies['generate-store-candidate'].bindings.design_packet.path,
+		'/outputs/design_packet',
+		'store candidate binds to DesignPacket output'
+	);
+	assert.equal(
+		plan.output_dependencies['validate-store-candidate'].bindings.static_site_candidate.path,
+		'/outputs/static_site_candidate',
+		'validation consumes StaticSiteCandidate before PR publication'
+	);
+	assert.deepEqual(
+		plan.output_dependencies['publish-store-pr'].depends_on,
+		['generate-store-candidate', 'validate-store-candidate'],
+		'PR publication waits for candidate generation and validation'
+	);
+	assert.equal(
+		plan.output_dependencies['publish-store-pr'].bindings.import_validation_result.path,
+		'/outputs/import_validation_result',
+		'PR publication consumes ImportValidationResult'
+	);
 
-  const designFlow = JSON.parse(await readFile(path.join(repoRoot, 'bundles/design-agent/flows/design-manual-flow.json'), 'utf8'));
-  const designAiStep = designFlow.steps.find((step) => step.step_type === 'ai');
-  const designSystemTaskStep = designFlow.steps.find((step) => step.step_type === 'system_task');
-  assert.deepEqual(designAiStep.enabled_tools, ['create_github_issue'], 'design AI can only create the design handoff issue');
-  assert.deepEqual(designAiStep.completion_assertions.complete_when_any[0].tools, [{ name: 'create_github_issue', success: true }], 'design AI completion only requires handoff issue creation');
-  assert.equal(designSystemTaskStep.flow_step_settings.task_type, 'github_update_issue_labels', 'design flow uses deterministic label update task');
-  assert.deepEqual(designSystemTaskStep.flow_step_settings.params.remove_labels, ['status:idea-ready'], 'design flow removes idea-ready deterministically');
-  assert.deepEqual(designSystemTaskStep.flow_step_settings.params.add_labels, ['status:design-ready'], 'design flow adds design-ready deterministically');
+	for (const taskId of ['design-store-packet', 'design-website-packet']) {
+		const config = plan.tasks.find((task) => task.task_id === taskId).executor.config;
+		assert.deepEqual(config.success_completion_outcomes, ['design_packet'], `${taskId} requires DesignPacket completion`);
+		assert.match(config.prompt, /ConceptPacket/, `${taskId} consumes ConceptPacket`);
+		assert.doesNotMatch(config.prompt, /create_github_issue/, `${taskId} does not create a design handoff issue`);
+		assert.deepEqual(config.tool_recorders, [], `${taskId} has no design issue recorder`);
+		assert.equal(config.artifact_outputs.design_packet.schema, 'wp-site-generator/DesignPacket/v1');
+		assert.equal(config.engine_data_outputs.design_packet, 'metadata.artifacts.DesignPacket');
+	}
 
-  for (const taskId of ['design-store-issue', 'design-website-issue']) {
-    const config = plan.tasks.find((task) => task.task_id === taskId).executor.config;
-    assert.deepEqual(config.success_completion_outcomes, ['design_issue'], `${taskId} requires design issue completion`);
-    assert.match(config.prompt, /create_github_issue/, `${taskId} creates a separate design issue with the direct GitHub issue tool`);
-    assert.doesNotMatch(config.prompt, /add_label_to_issue|remove_label_from_issue/, `${taskId} does not ask the AI to mutate labels`);
-    assert.equal(config.tool_recorders[0].tool, 'create_github_issue', `${taskId} records direct GitHub issue creation`);
-    assert.equal(config.tool_recorders[0].record.fields.issue_number, 'tool_result_data.issue_number', `${taskId} records issue number from non-handler tool result data`);
-    assert.equal(config.tool_recorders[0].record.fields.issue_url, 'tool_result_data.issue_url', `${taskId} records issue URL from non-handler tool result data`);
-    assert.equal(config.engine_data_outputs.design_issue_number, 'metadata.engine_data.design_agent.issue_number');
-    const systemTaskPatch = config.flow_step_patches.find((patch) => patch.step_type === 'system_task');
-    assert.equal(systemTaskPatch.merge.flow_step_settings.params.issue_number, '{{outputs.issue_number}}', `${taskId} patches deterministic label task with the source issue number`);
-  }
+	for (const taskId of ['generate-store-candidate', 'generate-website-candidate']) {
+		const config = plan.tasks.find((task) => task.task_id === taskId).executor.config;
+		assert.deepEqual(config.success_completion_outcomes, ['static_site_candidate'], `${taskId} stops at candidate artifact`);
+		assert.equal(config.success_requires_pr, false, `${taskId} does not publish a PR`);
+		assert.equal(config.artifact_outputs.static_site_candidate.schema, 'wp-site-generator/StaticSiteCandidate/v1');
+		assert.match(config.prompt, /Do not open a pull request/, `${taskId} separates candidate generation from publication`);
+	}
 
-  for (const taskId of ['static-store-site', 'static-website-site']) {
-    const config = plan.tasks.find((task) => task.task_id === taskId).executor.config;
-    assert.match(config.prompt, /design-direction issue #\{\{outputs\.design_issue_number\}\}/, `${taskId} receives design issue number`);
-    assert.match(config.prompt, /PR title, branch, static-sites directory, and Closes reference must derive from concept issue/, `${taskId} protects source concept identity`);
-    assert.match(config.prompt, /PR title must preserve the full source concept title after removing only one leading emoji\/icon marker/, `${taskId} preserves full source concept title for PR title`);
-    assert.match(config.prompt, /missing the concept sections Recommended Concept, Who It Serves, What It Offers, and Why It Could Work/, `${taskId} rejects corrupted concepts`);
-  }
+	for (const taskId of ['validate-store-candidate', 'validate-website-candidate']) {
+		const config = plan.tasks.find((task) => task.task_id === taskId).executor.config;
+		assert.equal(config.execution_kind, 'static_site_import_validation_adapter', `${taskId} delegates validation to Homeboy adapter`);
+		assert.equal(config.artifact_outputs.import_validation_result.schema, 'wp-site-generator/ImportValidationResult/v1');
+	}
+
+	for (const taskId of ['publish-store-pr', 'publish-website-pr']) {
+		const config = plan.tasks.find((task) => task.task_id === taskId).executor.config;
+		assert.equal(config.success_requires_pr, true, `${taskId} is the first GitHub-visible publication step`);
+		assert.deepEqual(config.success_completion_outcomes, ['static_site_pr'], `${taskId} completes on PR publication`);
+		assert.match(config.prompt, /ImportValidationResult/, `${taskId} consumes import validation metrics`);
+		assert.match(config.prompt, /render-static-site-pr-body\.mjs/, `${taskId} renders initial PR body metrics`);
+	}
 
   const staticPipeline = JSON.parse(await readFile(path.join(repoRoot, 'bundles/static-site-agent/pipelines/static-site-pipeline.json'), 'utf8'));
   const staticAiStep = staticPipeline.steps.find((step) => step.step_type === 'ai');

@@ -29,6 +29,7 @@
         "auth_refs": [],
         "extensions": [],
         "flows": [
+            "design-artifact-flow",
             "design-manual-flow"
         ],
         "handler_auth": "refs",
@@ -36,6 +37,7 @@
             "agent/SOUL.md"
         ],
         "pipelines": [
+            "design-artifact-pipeline",
             "design-pipeline"
         ],
         "prompts": [],
