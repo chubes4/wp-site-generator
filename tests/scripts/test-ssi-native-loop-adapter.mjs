@@ -79,9 +79,28 @@ assert.equal(planResult.status, 0, planResult.stderr || planResult.stdout);
 const plan = JSON.parse(await readFile(planPath, 'utf8'));
 assert.equal(plan.schema, 'homeboy/agent-task-plan/v1', 'native iterator adapter emits a Homeboy plan');
 assert.equal(plan.tasks[0].executor.config.execution_kind, 'datamachine_bundle', 'iterator runs through Homeboy Data Machine bundle executor');
+assert.equal(plan.tasks[0].executor.config.wp_codebox_bin, undefined, 'iterator plan defers WP Codebox binary selection to the runner by default');
 assert.equal(plan.tasks[0].executor.config.execute_workflow_path, workflowPath, 'iterator consumes prebuilt grouped finding workflow');
 assert.deepEqual(plan.tasks[0].executor.config.success_completion_outcomes, ['pull_request_path'], 'native iterator keeps PR-first completion gate');
 assert.equal(plan.tasks[0].inputs.source_pr, '456', 'source PR metadata flows into native plan');
+
+const explicitIteratorPlanPath = path.join(tempDir, 'iterator-plan-codebox.json');
+const explicitIteratorResult = spawnSync(
+	process.execPath,
+	['.github/scripts/build-homeboy-php-transformer-iterator-plan.mjs', '--workflow', workflowPath, '--output', explicitIteratorPlanPath],
+	{
+		cwd: repoRoot,
+		encoding: 'utf8',
+		env: {
+			...process.env,
+			GITHUB_RUN_ID: '516',
+			HOMEBOY_WP_CODEBOX_BIN: '/runner/wp-codebox/packages/cli/dist/index.js',
+		},
+	},
+);
+assert.equal(explicitIteratorResult.status, 0, explicitIteratorResult.stderr || explicitIteratorResult.stdout);
+const explicitIteratorPlan = JSON.parse(await readFile(explicitIteratorPlanPath, 'utf8'));
+assert.equal(explicitIteratorPlan.tasks[0].executor.config.wp_codebox_bin, '/runner/wp-codebox/packages/cli/dist/index.js', 'iterator plan preserves explicit runner WP Codebox path');
 
 const dispatchResult = spawnSync(
 	process.execPath,
