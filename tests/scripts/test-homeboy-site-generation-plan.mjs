@@ -1,12 +1,14 @@
 import assert from 'node:assert/strict';
-import { mkdtemp, readFile, rm } from 'node:fs/promises';
+import { mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { spawnSync } from 'node:child_process';
+import { evaluateComplexityPolicy, loadPolicy } from '../../.github/scripts/site-generation-complexity-policy.mjs';
 
 const repoRoot = path.resolve(new URL('../..', import.meta.url).pathname);
 const tempDir = await mkdtemp(path.join(tmpdir(), 'wpsg-homeboy-plan-'));
 const planPath = path.join(tempDir, 'plan.json');
+const qualitySignalsPath = path.join(tempDir, 'quality-signals.json');
 
 try {
   const result = spawnSync(process.execPath, ['.github/scripts/build-homeboy-site-generation-plan.mjs'], {
@@ -32,6 +34,14 @@ try {
 	assert.deepEqual(plan.metadata.artifact_stages, ['ConceptPacket', 'DesignPacket', 'StaticSiteCandidate', 'ImportValidationResult', 'StaticSitePullRequest']);
 	assert.equal(plan.metadata.controller_spec, '.github/homeboy/controllers/static-site-generation-loop.controller.json');
 	assert.equal(plan.metadata.controller_contract, 'wp-site-generator/static-site-generation-loop');
+	assert.equal(plan.metadata.complexity_policy.schema, 'wp-site-generator/site-generation-complexity-policy/v1');
+	assert.equal(plan.metadata.complexity_policy.current_tier, 'foundation');
+	assert.equal(plan.metadata.complexity_policy.selected_tier, 'foundation');
+	assert.equal(plan.metadata.complexity_policy.decision, 'hold');
+	assert.equal(plan.metadata.complexity_policy.randomness_profile.id, 'steady');
+	assert.equal(plan.metadata.complexity_policy.randomness_seed.length, 12);
+	assert.deepEqual(plan.metadata.complexity_policy.site_kind_mix, ['store', 'website']);
+	assert.equal(plan.options.max_concurrency, 1, 'foundation tier keeps one active candidate by default');
 
 	const controllerSpec = JSON.parse(await readFile(path.join(repoRoot, '.github/homeboy/controllers/static-site-generation-loop.controller.json'), 'utf8'));
 	assert.equal(controllerSpec.schema, 'homeboy/controller-spec/v1');
@@ -124,6 +134,9 @@ try {
 		const config = plan.tasks.find((task) => task.task_id === taskId).executor.config;
 		assert.deepEqual(config.success_completion_outcomes, ['design_packet'], `${taskId} requires DesignPacket completion`);
 		assert.match(config.prompt, /ConceptPacket/, `${taskId} consumes ConceptPacket`);
+		assert.match(config.prompt, /Generation complexity policy:/, `${taskId} records policy guidance in prompt`);
+		assert.equal(config.complexity_policy.selected_tier, 'foundation', `${taskId} records selected complexity tier`);
+		assert.equal(plan.tasks.find((task) => task.task_id === taskId).inputs.complexity_policy.randomness_seed.length, 12, `${taskId} carries reproducible randomness seed`);
 		assert.doesNotMatch(config.prompt, /create_github_issue/, `${taskId} does not create a design handoff issue`);
 		assert.deepEqual(config.tool_recorders, [], `${taskId} has no design issue recorder`);
 		assert.equal(config.artifact_outputs.design_packet.schema, 'wp-site-generator/DesignPacket/v1');
@@ -136,6 +149,7 @@ try {
 		assert.equal(config.success_requires_pr, false, `${taskId} does not publish a PR`);
 		assert.equal(config.artifact_outputs.static_site_candidate.schema, 'wp-site-generator/StaticSiteCandidate/v1');
 		assert.match(config.prompt, /Do not open a pull request/, `${taskId} separates candidate generation from publication`);
+		assert.match(config.prompt, /Record the tier, randomness profile, randomness seed/, `${taskId} asks candidate to preserve policy metadata`);
 	}
 
 	for (const taskId of ['validate-store-candidate', 'validate-website-candidate']) {
@@ -166,6 +180,8 @@ try {
   const loopWorkflow = await readFile(path.join(repoRoot, '.github/workflows/site-generation-loop.yml'), 'utf8');
   assert.match(loopWorkflow, /actions:\s+write/, 'site generation loop can dispatch validation workflows');
   assert.match(loopWorkflow, /HOMEBOY_CONTROLLER_SPEC_PATH/, 'site generation loop points at the controller spec contract');
+	assert.match(loopWorkflow, /WPSG_COMPLEXITY_TIER/, 'site generation loop exposes WPSG complexity override');
+	assert.match(loopWorkflow, /WPSG_QUALITY_SIGNALS_PATH/, 'site generation loop exposes quality-signal input');
   assert.match(loopWorkflow, /dispatch-static-validation\.mjs/, 'site generation loop dispatches static validation for generated PRs');
 
   const validationWorkflow = await readFile(path.join(repoRoot, '.github/workflows/static-site-validation.yml'), 'utf8');
@@ -183,6 +199,65 @@ try {
 
   const pluginShim = await readFile(path.join(repoRoot, 'wp-site-generator.php'), 'utf8');
   assert.match(pluginShim, /Plugin Name:\s*WP Site Generator CI Fixture/, 'repo exposes a plugin header for Homeboy bench component mounting');
+
+	const policy = loadPolicy(path.join(repoRoot, '.github/site-generation-complexity-policy.json'));
+	const stableDecision = evaluateComplexityPolicy({
+		policy,
+		runId: 'stable-run',
+		qualitySignals: {
+			current_tier: 'foundation',
+			recent_results: Array.from({ length: 4 }, () => ({
+				status: 'passed',
+				fallback_block_count: 0,
+				visual_mismatch_ratio: 0.01,
+				actionable_findings: 0,
+			})),
+		},
+	});
+	assert.equal(stableDecision.decision, 'raise', 'stable quality raises one tier');
+	assert.equal(stableDecision.selected_tier, 'composed', 'stable foundation quality ramps to composed');
+	assert.equal(stableDecision.randomness_profile.id, 'varied', 'composed tier uses varied randomness profile');
+
+	const regressionDecision = evaluateComplexityPolicy({
+		policy,
+		runId: 'regression-run',
+		qualitySignals: {
+			current_tier: 'composed',
+			recent_results: [
+				{ status: 'failed', fallback_block_count: 3, visual_mismatch_ratio: 0.11, actionable_findings: 5 },
+				{ status: 'passed', fallback_block_count: 2, visual_mismatch_ratio: 0.04, actionable_findings: 3 },
+			],
+		},
+	});
+	assert.equal(regressionDecision.decision, 'lower', 'regression lowers one tier');
+	assert.equal(regressionDecision.selected_tier, 'foundation', 'regression drops composed quality to foundation');
+
+	const overrideDecision = evaluateComplexityPolicy({
+		policy,
+		runId: 'override-run',
+		qualitySignals: { current_tier: 'foundation' },
+		overrides: { tier: 'stress', randomnessProfile: 'exploratory', seed: 'manual-seed', siteKindMix: ['publication'] },
+	});
+	assert.equal(overrideDecision.decision, 'override', 'explicit tier override wins over signals');
+	assert.equal(overrideDecision.selected_tier, 'stress', 'explicit tier override selects requested tier');
+	assert.equal(overrideDecision.randomness_seed, 'manual-seed', 'explicit seed override is recorded');
+	assert.deepEqual(overrideDecision.site_kind_mix, ['publication'], 'explicit site-kind mix override is recorded');
+
+	await writeFile(qualitySignalsPath, JSON.stringify({ current_tier: 'foundation', recent_results: stableDecision.quality_summary.count ? Array.from({ length: 4 }, () => ({ status: 'passed', fallback_block_count: 0, visual_mismatch_ratio: 0.01, actionable_findings: 0 })) : [] }));
+	const qualityResult = spawnSync(process.execPath, ['.github/scripts/build-homeboy-site-generation-plan.mjs'], {
+		cwd: repoRoot,
+		encoding: 'utf8',
+		env: {
+			...process.env,
+			GITHUB_RUN_ID: '410',
+			HOMEBOY_PLAN_PATH: path.join(tempDir, 'plan-stable.json'),
+			WPSG_QUALITY_SIGNALS_PATH: qualitySignalsPath,
+		},
+	});
+	assert.equal(qualityResult.status, 0, qualityResult.stderr || qualityResult.stdout);
+	const stablePlan = JSON.parse(await readFile(path.join(tempDir, 'plan-stable.json'), 'utf8'));
+	assert.equal(stablePlan.metadata.complexity_policy.selected_tier, 'composed', 'plan builder consumes quality-signal file');
+	assert.equal(stablePlan.options.max_concurrency, 2, 'composed tier raises active candidate budget');
 } finally {
   await rm(tempDir, { recursive: true, force: true });
 }

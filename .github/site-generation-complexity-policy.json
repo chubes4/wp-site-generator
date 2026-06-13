@@ -1,0 +1,70 @@
+{
+  "schema": "wp-site-generator/site-generation-complexity-policy/v1",
+  "default_tier": "foundation",
+  "default_randomness_profile": "steady",
+  "quality_window": 6,
+  "tiers": [
+    {
+      "id": "foundation",
+      "rank": 0,
+      "description": "Simple, single-purpose sites that prove core importer stability.",
+      "target_parallel_candidates": 1,
+      "site_kind_mix": ["store", "website"],
+      "allowed_layout_families": ["single-page", "simple-section-stack", "basic-commerce"],
+      "component_families": ["hero", "feature-list", "cards", "cta", "basic-product-grid"],
+      "prompt_guidance": "Prefer simple static structure, common Gutenberg-compatible sections, low animation, and minimal bespoke interaction."
+    },
+    {
+      "id": "composed",
+      "rank": 1,
+      "description": "Moderate compositions with richer section variety once foundation quality is stable.",
+      "target_parallel_candidates": 2,
+      "site_kind_mix": ["store", "website", "service", "portfolio"],
+      "allowed_layout_families": ["multi-section-landing", "editorial-home", "catalog-teaser", "event-or-service"],
+      "component_families": ["hero", "feature-list", "cards", "cta", "pricing", "testimonial", "gallery", "faq"],
+      "prompt_guidance": "Use moderate visual variety, nested section rhythm, richer metadata, and two to four reusable component patterns while keeping importability first."
+    },
+    {
+      "id": "stress",
+      "rank": 2,
+      "description": "Higher-variance prompts that deliberately exercise importer edges after composed quality holds.",
+      "target_parallel_candidates": 2,
+      "site_kind_mix": ["store", "website", "service", "portfolio", "community", "publication"],
+      "allowed_layout_families": ["asymmetric-landing", "dense-commerce", "publication-index", "community-directory", "campaign"],
+      "component_families": ["hero", "feature-list", "cards", "cta", "pricing", "testimonial", "gallery", "faq", "comparison-table", "timeline", "directory", "newsletter"],
+      "prompt_guidance": "Increase layout variety and content density, include one importer-edge pattern, and keep all randomness recorded in candidate metadata."
+    }
+  ],
+  "randomness_profiles": {
+    "steady": {
+      "description": "Low variance; deterministic enough for stable importer proof.",
+      "temperature_hint": 0.25,
+      "novelty": "low"
+    },
+    "varied": {
+      "description": "Moderate variance across kind, layout, palette, and content theme.",
+      "temperature_hint": 0.45,
+      "novelty": "medium"
+    },
+    "exploratory": {
+      "description": "Higher variance for stress prompts after recent quality is stable.",
+      "temperature_hint": 0.65,
+      "novelty": "high"
+    }
+  },
+  "ramp": {
+    "stable": {
+      "minimum_results": 4,
+      "minimum_pass_rate": 0.8,
+      "maximum_average_fallback_blocks": 0,
+      "maximum_average_visual_mismatch_ratio": 0.02,
+      "maximum_average_actionable_findings": 1
+    },
+    "regression": {
+      "maximum_pass_rate": 0.5,
+      "minimum_average_fallback_blocks": 2,
+      "minimum_average_visual_mismatch_ratio": 0.08,
+      "minimum_average_actionable_findings": 4
+    }
+  }
+}
