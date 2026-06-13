@@ -7,6 +7,7 @@ const runId = process.env.GITHUB_RUN_ID || String(Date.now());
 const repository = process.env.GITHUB_REPOSITORY || 'chubes4/wp-site-generator';
 const model = process.env.OPENAI_MODEL || 'gpt-5.5';
 const outputPath = process.env.HOMEBOY_PLAN_PATH || path.join(root, '.ci', 'site-generation-loop.agent-task-plan.json');
+const controllerSpecPath = process.env.HOMEBOY_CONTROLLER_SPEC_PATH || '.github/homeboy/controllers/static-site-generation-loop.controller.json';
 const manualTaskKind = process.env.HOMEBOY_TASK_KIND || '';
 const planId = manualTaskKind ? `site-generator-${manualTaskKind}-${runId}` : `site-generation-loop-${runId}`;
 const groupKey = manualTaskKind ? `site-generator-${manualTaskKind}` : 'site-generation-loop';
@@ -348,6 +349,8 @@ function manualPlan() {
 			source: 'wp-site-generator manual agent task',
 			task_kind: manualTaskKind,
 			artifact_driven: true,
+			controller_spec: controllerSpecPath,
+			controller_contract: 'wp-site-generator/static-site-generation-loop',
 			generated_by: '.github/scripts/build-homeboy-site-generation-plan.mjs',
 		},
 	};
@@ -476,6 +479,8 @@ const loopPlan = {
 		source: 'wp-site-generator site-generation-loop',
 		artifact_driven: true,
 		artifact_stages: ['ConceptPacket', 'DesignPacket', 'StaticSiteCandidate', 'ImportValidationResult', 'StaticSitePullRequest'],
+		controller_spec: controllerSpecPath,
+		controller_contract: 'wp-site-generator/static-site-generation-loop',
 		generated_by: '.github/scripts/build-homeboy-site-generation-plan.mjs',
 	},
 };
