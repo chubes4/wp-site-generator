@@ -48,6 +48,7 @@ jobs:
       GITHUB_TOKEN: ${{ github.token }}
       OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
       HOMEBOY_PLAN_PATH: ${{ github.workspace }}/.ci/site-generation-loop.agent-task-plan.json
+      HOMEBOY_CONTROLLER_SPEC_PATH: .github/homeboy/controllers/static-site-generation-loop.controller.json
       HOMEBOY_ARTIFACT_ROOT: ${{ github.workspace }}/.ci/homeboy-agent-task-artifacts
     steps:
       - name: Check out wp-site-generator
@@ -114,7 +115,7 @@ jobs:
           npm ci
           npm run build
 
-      - name: Build Homeboy agent-task plan
+      - name: Build Homeboy agent-task plan from controller contract
         id: plan
         run: |
           set -euo pipefail
@@ -145,6 +146,7 @@ jobs:
           name: site-generation-loop-homeboy-${{ github.run_id }}
           path: |
             .ci/site-generation-loop.agent-task-plan.json
+            .github/homeboy/controllers/static-site-generation-loop.controller.json
             .ci/homeboy-agent-task-artifacts/**
             ~/.local/share/homeboy/agent-task-runs/site-generation-loop-${{ github.run_id }}/**
           if-no-files-found: ignore

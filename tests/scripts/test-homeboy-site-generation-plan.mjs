@@ -30,6 +30,59 @@ try {
 
 	assert.equal(plan.metadata.artifact_driven, true, 'normal loop is artifact-driven');
 	assert.deepEqual(plan.metadata.artifact_stages, ['ConceptPacket', 'DesignPacket', 'StaticSiteCandidate', 'ImportValidationResult', 'StaticSitePullRequest']);
+	assert.equal(plan.metadata.controller_spec, '.github/homeboy/controllers/static-site-generation-loop.controller.json');
+	assert.equal(plan.metadata.controller_contract, 'wp-site-generator/static-site-generation-loop');
+
+	const controllerSpec = JSON.parse(await readFile(path.join(repoRoot, '.github/homeboy/controllers/static-site-generation-loop.controller.json'), 'utf8'));
+	assert.equal(controllerSpec.schema, 'homeboy/controller-spec/v1');
+	assert.equal(controllerSpec.controller_id, 'wp-site-generator/static-site-generation-loop');
+	assert.equal(controllerSpec.authority.execution_surface, 'homeboy_lab');
+	assert.equal(controllerSpec.authority.github_actions_role, 'trigger_and_reporting_compatibility');
+	assert.equal(controllerSpec.runtime.backend, 'codebox');
+	assert.equal(controllerSpec.runtime.provider.kind, 'codex');
+	assert.equal(controllerSpec.runtime.provider.location, 'in_sandbox');
+	assert.deepEqual(
+		controllerSpec.stages.map((stage) => stage.id),
+		[
+			'concept',
+			'design',
+			'candidate',
+			'import_validation',
+			'publish_pr',
+			'static_validation',
+			'finding_packets',
+			'iterator_upstream_pr',
+			'reviewer_gate',
+		],
+		'controller records the full static-site generation loop order'
+	);
+	assert.deepEqual(
+		controllerSpec.lineage_entities.map((entity) => entity.id),
+		[
+			'concept_packet',
+			'design_packet',
+			'static_site_candidate',
+			'import_validation_result',
+			'static_site_pull_request',
+			'static_validation_run',
+			'visual_parity_artifact',
+			'finding_packet_set',
+			'iterator_upstream_pull_request',
+			'reviewer_gate_outcome',
+		],
+		'controller records all source, validation, iterator, and reviewer lineage entities'
+	);
+	assert.deepEqual(
+		controllerSpec.blockers.map((blocker) => `${blocker.repo}#${blocker.issue}`),
+		[
+			'Extra-Chill/homeboy#3905',
+			'Extra-Chill/homeboy#3904',
+			'Extra-Chill/homeboy#4216',
+			'Extra-Chill/homeboy#4218',
+			'Extra-Chill/homeboy-extensions#1319',
+		],
+		'controller records known native Lab blockers'
+	);
 
 	for (const taskId of ['design-store-packet', 'design-website-packet']) {
 		assert.equal(
@@ -112,6 +165,7 @@ try {
 
   const loopWorkflow = await readFile(path.join(repoRoot, '.github/workflows/site-generation-loop.yml'), 'utf8');
   assert.match(loopWorkflow, /actions:\s+write/, 'site generation loop can dispatch validation workflows');
+  assert.match(loopWorkflow, /HOMEBOY_CONTROLLER_SPEC_PATH/, 'site generation loop points at the controller spec contract');
   assert.match(loopWorkflow, /dispatch-static-validation\.mjs/, 'site generation loop dispatches static validation for generated PRs');
 
   const validationWorkflow = await readFile(path.join(repoRoot, '.github/workflows/static-site-validation.yml'), 'utf8');

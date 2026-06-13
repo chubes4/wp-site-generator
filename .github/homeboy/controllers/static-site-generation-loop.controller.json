@@ -1,0 +1,171 @@
+{
+  "schema": "homeboy/controller-spec/v1",
+  "controller_id": "wp-site-generator/static-site-generation-loop",
+  "title": "Static site generation loop",
+  "authority": {
+    "execution_surface": "homeboy_lab",
+    "github_actions_role": "trigger_and_reporting_compatibility",
+    "native_runner": "homeboy controller run --spec @.github/homeboy/controllers/static-site-generation-loop.controller.json",
+    "plan_contracts": {
+      "generation": ".ci/site-generation-loop.agent-task-plan.json",
+      "iterator": ".ci/php-transformer-iterator.agent-task-plan.json",
+      "reviewer": ".ci/ssi-stack-reviewer.agent-task-plan.json"
+    }
+  },
+  "runtime": {
+    "backend": "codebox",
+    "wordpress_runtime": "wp-codebox",
+    "agent_runtime": "datamachine_bundle",
+    "provider": {
+      "kind": "codex",
+      "location": "in_sandbox",
+      "assumption": "The Codebox sandbox has the Codex provider plugin/runtime overlay and required secret_env values mounted by Homeboy Lab. GitHub Actions compatibility may still use ai-provider-for-openai until Homeboy Extensions exposes Codex defaults."
+    },
+    "secret_env": [
+      "AI_PROVIDER_OPENAI_CODEX_API_KEY",
+      "OPENAI_API_KEY",
+      "GITHUB_TOKEN"
+    ]
+  },
+  "lineage_entities": [
+    { "id": "concept_packet", "schema": "wp-site-generator/ConceptPacket/v1" },
+    { "id": "design_packet", "schema": "wp-site-generator/DesignPacket/v1" },
+    { "id": "static_site_candidate", "schema": "wp-site-generator/StaticSiteCandidate/v1" },
+    { "id": "import_validation_result", "schema": "wp-site-generator/ImportValidationResult/v1" },
+    { "id": "static_site_pull_request", "schema": "github/PullRequest/v1" },
+    { "id": "static_validation_run", "schema": "homeboy/Run/v1" },
+    { "id": "visual_parity_artifact", "schema": "wp-site-generator/VisualParityArtifact/v1" },
+    { "id": "finding_packet_set", "schema": "wp-site-generator/FindingPacketSet/v1" },
+    { "id": "iterator_upstream_pull_request", "schema": "github/PullRequest/v1" },
+    { "id": "reviewer_gate_outcome", "schema": "wp-site-generator/SsiStackReviewerGate/v1" }
+  ],
+  "stages": [
+    {
+      "id": "concept",
+      "label": "Generate concept packet",
+      "plan": "generation",
+      "tasks": ["store-idea-agent", "website-idea-agent"],
+      "emits": ["concept_packet"],
+      "on_success": "design"
+    },
+    {
+      "id": "design",
+      "label": "Generate design packet",
+      "plan": "generation",
+      "tasks": ["design-store-packet", "design-website-packet"],
+      "requires": ["concept_packet"],
+      "emits": ["design_packet"],
+      "on_success": "candidate"
+    },
+    {
+      "id": "candidate",
+      "label": "Generate static-site candidate",
+      "plan": "generation",
+      "tasks": ["generate-store-candidate", "generate-website-candidate"],
+      "requires": ["concept_packet", "design_packet"],
+      "emits": ["static_site_candidate"],
+      "on_success": "import_validation"
+    },
+    {
+      "id": "import_validation",
+      "label": "Validate candidate with Static Site Importer before publication",
+      "plan": "generation",
+      "tasks": ["validate-store-candidate", "validate-website-candidate"],
+      "requires": ["static_site_candidate"],
+      "emits": ["import_validation_result", "finding_packet_set"],
+      "on_success": "publish_pr",
+      "on_failure": "finding_packets"
+    },
+    {
+      "id": "publish_pr",
+      "label": "Publish generated static-site PR",
+      "plan": "generation",
+      "tasks": ["publish-store-pr", "publish-website-pr"],
+      "requires": ["static_site_candidate", "import_validation_result"],
+      "emits": ["static_site_pull_request"],
+      "on_success": "static_validation"
+    },
+    {
+      "id": "static_validation",
+      "label": "Run published static validation and visual parity",
+      "plan": "validation",
+      "tasks": ["static-site-importer-bench", "visual-parity"],
+      "requires": ["static_site_pull_request"],
+      "emits": ["static_validation_run", "import_validation_result", "visual_parity_artifact"],
+      "on_success": "finding_packets"
+    },
+    {
+      "id": "finding_packets",
+      "label": "Build actionable finding packets",
+      "plan": "validation",
+      "tasks": ["build-ssi-finding-packets", "group-ssi-finding-packets"],
+      "requires": ["static_validation_run", "visual_parity_artifact"],
+      "emits": ["finding_packet_set"],
+      "on_actionable": "iterator_upstream_pr",
+      "on_clean": "reviewer_gate"
+    },
+    {
+      "id": "iterator_upstream_pr",
+      "label": "Open iterator upstream PR",
+      "plan": "iterator",
+      "tasks": ["php-transformer-iterator"],
+      "requires": ["finding_packet_set"],
+      "emits": ["iterator_upstream_pull_request"],
+      "on_success": "reviewer_gate"
+    },
+    {
+      "id": "reviewer_gate",
+      "label": "Run SSI stack reviewer gate",
+      "plan": "reviewer",
+      "tasks": ["ssi-stack-reviewer"],
+      "requires_any": ["iterator_upstream_pull_request", "finding_packet_set"],
+      "emits": ["reviewer_gate_outcome"],
+      "on_pass": "complete",
+      "on_needs_work": "iterator_upstream_pr",
+      "on_insufficient_evidence": "wait"
+    }
+  ],
+  "events": [
+    { "event": "controller.started", "records": ["controller_id", "source_ref", "run_id"] },
+    { "event": "artifact.emitted", "records": ["entity_id", "schema", "producer_stage", "artifact_url"] },
+    { "event": "pr.published", "records": ["static_site_pull_request", "source_concept", "source_design", "head_sha"] },
+    { "event": "validation.completed", "records": ["static_validation_run", "visual_parity_artifact", "fallback_block_count", "parity_status"] },
+    { "event": "findings.grouped", "records": ["finding_packet_set", "actionable_count", "owner_repos"] },
+    { "event": "iterator.pr_opened", "records": ["iterator_upstream_pull_request", "finding_packet_set", "source_static_site_pull_request"] },
+    { "event": "reviewer_gate.completed", "records": ["reviewer_gate_outcome", "decision", "comment_url"] }
+  ],
+  "actions_compatibility": {
+    "site_generation_loop_workflow": ".github/workflows/site-generation-loop.yml",
+    "static_validation_workflow": ".github/workflows/static-site-validation.yml",
+    "iterator_workflow": ".github/workflows/php-transformer-iterator.yml",
+    "reviewer_workflow": ".github/workflows/ssi-stack-reviewer.yml",
+    "rule": "Workflows may trigger, report, and upload artifacts, but native control flow is described by this controller spec and its plan_contracts."
+  },
+  "blockers": [
+    {
+      "repo": "Extra-Chill/homeboy",
+      "issue": 3905,
+      "needed_for": "autonomous controller pending-action execution"
+    },
+    {
+      "repo": "Extra-Chill/homeboy",
+      "issue": 3904,
+      "needed_for": "Lab @file plan staging for controller-submitted plans"
+    },
+    {
+      "repo": "Extra-Chill/homeboy",
+      "issue": 4216,
+      "needed_for": "native nested controller/subloop execution for validation and iterator fan-out"
+    },
+    {
+      "repo": "Extra-Chill/homeboy",
+      "issue": 4218,
+      "needed_for": "controller lineage/event persistence for PRs, validation runs, findings, upstream PRs, and reviewer gates"
+    },
+    {
+      "repo": "Extra-Chill/homeboy-extensions",
+      "issue": 1319,
+      "needed_for": "Codex provider defaults through Codebox sandbox execution"
+    }
+  ]
+}
