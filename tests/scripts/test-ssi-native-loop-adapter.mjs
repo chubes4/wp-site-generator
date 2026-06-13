@@ -10,6 +10,25 @@ const settingsPath = path.join(tempDir, 'settings.json');
 const workflowPath = path.join(tempDir, 'workflow.json');
 const planPath = path.join(tempDir, 'iterator-plan.json');
 const dispatchPath = path.join(tempDir, 'dispatch.json');
+const controllerPath = path.join(tempDir, 'controller.json');
+
+const controllerResult = spawnSync(process.execPath, ['.github/scripts/build-homeboy-ssi-loop-controller.mjs', '--output', controllerPath], {
+	cwd: repoRoot,
+	encoding: 'utf8',
+});
+assert.equal(controllerResult.status, 0, controllerResult.stderr || controllerResult.stdout);
+
+const controller = JSON.parse(await readFile(controllerPath, 'utf8'));
+assert.equal(controller.schema, 'homeboy/controller-spec/v1', 'native controller builder emits a Homeboy controller spec');
+assert.equal(controller.authority.builder, '.github/scripts/build-homeboy-ssi-loop-controller.mjs', 'controller records its repo-owned builder');
+assert.equal(controller.state.store, 'homeboy_controller_state', 'controller records resumable state store');
+assert.ok(controller.state.tracked_entities.includes('revalidation_attempt'), 'controller tracks revalidation attempts');
+assert.equal(controller.quality_gates.fallback_blocks.pass_when, 'value === 0', 'fallback block gate is explicit');
+assert.equal(controller.quality_gates.conversion_findings.pass_when, 'value === 0', 'conversion finding gate is explicit');
+assert.equal(controller.quality_gates.visual_parity.pass_when, 'status === "pass" && mismatch_count === 0 && max_delta_ratio === 0', 'visual parity gate is explicit');
+assert.equal(controller.phases.find((phase) => phase.id === 'iterator_subloops').dedupe_by.length, 2, 'iterator subloops have dedupe keys');
+assert.equal(controller.phases.find((phase) => phase.id === 'revalidation').on_fail, 'iterator_subloops', 'failed revalidation loops back to iterator subloops');
+assert.equal(controller.tracking.issue, 'https://github.com/chubes4/wp-site-generator/issues/639', 'controller links issue 639');
 
 const settingsResult = spawnSync(process.execPath, ['.github/scripts/build-static-validation-settings.mjs', '--site', 'issue-123-native-loop', '--output', settingsPath], {
 	cwd: repoRoot,

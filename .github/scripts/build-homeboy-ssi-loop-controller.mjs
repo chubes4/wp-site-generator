@@ -1,0 +1,264 @@
+#!/usr/bin/env node
+
+import { mkdir, writeFile } from 'node:fs/promises';
+import path from 'node:path';
+
+const args = parseArgs(process.argv.slice(2));
+const root = process.env.GITHUB_WORKSPACE || process.cwd();
+const outputPath = args.get('--output') || process.env.HOMEBOY_CONTROLLER_SPEC_PATH || path.join(root, '.github/homeboy/controllers/static-site-generation-loop.controller.json');
+const issueUrl = 'https://github.com/chubes4/wp-site-generator/issues/639';
+
+const planContracts = {
+	generation: '.ci/site-generation-loop.agent-task-plan.json',
+	validation_settings: '.ci/static-validation-settings-${site}.json',
+	finding_packets: '.ci/finding-packets/finding-packets.json',
+	finding_groups: '.ci/finding-packets/grouped-finding-packets.json',
+	iterator_workflow: '.ci/datamachine-iterator-workflow.json',
+	iterator: '.ci/php-transformer-iterator.agent-task-plan.json',
+	reviewer: '.ci/ssi-stack-reviewer.agent-task-plan.json',
+};
+
+const controller = {
+	schema: 'homeboy/controller-spec/v1',
+	controller_id: 'wp-site-generator/static-site-generation-loop',
+	title: 'Static Site Importer self-improving site-generation loop',
+	description: 'WPSG-owned native controller contract for generating a static-site candidate, validating it through Static Site Importer, opening iterator upstream work, revalidating, and publishing only when quality gates clear.',
+	authority: {
+		execution_surface: 'homeboy_lab',
+		github_actions_role: 'trigger_and_reporting_compatibility',
+		native_runner: 'homeboy controller run --spec @.github/homeboy/controllers/static-site-generation-loop.controller.json',
+		builder: '.github/scripts/build-homeboy-ssi-loop-controller.mjs',
+		plan_contracts: planContracts,
+	},
+	runtime: {
+		backend: 'codebox',
+		wordpress_runtime: 'wp-codebox',
+		agent_runtime: 'datamachine_bundle',
+		provider: {
+			kind: 'codex',
+			location: 'in_sandbox',
+			assumption: 'The Codebox sandbox has the Codex provider plugin/runtime overlay and required secret_env values mounted by Homeboy Lab. GitHub Actions compatibility may still use ai-provider-for-openai until Homeboy Extensions exposes Codex defaults.',
+		},
+		secret_env: ['AI_PROVIDER_OPENAI_CODEX_API_KEY', 'OPENAI_API_KEY', 'GITHUB_TOKEN'],
+	},
+	state: {
+		resume_key: 'wp-site-generator/static-site-generation-loop:${source_ref}:${candidate.slug}',
+		store: 'homeboy_controller_state',
+		checkpoint_events: [
+			'candidate.generated',
+			'import_validation.completed',
+			'static_site_pr.published',
+			'static_validation.completed',
+			'finding_packets.grouped',
+			'iterator_subloop.completed',
+			'revalidation.completed',
+			'reviewer_gate.completed',
+		],
+		dedupe_keys: {
+			candidate: '${static_site_candidate.sha256}',
+			validation: '${static_site_pull_request.number}:${static_site_pull_request.head_sha}:${validation_attempt}',
+			finding_group: '${finding_group.owner_repo}:${finding_group.kind}:${finding_group.source_fingerprint}',
+			iterator_worktree: '${finding_group.owner_repo}:${finding_group.kind}:${finding_group.source_fingerprint}',
+			upstream_pr: '${finding_group.owner_repo}:${finding_group.issue_url || finding_group.source_fingerprint}',
+		},
+		tracked_entities: [
+			'concept_packet',
+			'design_packet',
+			'static_site_candidate',
+			'import_validation_result',
+			'static_site_pull_request',
+			'static_validation_run',
+			'visual_parity_artifact',
+			'finding_packet_set',
+			'finding_group',
+			'iterator_worktree',
+			'iterator_upstream_issue',
+			'iterator_upstream_pull_request',
+			'revalidation_attempt',
+			'reviewer_gate_outcome',
+		],
+	},
+	quality_gates: {
+		fallback_blocks: {
+			metric_paths: ['import_validation_result.metrics.fallback_blocks', 'import_validation_result.metrics.fallback_block_count', 'import_validation_result.metrics.ssi_fallback_count'],
+			pass_when: 'value === 0',
+			on_fail: 'finding_packets',
+		},
+		conversion_findings: {
+			metric_paths: ['import_validation_result.metrics.conversion_findings', 'finding_packet_set.actionable_conversion_count'],
+			pass_when: 'value === 0',
+			actionable_kinds: ['unsupported_html_fallback', 'core_html_block', 'freeform_block'],
+			on_fail: 'iterator_subloops',
+		},
+		visual_parity: {
+			metric_paths: ['visual_parity_artifact.summary.status', 'visual_parity_artifact.summary.mismatch_count', 'visual_parity_artifact.summary.max_delta_ratio'],
+			pass_when: 'status === "pass" && mismatch_count === 0 && max_delta_ratio === 0',
+			on_fail: 'finding_packets',
+		},
+		reviewer_evidence: {
+			requires: ['static_site_pull_request.url', 'static_validation_run.artifact_url', 'visual_parity_artifact.artifact_url'],
+			forbids: ['localhost', '127.0.0.1', '/Users/'],
+			on_fail: 'escalate',
+		},
+	},
+	lineage_entities: [
+		{ id: 'concept_packet', schema: 'wp-site-generator/ConceptPacket/v1' },
+		{ id: 'design_packet', schema: 'wp-site-generator/DesignPacket/v1' },
+		{ id: 'static_site_candidate', schema: 'wp-site-generator/StaticSiteCandidate/v1' },
+		{ id: 'import_validation_result', schema: 'wp-site-generator/ImportValidationResult/v1' },
+		{ id: 'static_site_pull_request', schema: 'github/PullRequest/v1' },
+		{ id: 'static_validation_run', schema: 'homeboy/Run/v1' },
+		{ id: 'visual_parity_artifact', schema: 'wp-site-generator/VisualParityArtifact/v1' },
+		{ id: 'finding_packet_set', schema: 'wp-site-generator/FindingPacketSet/v1' },
+		{ id: 'finding_group', schema: 'wp-site-generator/FindingGroup/v1' },
+		{ id: 'iterator_worktree', schema: 'datamachine-code/Worktree/v1' },
+		{ id: 'iterator_upstream_issue', schema: 'github/Issue/v1' },
+		{ id: 'iterator_upstream_pull_request', schema: 'github/PullRequest/v1' },
+		{ id: 'revalidation_attempt', schema: 'wp-site-generator/RevalidationAttempt/v1' },
+		{ id: 'reviewer_gate_outcome', schema: 'wp-site-generator/SsiStackReviewerGate/v1' },
+	],
+	phases: [
+		{
+			id: 'generation',
+			label: 'Generate candidate artifacts',
+			plan: 'generation',
+			builder: '.github/scripts/build-homeboy-site-generation-plan.mjs',
+			run: 'homeboy agent-task run-plan --plan @.ci/site-generation-loop.agent-task-plan.json',
+			tasks: ['store-idea-agent', 'website-idea-agent', 'design-store-packet', 'design-website-packet', 'generate-store-candidate', 'generate-website-candidate'],
+			emits: ['concept_packet', 'design_packet', 'static_site_candidate'],
+			on_success: 'import_validation',
+		},
+		{
+			id: 'import_validation',
+			label: 'Import candidate before publication',
+			plan: 'generation',
+			tasks: ['validate-store-candidate', 'validate-website-candidate'],
+			requires: ['static_site_candidate'],
+			emits: ['import_validation_result', 'finding_packet_set'],
+			gates: ['fallback_blocks', 'conversion_findings'],
+			on_pass: 'publish_pr',
+			on_fail: 'finding_packets',
+		},
+		{
+			id: 'publish_pr',
+			label: 'Publish generated static-site PR',
+			plan: 'generation',
+			tasks: ['publish-store-pr', 'publish-website-pr'],
+			requires: ['static_site_candidate', 'import_validation_result'],
+			emits: ['static_site_pull_request'],
+			on_success: 'static_validation',
+		},
+		{
+			id: 'static_validation',
+			label: 'Validate published PR and visual parity',
+			builders: ['.github/scripts/build-static-validation-settings.mjs', '.github/scripts/static-visual-parity.mjs'],
+			run: 'homeboy bench run --settings @.ci/static-validation-settings-${site}.json',
+			tasks: ['static-site-importer-bench', 'visual-parity'],
+			requires: ['static_site_pull_request'],
+			emits: ['static_validation_run', 'import_validation_result', 'visual_parity_artifact'],
+			gates: ['fallback_blocks', 'conversion_findings', 'visual_parity'],
+			on_pass: 'reviewer_gate',
+			on_fail: 'finding_packets',
+		},
+		{
+			id: 'finding_packets',
+			label: 'Normalize validation artifacts into finding packets',
+			builders: ['.github/scripts/build-ssi-finding-packets.mjs', '.github/scripts/group-ssi-finding-packets.mjs', '.github/scripts/build-datamachine-iterator-workflow.mjs'],
+			requires_any: ['import_validation_result', 'static_validation_run', 'visual_parity_artifact'],
+			emits: ['finding_packet_set', 'finding_group'],
+			dedupe_by: 'state.dedupe_keys.finding_group',
+			on_actionable: 'iterator_subloops',
+			on_clean: 'reviewer_gate',
+		},
+		{
+			id: 'iterator_subloops',
+			label: 'Run upstream iterator subloops per finding group',
+			plan: 'iterator',
+			builder: '.github/scripts/build-homeboy-php-transformer-iterator-plan.mjs',
+			run: 'homeboy agent-task run-plan --plan @.ci/php-transformer-iterator.agent-task-plan.json',
+			requires: ['finding_group'],
+			emits: ['iterator_worktree', 'iterator_upstream_issue', 'iterator_upstream_pull_request'],
+			dedupe_by: ['state.dedupe_keys.iterator_worktree', 'state.dedupe_keys.upstream_pr'],
+			fan_out: {
+				per: 'finding_group',
+				max_concurrency: 1,
+				owner_repos: ['chubes4/html-to-blocks-converter', 'chubes4/block-format-bridge', 'chubes4/static-site-importer', 'chubes4/wp-site-generator'],
+			},
+			on_success: 'revalidation',
+			on_blocked: 'escalate',
+		},
+		{
+			id: 'revalidation',
+			label: 'Re-run validation after upstream iterator work',
+			builders: ['.github/scripts/build-static-validation-settings.mjs', '.github/scripts/build-ssi-finding-packets.mjs', '.github/scripts/group-ssi-finding-packets.mjs'],
+			requires: ['static_site_pull_request', 'iterator_upstream_pull_request'],
+			emits: ['revalidation_attempt', 'static_validation_run', 'import_validation_result', 'visual_parity_artifact', 'finding_packet_set'],
+			max_attempts: 3,
+			gates: ['fallback_blocks', 'conversion_findings', 'visual_parity'],
+			on_pass: 'reviewer_gate',
+			on_fail: 'iterator_subloops',
+			on_exhausted: 'escalate',
+		},
+		{
+			id: 'reviewer_gate',
+			label: 'Run SSI stack reviewer gate',
+			plan: 'reviewer',
+			builder: '.github/scripts/build-ssi-stack-reviewer-workflow.mjs',
+			requires: ['static_site_pull_request', 'static_validation_run', 'visual_parity_artifact'],
+			requires_any: ['finding_packet_set', 'iterator_upstream_pull_request'],
+			emits: ['reviewer_gate_outcome'],
+			gates: ['reviewer_evidence'],
+			on_pass: 'complete',
+			on_needs_work: 'iterator_subloops',
+			on_insufficient_evidence: 'escalate',
+		},
+	],
+	events: [
+		{ event: 'controller.started', records: ['controller_id', 'source_ref', 'run_id', 'resume_key'] },
+		{ event: 'candidate.generated', records: ['static_site_candidate', 'concept_packet', 'design_packet'] },
+		{ event: 'import_validation.completed', records: ['import_validation_result', 'finding_packet_set', 'fallback_block_count', 'conversion_findings_count'] },
+		{ event: 'static_site_pr.published', records: ['static_site_pull_request', 'source_concept', 'source_design', 'head_sha'] },
+		{ event: 'static_validation.completed', records: ['static_validation_run', 'visual_parity_artifact', 'fallback_block_count', 'conversion_findings_count', 'visual_parity_status'] },
+		{ event: 'finding_packets.grouped', records: ['finding_packet_set', 'finding_group', 'actionable_count', 'owner_repos'] },
+		{ event: 'iterator_subloop.completed', records: ['finding_group', 'iterator_worktree', 'iterator_upstream_issue', 'iterator_upstream_pull_request'] },
+		{ event: 'revalidation.completed', records: ['revalidation_attempt', 'static_validation_run', 'quality_gates'] },
+		{ event: 'reviewer_gate.completed', records: ['reviewer_gate_outcome', 'decision', 'comment_url'] },
+	],
+	actions_compatibility: {
+		site_generation_loop_workflow: '.github/workflows/site-generation-loop.yml',
+		static_validation_workflow: '.github/workflows/static-site-validation.yml',
+		iterator_workflow: '.github/workflows/php-transformer-iterator.yml',
+		reviewer_workflow: '.github/workflows/ssi-stack-reviewer.yml',
+		rule: 'Workflows may trigger, report, and upload artifacts, but this controller spec owns native control flow, state, lineage, quality gates, iteration, and revalidation.',
+	},
+	tracking: {
+		issue: issueUrl,
+	},
+	blockers: [
+		{ repo: 'Extra-Chill/homeboy', issue: 3905, needed_for: 'autonomous controller pending-action execution' },
+		{ repo: 'Extra-Chill/homeboy', issue: 3904, needed_for: 'Lab @file plan staging for controller-submitted plans' },
+		{ repo: 'Extra-Chill/homeboy', issue: 4216, needed_for: 'native nested controller/subloop execution for validation and iterator fan-out' },
+		{ repo: 'Extra-Chill/homeboy', issue: 4218, needed_for: 'controller lineage/event persistence for PRs, validation runs, findings, upstream PRs, and reviewer gates' },
+		{ repo: 'Extra-Chill/homeboy-extensions', issue: 1319, needed_for: 'Codex provider defaults through Codebox sandbox execution' },
+	],
+};
+
+await mkdir(path.dirname(outputPath), { recursive: true });
+await writeFile(outputPath, `${JSON.stringify(controller, null, 2)}\n`);
+console.log(outputPath);
+
+function parseArgs(argv) {
+	const parsed = new Map();
+	for (let i = 0; i < argv.length; i += 1) {
+		const arg = argv[i];
+		if (!arg.startsWith('--')) {
+			continue;
+		}
+		const next = argv[i + 1];
+		parsed.set(arg, next && !next.startsWith('--') ? next : '1');
+		if (next && !next.startsWith('--')) {
+			i += 1;
+		}
+	}
+	return parsed;
+}

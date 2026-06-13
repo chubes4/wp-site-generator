@@ -1,18 +1,49 @@
 # SSI Native Loop Adapter
 
-This repo owns the Static Site Importer-specific orchestration for the continuous site-generation loop. GitHub Actions remains a supported trigger, but the reusable contract is the checked-in Homeboy controller spec at `.github/homeboy/controllers/static-site-generation-loop.controller.json` so a Lab/Homeboy controller can run the same phases without using Actions as the orchestrator.
+This repo owns the Static Site Importer-specific orchestration for the continuous site-generation loop. GitHub Actions remains a supported trigger, but the reusable contract is the generated Homeboy controller spec at `.github/homeboy/controllers/static-site-generation-loop.controller.json` so a Lab/Homeboy controller can run the same phases without using Actions as the orchestrator.
 
-The controller spec is the authority for the full loop:
+The controller builder is `.github/scripts/build-homeboy-ssi-loop-controller.mjs`. It emits the WPSG-owned native controller contract that tracks candidate lineage, validation artifacts, finding packets, iterator work, upstream PR/issue URLs, revalidation attempts, and final reviewer-gate evidence.
+
+The controller spec is the authority for the full self-improving loop:
 
 ```text
-concept -> design -> candidate -> import validation -> publish PR
+generation -> import validation -> publish PR
   -> static validation + visual parity -> finding packets
-  -> iterator upstream PR -> reviewer gate
+  -> iterator subloops -> revalidation -> reviewer gate
 ```
 
 The native Lab path assumes the `codebox` backend. Inside the sandbox, Homeboy should mount the Codex provider overlay and required secrets for Codex execution; the Actions compatibility path may keep using the existing OpenAI provider checkout until Homeboy Extensions exposes those Codebox/Codex defaults.
 
-## Native Controller Sequence
+## Native Controller Path
+
+Build or refresh the checked-in controller spec:
+
+```bash
+node .github/scripts/build-homeboy-ssi-loop-controller.mjs
+```
+
+Run the native controller from the spec:
+
+```bash
+homeboy controller run --spec @.github/homeboy/controllers/static-site-generation-loop.controller.json
+```
+
+The controller owns the state machine. Homeboy should checkpoint the configured events after candidate generation, import validation, PR publication, static validation, grouped findings, iterator subloops, revalidation, and the reviewer gate. Resume uses the controller `resume_key` plus the candidate identity, and dedupes repeated finding groups, iterator worktrees, and upstream PR actions through the declared `state.dedupe_keys`.
+
+## Quality Gates
+
+The native controller stops publication/advancement unless the declared gates pass:
+
+- **Fallback blocks:** `fallback_blocks`, `fallback_block_count`, or `ssi_fallback_count` must be `0`.
+- **Conversion findings:** actionable conversion finding count must be `0`; fallback/core HTML/freeform findings route to iterator subloops.
+- **Visual parity:** visual parity must report `status === "pass"`, `mismatch_count === 0`, and `max_delta_ratio === 0`.
+- **Reviewer evidence:** reviewer-facing evidence must link to GitHub artifacts, PRs, or issues and must not use local-only URLs or filesystem paths.
+
+Failed import/static/revalidation gates route through finding packet generation, grouped iterator workflows, upstream PR/issue tracking, and bounded revalidation attempts. Passing gates route to the SSI stack reviewer gate and then completion.
+
+## Script Contracts
+
+The controller invokes the existing repo-owned builders as phase contracts:
 
 1. Build and run the site-generation Homeboy plan.
 
@@ -21,7 +52,7 @@ node .github/scripts/build-homeboy-site-generation-plan.mjs
 homeboy agent-task run-plan --plan "@.ci/site-generation-loop.agent-task-plan.json" --record-run-id "$RUN_ID" --artifact-root "$HOMEBOY_ARTIFACT_ROOT"
 ```
 
-The generated plan records `.github/homeboy/controllers/static-site-generation-loop.controller.json` in `metadata.controller_spec`. Lab controllers should use that field to bind plan execution back to controller lineage.
+The generated plan records `.github/homeboy/controllers/static-site-generation-loop.controller.json` in `metadata.controller_spec`. Lab controllers use that field to bind plan execution back to controller lineage.
 
 2. For each generated static-site PR/site, build the SSI validation settings and run the Homeboy bench workload.
 
@@ -55,7 +86,7 @@ node .github/scripts/build-datamachine-iterator-workflow.mjs \
   .ci/datamachine-iterator-workflow.json
 ```
 
-5. Submit the iterator through Homeboy natively.
+5. Submit the iterator through Homeboy natively for each grouped finding subloop.
 
 ```bash
 DATAMACHINE_WORKFLOW_PATH=.ci/datamachine-iterator-workflow.json \
@@ -68,11 +99,13 @@ node .github/scripts/build-homeboy-php-transformer-iterator-plan.mjs
 homeboy agent-task run-plan --plan "@.ci/php-transformer-iterator.agent-task-plan.json" --record-run-id "php-transformer-iterator-$RUN_ID" --artifact-root "$HOMEBOY_ARTIFACT_ROOT"
 ```
 
+6. Re-run static validation and finding packet grouping after upstream iterator work. The controller loops back to iterator subloops until all quality gates pass or the bounded `revalidation.max_attempts` value is exhausted.
+
 ## Actions Compatibility
 
 `site-generation-loop.yml` builds the same generation plan and records `HOMEBOY_CONTROLLER_SPEC_PATH` so Actions-triggered runs point back to the Lab controller contract.
 
-`static-site-validation.yml` calls the same shared scripts for Homeboy settings, Playground preview URLs, and php-transformer iterator dispatch. The Actions path still dispatches `php-transformer-iterator.yml`; native controllers should use `build-homeboy-php-transformer-iterator-plan.mjs` instead.
+`static-site-validation.yml` calls the same shared scripts for Homeboy settings, Playground preview URLs, and php-transformer iterator dispatch. The Actions path still dispatches `php-transformer-iterator.yml`; native controllers use `build-homeboy-php-transformer-iterator-plan.mjs` and then resume through the controller's revalidation phase.
 
 ## Current Native Blockers
 
