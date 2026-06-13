@@ -20,7 +20,7 @@ const planId = manualTaskKind ? `site-generator-${manualTaskKind}-${runId}` : `s
 const groupKey = manualTaskKind ? `site-generator-${manualTaskKind}` : 'site-generation-loop';
 
 const ci = (name) => path.join(root, '.ci', name);
-const wpCodeboxBin = process.env.HOMEBOY_WP_CODEBOX_BIN || path.join(ci('wp-codebox'), 'packages', 'cli', 'dist', 'index.js');
+const wpCodeboxBin = process.env.HOMEBOY_WP_CODEBOX_BIN || '';
 const artifactsRoot = process.env.HOMEBOY_ARTIFACT_ROOT || path.join(root, '.ci', 'homeboy-agent-task-artifacts');
 const policyInputs = resolvePolicyInputs({ root });
 const complexityPolicy = loadPolicy(policyInputs.policyPath);
@@ -66,7 +66,6 @@ function datamachineConfig({
     data_machine: ci('data-machine'),
     data_machine_code: ci('data-machine-code'),
     homeboy_extensions: path.join(ci('homeboy-extensions'), 'wordpress'),
-    wp_codebox_bin: wpCodeboxBin,
     bundle_host_path: path.join(root, bundle),
     bundle_path: `/workspace/wp-site-generator/${bundle}`,
     agent_slug: agent,
@@ -84,6 +83,10 @@ function datamachineConfig({
     secret_env: ['OPENAI_API_KEY', 'GITHUB_TOKEN'],
     artifacts: path.join(artifactsRoot, agent, transcriptArtifactName || flow),
   };
+
+  if (wpCodeboxBin) {
+    config.wp_codebox_bin = wpCodeboxBin;
+  }
 
 	if (taskComplexityPolicy) {
 		config.complexity_policy = taskComplexityPolicy;

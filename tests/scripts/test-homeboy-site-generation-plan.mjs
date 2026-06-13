@@ -29,6 +29,7 @@ try {
   assert.equal(plan.schema, 'homeboy/agent-task-plan/v1');
   assert.doesNotMatch(serialized, /metadata\/codebox\/datamachine/);
   assert.doesNotMatch(serialized, /scenarios\/0/);
+  assert.doesNotMatch(serialized, /\.ci\/wp-codebox/, 'Lab plans do not bake a controller-local WP Codebox path by default');
 
 	assert.equal(plan.metadata.artifact_driven, true, 'normal loop is artifact-driven');
 	assert.deepEqual(plan.metadata.artifact_stages, ['ConceptPacket', 'DesignPacket', 'StaticSiteCandidate', 'ImportValidationResult', 'StaticSitePullRequest']);
@@ -277,6 +278,22 @@ try {
 	const stablePlan = JSON.parse(await readFile(path.join(tempDir, 'plan-stable.json'), 'utf8'));
 	assert.equal(stablePlan.metadata.complexity_policy.selected_tier, 'composed', 'plan builder consumes quality-signal file');
 	assert.equal(stablePlan.options.max_concurrency, 2, 'composed tier raises active candidate budget');
+
+	const explicitCodeboxPath = '/runner/wp-codebox/packages/cli/dist/index.js';
+	const explicitCodeboxPlanPath = path.join(tempDir, 'plan-codebox.json');
+	const explicitCodeboxResult = spawnSync(process.execPath, ['.github/scripts/build-homeboy-site-generation-plan.mjs'], {
+		cwd: repoRoot,
+		encoding: 'utf8',
+		env: {
+			...process.env,
+			GITHUB_RUN_ID: '411',
+			HOMEBOY_PLAN_PATH: explicitCodeboxPlanPath,
+			HOMEBOY_WP_CODEBOX_BIN: explicitCodeboxPath,
+		},
+	});
+	assert.equal(explicitCodeboxResult.status, 0, explicitCodeboxResult.stderr || explicitCodeboxResult.stdout);
+	const explicitCodeboxPlan = JSON.parse(await readFile(explicitCodeboxPlanPath, 'utf8'));
+	assert.equal(explicitCodeboxPlan.tasks[0].executor.config.wp_codebox_bin, explicitCodeboxPath, 'explicit runner WP Codebox path is preserved');
 } finally {
   await rm(tempDir, { recursive: true, force: true });
 }
