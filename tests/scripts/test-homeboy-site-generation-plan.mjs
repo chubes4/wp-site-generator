@@ -51,20 +51,35 @@ try {
 	assert.equal(controllerSpec.runtime.backend, 'codebox');
 	assert.equal(controllerSpec.runtime.provider.kind, 'codex');
 	assert.equal(controllerSpec.runtime.provider.location, 'in_sandbox');
+	assert.equal(controllerSpec.authority.builder, '.github/scripts/build-homeboy-ssi-loop-controller.mjs');
+	assert.equal(controllerSpec.state.store, 'homeboy_controller_state', 'controller declares resumable state storage');
+	assert.ok(controllerSpec.state.checkpoint_events.includes('revalidation.completed'), 'controller checkpoints revalidation attempts');
+	assert.equal(controllerSpec.tracking.issue, 'https://github.com/chubes4/wp-site-generator/issues/639', 'controller links issue 639');
 	assert.deepEqual(
-		controllerSpec.stages.map((stage) => stage.id),
+		controllerSpec.phases.map((phase) => phase.id),
 		[
-			'concept',
-			'design',
-			'candidate',
+			'generation',
 			'import_validation',
 			'publish_pr',
 			'static_validation',
 			'finding_packets',
-			'iterator_upstream_pr',
+			'iterator_subloops',
+			'revalidation',
 			'reviewer_gate',
 		],
 		'controller records the full static-site generation loop order'
+	);
+	assert.deepEqual(Object.keys(controllerSpec.quality_gates), ['fallback_blocks', 'conversion_findings', 'visual_parity', 'reviewer_evidence'], 'controller declares explicit quality gates');
+	assert.equal(controllerSpec.quality_gates.fallback_blocks.pass_when, 'value === 0');
+	assert.equal(controllerSpec.quality_gates.conversion_findings.pass_when, 'value === 0');
+	assert.equal(controllerSpec.quality_gates.visual_parity.pass_when, 'status === "pass" && mismatch_count === 0 && max_delta_ratio === 0');
+	assert.deepEqual(controllerSpec.quality_gates.reviewer_evidence.forbids, ['localhost', '127.0.0.1', '/Users/']);
+	assert.equal(controllerSpec.phases.find((phase) => phase.id === 'iterator_subloops').fan_out.per, 'finding_group', 'iterator phase fans out per grouped finding');
+	assert.equal(controllerSpec.phases.find((phase) => phase.id === 'revalidation').max_attempts, 3, 'revalidation attempts are bounded');
+	assert.deepEqual(
+		controllerSpec.phases.find((phase) => phase.id === 'revalidation').gates,
+		['fallback_blocks', 'conversion_findings', 'visual_parity'],
+		'revalidation reruns all quality gates'
 	);
 	assert.deepEqual(
 		controllerSpec.lineage_entities.map((entity) => entity.id),
@@ -77,7 +92,11 @@ try {
 			'static_validation_run',
 			'visual_parity_artifact',
 			'finding_packet_set',
+			'finding_group',
+			'iterator_worktree',
+			'iterator_upstream_issue',
 			'iterator_upstream_pull_request',
+			'revalidation_attempt',
 			'reviewer_gate_outcome',
 		],
 		'controller records all source, validation, iterator, and reviewer lineage entities'

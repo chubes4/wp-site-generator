@@ -201,9 +201,11 @@ function escapeRegExp(value) {
 
 async function assertImportAndIteratorWorkflow() {
   const workflow = await readFile(path.join(repoRoot, '.github/workflows/static-site-validation.yml'), 'utf8');
-  assert.match(workflow, /static-site-importer import-theme/, 'static validation imports generated static sites');
+  const validationSettings = await readFile(path.join(repoRoot, '.github/scripts/build-static-validation-settings.mjs'), 'utf8');
+  assert.match(workflow, /build-static-validation-settings\.mjs/, 'static validation delegates SSI settings to the shared builder');
+  assert.match(validationSettings, /static-site-importer import-theme/, 'static validation settings import generated static sites');
   assert.match(workflow, /Build SSI finding packets/, 'static validation builds SSI finding packets');
-  assert.match(workflow, /gh workflow run php-transformer-iterator\.yml/, 'static validation dispatches transformer iterator');
+  assert.match(workflow, /dispatch-php-transformer-iterator\.mjs/, 'static validation delegates transformer iterator dispatch to the shared builder');
 }
 
 async function assertStaticValidationComments(staticPrs) {
