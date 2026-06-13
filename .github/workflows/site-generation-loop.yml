@@ -27,6 +27,22 @@ on:
         description: WP Codebox ref.
         required: true
         default: main
+      complexity_tier:
+        description: Optional WPSG prompt complexity tier override.
+        required: false
+        default: ''
+      randomness_profile:
+        description: Optional WPSG randomness profile override.
+        required: false
+        default: ''
+      randomness_seed:
+        description: Optional WPSG randomness seed override.
+        required: false
+        default: ''
+      quality_signals_path:
+        description: Optional repo-relative JSON file with recent validation quality signals.
+        required: false
+        default: ''
 
 permissions:
   actions: write
@@ -50,6 +66,10 @@ jobs:
       HOMEBOY_PLAN_PATH: ${{ github.workspace }}/.ci/site-generation-loop.agent-task-plan.json
       HOMEBOY_CONTROLLER_SPEC_PATH: .github/homeboy/controllers/static-site-generation-loop.controller.json
       HOMEBOY_ARTIFACT_ROOT: ${{ github.workspace }}/.ci/homeboy-agent-task-artifacts
+      WPSG_COMPLEXITY_TIER: ${{ inputs.complexity_tier }}
+      WPSG_RANDOMNESS_PROFILE: ${{ inputs.randomness_profile }}
+      WPSG_RANDOMNESS_SEED: ${{ inputs.randomness_seed }}
+      WPSG_QUALITY_SIGNALS_PATH: ${{ inputs.quality_signals_path }}
     steps:
       - name: Check out wp-site-generator
         uses: actions/checkout@v4
@@ -146,6 +166,7 @@ jobs:
           name: site-generation-loop-homeboy-${{ github.run_id }}
           path: |
             .ci/site-generation-loop.agent-task-plan.json
+            .github/site-generation-complexity-policy.json
             .github/homeboy/controllers/static-site-generation-loop.controller.json
             .ci/homeboy-agent-task-artifacts/**
             ~/.local/share/homeboy/agent-task-runs/site-generation-loop-${{ github.run_id }}/**

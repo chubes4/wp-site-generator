@@ -1,6 +1,13 @@
 #!/usr/bin/env node
 import fs from 'node:fs';
 import path from 'node:path';
+import {
+	evaluateComplexityPolicy,
+	loadPolicy,
+	loadQualitySignals,
+	policyPrompt,
+	resolvePolicyInputs,
+} from './site-generation-complexity-policy.mjs';
 
 const root = process.env.GITHUB_WORKSPACE || process.cwd();
 const runId = process.env.GITHUB_RUN_ID || String(Date.now());
@@ -15,6 +22,18 @@ const groupKey = manualTaskKind ? `site-generator-${manualTaskKind}` : 'site-gen
 const ci = (name) => path.join(root, '.ci', name);
 const wpCodeboxBin = process.env.HOMEBOY_WP_CODEBOX_BIN || path.join(ci('wp-codebox'), 'packages', 'cli', 'dist', 'index.js');
 const artifactsRoot = process.env.HOMEBOY_ARTIFACT_ROOT || path.join(root, '.ci', 'homeboy-agent-task-artifacts');
+const policyInputs = resolvePolicyInputs({ root });
+const complexityPolicy = loadPolicy(policyInputs.policyPath);
+const qualitySignals = loadQualitySignals(policyInputs.qualitySignalsPath);
+const complexityDecision = evaluateComplexityPolicy({
+	policy: complexityPolicy,
+	qualitySignals,
+	runId,
+	overrides: policyInputs.overrides,
+});
+const complexityTaskInput = {
+	complexity_policy: complexityDecision,
+};
 
 function taskOutputPath(field) {
   return `/outputs/${field}`;
@@ -36,6 +55,7 @@ function datamachineConfig({
 	toolRecorders = [],
   engineDataOutputs = {},
   transcriptArtifactName,
+  complexityPolicy: taskComplexityPolicy,
 }) {
   const config = {
     execution_kind: 'datamachine_bundle',
@@ -65,6 +85,10 @@ function datamachineConfig({
     artifacts: path.join(artifactsRoot, agent, transcriptArtifactName || flow),
   };
 
+	if (taskComplexityPolicy) {
+		config.complexity_policy = taskComplexityPolicy;
+	}
+
   if (maxTurns) {
     config.max_turns = maxTurns;
   }
@@ -79,7 +103,7 @@ function datamachineConfig({
   return config;
 }
 
-function task({ id, title, config, instructions, expectedArtifacts = ['datamachine-transcript'] }) {
+function task({ id, title, config, instructions, expectedArtifacts = ['datamachine-transcript'], inputs = {} }) {
   return {
     schema: 'homeboy/agent-task-request/v1',
     task_id: id,
@@ -91,7 +115,7 @@ function task({ id, title, config, instructions, expectedArtifacts = ['datamachi
       config,
     },
     instructions,
-    inputs: { title },
+    inputs: { title, ...inputs },
     limits: {
       task_timeout_seconds: config.task_timeout_seconds || 900,
     },
@@ -142,19 +166,21 @@ const loopDesignPrompt = 'Consume ConceptPacket {{outputs.concept_packet}} and e
 const loopCandidatePrompt = 'Consume ConceptPacket {{outputs.concept_packet}} and DesignPacket {{outputs.design_packet}}, then generate a StaticSiteCandidate artifact containing the complete static-sites file set or patch, site metadata, source concept/design references, branch/title proposal, and reproduction context. Do not create a pull request; validation must run before publication.';
 const loopPublishPrompt = 'Consume StaticSiteCandidate {{outputs.static_site_candidate}} and ImportValidationResult {{outputs.import_validation_result}}, then publish exactly one static-site PR. Use the candidate files and metadata as source of truth. Render the PR body with .github/scripts/render-static-site-pr-body.mjs so the initial PR body includes the import validation summary, fallback block count, conversion finding counts, and artifact references. Do not add a separate follow-up metrics comment in the normal flow.';
 
-function storeIdeaTask({ id = 'store-idea-agent', flow = 'store-idea-artifact-flow', prompt = ' ', title = 'Generate store idea' } = {}) {
+function storeIdeaTask({ id = 'store-idea-agent', flow = 'store-idea-artifact-flow', prompt = ' ', title = 'Generate store idea', lane = 'store concept lane' } = {}) {
+	const lanePolicyPrompt = policyPrompt(complexityDecision, lane);
 	const taskPrompt = [conceptPacketPrompt, prompt].filter(Boolean).join('\n\n');
 	return task({
 		id,
 		title,
 		instructions: 'Generate one store ConceptPacket artifact.',
+		inputs: complexityTaskInput,
 		expectedArtifacts: ['datamachine-transcript', 'ConceptPacket'],
 		config: datamachineConfig({
 			bundle: 'bundles/store-idea-agent',
 			agent: 'store-idea-agent',
 			pipeline: 'store-idea-artifact-pipeline',
 			flow,
-			prompt: taskPrompt,
+			prompt: [taskPrompt, lanePolicyPrompt].join('\n\n'),
 			successRequiresPr: false,
 			successCompletionOutcomes: ['concept_packet'],
 			artifactOutputs: {
@@ -167,23 +193,27 @@ function storeIdeaTask({ id = 'store-idea-agent', flow = 'store-idea-artifact-fl
 				concept_packet: 'metadata.artifacts.ConceptPacket',
 			},
 			transcriptArtifactName: `${id}-transcript-${runId}`,
+			complexityPolicy: complexityDecision,
 		}),
 	});
 }
 
-function websiteIdeaTask({ id = 'website-idea-agent', flow = 'website-idea-artifact-flow', prompt = '', title = 'Generate website idea' } = {}) {
+
+function websiteIdeaTask({ id = 'website-idea-agent', flow = 'website-idea-artifact-flow', prompt = '', title = 'Generate website idea', lane = 'website concept lane' } = {}) {
+	const lanePolicyPrompt = policyPrompt(complexityDecision, lane);
 	const taskPrompt = [conceptPacketPrompt, prompt].filter(Boolean).join('\n\n');
 	return task({
 		id,
 		title,
 		instructions: 'Generate one website ConceptPacket artifact.',
+		inputs: complexityTaskInput,
 		expectedArtifacts: ['datamachine-transcript', 'ConceptPacket'],
 		config: datamachineConfig({
 			bundle: 'bundles/website-idea-agent',
 			agent: 'website-idea-agent',
 			pipeline: 'website-idea-artifact-pipeline',
 			flow,
-			prompt: taskPrompt,
+			prompt: [taskPrompt, lanePolicyPrompt].join('\n\n'),
 			successRequiresPr: false,
 			successCompletionOutcomes: ['concept_packet'],
 			artifactOutputs: {
@@ -193,16 +223,18 @@ function websiteIdeaTask({ id = 'website-idea-agent', flow = 'website-idea-artif
 				concept_packet: 'metadata.artifacts.ConceptPacket',
 			},
 			transcriptArtifactName: `${id}-transcript-${runId}`,
+			complexityPolicy: complexityDecision,
 		}),
 	});
 }
 
-function designTask({ id, conceptPacket = '{{outputs.concept_packet}}', title }) {
-	const prompt = `Consume ConceptPacket ${conceptPacket} and emit one DesignPacket artifact. Preserve source concept identity and lane metadata. Do not create GitHub issues or pull requests.`;
+function designTask({ id, conceptPacket = '{{outputs.concept_packet}}', title, lane = 'design lane' }) {
+	const prompt = [`Consume ConceptPacket ${conceptPacket} and emit one DesignPacket artifact. Preserve source concept identity and lane metadata. Do not create GitHub issues or pull requests.`, policyPrompt(complexityDecision, lane)].join('\n\n');
 	return task({
 		id,
 		title,
 		instructions: prompt,
+		inputs: complexityTaskInput,
 		expectedArtifacts: ['datamachine-transcript', 'DesignPacket'],
 		config: datamachineConfig({
 			bundle: 'bundles/design-agent',
@@ -219,16 +251,18 @@ function designTask({ id, conceptPacket = '{{outputs.concept_packet}}', title })
 				design_packet: 'metadata.artifacts.DesignPacket',
 			},
 			transcriptArtifactName: `${id}-transcript-${runId}`,
+			complexityPolicy: complexityDecision,
 		}),
 	});
 }
 
-function staticSiteCandidateTask({ id, conceptPacket = '{{outputs.concept_packet}}', designPacket = '{{outputs.design_packet}}', title }) {
-	const prompt = `Consume ConceptPacket ${conceptPacket} and DesignPacket ${designPacket}. Emit one StaticSiteCandidate artifact with generated files, metadata, branch/title proposal, and reproduction context. Do not open a pull request.`;
+function staticSiteCandidateTask({ id, conceptPacket = '{{outputs.concept_packet}}', designPacket = '{{outputs.design_packet}}', title, lane = 'static-site candidate lane' }) {
+	const prompt = [`Consume ConceptPacket ${conceptPacket} and DesignPacket ${designPacket}. Emit one StaticSiteCandidate artifact with generated files, metadata, branch/title proposal, and reproduction context. Do not open a pull request.`, policyPrompt(complexityDecision, lane)].join('\n\n');
 	return task({
 		id,
 		title,
 		instructions: prompt,
+		inputs: complexityTaskInput,
 		expectedArtifacts: ['datamachine-transcript', 'StaticSiteCandidate'],
 		config: datamachineConfig({
 			bundle: 'bundles/static-site-agent',
@@ -245,6 +279,7 @@ function staticSiteCandidateTask({ id, conceptPacket = '{{outputs.concept_packet
 				static_site_candidate: 'metadata.artifacts.StaticSiteCandidate',
 			},
 			transcriptArtifactName: `${id}-transcript-${runId}`,
+			complexityPolicy: complexityDecision,
 		}),
 	});
 }
@@ -351,28 +386,38 @@ function manualPlan() {
 			artifact_driven: true,
 			controller_spec: controllerSpecPath,
 			controller_contract: 'wp-site-generator/static-site-generation-loop',
+			complexity_policy: complexityDecision,
 			generated_by: '.github/scripts/build-homeboy-site-generation-plan.mjs',
 		},
 	};
 }
 
+const boundedMaxConcurrency = Math.max(
+	1,
+	Math.min(
+		Number(process.env.HOMEBOY_MAX_CONCURRENCY || complexityDecision.target_parallel_candidates || 1),
+		Number(complexityDecision.target_parallel_candidates || 1)
+	)
+);
+
 const loopPlan = {
   schema: 'homeboy/agent-task-plan/v1',
   plan_id: planId,
 	tasks: [
-		storeIdeaTask({ prompt: ' ', title: 'Generate store idea' }),
-		websiteIdeaTask({ prompt: ' ', title: 'Generate website idea' }),
+		storeIdeaTask({ prompt: ' ', title: 'Generate store idea', lane: 'store concept lane' }),
+		websiteIdeaTask({ prompt: ' ', title: 'Generate website idea', lane: 'website concept lane' }),
 		task({
 			id: 'design-store-packet',
 			title: 'Design store concept packet',
 			instructions: loopDesignPrompt,
+			inputs: complexityTaskInput,
 			expectedArtifacts: ['datamachine-transcript', 'DesignPacket'],
 			config: datamachineConfig({
 				bundle: 'bundles/design-agent',
 				agent: 'design-agent',
 				pipeline: 'design-artifact-pipeline',
 				flow: 'design-artifact-flow',
-				prompt: loopDesignPrompt,
+				prompt: [loopDesignPrompt, policyPrompt(complexityDecision, 'store design lane')].join('\n\n'),
 				successRequiresPr: false,
 				successCompletionOutcomes: ['design_packet'],
 				artifactOutputs: {
@@ -382,19 +427,21 @@ const loopPlan = {
 					design_packet: 'metadata.artifacts.DesignPacket',
 				},
 				transcriptArtifactName: `design-agent-store-transcript-${runId}`,
+				complexityPolicy: complexityDecision,
 			}),
 		}),
 		task({
 			id: 'design-website-packet',
 			title: 'Design website concept packet',
 			instructions: loopDesignPrompt,
+			inputs: complexityTaskInput,
 			expectedArtifacts: ['datamachine-transcript', 'DesignPacket'],
 			config: datamachineConfig({
 				bundle: 'bundles/design-agent',
 				agent: 'design-agent',
 				pipeline: 'design-artifact-pipeline',
 				flow: 'design-artifact-flow',
-				prompt: loopDesignPrompt,
+				prompt: [loopDesignPrompt, policyPrompt(complexityDecision, 'website design lane')].join('\n\n'),
 				successRequiresPr: false,
 				successCompletionOutcomes: ['design_packet'],
 				artifactOutputs: {
@@ -404,10 +451,11 @@ const loopPlan = {
 					design_packet: 'metadata.artifacts.DesignPacket',
 				},
 				transcriptArtifactName: `design-agent-website-transcript-${runId}`,
+				complexityPolicy: complexityDecision,
 			}),
 		}),
-		staticSiteCandidateTask({ id: 'generate-store-candidate', title: 'Generate store static-site candidate' }),
-		staticSiteCandidateTask({ id: 'generate-website-candidate', title: 'Generate website static-site candidate' }),
+		staticSiteCandidateTask({ id: 'generate-store-candidate', title: 'Generate store static-site candidate', lane: 'store candidate lane' }),
+		staticSiteCandidateTask({ id: 'generate-website-candidate', title: 'Generate website static-site candidate', lane: 'website candidate lane' }),
 		importValidationTask({ id: 'validate-store-candidate', title: 'Validate store static-site candidate' }),
 		importValidationTask({ id: 'validate-website-candidate', title: 'Validate website static-site candidate' }),
 		staticSitePublishTask({ id: 'publish-store-pr', title: 'Publish store static-site PR' }),
@@ -466,9 +514,9 @@ const loopPlan = {
 		},
 	},
   options: {
-    max_concurrency: 1,
+    max_concurrency: boundedMaxConcurrency,
     resource_budget: {
-      max_active_units: 1,
+      max_active_units: boundedMaxConcurrency,
       default_task_units: 1,
     },
     retry: {
@@ -481,6 +529,7 @@ const loopPlan = {
 		artifact_stages: ['ConceptPacket', 'DesignPacket', 'StaticSiteCandidate', 'ImportValidationResult', 'StaticSitePullRequest'],
 		controller_spec: controllerSpecPath,
 		controller_contract: 'wp-site-generator/static-site-generation-loop',
+		complexity_policy: complexityDecision,
 		generated_by: '.github/scripts/build-homeboy-site-generation-plan.mjs',
 	},
 };

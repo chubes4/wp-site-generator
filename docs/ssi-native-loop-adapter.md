@@ -23,6 +23,73 @@ homeboy agent-task run-plan --plan "@.ci/site-generation-loop.agent-task-plan.js
 
 The generated plan records `.github/homeboy/controllers/static-site-generation-loop.controller.json` in `metadata.controller_spec`. Lab controllers should use that field to bind plan execution back to controller lineage.
 
+## Complexity And Randomness Policy
+
+Prompt difficulty is owned by WP Site Generator, not Homeboy. The checked-in policy at `.github/site-generation-complexity-policy.json` is evaluated by `.github/scripts/build-homeboy-site-generation-plan.mjs` every time the generation plan is built.
+
+The generated plan records the full decision at `metadata.complexity_policy`, including:
+
+- selected and current complexity tier
+- ramp decision: `hold`, `raise`, `lower`, `hold_floor`, `hold_ceiling`, or `override`
+- deterministic randomness seed and randomness profile
+- site-kind mix
+- tier layout/component families and criteria
+- quality-signal path and explicit overrides used for the run
+
+The same policy decision is also attached to generation task `inputs.complexity_policy`, copied into each Datamachine bundle config as `complexity_policy`, and injected into concept/design/candidate prompts. Candidate-producing prompts instruct the agent to record the tier, randomness seed/profile, site kind, layout family, component families, and policy decision in emitted artifact metadata.
+
+### Quality Signals
+
+Quality signals are optional JSON supplied through `WPSG_QUALITY_SIGNALS_PATH` or `HOMEBOY_QUALITY_SIGNALS_PATH`. When no signal file is supplied, the loop holds at the configured default tier.
+
+Accepted shapes are either an array of recent results or an object with `recent_results`, `results`, or `validations`:
+
+```json
+{
+  "current_tier": "foundation",
+  "recent_results": [
+    {
+      "status": "passed",
+      "site_kind": "store",
+      "pattern_family": "basic-commerce",
+      "fallback_block_count": 0,
+      "visual_mismatch_ratio": 0.01,
+      "actionable_findings": 0
+    }
+  ]
+}
+```
+
+The evaluator uses the configured `quality_window` and summarizes pass rate, fallback blocks, visual mismatch ratio, actionable findings, site kinds, and pattern families.
+
+### Ramp Rules
+
+The default policy has three tiers:
+
+- `foundation`: simple store/website prompts for core importer stability
+- `composed`: richer section variety after foundation quality is stable
+- `stress`: higher-variance prompts after composed quality is stable
+
+Stable quality raises at most one tier for the next plan. Regressions lower at most one tier. The floor and ceiling hold when the policy cannot move farther. This keeps prompt complexity reproducible and prevents a single good or bad run from skipping the configured ladder.
+
+### Overrides
+
+GitHub Actions exposes these optional inputs, which map directly to environment variables:
+
+- `complexity_tier` -> `WPSG_COMPLEXITY_TIER`
+- `randomness_profile` -> `WPSG_RANDOMNESS_PROFILE`
+- `randomness_seed` -> `WPSG_RANDOMNESS_SEED`
+- `quality_signals_path` -> `WPSG_QUALITY_SIGNALS_PATH`
+
+Additional local-only knobs are available for controller/lab runs:
+
+- `WPSG_CURRENT_COMPLEXITY_TIER`: current tier when the signal file does not include one
+- `WPSG_SITE_KIND_MIX`: comma-separated site-kind override
+- `WPSG_TARGET_PARALLEL_CANDIDATES`: candidate budget override, bounded by the selected tier
+- `HOMEBOY_MAX_CONCURRENCY`: optional lower cap for plan `max_concurrency`
+
+Homeboy remains a generic executor/scheduler. It only receives the plan, task inputs, and metadata that WPSG has already computed.
+
 2. For each generated static-site PR/site, build the SSI validation settings and run the Homeboy bench workload.
 
 ```bash
