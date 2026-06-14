@@ -30,6 +30,16 @@ try {
   assert.doesNotMatch(serialized, /metadata\/codebox\/datamachine/);
   assert.doesNotMatch(serialized, /scenarios\/0/);
   assert.doesNotMatch(serialized, /\.ci\/wp-codebox/, 'Lab plans do not bake a controller-local WP Codebox path by default');
+  assert.doesNotMatch(serialized, /ai-provider-for-openai/, 'Lab plans defer provider plugin selection to runner settings by default');
+  assert.doesNotMatch(serialized, /OPENAI_API_KEY/, 'Lab plans defer provider auth selection to runner settings by default');
+
+  for (const request of plan.tasks) {
+    assert.equal(request.executor.model, undefined, `${request.task_id} defers executor model selection to runner settings by default`);
+    assert.equal(request.executor.config.provider, undefined, `${request.task_id} defers provider selection to runner settings by default`);
+    assert.equal(request.executor.config.model, undefined, `${request.task_id} defers config model selection to runner settings by default`);
+    assert.equal(request.executor.config.provider_plugin_paths, undefined, `${request.task_id} defers provider plugin selection to runner settings by default`);
+    assert.equal(request.executor.config.secret_env, undefined, `${request.task_id} defers provider secret env selection to runner settings by default`);
+  }
 
 	assert.equal(plan.metadata.artifact_driven, true, 'normal loop is artifact-driven');
 	assert.deepEqual(plan.metadata.artifact_stages, ['ConceptPacket', 'DesignPacket', 'StaticSiteCandidate', 'ImportValidationResult', 'StaticSitePullRequest']);
@@ -292,8 +302,30 @@ try {
 		},
 	});
 	assert.equal(explicitCodeboxResult.status, 0, explicitCodeboxResult.stderr || explicitCodeboxResult.stdout);
-	const explicitCodeboxPlan = JSON.parse(await readFile(explicitCodeboxPlanPath, 'utf8'));
-	assert.equal(explicitCodeboxPlan.tasks[0].executor.config.wp_codebox_bin, explicitCodeboxPath, 'explicit runner WP Codebox path is preserved');
+  const explicitCodeboxPlan = JSON.parse(await readFile(explicitCodeboxPlanPath, 'utf8'));
+  assert.equal(explicitCodeboxPlan.tasks[0].executor.config.wp_codebox_bin, explicitCodeboxPath, 'explicit runner WP Codebox path is preserved');
+
+  const explicitProviderPlanPath = path.join(tempDir, 'plan-provider.json');
+  const explicitProviderResult = spawnSync(process.execPath, ['.github/scripts/build-homeboy-site-generation-plan.mjs'], {
+    cwd: repoRoot,
+    encoding: 'utf8',
+    env: {
+      ...process.env,
+      GITHUB_RUN_ID: '412',
+      HOMEBOY_PLAN_PATH: explicitProviderPlanPath,
+      HOMEBOY_WP_CODEBOX_PROVIDER: 'opencode',
+      HOMEBOY_WP_CODEBOX_MODEL: 'opencode-go/kimi-k2.6',
+      HOMEBOY_WP_CODEBOX_PROVIDER_PLUGIN_PATHS: '/runner/ai-provider-for-opencode-current',
+      HOMEBOY_WP_CODEBOX_SECRET_ENV: 'OPENCODE_API_KEY,GITHUB_TOKEN',
+    },
+  });
+  assert.equal(explicitProviderResult.status, 0, explicitProviderResult.stderr || explicitProviderResult.stdout);
+  const explicitProviderPlan = JSON.parse(await readFile(explicitProviderPlanPath, 'utf8'));
+  const explicitProviderConfig = explicitProviderPlan.tasks[0].executor.config;
+  assert.equal(explicitProviderConfig.provider, 'opencode', 'explicit provider override is preserved');
+  assert.equal(explicitProviderConfig.model, 'opencode-go/kimi-k2.6', 'explicit provider model override is preserved');
+  assert.deepEqual(explicitProviderConfig.provider_plugin_paths, ['/runner/ai-provider-for-opencode-current'], 'explicit provider plugin override is preserved');
+  assert.deepEqual(explicitProviderConfig.secret_env, ['OPENCODE_API_KEY', 'GITHUB_TOKEN'], 'explicit secret env override is preserved');
 } finally {
   await rm(tempDir, { recursive: true, force: true });
 }
