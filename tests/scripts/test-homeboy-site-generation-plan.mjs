@@ -40,13 +40,14 @@ try {
     assert.equal(request.executor.config.model, undefined, `${request.task_id} defers config model selection to runner settings by default`);
     assert.equal(request.executor.config.provider_plugin_paths, undefined, `${request.task_id} defers provider plugin selection to runner settings by default`);
     assert.equal(request.executor.config.secret_env, undefined, `${request.task_id} defers provider secret env selection to runner settings by default`);
-    if (request.executor.config.execution_kind === 'datamachine_bundle') {
-      assert.equal(request.executor.config.agents_api, '.ci/agents-api', `${request.task_id} uses a repo-relative Agents API component path`);
-      assert.equal(request.executor.config.data_machine, '.ci/data-machine', `${request.task_id} uses a repo-relative Data Machine component path`);
-      assert.equal(request.executor.config.data_machine_code, '.ci/data-machine-code', `${request.task_id} uses a repo-relative Data Machine Code component path`);
+    if (request.executor.config.runtime_task?.ability === 'datamachine/run-agent-bundle') {
+      assert.equal(request.executor.config.runtime_component_paths.agents_api, '.ci/agents-api', `${request.task_id} uses a repo-relative Agents API component path`);
+      assert.equal(request.executor.config.runtime_component_paths.agent_runtime, '.ci/data-machine', `${request.task_id} uses a repo-relative Data Machine component path`);
+      assert.equal(request.executor.config.runtime_component_paths.agent_runtime_tools, '.ci/data-machine-code', `${request.task_id} uses a repo-relative Data Machine Code component path`);
       assert.equal(request.executor.config.homeboy_extensions, '.ci/homeboy-extensions/wordpress', `${request.task_id} uses a repo-relative Homeboy Extensions component path`);
-      assert.match(request.executor.config.bundle_host_path, /^bundles\//, `${request.task_id} uses a repo-relative bundle path`);
-      assert.match(request.executor.config.artifacts, /^\.ci\/homeboy-agent-task-artifacts\//, `${request.task_id} uses a repo-relative artifact directory`);
+      assert.match(request.executor.config.agent_bundles[0].source, /^\/workspace\/wp-site-generator\/bundles\//, `${request.task_id} imports a sandbox-local agent bundle path`);
+      assert.match(request.executor.config.runtime_task.input.source, /^\/workspace\/wp-site-generator\/bundles\//, `${request.task_id} runs a sandbox-local agent bundle path`);
+      assert.match(request.executor.config.runtime_task.input.artifacts, /^\.ci\/homeboy-agent-task-artifacts\//, `${request.task_id} uses a repo-relative artifact directory`);
     }
   }
 
@@ -171,24 +172,27 @@ try {
 
 	for (const taskId of ['design-store-packet', 'design-website-packet']) {
 		const config = plan.tasks.find((task) => task.task_id === taskId).executor.config;
-		assert.deepEqual(config.success_completion_outcomes, ['design_packet'], `${taskId} requires DesignPacket completion`);
-		assert.match(config.prompt, /ConceptPacket/, `${taskId} consumes ConceptPacket`);
-		assert.match(config.prompt, /Generation complexity policy:/, `${taskId} records policy guidance in prompt`);
-		assert.equal(config.complexity_policy.selected_tier, 'foundation', `${taskId} records selected complexity tier`);
+		const runtimeInput = config.runtime_task.input;
+		assert.equal(config.runtime_task.ability, 'datamachine/run-agent-bundle', `${taskId} runs the bundle through a WP Codebox runtime task`);
+		assert.deepEqual(runtimeInput.success_completion_outcomes, ['design_packet'], `${taskId} requires DesignPacket completion`);
+		assert.match(runtimeInput.prompt, /ConceptPacket/, `${taskId} consumes ConceptPacket`);
+		assert.match(runtimeInput.prompt, /Generation complexity policy:/, `${taskId} records policy guidance in prompt`);
+		assert.equal(runtimeInput.complexity_policy.selected_tier, 'foundation', `${taskId} records selected complexity tier`);
 		assert.equal(plan.tasks.find((task) => task.task_id === taskId).inputs.complexity_policy.randomness_seed.length, 12, `${taskId} carries reproducible randomness seed`);
-		assert.doesNotMatch(config.prompt, /create_github_issue/, `${taskId} does not create a design handoff issue`);
-		assert.deepEqual(config.tool_recorders, [], `${taskId} has no design issue recorder`);
-		assert.equal(config.artifact_outputs.design_packet.schema, 'wp-site-generator/DesignPacket/v1');
-		assert.equal(config.engine_data_outputs.design_packet, 'metadata.artifacts.DesignPacket');
+		assert.doesNotMatch(runtimeInput.prompt, /create_github_issue/, `${taskId} does not create a design handoff issue`);
+		assert.deepEqual(runtimeInput.tool_recorders, [], `${taskId} has no design issue recorder`);
+		assert.equal(runtimeInput.artifact_outputs.design_packet.schema, 'wp-site-generator/DesignPacket/v1');
+		assert.equal(runtimeInput.engine_data_outputs.design_packet, 'metadata.artifacts.DesignPacket');
 	}
 
 	for (const taskId of ['generate-store-candidate', 'generate-website-candidate']) {
 		const config = plan.tasks.find((task) => task.task_id === taskId).executor.config;
-		assert.deepEqual(config.success_completion_outcomes, ['static_site_candidate'], `${taskId} stops at candidate artifact`);
-		assert.equal(config.success_requires_pr, false, `${taskId} does not publish a PR`);
-		assert.equal(config.artifact_outputs.static_site_candidate.schema, 'wp-site-generator/StaticSiteCandidate/v1');
-		assert.match(config.prompt, /Do not open a pull request/, `${taskId} separates candidate generation from publication`);
-		assert.match(config.prompt, /Record the tier, randomness profile, randomness seed/, `${taskId} asks candidate to preserve policy metadata`);
+		const runtimeInput = config.runtime_task.input;
+		assert.deepEqual(runtimeInput.success_completion_outcomes, ['static_site_candidate'], `${taskId} stops at candidate artifact`);
+		assert.equal(runtimeInput.success_requires_pr, false, `${taskId} does not publish a PR`);
+		assert.equal(runtimeInput.artifact_outputs.static_site_candidate.schema, 'wp-site-generator/StaticSiteCandidate/v1');
+		assert.match(runtimeInput.prompt, /Do not open a pull request/, `${taskId} separates candidate generation from publication`);
+		assert.match(runtimeInput.prompt, /Record the tier, randomness profile, randomness seed/, `${taskId} asks candidate to preserve policy metadata`);
 	}
 
 	for (const taskId of ['validate-store-candidate', 'validate-website-candidate']) {
@@ -205,10 +209,11 @@ try {
 
 	for (const taskId of ['publish-store-pr', 'publish-website-pr']) {
 		const config = plan.tasks.find((task) => task.task_id === taskId).executor.config;
-		assert.equal(config.success_requires_pr, true, `${taskId} is the first GitHub-visible publication step`);
-		assert.deepEqual(config.success_completion_outcomes, ['static_site_pr'], `${taskId} completes on PR publication`);
-		assert.match(config.prompt, /ImportValidationResult/, `${taskId} consumes import validation metrics`);
-		assert.match(config.prompt, /render-static-site-pr-body\.mjs/, `${taskId} renders initial PR body metrics`);
+		const runtimeInput = config.runtime_task.input;
+		assert.equal(runtimeInput.success_requires_pr, true, `${taskId} is the first GitHub-visible publication step`);
+		assert.deepEqual(runtimeInput.success_completion_outcomes, ['static_site_pr'], `${taskId} completes on PR publication`);
+		assert.match(runtimeInput.prompt, /ImportValidationResult/, `${taskId} consumes import validation metrics`);
+		assert.match(runtimeInput.prompt, /render-static-site-pr-body\.mjs/, `${taskId} renders initial PR body metrics`);
 	}
 
   const staticPipeline = JSON.parse(await readFile(path.join(repoRoot, 'bundles/static-site-agent/pipelines/static-site-pipeline.json'), 'utf8'));
@@ -333,6 +338,8 @@ try {
   const explicitProviderConfig = explicitProviderPlan.tasks[0].executor.config;
   assert.equal(explicitProviderConfig.provider, 'opencode', 'explicit provider override is preserved');
   assert.equal(explicitProviderConfig.model, 'opencode-go/kimi-k2.6', 'explicit provider model override is preserved');
+  assert.equal(explicitProviderConfig.runtime_task.input.provider, 'opencode', 'explicit provider override is passed to runtime task');
+  assert.equal(explicitProviderConfig.runtime_task.input.model, 'opencode-go/kimi-k2.6', 'explicit model override is passed to runtime task');
   assert.deepEqual(explicitProviderConfig.provider_plugin_paths, ['/runner/ai-provider-for-opencode-current'], 'explicit provider plugin override is preserved');
   assert.deepEqual(explicitProviderConfig.secret_env, ['OPENCODE_API_KEY', 'GITHUB_TOKEN'], 'explicit secret env override is preserved');
 } finally {
