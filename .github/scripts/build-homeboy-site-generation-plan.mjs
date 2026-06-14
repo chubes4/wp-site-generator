@@ -12,9 +12,9 @@ import {
 const root = process.env.GITHUB_WORKSPACE || process.cwd();
 const runId = process.env.GITHUB_RUN_ID || String(Date.now());
 const repository = process.env.GITHUB_REPOSITORY || 'chubes4/wp-site-generator';
-const model = process.env.HOMEBOY_WP_CODEBOX_MODEL || process.env.OPENAI_MODEL || '';
+const model = process.env.HOMEBOY_WP_CODEBOX_MODEL || '';
 const provider = process.env.HOMEBOY_WP_CODEBOX_PROVIDER || '';
-const providerPluginPaths = splitList(process.env.HOMEBOY_WP_CODEBOX_PROVIDER_PLUGIN_PATHS || process.env.HOMEBOY_WP_CODEBOX_PROVIDER_PLUGIN_PATH || '');
+const providerPluginPaths = splitList(process.env.HOMEBOY_WP_CODEBOX_PROVIDER_PLUGIN_PATHS || '');
 const secretEnv = splitList(process.env.HOMEBOY_WP_CODEBOX_SECRET_ENV || '');
 const outputPath = process.env.HOMEBOY_PLAN_PATH || path.join(root, '.ci', 'site-generation-loop.agent-task-plan.json');
 const controllerSpecPath = process.env.HOMEBOY_CONTROLLER_SPEC_PATH || '.github/homeboy/controllers/static-site-generation-loop.controller.json';
