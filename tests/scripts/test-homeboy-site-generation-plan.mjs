@@ -32,6 +32,7 @@ try {
   assert.doesNotMatch(serialized, /\.ci\/wp-codebox/, 'Lab plans do not bake a controller-local WP Codebox path by default');
   assert.doesNotMatch(serialized, /ai-provider-for-openai/, 'Lab plans defer provider plugin selection to runner settings by default');
   assert.doesNotMatch(serialized, /OPENAI_API_KEY/, 'Lab plans defer provider auth selection to runner settings by default');
+  assert.equal(serialized.includes(repoRoot), false, 'default Lab plan does not bake the local checkout path');
 
   for (const request of plan.tasks) {
     assert.equal(request.executor.model, undefined, `${request.task_id} defers executor model selection to runner settings by default`);
@@ -39,6 +40,14 @@ try {
     assert.equal(request.executor.config.model, undefined, `${request.task_id} defers config model selection to runner settings by default`);
     assert.equal(request.executor.config.provider_plugin_paths, undefined, `${request.task_id} defers provider plugin selection to runner settings by default`);
     assert.equal(request.executor.config.secret_env, undefined, `${request.task_id} defers provider secret env selection to runner settings by default`);
+    if (request.executor.config.execution_kind === 'datamachine_bundle') {
+      assert.equal(request.executor.config.agents_api, '.ci/agents-api', `${request.task_id} uses a repo-relative Agents API component path`);
+      assert.equal(request.executor.config.data_machine, '.ci/data-machine', `${request.task_id} uses a repo-relative Data Machine component path`);
+      assert.equal(request.executor.config.data_machine_code, '.ci/data-machine-code', `${request.task_id} uses a repo-relative Data Machine Code component path`);
+      assert.equal(request.executor.config.homeboy_extensions, '.ci/homeboy-extensions/wordpress', `${request.task_id} uses a repo-relative Homeboy Extensions component path`);
+      assert.match(request.executor.config.bundle_host_path, /^bundles\//, `${request.task_id} uses a repo-relative bundle path`);
+      assert.match(request.executor.config.artifacts, /^\.ci\/homeboy-agent-task-artifacts\//, `${request.task_id} uses a repo-relative artifact directory`);
+    }
   }
 
 	assert.equal(plan.metadata.artifact_driven, true, 'normal loop is artifact-driven');

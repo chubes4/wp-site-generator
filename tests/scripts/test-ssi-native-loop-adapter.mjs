@@ -86,6 +86,12 @@ assert.equal(plan.tasks[0].executor.config.model, undefined, 'iterator plan defe
 assert.equal(plan.tasks[0].executor.config.provider_plugin_paths, undefined, 'iterator plan defers provider plugin selection to the runner by default');
 assert.equal(plan.tasks[0].executor.config.secret_env, undefined, 'iterator plan defers provider secret env selection to the runner by default');
 assert.equal(plan.tasks[0].executor.config.execute_workflow_path, workflowPath, 'iterator consumes prebuilt grouped finding workflow');
+assert.equal(plan.tasks[0].executor.config.agents_api, '.ci/agents-api', 'iterator uses a repo-relative Agents API component path');
+assert.equal(plan.tasks[0].executor.config.data_machine, '.ci/data-machine', 'iterator uses a repo-relative Data Machine component path');
+assert.equal(plan.tasks[0].executor.config.data_machine_code, '.ci/data-machine-code', 'iterator uses a repo-relative Data Machine Code component path');
+assert.equal(plan.tasks[0].executor.config.homeboy_extensions, '.ci/homeboy-extensions/wordpress', 'iterator uses a repo-relative Homeboy Extensions component path');
+assert.equal(plan.tasks[0].executor.config.bundle_host_path, 'bundles/php-transformer-iterator-agent', 'iterator uses a repo-relative bundle path');
+assert.match(plan.tasks[0].executor.config.artifacts, /^\.ci\/homeboy-agent-task-artifacts\//, 'iterator uses a repo-relative artifact directory');
 assert.deepEqual(plan.tasks[0].executor.config.success_completion_outcomes, ['pull_request_path'], 'native iterator keeps PR-first completion gate');
 assert.equal(plan.tasks[0].inputs.source_pr, '456', 'source PR metadata flows into native plan');
 
