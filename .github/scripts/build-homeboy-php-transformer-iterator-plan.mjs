@@ -13,20 +13,20 @@ const providerPluginPaths = splitList(process.env.HOMEBOY_WP_CODEBOX_PROVIDER_PL
 const secretEnv = splitList(process.env.HOMEBOY_WP_CODEBOX_SECRET_ENV || '');
 const workflowPath = args.get('--workflow') || process.env.DATAMACHINE_WORKFLOW_PATH || '.ci/datamachine-iterator-workflow.json';
 const outputPath = args.get('--output') || process.env.HOMEBOY_ITERATOR_PLAN_PATH || path.join(root, '.ci', 'php-transformer-iterator.agent-task-plan.json');
-const artifactsRoot = process.env.HOMEBOY_ARTIFACT_ROOT || path.join(root, '.ci', 'homeboy-agent-task-artifacts');
+const artifactsRoot = process.env.HOMEBOY_ARTIFACT_ROOT || '.ci/homeboy-agent-task-artifacts';
 const sourcePr = process.env.SOURCE_PR || args.get('--source-pr') || '';
 const sourceHeadSha = process.env.SOURCE_HEAD_SHA || args.get('--source-head-sha') || '';
 const validationRunId = process.env.VALIDATION_RUN_ID || args.get('--validation-run-id') || '';
 const wpCodeboxBin = process.env.HOMEBOY_WP_CODEBOX_BIN || '';
 
-const ci = (name) => path.join(root, '.ci', name);
+const ci = (name) => `.ci/${name}`;
 const executorConfig = {
 	execution_kind: 'datamachine_bundle',
 	agents_api: ci('agents-api'),
 	data_machine: ci('data-machine'),
 	data_machine_code: ci('data-machine-code'),
-	homeboy_extensions: path.join(ci('homeboy-extensions'), 'wordpress'),
-	bundle_host_path: path.join(root, 'bundles/php-transformer-iterator-agent'),
+	homeboy_extensions: `${ci('homeboy-extensions')}/wordpress`,
+	bundle_host_path: 'bundles/php-transformer-iterator-agent',
 	bundle_path: '/workspace/wp-site-generator/bundles/php-transformer-iterator-agent',
 	agent_slug: 'php-transformer-iterator-agent',
 	pipeline_slug: 'php-transformer-iterator-pipeline',

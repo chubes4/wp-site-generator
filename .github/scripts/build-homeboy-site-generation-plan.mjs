@@ -22,9 +22,9 @@ const manualTaskKind = process.env.HOMEBOY_TASK_KIND || '';
 const planId = manualTaskKind ? `site-generator-${manualTaskKind}-${runId}` : `site-generation-loop-${runId}`;
 const groupKey = manualTaskKind ? `site-generator-${manualTaskKind}` : 'site-generation-loop';
 
-const ci = (name) => path.join(root, '.ci', name);
+const ci = (name) => `.ci/${name}`;
 const wpCodeboxBin = process.env.HOMEBOY_WP_CODEBOX_BIN || '';
-const artifactsRoot = process.env.HOMEBOY_ARTIFACT_ROOT || path.join(root, '.ci', 'homeboy-agent-task-artifacts');
+const artifactsRoot = process.env.HOMEBOY_ARTIFACT_ROOT || '.ci/homeboy-agent-task-artifacts';
 const policyInputs = resolvePolicyInputs({ root });
 const complexityPolicy = loadPolicy(policyInputs.policyPath);
 const qualitySignals = loadQualitySignals(policyInputs.qualitySignalsPath);
@@ -72,8 +72,8 @@ function datamachineConfig({
     agents_api: ci('agents-api'),
     data_machine: ci('data-machine'),
     data_machine_code: ci('data-machine-code'),
-    homeboy_extensions: path.join(ci('homeboy-extensions'), 'wordpress'),
-    bundle_host_path: path.join(root, bundle),
+    homeboy_extensions: `${ci('homeboy-extensions')}/wordpress`,
+    bundle_host_path: bundle,
     bundle_path: `/workspace/wp-site-generator/${bundle}`,
     agent_slug: agent,
     pipeline_slug: pipeline,
