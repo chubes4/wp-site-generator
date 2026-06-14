@@ -66,15 +66,11 @@ function datamachineConfig({
   engineDataOutputs = {},
   transcriptArtifactName,
   complexityPolicy: taskComplexityPolicy,
+  structuredArtifacts = [],
 }) {
-  const config = {
-    execution_kind: 'datamachine_bundle',
-    agents_api: ci('agents-api'),
-    data_machine: ci('data-machine'),
-    data_machine_code: ci('data-machine-code'),
-    homeboy_extensions: `${ci('homeboy-extensions')}/wordpress`,
-    bundle_host_path: bundle,
-    bundle_path: `/workspace/wp-site-generator/${bundle}`,
+  const runtimeBundlePath = `/workspace/wp-site-generator/${bundle}`;
+  const runtimeTaskInput = {
+    source: runtimeBundlePath,
     agent_slug: agent,
     pipeline_slug: pipeline,
     flow_slug: flow,
@@ -90,11 +86,28 @@ function datamachineConfig({
     artifacts: path.join(artifactsRoot, agent, transcriptArtifactName || flow),
   };
 
+  const config = {
+    runtime_component_paths: {
+      agents_api: ci('agents-api'),
+      agent_runtime: ci('data-machine'),
+      agent_runtime_tools: ci('data-machine-code'),
+    },
+    homeboy_extensions: `${ci('homeboy-extensions')}/wordpress`,
+    agent_bundles: [{ source: runtimeBundlePath, slug: agent }],
+    runtime_task: {
+      ability: 'datamachine/run-agent-bundle',
+      input: runtimeTaskInput,
+    },
+    structured_artifacts: structuredArtifacts,
+  };
+
   if (provider) {
     config.provider = provider;
+    runtimeTaskInput.provider = provider;
   }
   if (model) {
     config.model = model;
+    runtimeTaskInput.model = model;
   }
   if (providerPluginPaths.length > 0) {
     config.provider_plugin_paths = providerPluginPaths;
@@ -108,17 +121,18 @@ function datamachineConfig({
   }
 
 	if (taskComplexityPolicy) {
-		config.complexity_policy = taskComplexityPolicy;
+		runtimeTaskInput.complexity_policy = taskComplexityPolicy;
 	}
 
   if (maxTurns) {
     config.max_turns = maxTurns;
+    runtimeTaskInput.max_turns = maxTurns;
   }
   if (stepBudget) {
-    config.step_budget = stepBudget;
+    runtimeTaskInput.step_budget = stepBudget;
   }
   if (timeBudgetMs) {
-    config.time_budget_ms = timeBudgetMs;
+    runtimeTaskInput.time_budget_ms = timeBudgetMs;
     config.task_timeout_seconds = Math.ceil(timeBudgetMs / 1000) + 300;
   }
 
