@@ -7,7 +7,10 @@ const args = parseArgs(process.argv.slice(2));
 const root = process.env.GITHUB_WORKSPACE || process.cwd();
 const runId = process.env.GITHUB_RUN_ID || String(Date.now());
 const repository = process.env.GITHUB_REPOSITORY || process.env.SOURCE_REPO || 'chubes4/wp-site-generator';
-const model = process.env.OPENAI_MODEL || 'gpt-5.5';
+const model = process.env.HOMEBOY_WP_CODEBOX_MODEL || process.env.OPENAI_MODEL || '';
+const provider = process.env.HOMEBOY_WP_CODEBOX_PROVIDER || '';
+const providerPluginPaths = splitList(process.env.HOMEBOY_WP_CODEBOX_PROVIDER_PLUGIN_PATHS || process.env.HOMEBOY_WP_CODEBOX_PROVIDER_PLUGIN_PATH || '');
+const secretEnv = splitList(process.env.HOMEBOY_WP_CODEBOX_SECRET_ENV || '');
 const workflowPath = args.get('--workflow') || process.env.DATAMACHINE_WORKFLOW_PATH || '.ci/datamachine-iterator-workflow.json';
 const outputPath = args.get('--output') || process.env.HOMEBOY_ITERATOR_PLAN_PATH || path.join(root, '.ci', 'php-transformer-iterator.agent-task-plan.json');
 const artifactsRoot = process.env.HOMEBOY_ARTIFACT_ROOT || path.join(root, '.ci', 'homeboy-agent-task-artifacts');
@@ -19,9 +22,6 @@ const wpCodeboxBin = process.env.HOMEBOY_WP_CODEBOX_BIN || '';
 const ci = (name) => path.join(root, '.ci', name);
 const executorConfig = {
 	execution_kind: 'datamachine_bundle',
-	provider: 'openai',
-	model,
-	provider_plugin_paths: [ci('ai-provider-for-openai')],
 	agents_api: ci('agents-api'),
 	data_machine: ci('data-machine'),
 	data_machine_code: ci('data-machine-code'),
@@ -50,9 +50,21 @@ const executorConfig = {
 	],
 	execute_workflow_path: workflowPath,
 	transcript_artifact_name: `php-transformer-iterator-transcript-${runId}`,
-	secret_env: ['OPENAI_API_KEY', 'GITHUB_TOKEN'],
 	artifacts: path.join(artifactsRoot, 'php-transformer-iterator-agent', `php-transformer-iterator-transcript-${runId}`),
 };
+
+if (provider) {
+	executorConfig.provider = provider;
+}
+if (model) {
+	executorConfig.model = model;
+}
+if (providerPluginPaths.length > 0) {
+	executorConfig.provider_plugin_paths = providerPluginPaths;
+}
+if (secretEnv.length > 0) {
+	executorConfig.secret_env = secretEnv;
+}
 
 if (wpCodeboxBin) {
 	executorConfig.wp_codebox_bin = wpCodeboxBin;
@@ -69,7 +81,6 @@ const plan = {
 			parent_plan_id: `php-transformer-iterator-${runId}`,
 			executor: {
 				backend: 'codebox',
-				model,
 				config: executorConfig,
 			},
 			instructions: 'Run the PR-first Static Site Importer transformer iterator against the grouped finding workflow and comment back to the source generated-site PR.',
@@ -118,4 +129,11 @@ function parseArgs(argv) {
 		}
 	}
 	return parsed;
+}
+
+function splitList(value) {
+	return String(value || '')
+		.split(',')
+		.map((item) => item.trim())
+		.filter(Boolean);
 }

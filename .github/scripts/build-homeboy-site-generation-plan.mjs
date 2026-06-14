@@ -12,7 +12,10 @@ import {
 const root = process.env.GITHUB_WORKSPACE || process.cwd();
 const runId = process.env.GITHUB_RUN_ID || String(Date.now());
 const repository = process.env.GITHUB_REPOSITORY || 'chubes4/wp-site-generator';
-const model = process.env.OPENAI_MODEL || 'gpt-5.5';
+const model = process.env.HOMEBOY_WP_CODEBOX_MODEL || process.env.OPENAI_MODEL || '';
+const provider = process.env.HOMEBOY_WP_CODEBOX_PROVIDER || '';
+const providerPluginPaths = splitList(process.env.HOMEBOY_WP_CODEBOX_PROVIDER_PLUGIN_PATHS || process.env.HOMEBOY_WP_CODEBOX_PROVIDER_PLUGIN_PATH || '');
+const secretEnv = splitList(process.env.HOMEBOY_WP_CODEBOX_SECRET_ENV || '');
 const outputPath = process.env.HOMEBOY_PLAN_PATH || path.join(root, '.ci', 'site-generation-loop.agent-task-plan.json');
 const controllerSpecPath = process.env.HOMEBOY_CONTROLLER_SPEC_PATH || '.github/homeboy/controllers/static-site-generation-loop.controller.json';
 const manualTaskKind = process.env.HOMEBOY_TASK_KIND || '';
@@ -34,6 +37,13 @@ const complexityDecision = evaluateComplexityPolicy({
 const complexityTaskInput = {
 	complexity_policy: complexityDecision,
 };
+
+function splitList(value) {
+  return String(value || '')
+    .split(',')
+    .map((item) => item.trim())
+    .filter(Boolean);
+}
 
 function taskOutputPath(field) {
   return `/outputs/${field}`;
@@ -59,9 +69,6 @@ function datamachineConfig({
 }) {
   const config = {
     execution_kind: 'datamachine_bundle',
-    provider: 'openai',
-    model,
-    provider_plugin_paths: [ci('ai-provider-for-openai')],
     agents_api: ci('agents-api'),
     data_machine: ci('data-machine'),
     data_machine_code: ci('data-machine-code'),
@@ -80,9 +87,21 @@ function datamachineConfig({
     tool_recorders: toolRecorders,
     engine_data_outputs: engineDataOutputs,
     transcript_artifact_name: transcriptArtifactName,
-    secret_env: ['OPENAI_API_KEY', 'GITHUB_TOKEN'],
     artifacts: path.join(artifactsRoot, agent, transcriptArtifactName || flow),
   };
+
+  if (provider) {
+    config.provider = provider;
+  }
+  if (model) {
+    config.model = model;
+  }
+  if (providerPluginPaths.length > 0) {
+    config.provider_plugin_paths = providerPluginPaths;
+  }
+  if (secretEnv.length > 0) {
+    config.secret_env = secretEnv;
+  }
 
   if (wpCodeboxBin) {
     config.wp_codebox_bin = wpCodeboxBin;
@@ -114,7 +133,6 @@ function task({ id, title, config, instructions, expectedArtifacts = ['datamachi
     parent_plan_id: planId,
     executor: {
       backend: 'codebox',
-      model,
       config,
     },
     instructions,

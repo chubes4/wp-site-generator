@@ -80,6 +80,11 @@ const plan = JSON.parse(await readFile(planPath, 'utf8'));
 assert.equal(plan.schema, 'homeboy/agent-task-plan/v1', 'native iterator adapter emits a Homeboy plan');
 assert.equal(plan.tasks[0].executor.config.execution_kind, 'datamachine_bundle', 'iterator runs through Homeboy Data Machine bundle executor');
 assert.equal(plan.tasks[0].executor.config.wp_codebox_bin, undefined, 'iterator plan defers WP Codebox binary selection to the runner by default');
+assert.equal(plan.tasks[0].executor.model, undefined, 'iterator plan defers executor model selection to the runner by default');
+assert.equal(plan.tasks[0].executor.config.provider, undefined, 'iterator plan defers provider selection to the runner by default');
+assert.equal(plan.tasks[0].executor.config.model, undefined, 'iterator plan defers config model selection to the runner by default');
+assert.equal(plan.tasks[0].executor.config.provider_plugin_paths, undefined, 'iterator plan defers provider plugin selection to the runner by default');
+assert.equal(plan.tasks[0].executor.config.secret_env, undefined, 'iterator plan defers provider secret env selection to the runner by default');
 assert.equal(plan.tasks[0].executor.config.execute_workflow_path, workflowPath, 'iterator consumes prebuilt grouped finding workflow');
 assert.deepEqual(plan.tasks[0].executor.config.success_completion_outcomes, ['pull_request_path'], 'native iterator keeps PR-first completion gate');
 assert.equal(plan.tasks[0].inputs.source_pr, '456', 'source PR metadata flows into native plan');
@@ -101,6 +106,31 @@ const explicitIteratorResult = spawnSync(
 assert.equal(explicitIteratorResult.status, 0, explicitIteratorResult.stderr || explicitIteratorResult.stdout);
 const explicitIteratorPlan = JSON.parse(await readFile(explicitIteratorPlanPath, 'utf8'));
 assert.equal(explicitIteratorPlan.tasks[0].executor.config.wp_codebox_bin, '/runner/wp-codebox/packages/cli/dist/index.js', 'iterator plan preserves explicit runner WP Codebox path');
+
+const explicitProviderIteratorPlanPath = path.join(tempDir, 'iterator-plan-provider.json');
+const explicitProviderIteratorResult = spawnSync(
+	process.execPath,
+	['.github/scripts/build-homeboy-php-transformer-iterator-plan.mjs', '--workflow', workflowPath, '--output', explicitProviderIteratorPlanPath],
+	{
+		cwd: repoRoot,
+		encoding: 'utf8',
+		env: {
+			...process.env,
+			GITHUB_RUN_ID: '517',
+			HOMEBOY_WP_CODEBOX_PROVIDER: 'opencode',
+			HOMEBOY_WP_CODEBOX_MODEL: 'opencode-go/kimi-k2.6',
+			HOMEBOY_WP_CODEBOX_PROVIDER_PLUGIN_PATHS: '/runner/ai-provider-for-opencode-current',
+			HOMEBOY_WP_CODEBOX_SECRET_ENV: 'OPENCODE_API_KEY,GITHUB_TOKEN',
+		},
+	},
+);
+assert.equal(explicitProviderIteratorResult.status, 0, explicitProviderIteratorResult.stderr || explicitProviderIteratorResult.stdout);
+const explicitProviderIteratorPlan = JSON.parse(await readFile(explicitProviderIteratorPlanPath, 'utf8'));
+const explicitProviderIteratorConfig = explicitProviderIteratorPlan.tasks[0].executor.config;
+assert.equal(explicitProviderIteratorConfig.provider, 'opencode', 'iterator preserves explicit provider override');
+assert.equal(explicitProviderIteratorConfig.model, 'opencode-go/kimi-k2.6', 'iterator preserves explicit provider model override');
+assert.deepEqual(explicitProviderIteratorConfig.provider_plugin_paths, ['/runner/ai-provider-for-opencode-current'], 'iterator preserves explicit provider plugin override');
+assert.deepEqual(explicitProviderIteratorConfig.secret_env, ['OPENCODE_API_KEY', 'GITHUB_TOKEN'], 'iterator preserves explicit secret env override');
 
 const dispatchResult = spawnSync(
 	process.execPath,
