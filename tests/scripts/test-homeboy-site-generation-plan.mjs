@@ -47,6 +47,7 @@ try {
       assert.equal(request.executor.config.homeboy_extensions, '.ci/homeboy-extensions/wordpress', `${request.task_id} uses a repo-relative Homeboy Extensions component path`);
       assert.match(request.executor.config.agent_bundles[0].source, /^\/workspace\/wp-site-generator\/bundles\//, `${request.task_id} imports a sandbox-local agent bundle path`);
       assert.match(request.executor.config.runtime_task.input.source, /^\/workspace\/wp-site-generator\/bundles\//, `${request.task_id} runs a sandbox-local agent bundle path`);
+      assert.equal(request.executor.config.runtime_task.input.wait_for_completion, true, `${request.task_id} waits for typed bundle outputs`);
       assert.match(request.executor.config.runtime_task.input.artifacts, /^\.ci\/homeboy-agent-task-artifacts\//, `${request.task_id} uses a repo-relative artifact directory`);
     }
   }
@@ -331,6 +332,9 @@ try {
       HOMEBOY_WP_CODEBOX_MODEL: 'opencode-go/kimi-k2.6',
       HOMEBOY_WP_CODEBOX_PROVIDER_PLUGIN_PATHS: '/runner/ai-provider-for-opencode-current',
       HOMEBOY_WP_CODEBOX_SECRET_ENV: 'OPENCODE_API_KEY,GITHUB_TOKEN',
+      HOMEBOY_WP_CODEBOX_RUNTIME_ENV: JSON.stringify({ XDG_CONFIG_HOME: '/runtime/config', XDG_STATE_HOME: '/runtime/state' }),
+      HOMEBOY_WP_CODEBOX_RUNTIME_CONFIG_MOUNTS: JSON.stringify([{ source: '/runner/config', target: '/runtime/config', mode: 'readonly' }]),
+      HOMEBOY_WP_CODEBOX_RUNTIME_STATE_MOUNTS: JSON.stringify([{ source: '/runner/state', target: '/runtime/state', mode: 'readonly' }]),
     },
   });
   assert.equal(explicitProviderResult.status, 0, explicitProviderResult.stderr || explicitProviderResult.stdout);
@@ -342,6 +346,9 @@ try {
   assert.equal(explicitProviderConfig.runtime_task.input.model, 'opencode-go/kimi-k2.6', 'explicit model override is passed to runtime task');
   assert.deepEqual(explicitProviderConfig.provider_plugin_paths, ['/runner/ai-provider-for-opencode-current'], 'explicit provider plugin override is preserved');
   assert.deepEqual(explicitProviderConfig.secret_env, ['OPENCODE_API_KEY', 'GITHUB_TOKEN'], 'explicit secret env override is preserved');
+  assert.deepEqual(explicitProviderConfig.runtime_env, { XDG_CONFIG_HOME: '/runtime/config', XDG_STATE_HOME: '/runtime/state' }, 'explicit runtime env override is preserved');
+  assert.deepEqual(explicitProviderConfig.runtime_config_mounts, [{ source: '/runner/config', target: '/runtime/config', mode: 'readonly' }], 'explicit runtime config mounts are preserved');
+  assert.deepEqual(explicitProviderConfig.runtime_state_mounts, [{ source: '/runner/state', target: '/runtime/state', mode: 'readonly' }], 'explicit runtime state mounts are preserved');
 } finally {
   await rm(tempDir, { recursive: true, force: true });
 }

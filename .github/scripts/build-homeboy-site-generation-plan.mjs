@@ -16,6 +16,9 @@ const model = process.env.HOMEBOY_WP_CODEBOX_MODEL || '';
 const provider = process.env.HOMEBOY_WP_CODEBOX_PROVIDER || '';
 const providerPluginPaths = splitList(process.env.HOMEBOY_WP_CODEBOX_PROVIDER_PLUGIN_PATHS || '');
 const secretEnv = splitList(process.env.HOMEBOY_WP_CODEBOX_SECRET_ENV || '');
+const runtimeEnv = parseJsonObject(process.env.HOMEBOY_WP_CODEBOX_RUNTIME_ENV || '');
+const runtimeConfigMounts = parseJsonArray(process.env.HOMEBOY_WP_CODEBOX_RUNTIME_CONFIG_MOUNTS || '');
+const runtimeStateMounts = parseJsonArray(process.env.HOMEBOY_WP_CODEBOX_RUNTIME_STATE_MOUNTS || '');
 const outputPath = process.env.HOMEBOY_PLAN_PATH || path.join(root, '.ci', 'site-generation-loop.agent-task-plan.json');
 const controllerSpecPath = process.env.HOMEBOY_CONTROLLER_SPEC_PATH || '.github/homeboy/controllers/static-site-generation-loop.controller.json';
 const manualTaskKind = process.env.HOMEBOY_TASK_KIND || '';
@@ -43,6 +46,28 @@ function splitList(value) {
     .split(',')
     .map((item) => item.trim())
     .filter(Boolean);
+}
+
+function parseJsonObject(value) {
+  if (!value) {
+    return null;
+  }
+  const parsed = JSON.parse(value);
+  if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) {
+    throw new Error('Expected JSON object');
+  }
+  return parsed;
+}
+
+function parseJsonArray(value) {
+  if (!value) {
+    return null;
+  }
+  const parsed = JSON.parse(value);
+  if (!Array.isArray(parsed)) {
+    throw new Error('Expected JSON array');
+  }
+  return parsed;
 }
 
 function taskOutputPath(field) {
@@ -76,6 +101,7 @@ function datamachineConfig({
     flow_slug: flow,
     target_repo: repository,
     prompt,
+		wait_for_completion: true,
 		success_requires_pr: successRequiresPr,
 		success_completion_outcomes: successCompletionOutcomes,
 		artifact_outputs: artifactOutputs,
@@ -114,6 +140,15 @@ function datamachineConfig({
   }
   if (secretEnv.length > 0) {
     config.secret_env = secretEnv;
+  }
+  if (runtimeEnv) {
+    config.runtime_env = runtimeEnv;
+  }
+  if (runtimeConfigMounts) {
+    config.runtime_config_mounts = runtimeConfigMounts;
+  }
+  if (runtimeStateMounts) {
+    config.runtime_state_mounts = runtimeStateMounts;
   }
 
   if (wpCodeboxBin) {
