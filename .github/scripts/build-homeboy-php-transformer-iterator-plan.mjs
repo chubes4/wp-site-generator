@@ -11,6 +11,9 @@ const model = process.env.HOMEBOY_WP_CODEBOX_MODEL || '';
 const provider = process.env.HOMEBOY_WP_CODEBOX_PROVIDER || '';
 const providerPluginPaths = splitList(process.env.HOMEBOY_WP_CODEBOX_PROVIDER_PLUGIN_PATHS || '');
 const secretEnv = splitList(process.env.HOMEBOY_WP_CODEBOX_SECRET_ENV || '');
+const runtimeEnv = parseJsonObject(process.env.HOMEBOY_WP_CODEBOX_RUNTIME_ENV || '');
+const runtimeConfigMounts = parseJsonArray(process.env.HOMEBOY_WP_CODEBOX_RUNTIME_CONFIG_MOUNTS || '');
+const runtimeStateMounts = parseJsonArray(process.env.HOMEBOY_WP_CODEBOX_RUNTIME_STATE_MOUNTS || '');
 const workflowPath = args.get('--workflow') || process.env.DATAMACHINE_WORKFLOW_PATH || '.ci/datamachine-iterator-workflow.json';
 const outputPath = args.get('--output') || process.env.HOMEBOY_ITERATOR_PLAN_PATH || path.join(root, '.ci', 'php-transformer-iterator.agent-task-plan.json');
 const artifactsRoot = process.env.HOMEBOY_ARTIFACT_ROOT || '.ci/homeboy-agent-task-artifacts';
@@ -28,6 +31,7 @@ const runtimeTaskInput = {
 	flow_slug: 'php-transformer-iterator-manual-flow',
 	target_repo: repository,
 	prompt: 'Run the static-site validation iterator now. The prebuilt workflow embeds grouped finding context; process it as the source of truth.',
+	wait_for_completion: true,
 	success_requires_pr: true,
 	success_completion_outcomes: ['pull_request_path'],
 	max_turns: 24,
@@ -74,6 +78,15 @@ if (providerPluginPaths.length > 0) {
 }
 if (secretEnv.length > 0) {
 	executorConfig.secret_env = secretEnv;
+}
+if (runtimeEnv) {
+	executorConfig.runtime_env = runtimeEnv;
+}
+if (runtimeConfigMounts) {
+	executorConfig.runtime_config_mounts = runtimeConfigMounts;
+}
+if (runtimeStateMounts) {
+	executorConfig.runtime_state_mounts = runtimeStateMounts;
 }
 
 if (wpCodeboxBin) {
@@ -146,4 +159,26 @@ function splitList(value) {
 		.split(',')
 		.map((item) => item.trim())
 		.filter(Boolean);
+}
+
+function parseJsonObject(value) {
+	if (!value) {
+		return null;
+	}
+	const parsed = JSON.parse(value);
+	if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) {
+		throw new Error('Expected JSON object');
+	}
+	return parsed;
+}
+
+function parseJsonArray(value) {
+	if (!value) {
+		return null;
+	}
+	const parsed = JSON.parse(value);
+	if (!Array.isArray(parsed)) {
+		throw new Error('Expected JSON array');
+	}
+	return parsed;
 }

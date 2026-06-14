@@ -92,6 +92,7 @@ assert.equal(plan.tasks[0].executor.config.runtime_component_paths.agent_runtime
 assert.equal(plan.tasks[0].executor.config.homeboy_extensions, '.ci/homeboy-extensions/wordpress', 'iterator uses a repo-relative Homeboy Extensions component path');
 assert.equal(plan.tasks[0].executor.config.agent_bundles[0].source, '/workspace/wp-site-generator/bundles/php-transformer-iterator-agent', 'iterator imports a sandbox-local bundle path');
 assert.equal(plan.tasks[0].executor.config.runtime_task.input.source, '/workspace/wp-site-generator/bundles/php-transformer-iterator-agent', 'iterator runs a sandbox-local bundle path');
+assert.equal(plan.tasks[0].executor.config.runtime_task.input.wait_for_completion, true, 'iterator waits for typed bundle outputs');
 assert.match(plan.tasks[0].executor.config.runtime_task.input.artifacts, /^\.ci\/homeboy-agent-task-artifacts\//, 'iterator uses a repo-relative artifact directory');
 assert.deepEqual(plan.tasks[0].executor.config.runtime_task.input.success_completion_outcomes, ['pull_request_path'], 'native iterator keeps PR-first completion gate');
 assert.equal(plan.tasks[0].inputs.source_pr, '456', 'source PR metadata flows into native plan');
@@ -128,6 +129,9 @@ const explicitProviderIteratorResult = spawnSync(
 			HOMEBOY_WP_CODEBOX_MODEL: 'opencode-go/kimi-k2.6',
 			HOMEBOY_WP_CODEBOX_PROVIDER_PLUGIN_PATHS: '/runner/ai-provider-for-opencode-current',
 			HOMEBOY_WP_CODEBOX_SECRET_ENV: 'OPENCODE_API_KEY,GITHUB_TOKEN',
+			HOMEBOY_WP_CODEBOX_RUNTIME_ENV: JSON.stringify({ XDG_CONFIG_HOME: '/runtime/config', XDG_STATE_HOME: '/runtime/state' }),
+			HOMEBOY_WP_CODEBOX_RUNTIME_CONFIG_MOUNTS: JSON.stringify([{ source: '/runner/config', target: '/runtime/config', mode: 'readonly' }]),
+			HOMEBOY_WP_CODEBOX_RUNTIME_STATE_MOUNTS: JSON.stringify([{ source: '/runner/state', target: '/runtime/state', mode: 'readonly' }]),
 		},
 	},
 );
@@ -140,6 +144,9 @@ assert.equal(explicitProviderIteratorConfig.runtime_task.input.provider, 'openco
 assert.equal(explicitProviderIteratorConfig.runtime_task.input.model, 'opencode-go/kimi-k2.6', 'iterator passes explicit model to runtime task');
 assert.deepEqual(explicitProviderIteratorConfig.provider_plugin_paths, ['/runner/ai-provider-for-opencode-current'], 'iterator preserves explicit provider plugin override');
 assert.deepEqual(explicitProviderIteratorConfig.secret_env, ['OPENCODE_API_KEY', 'GITHUB_TOKEN'], 'iterator preserves explicit secret env override');
+assert.deepEqual(explicitProviderIteratorConfig.runtime_env, { XDG_CONFIG_HOME: '/runtime/config', XDG_STATE_HOME: '/runtime/state' }, 'iterator preserves explicit runtime env override');
+assert.deepEqual(explicitProviderIteratorConfig.runtime_config_mounts, [{ source: '/runner/config', target: '/runtime/config', mode: 'readonly' }], 'iterator preserves explicit runtime config mounts');
+assert.deepEqual(explicitProviderIteratorConfig.runtime_state_mounts, [{ source: '/runner/state', target: '/runtime/state', mode: 'readonly' }], 'iterator preserves explicit runtime state mounts');
 
 const dispatchResult = spawnSync(
 	process.execPath,
