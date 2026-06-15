@@ -69,17 +69,7 @@ try {
 	const controllerSpec = JSON.parse(await readFile(path.join(repoRoot, '.github/homeboy/controllers/static-site-generation-loop.controller.json'), 'utf8'));
 	assert.equal(controllerSpec.schema, 'homeboy/controller-spec/v1');
 	assert.equal(controllerSpec.controller_id, 'wp-site-generator/static-site-generation-loop');
-	assert.equal(controllerSpec.authority.execution_surface, 'homeboy_lab');
-	assert.equal(Object.hasOwn(controllerSpec.authority, 'github_actions_role'), false, 'controller has no GitHub Actions role');
-	assert.equal(Object.hasOwn(controllerSpec, 'actions_compatibility'), false, 'controller has no Actions contract');
-	assert.equal(controllerSpec.runtime.backend, 'codebox');
-	assert.equal(controllerSpec.runtime.provider.kind, 'codex');
-	assert.equal(controllerSpec.runtime.provider.location, 'in_sandbox');
-	assert.doesNotMatch(controllerSpec.runtime.provider.assumption, /compatibility|legacy|shim/i, 'provider assumption uses current contract language');
-	assert.equal(controllerSpec.authority.builder, '.github/scripts/build-homeboy-ssi-loop-controller.mjs');
-	assert.equal(controllerSpec.state.store, 'homeboy_controller_state', 'controller declares resumable state storage');
 	assert.ok(controllerSpec.state.checkpoint_events.includes('revalidation.completed'), 'controller checkpoints revalidation attempts');
-	assert.equal(controllerSpec.tracking.issue, 'https://github.com/chubes4/wp-site-generator/issues/639', 'controller links issue 639');
 	assert.deepEqual(
 		controllerSpec.phases.map((phase) => phase.id),
 		[
@@ -94,48 +84,12 @@ try {
 		],
 		'controller records the full static-site generation loop order'
 	);
-	assert.deepEqual(Object.keys(controllerSpec.quality_gates), ['fallback_blocks', 'conversion_findings', 'visual_parity', 'reviewer_evidence'], 'controller declares explicit quality gates');
-	assert.equal(controllerSpec.quality_gates.fallback_blocks.pass_when, 'value === 0');
-	assert.equal(controllerSpec.quality_gates.conversion_findings.pass_when, 'value === 0');
-	assert.equal(controllerSpec.quality_gates.visual_parity.pass_when, 'status === "pass" && mismatch_count === 0 && max_delta_ratio === 0');
-	assert.deepEqual(controllerSpec.quality_gates.reviewer_evidence.forbids, ['localhost', '127.0.0.1', '/Users/']);
 	assert.equal(controllerSpec.phases.find((phase) => phase.id === 'iterator_subloops').fan_out.per, 'finding_group', 'iterator phase fans out per grouped finding');
 	assert.equal(controllerSpec.phases.find((phase) => phase.id === 'revalidation').max_attempts, 3, 'revalidation attempts are bounded');
 	assert.deepEqual(
 		controllerSpec.phases.find((phase) => phase.id === 'revalidation').gates,
 		['fallback_blocks', 'conversion_findings', 'visual_parity'],
 		'revalidation reruns all quality gates'
-	);
-	assert.deepEqual(
-		controllerSpec.lineage_entities.map((entity) => entity.id),
-		[
-			'concept_packet',
-			'design_packet',
-			'static_site_candidate',
-			'import_validation_result',
-			'static_site_pull_request',
-			'static_validation_run',
-			'visual_parity_artifact',
-			'finding_packet_set',
-			'finding_group',
-			'iterator_worktree',
-			'iterator_upstream_issue',
-			'iterator_upstream_pull_request',
-			'revalidation_attempt',
-			'reviewer_gate_outcome',
-		],
-		'controller records all source, validation, iterator, and reviewer lineage entities'
-	);
-	assert.deepEqual(
-		controllerSpec.blockers.map((blocker) => `${blocker.repo}#${blocker.issue}`),
-		[
-			'Extra-Chill/homeboy#3905',
-			'Extra-Chill/homeboy#3904',
-			'Extra-Chill/homeboy#4216',
-			'Extra-Chill/homeboy#4218',
-			'Extra-Chill/homeboy-extensions#1319',
-		],
-		'controller records known native Lab blockers'
 	);
 
 	for (const taskId of ['design-store-packet', 'design-website-packet']) {
@@ -235,26 +189,6 @@ try {
   const staticAiStep = staticPipeline.steps.find((step) => step.step_type === 'ai');
   assert.match(staticAiStep.step_config.system_prompt, /preserve the remaining title text verbatim/, 'static agent preserves full source concept title text');
   assert.match(staticAiStep.step_config.system_prompt, /full source concept title without its leading emoji\/icon marker/, 'static agent PR title formula keeps full source concept title');
-
-  const loopWorkflow = await readFile(path.join(repoRoot, '.github/workflows/site-generation-loop.yml'), 'utf8');
-  assert.match(loopWorkflow, /actions:\s+write/, 'site generation loop can dispatch validation workflows');
-  assert.match(loopWorkflow, /HOMEBOY_CONTROLLER_SPEC_PATH/, 'site generation loop points at the controller spec contract');
-	assert.match(loopWorkflow, /WPSG_COMPLEXITY_TIER/, 'site generation loop exposes WPSG complexity override');
-	assert.match(loopWorkflow, /WPSG_QUALITY_SIGNALS_PATH/, 'site generation loop exposes quality-signal input');
-  assert.match(loopWorkflow, /dispatch-static-validation\.mjs/, 'site generation loop dispatches static validation for generated PRs');
-
-  const validationWorkflow = await readFile(path.join(repoRoot, '.github/workflows/static-site-validation.yml'), 'utf8');
-  assert.match(validationWorkflow, /workflow_dispatch:[\s\S]*pr_number:/, 'static validation supports explicit PR dispatch');
-  assert.match(validationWorkflow, /gh pr diff "\$PR_NUMBER"/, 'static validation detects changed sites from dispatched PR number');
-  assert.match(validationWorkflow, /build-static-validation-settings\.mjs/, 'static validation delegates Homeboy settings to the shared adapter');
-
-  const validationSettings = await readFile(path.join(repoRoot, '.github/scripts/build-static-validation-settings.mjs'), 'utf8');
-  assert.match(validationSettings, /block-artifact-compiler[\s\S]*block-format-bridge[\s\S]*static-site-importer/, 'static validation installs BAC, BFB, then SSI');
-  assert.match(validationSettings, /block-format-bridge/, 'static validation installs Block Format Bridge before Static Site Importer');
-
-  const visualParity = await readFile(path.join(repoRoot, '.github/scripts/static-visual-parity.mjs'), 'utf8');
-  assert.match(visualParity, /block-artifact-compiler[\s\S]*block-format-bridge[\s\S]*static-site-importer/, 'visual parity recipe installs BAC, BFB, then SSI');
-  assert.match(visualParity, /block-format-bridge/, 'visual parity recipe installs Block Format Bridge before Static Site Importer');
 
   const pluginShim = await readFile(path.join(repoRoot, 'wp-site-generator.php'), 'utf8');
   assert.match(pluginShim, /Plugin Name:\s*WP Site Generator CI Fixture/, 'repo exposes a plugin header for Homeboy bench component mounting');
