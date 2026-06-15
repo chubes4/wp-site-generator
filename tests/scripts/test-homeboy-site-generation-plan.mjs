@@ -69,7 +69,7 @@ try {
 	const controllerSpec = JSON.parse(await readFile(path.join(repoRoot, '.github/homeboy/controllers/static-site-generation-loop.controller.json'), 'utf8'));
 	assert.equal(controllerSpec.schema, 'homeboy/controller-spec/v1');
 	assert.equal(controllerSpec.controller_id, 'wp-site-generator/static-site-generation-loop');
-	assert.ok(controllerSpec.state.checkpoint_events.includes('revalidation.completed'), 'controller checkpoints revalidation attempts');
+	assert.ok(controllerSpec.phases.find((phase) => phase.id === 'revalidation').emits.includes('revalidation_attempt'), 'controller checkpoints revalidation attempts');
 	assert.deepEqual(
 		controllerSpec.phases.map((phase) => phase.id),
 		[
@@ -84,7 +84,7 @@ try {
 		],
 		'controller records the full static-site generation loop order'
 	);
-	assert.equal(controllerSpec.phases.find((phase) => phase.id === 'iterator_subloops').fan_out.per, 'finding_group', 'iterator phase fans out per grouped finding');
+	assert.ok(controllerSpec.phases.find((phase) => phase.id === 'iterator_subloops').requires.includes('finding_group'), 'iterator phase fans out per grouped finding');
 	assert.equal(controllerSpec.phases.find((phase) => phase.id === 'revalidation').max_attempts, 3, 'revalidation attempts are bounded');
 	assert.deepEqual(
 		controllerSpec.phases.find((phase) => phase.id === 'revalidation').gates,
