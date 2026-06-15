@@ -25,7 +25,6 @@ const controller = {
 	description: 'WPSG-owned native controller contract for generating a static-site candidate, validating it through Static Site Importer, opening iterator upstream work, revalidating, and publishing only when quality gates clear.',
 	authority: {
 		execution_surface: 'homeboy_lab',
-		github_actions_role: 'trigger_and_reporting_compatibility',
 		native_runner: 'homeboy controller run --spec @.github/homeboy/controllers/static-site-generation-loop.controller.json',
 		builder: '.github/scripts/build-homeboy-ssi-loop-controller.mjs',
 		plan_contracts: planContracts,
@@ -37,7 +36,7 @@ const controller = {
 		provider: {
 			kind: 'codex',
 			location: 'in_sandbox',
-			assumption: 'The Codebox sandbox has the Codex provider plugin/runtime overlay and required secret_env values mounted by Homeboy Lab. GitHub Actions compatibility may still use ai-provider-for-openai until Homeboy Extensions exposes Codex defaults.',
+			assumption: 'The Codebox sandbox has the Codex provider plugin/runtime overlay and required secret_env values mounted by Homeboy Lab.',
 		},
 		secret_env: ['AI_PROVIDER_OPENAI_CODEX_API_KEY', 'OPENAI_API_KEY', 'GITHUB_TOKEN'],
 	},
@@ -224,13 +223,6 @@ const controller = {
 		{ event: 'revalidation.completed', records: ['revalidation_attempt', 'static_validation_run', 'quality_gates'] },
 		{ event: 'reviewer_gate.completed', records: ['reviewer_gate_outcome', 'decision', 'comment_url'] },
 	],
-	actions_compatibility: {
-		site_generation_loop_workflow: '.github/workflows/site-generation-loop.yml',
-		static_validation_workflow: '.github/workflows/static-site-validation.yml',
-		iterator_workflow: '.github/workflows/php-transformer-iterator.yml',
-		reviewer_workflow: '.github/workflows/ssi-stack-reviewer.yml',
-		rule: 'Workflows may trigger, report, and upload artifacts, but this controller spec owns native control flow, state, lineage, quality gates, iteration, and revalidation.',
-	},
 	tracking: {
 		issue: issueUrl,
 	},

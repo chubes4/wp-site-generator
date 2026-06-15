@@ -45,6 +45,7 @@ try {
       assert.equal(request.executor.config.runtime_component_paths.agent_runtime, '.ci/data-machine', `${request.task_id} uses a repo-relative Data Machine component path`);
       assert.equal(request.executor.config.runtime_component_paths.agent_runtime_tools, '.ci/data-machine-code', `${request.task_id} uses a repo-relative Data Machine Code component path`);
       assert.equal(request.executor.config.homeboy_extensions, '.ci/homeboy-extensions/wordpress', `${request.task_id} uses a repo-relative Homeboy Extensions component path`);
+      assert.deepEqual(request.executor.config.component_contracts, [{ slug: 'wp-site-generator', path: '.', activate: true }], `${request.task_id} loads the WPSG packet materializer component`);
       assert.match(request.executor.config.agent_bundles[0].source, /^\/workspace\/wp-site-generator\/bundles\//, `${request.task_id} imports a sandbox-local agent bundle path`);
       assert.match(request.executor.config.runtime_task.input.source, /^\/workspace\/wp-site-generator\/bundles\//, `${request.task_id} runs a sandbox-local agent bundle path`);
       assert.equal(request.executor.config.runtime_task.input.wait_for_completion, true, `${request.task_id} waits for typed bundle outputs`);
@@ -69,10 +70,12 @@ try {
 	assert.equal(controllerSpec.schema, 'homeboy/controller-spec/v1');
 	assert.equal(controllerSpec.controller_id, 'wp-site-generator/static-site-generation-loop');
 	assert.equal(controllerSpec.authority.execution_surface, 'homeboy_lab');
-	assert.equal(controllerSpec.authority.github_actions_role, 'trigger_and_reporting_compatibility');
+	assert.equal(Object.hasOwn(controllerSpec.authority, 'github_actions_role'), false, 'controller has no GitHub Actions role');
+	assert.equal(Object.hasOwn(controllerSpec, 'actions_compatibility'), false, 'controller has no Actions contract');
 	assert.equal(controllerSpec.runtime.backend, 'codebox');
 	assert.equal(controllerSpec.runtime.provider.kind, 'codex');
 	assert.equal(controllerSpec.runtime.provider.location, 'in_sandbox');
+	assert.doesNotMatch(controllerSpec.runtime.provider.assumption, /compatibility|legacy|shim/i, 'provider assumption uses current contract language');
 	assert.equal(controllerSpec.authority.builder, '.github/scripts/build-homeboy-ssi-loop-controller.mjs');
 	assert.equal(controllerSpec.state.store, 'homeboy_controller_state', 'controller declares resumable state storage');
 	assert.ok(controllerSpec.state.checkpoint_events.includes('revalidation.completed'), 'controller checkpoints revalidation attempts');
@@ -177,13 +180,22 @@ try {
 		assert.equal(config.runtime_task.ability, 'datamachine/run-agent-bundle', `${taskId} runs the bundle through a WP Codebox runtime task`);
 		assert.deepEqual(runtimeInput.success_completion_outcomes, ['design_packet'], `${taskId} requires DesignPacket completion`);
 		assert.match(runtimeInput.prompt, /ConceptPacket/, `${taskId} consumes ConceptPacket`);
+		assert.match(runtimeInput.prompt, /wpsg_materialize_packet/, `${taskId} records packet through deterministic WPSG tool`);
 		assert.match(runtimeInput.prompt, /Generation complexity policy:/, `${taskId} records policy guidance in prompt`);
 		assert.equal(runtimeInput.complexity_policy.selected_tier, 'foundation', `${taskId} records selected complexity tier`);
 		assert.equal(plan.tasks.find((task) => task.task_id === taskId).inputs.complexity_policy.randomness_seed.length, 12, `${taskId} carries reproducible randomness seed`);
 		assert.doesNotMatch(runtimeInput.prompt, /create_github_issue/, `${taskId} does not create a design handoff issue`);
-		assert.deepEqual(runtimeInput.tool_recorders, [], `${taskId} has no design issue recorder`);
+		assert.deepEqual(runtimeInput.tool_recorders[0].record.fields, { design_packet: 'data.design_packet' }, `${taskId} records DesignPacket tool output`);
 		assert.equal(runtimeInput.artifact_outputs.design_packet.schema, 'wp-site-generator/DesignPacket/v1');
-		assert.equal(runtimeInput.engine_data_outputs.design_packet, 'metadata.artifacts.DesignPacket');
+		assert.equal(runtimeInput.engine_data_outputs.design_packet, 'metadata.engine_data.wpsg_packets.design_packet');
+	}
+
+	for (const taskId of ['store-idea-agent', 'website-idea-agent']) {
+		const config = plan.tasks.find((task) => task.task_id === taskId).executor.config;
+		const runtimeInput = config.runtime_task.input;
+		assert.match(runtimeInput.prompt, /wpsg_materialize_packet/, `${taskId} records concept through deterministic WPSG tool`);
+		assert.deepEqual(runtimeInput.tool_recorders[0].record.fields, { concept_packet: 'data.concept_packet' }, `${taskId} records ConceptPacket tool output`);
+		assert.equal(runtimeInput.engine_data_outputs.concept_packet, 'metadata.engine_data.wpsg_packets.concept_packet');
 	}
 
 	for (const taskId of ['generate-store-candidate', 'generate-website-candidate']) {
@@ -192,6 +204,8 @@ try {
 		assert.deepEqual(runtimeInput.success_completion_outcomes, ['static_site_candidate'], `${taskId} stops at candidate artifact`);
 		assert.equal(runtimeInput.success_requires_pr, false, `${taskId} does not publish a PR`);
 		assert.equal(runtimeInput.artifact_outputs.static_site_candidate.schema, 'wp-site-generator/StaticSiteCandidate/v1');
+		assert.deepEqual(runtimeInput.tool_recorders[0].record.fields, { static_site_candidate: 'data.static_site_candidate' }, `${taskId} records StaticSiteCandidate tool output`);
+		assert.equal(runtimeInput.engine_data_outputs.static_site_candidate, 'metadata.engine_data.wpsg_packets.static_site_candidate');
 		assert.match(runtimeInput.prompt, /Do not open a pull request/, `${taskId} separates candidate generation from publication`);
 		assert.match(runtimeInput.prompt, /Record the tier, randomness profile, randomness seed/, `${taskId} asks candidate to preserve policy metadata`);
 	}
@@ -244,6 +258,8 @@ try {
 
   const pluginShim = await readFile(path.join(repoRoot, 'wp-site-generator.php'), 'utf8');
   assert.match(pluginShim, /Plugin Name:\s*WP Site Generator CI Fixture/, 'repo exposes a plugin header for Homeboy bench component mounting');
+  assert.match(pluginShim, /wp-site-generator\/materialize-packet/, 'plugin registers the WPSG packet materializer ability');
+  assert.match(pluginShim, /wpsg_materialize_packet/, 'plugin projects the packet materializer as an agent tool');
 
 	const policy = loadPolicy(path.join(repoRoot, '.github/site-generation-complexity-policy.json'));
 	const stableDecision = evaluateComplexityPolicy({
@@ -346,6 +362,7 @@ try {
   assert.equal(explicitProviderConfig.runtime_task.input.model, 'opencode-go/kimi-k2.6', 'explicit model override is passed to runtime task');
   assert.deepEqual(explicitProviderConfig.provider_plugin_paths, ['/runner/ai-provider-for-opencode-current'], 'explicit provider plugin override is preserved');
   assert.deepEqual(explicitProviderConfig.secret_env, ['OPENCODE_API_KEY', 'GITHUB_TOKEN'], 'explicit secret env override is preserved');
+  assert.deepEqual(explicitProviderPlan.tasks[0].executor.secret_env, ['OPENCODE_API_KEY', 'GITHUB_TOKEN'], 'explicit secret env is declared for Homeboy provider hydration');
   assert.deepEqual(explicitProviderConfig.runtime_env, { XDG_CONFIG_HOME: '/runtime/config', XDG_STATE_HOME: '/runtime/state' }, 'explicit runtime env override is preserved');
   assert.deepEqual(explicitProviderConfig.runtime_config_mounts, [{ source: '/runner/config', target: '/runtime/config', mode: 'readonly' }], 'explicit runtime config mounts are preserved');
   assert.deepEqual(explicitProviderConfig.runtime_state_mounts, [{ source: '/runner/state', target: '/runtime/state', mode: 'readonly' }], 'explicit runtime state mounts are preserved');
