@@ -7,6 +7,9 @@
     "slug": "store-idea-artifact-flow",
     "steps": [
         {
+            "enabled_tools": [
+                "wpsg_materialize_packet"
+            ],
             "disabled_tools": [
                 "list_github_issues",
                 "github_issue_publish"
@@ -15,7 +18,7 @@
             "prompt_queue": [
                 {
                     "added_at": "2026-06-10T00:00:00+00:00",
-                    "prompt": "Industry: open. Generate one distinct, buildable store ConceptPacket artifact. Treat this as a pre-publication artifact stage; GitHub remains empty until a validated StaticSiteCandidate is published."
+                    "prompt": "Industry: open. Generate one distinct, buildable store concept. Record it by calling wpsg_materialize_packet with packet_type=concept_packet. GitHub remains empty until a validated StaticSiteCandidate is published."
                 }
             ],
             "queue_mode": "static",

@@ -7,6 +7,9 @@
     "slug": "design-artifact-flow",
     "steps": [
         {
+            "enabled_tools": [
+                "wpsg_materialize_packet"
+            ],
             "disabled_tools": [
                 "create_github_issue"
             ],

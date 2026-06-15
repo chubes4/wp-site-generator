@@ -78,21 +78,23 @@ assert.equal(planResult.status, 0, planResult.stderr || planResult.stdout);
 
 const plan = JSON.parse(await readFile(planPath, 'utf8'));
 assert.equal(plan.schema, 'homeboy/agent-task-plan/v1', 'native iterator adapter emits a Homeboy plan');
-assert.equal(plan.tasks[0].executor.config.execution_kind, 'datamachine_bundle', 'iterator runs through Homeboy Data Machine bundle executor');
+assert.equal(plan.tasks[0].executor.config.runtime_task.ability, 'datamachine/run-agent-bundle', 'iterator runs through a WP Codebox runtime task');
 assert.equal(plan.tasks[0].executor.config.wp_codebox_bin, undefined, 'iterator plan defers WP Codebox binary selection to the runner by default');
 assert.equal(plan.tasks[0].executor.model, undefined, 'iterator plan defers executor model selection to the runner by default');
 assert.equal(plan.tasks[0].executor.config.provider, undefined, 'iterator plan defers provider selection to the runner by default');
 assert.equal(plan.tasks[0].executor.config.model, undefined, 'iterator plan defers config model selection to the runner by default');
 assert.equal(plan.tasks[0].executor.config.provider_plugin_paths, undefined, 'iterator plan defers provider plugin selection to the runner by default');
 assert.equal(plan.tasks[0].executor.config.secret_env, undefined, 'iterator plan defers provider secret env selection to the runner by default');
-assert.equal(plan.tasks[0].executor.config.execute_workflow_path, workflowPath, 'iterator consumes prebuilt grouped finding workflow');
-assert.equal(plan.tasks[0].executor.config.agents_api, '.ci/agents-api', 'iterator uses a repo-relative Agents API component path');
-assert.equal(plan.tasks[0].executor.config.data_machine, '.ci/data-machine', 'iterator uses a repo-relative Data Machine component path');
-assert.equal(plan.tasks[0].executor.config.data_machine_code, '.ci/data-machine-code', 'iterator uses a repo-relative Data Machine Code component path');
+assert.equal(plan.tasks[0].executor.config.runtime_task.input.execute_workflow_path, workflowPath, 'iterator consumes prebuilt grouped finding workflow');
+assert.equal(plan.tasks[0].executor.config.runtime_component_paths.agents_api, '.ci/agents-api', 'iterator uses a repo-relative Agents API component path');
+assert.equal(plan.tasks[0].executor.config.runtime_component_paths.agent_runtime, '.ci/data-machine', 'iterator uses a repo-relative Data Machine component path');
+assert.equal(plan.tasks[0].executor.config.runtime_component_paths.agent_runtime_tools, '.ci/data-machine-code', 'iterator uses a repo-relative Data Machine Code component path');
 assert.equal(plan.tasks[0].executor.config.homeboy_extensions, '.ci/homeboy-extensions/wordpress', 'iterator uses a repo-relative Homeboy Extensions component path');
-assert.equal(plan.tasks[0].executor.config.bundle_host_path, 'bundles/php-transformer-iterator-agent', 'iterator uses a repo-relative bundle path');
-assert.match(plan.tasks[0].executor.config.artifacts, /^\.ci\/homeboy-agent-task-artifacts\//, 'iterator uses a repo-relative artifact directory');
-assert.deepEqual(plan.tasks[0].executor.config.success_completion_outcomes, ['pull_request_path'], 'native iterator keeps PR-first completion gate');
+assert.equal(plan.tasks[0].executor.config.agent_bundles[0].source, '/workspace/wp-site-generator/bundles/php-transformer-iterator-agent', 'iterator imports a sandbox-local bundle path');
+assert.equal(plan.tasks[0].executor.config.runtime_task.input.source, '/workspace/wp-site-generator/bundles/php-transformer-iterator-agent', 'iterator runs a sandbox-local bundle path');
+assert.equal(plan.tasks[0].executor.config.runtime_task.input.wait_for_completion, true, 'iterator waits for typed bundle outputs');
+assert.match(plan.tasks[0].executor.config.runtime_task.input.artifacts, /^\.ci\/homeboy-agent-task-artifacts\//, 'iterator uses a repo-relative artifact directory');
+assert.deepEqual(plan.tasks[0].executor.config.runtime_task.input.success_completion_outcomes, ['pull_request_path'], 'native iterator keeps PR-first completion gate');
 assert.equal(plan.tasks[0].inputs.source_pr, '456', 'source PR metadata flows into native plan');
 
 const explicitIteratorPlanPath = path.join(tempDir, 'iterator-plan-codebox.json');
@@ -127,6 +129,9 @@ const explicitProviderIteratorResult = spawnSync(
 			HOMEBOY_WP_CODEBOX_MODEL: 'opencode-go/kimi-k2.6',
 			HOMEBOY_WP_CODEBOX_PROVIDER_PLUGIN_PATHS: '/runner/ai-provider-for-opencode-current',
 			HOMEBOY_WP_CODEBOX_SECRET_ENV: 'OPENCODE_API_KEY,GITHUB_TOKEN',
+			HOMEBOY_WP_CODEBOX_RUNTIME_ENV: JSON.stringify({ XDG_CONFIG_HOME: '/runtime/config', XDG_STATE_HOME: '/runtime/state' }),
+			HOMEBOY_WP_CODEBOX_RUNTIME_CONFIG_MOUNTS: JSON.stringify([{ source: '/runner/config', target: '/runtime/config', mode: 'readonly' }]),
+			HOMEBOY_WP_CODEBOX_RUNTIME_STATE_MOUNTS: JSON.stringify([{ source: '/runner/state', target: '/runtime/state', mode: 'readonly' }]),
 		},
 	},
 );
@@ -135,8 +140,13 @@ const explicitProviderIteratorPlan = JSON.parse(await readFile(explicitProviderI
 const explicitProviderIteratorConfig = explicitProviderIteratorPlan.tasks[0].executor.config;
 assert.equal(explicitProviderIteratorConfig.provider, 'opencode', 'iterator preserves explicit provider override');
 assert.equal(explicitProviderIteratorConfig.model, 'opencode-go/kimi-k2.6', 'iterator preserves explicit provider model override');
+assert.equal(explicitProviderIteratorConfig.runtime_task.input.provider, 'opencode', 'iterator passes explicit provider to runtime task');
+assert.equal(explicitProviderIteratorConfig.runtime_task.input.model, 'opencode-go/kimi-k2.6', 'iterator passes explicit model to runtime task');
 assert.deepEqual(explicitProviderIteratorConfig.provider_plugin_paths, ['/runner/ai-provider-for-opencode-current'], 'iterator preserves explicit provider plugin override');
 assert.deepEqual(explicitProviderIteratorConfig.secret_env, ['OPENCODE_API_KEY', 'GITHUB_TOKEN'], 'iterator preserves explicit secret env override');
+assert.deepEqual(explicitProviderIteratorConfig.runtime_env, { XDG_CONFIG_HOME: '/runtime/config', XDG_STATE_HOME: '/runtime/state' }, 'iterator preserves explicit runtime env override');
+assert.deepEqual(explicitProviderIteratorConfig.runtime_config_mounts, [{ source: '/runner/config', target: '/runtime/config', mode: 'readonly' }], 'iterator preserves explicit runtime config mounts');
+assert.deepEqual(explicitProviderIteratorConfig.runtime_state_mounts, [{ source: '/runner/state', target: '/runtime/state', mode: 'readonly' }], 'iterator preserves explicit runtime state mounts');
 
 const dispatchResult = spawnSync(
 	process.execPath,

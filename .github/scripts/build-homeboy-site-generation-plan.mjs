@@ -16,6 +16,9 @@ const model = process.env.HOMEBOY_WP_CODEBOX_MODEL || '';
 const provider = process.env.HOMEBOY_WP_CODEBOX_PROVIDER || '';
 const providerPluginPaths = splitList(process.env.HOMEBOY_WP_CODEBOX_PROVIDER_PLUGIN_PATHS || '');
 const secretEnv = splitList(process.env.HOMEBOY_WP_CODEBOX_SECRET_ENV || '');
+const runtimeEnv = parseJsonObject(process.env.HOMEBOY_WP_CODEBOX_RUNTIME_ENV || '');
+const runtimeConfigMounts = parseJsonArray(process.env.HOMEBOY_WP_CODEBOX_RUNTIME_CONFIG_MOUNTS || '');
+const runtimeStateMounts = parseJsonArray(process.env.HOMEBOY_WP_CODEBOX_RUNTIME_STATE_MOUNTS || '');
 const outputPath = process.env.HOMEBOY_PLAN_PATH || path.join(root, '.ci', 'site-generation-loop.agent-task-plan.json');
 const controllerSpecPath = process.env.HOMEBOY_CONTROLLER_SPEC_PATH || '.github/homeboy/controllers/static-site-generation-loop.controller.json';
 const manualTaskKind = process.env.HOMEBOY_TASK_KIND || '';
@@ -45,6 +48,28 @@ function splitList(value) {
     .filter(Boolean);
 }
 
+function parseJsonObject(value) {
+  if (!value) {
+    return null;
+  }
+  const parsed = JSON.parse(value);
+  if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) {
+    throw new Error('Expected JSON object');
+  }
+  return parsed;
+}
+
+function parseJsonArray(value) {
+  if (!value) {
+    return null;
+  }
+  const parsed = JSON.parse(value);
+  if (!Array.isArray(parsed)) {
+    throw new Error('Expected JSON array');
+  }
+  return parsed;
+}
+
 function taskOutputPath(field) {
   return `/outputs/${field}`;
 }
@@ -66,20 +91,17 @@ function datamachineConfig({
   engineDataOutputs = {},
   transcriptArtifactName,
   complexityPolicy: taskComplexityPolicy,
+  structuredArtifacts = [],
 }) {
-  const config = {
-    execution_kind: 'datamachine_bundle',
-    agents_api: ci('agents-api'),
-    data_machine: ci('data-machine'),
-    data_machine_code: ci('data-machine-code'),
-    homeboy_extensions: `${ci('homeboy-extensions')}/wordpress`,
-    bundle_host_path: bundle,
-    bundle_path: `/workspace/wp-site-generator/${bundle}`,
+  const runtimeBundlePath = `/workspace/wp-site-generator/${bundle}`;
+  const runtimeTaskInput = {
+    source: runtimeBundlePath,
     agent_slug: agent,
     pipeline_slug: pipeline,
     flow_slug: flow,
     target_repo: repository,
     prompt,
+		wait_for_completion: true,
 		success_requires_pr: successRequiresPr,
 		success_completion_outcomes: successCompletionOutcomes,
 		artifact_outputs: artifactOutputs,
@@ -90,11 +112,29 @@ function datamachineConfig({
     artifacts: path.join(artifactsRoot, agent, transcriptArtifactName || flow),
   };
 
+  const config = {
+    runtime_component_paths: {
+      agents_api: ci('agents-api'),
+      agent_runtime: ci('data-machine'),
+      agent_runtime_tools: ci('data-machine-code'),
+    },
+    component_contracts: [{ slug: 'wp-site-generator', path: '.', activate: true }],
+    homeboy_extensions: `${ci('homeboy-extensions')}/wordpress`,
+    agent_bundles: [{ source: runtimeBundlePath, slug: agent }],
+    runtime_task: {
+      ability: 'datamachine/run-agent-bundle',
+      input: runtimeTaskInput,
+    },
+    structured_artifacts: structuredArtifacts,
+  };
+
   if (provider) {
     config.provider = provider;
+    runtimeTaskInput.provider = provider;
   }
   if (model) {
     config.model = model;
+    runtimeTaskInput.model = model;
   }
   if (providerPluginPaths.length > 0) {
     config.provider_plugin_paths = providerPluginPaths;
@@ -102,23 +142,33 @@ function datamachineConfig({
   if (secretEnv.length > 0) {
     config.secret_env = secretEnv;
   }
+  if (runtimeEnv) {
+    config.runtime_env = runtimeEnv;
+  }
+  if (runtimeConfigMounts) {
+    config.runtime_config_mounts = runtimeConfigMounts;
+  }
+  if (runtimeStateMounts) {
+    config.runtime_state_mounts = runtimeStateMounts;
+  }
 
   if (wpCodeboxBin) {
     config.wp_codebox_bin = wpCodeboxBin;
   }
 
 	if (taskComplexityPolicy) {
-		config.complexity_policy = taskComplexityPolicy;
+		runtimeTaskInput.complexity_policy = taskComplexityPolicy;
 	}
 
   if (maxTurns) {
     config.max_turns = maxTurns;
+    runtimeTaskInput.max_turns = maxTurns;
   }
   if (stepBudget) {
-    config.step_budget = stepBudget;
+    runtimeTaskInput.step_budget = stepBudget;
   }
   if (timeBudgetMs) {
-    config.time_budget_ms = timeBudgetMs;
+    runtimeTaskInput.time_budget_ms = timeBudgetMs;
     config.task_timeout_seconds = Math.ceil(timeBudgetMs / 1000) + 300;
   }
 
@@ -133,6 +183,7 @@ function task({ id, title, config, instructions, expectedArtifacts = ['datamachi
     parent_plan_id: planId,
     executor: {
       backend: 'codebox',
+      ...(Array.isArray(config.secret_env) && config.secret_env.length > 0 ? { secret_env: config.secret_env } : {}),
       config,
     },
     instructions,
@@ -182,9 +233,23 @@ const prRecorder = [
   },
 ];
 
-const conceptPacketPrompt = 'Generate one buildable concept and emit a ConceptPacket artifact. Include title, body sections, lane labels, concept kind, and source provenance. Do not create GitHub issues or pull requests; Homeboy owns orchestration and GitHub publication happens only after a validated static-site candidate exists.';
-const loopDesignPrompt = 'Consume ConceptPacket {{outputs.concept_packet}} and emit one DesignPacket artifact. Preserve the concept title, body sections, lane labels, and provenance. Include palette, typography, layout direction, mood, accessibility notes, and any implementation constraints needed by the static-site candidate generator. Do not create GitHub issues or pull requests.';
-const loopCandidatePrompt = 'Consume ConceptPacket {{outputs.concept_packet}} and DesignPacket {{outputs.design_packet}}, then generate a StaticSiteCandidate artifact containing the complete static-sites file set or patch, site metadata, source concept/design references, branch/title proposal, and reproduction context. Do not create a pull request; validation must run before publication.';
+function packetRecorder(packetKey) {
+  return [
+    {
+      tool: 'wpsg_materialize_packet',
+      record: {
+        engine_key: 'wpsg_packets',
+        fields: {
+          [packetKey]: `data.${packetKey}`,
+        },
+      },
+    },
+  ];
+}
+
+const conceptPacketPrompt = 'Generate one buildable concept. When the content is ready, call wpsg_materialize_packet exactly once with packet_type=concept_packet, title, body sections, lane labels, concept kind, and source provenance. Do not create GitHub issues or pull requests; Homeboy owns orchestration and GitHub publication happens only after a validated static-site candidate exists.';
+const loopDesignPrompt = 'Consume ConceptPacket {{outputs.concept_packet}} and decide one design direction. When the design is ready, call wpsg_materialize_packet exactly once with packet_type=design_packet. Preserve the concept title, body sections, lane labels, and provenance. Include palette, typography, layout direction, mood, accessibility notes, and any implementation constraints needed by the static-site candidate generator. Do not create GitHub issues or pull requests.';
+const loopCandidatePrompt = 'Consume ConceptPacket {{outputs.concept_packet}} and DesignPacket {{outputs.design_packet}}, then generate a static-site candidate file set or patch. When the candidate is ready, call wpsg_materialize_packet exactly once with packet_type=static_site_candidate, generated files, metadata, branch/title proposal, and reproduction context. Do not create a pull request; validation must run before publication.';
 const loopPublishPrompt = 'Consume StaticSiteCandidate {{outputs.static_site_candidate}} and ImportValidationResult {{outputs.import_validation_result}}, then publish exactly one static-site PR. Use the candidate files and metadata as source of truth. Render the PR body with .github/scripts/render-static-site-pr-body.mjs so the initial PR body includes the import validation summary, fallback block count, conversion finding counts, and artifact references. Do not add a separate follow-up metrics comment in the normal flow.';
 
 function storeIdeaTask({ id = 'store-idea-agent', flow = 'store-idea-artifact-flow', prompt = ' ', title = 'Generate store idea', lane = 'store concept lane' } = {}) {
@@ -193,7 +258,7 @@ function storeIdeaTask({ id = 'store-idea-agent', flow = 'store-idea-artifact-fl
 	return task({
 		id,
 		title,
-		instructions: 'Generate one store ConceptPacket artifact.',
+		instructions: 'Generate one store concept and record it with wpsg_materialize_packet.',
 		inputs: complexityTaskInput,
 		expectedArtifacts: ['datamachine-transcript', 'ConceptPacket'],
 		config: datamachineConfig({
@@ -210,8 +275,9 @@ function storeIdeaTask({ id = 'store-idea-agent', flow = 'store-idea-artifact-fl
 			maxTurns: 6,
 			stepBudget: 8,
 			timeBudgetMs: 180000,
+			toolRecorders: packetRecorder('concept_packet'),
 			engineDataOutputs: {
-				concept_packet: 'metadata.artifacts.ConceptPacket',
+				concept_packet: 'metadata.engine_data.wpsg_packets.concept_packet',
 			},
 			transcriptArtifactName: `${id}-transcript-${runId}`,
 			complexityPolicy: complexityDecision,
@@ -226,7 +292,7 @@ function websiteIdeaTask({ id = 'website-idea-agent', flow = 'website-idea-artif
 	return task({
 		id,
 		title,
-		instructions: 'Generate one website ConceptPacket artifact.',
+		instructions: 'Generate one website concept and record it with wpsg_materialize_packet.',
 		inputs: complexityTaskInput,
 		expectedArtifacts: ['datamachine-transcript', 'ConceptPacket'],
 		config: datamachineConfig({
@@ -240,8 +306,9 @@ function websiteIdeaTask({ id = 'website-idea-agent', flow = 'website-idea-artif
 			artifactOutputs: {
 				concept_packet: conceptPacketOutput,
 			},
+			toolRecorders: packetRecorder('concept_packet'),
 			engineDataOutputs: {
-				concept_packet: 'metadata.artifacts.ConceptPacket',
+				concept_packet: 'metadata.engine_data.wpsg_packets.concept_packet',
 			},
 			transcriptArtifactName: `${id}-transcript-${runId}`,
 			complexityPolicy: complexityDecision,
@@ -250,7 +317,7 @@ function websiteIdeaTask({ id = 'website-idea-agent', flow = 'website-idea-artif
 }
 
 function designTask({ id, conceptPacket = '{{outputs.concept_packet}}', title, lane = 'design lane' }) {
-	const prompt = [`Consume ConceptPacket ${conceptPacket} and emit one DesignPacket artifact. Preserve source concept identity and lane metadata. Do not create GitHub issues or pull requests.`, policyPrompt(complexityDecision, lane)].join('\n\n');
+	const prompt = [`Consume ConceptPacket ${conceptPacket} and record one DesignPacket by calling wpsg_materialize_packet exactly once with packet_type=design_packet. Preserve source concept identity and lane metadata. Do not create GitHub issues or pull requests.`, policyPrompt(complexityDecision, lane)].join('\n\n');
 	return task({
 		id,
 		title,
@@ -268,8 +335,9 @@ function designTask({ id, conceptPacket = '{{outputs.concept_packet}}', title, l
 			artifactOutputs: {
 				design_packet: designPacketOutput,
 			},
+			toolRecorders: packetRecorder('design_packet'),
 			engineDataOutputs: {
-				design_packet: 'metadata.artifacts.DesignPacket',
+				design_packet: 'metadata.engine_data.wpsg_packets.design_packet',
 			},
 			transcriptArtifactName: `${id}-transcript-${runId}`,
 			complexityPolicy: complexityDecision,
@@ -278,7 +346,7 @@ function designTask({ id, conceptPacket = '{{outputs.concept_packet}}', title, l
 }
 
 function staticSiteCandidateTask({ id, conceptPacket = '{{outputs.concept_packet}}', designPacket = '{{outputs.design_packet}}', title, lane = 'static-site candidate lane' }) {
-	const prompt = [`Consume ConceptPacket ${conceptPacket} and DesignPacket ${designPacket}. Emit one StaticSiteCandidate artifact with generated files, metadata, branch/title proposal, and reproduction context. Do not open a pull request.`, policyPrompt(complexityDecision, lane)].join('\n\n');
+	const prompt = [`Consume ConceptPacket ${conceptPacket} and DesignPacket ${designPacket}. Generate one static-site candidate and record it by calling wpsg_materialize_packet exactly once with packet_type=static_site_candidate, generated files, metadata, branch/title proposal, and reproduction context. Do not open a pull request.`, policyPrompt(complexityDecision, lane)].join('\n\n');
 	return task({
 		id,
 		title,
@@ -296,8 +364,9 @@ function staticSiteCandidateTask({ id, conceptPacket = '{{outputs.concept_packet
 			artifactOutputs: {
 				static_site_candidate: staticSiteCandidateOutput,
 			},
+			toolRecorders: packetRecorder('static_site_candidate'),
 			engineDataOutputs: {
-				static_site_candidate: 'metadata.artifacts.StaticSiteCandidate',
+				static_site_candidate: 'metadata.engine_data.wpsg_packets.static_site_candidate',
 			},
 			transcriptArtifactName: `${id}-transcript-${runId}`,
 			complexityPolicy: complexityDecision,
@@ -444,8 +513,9 @@ const loopPlan = {
 				artifactOutputs: {
 					design_packet: designPacketOutput,
 				},
+				toolRecorders: packetRecorder('design_packet'),
 				engineDataOutputs: {
-					design_packet: 'metadata.artifacts.DesignPacket',
+					design_packet: 'metadata.engine_data.wpsg_packets.design_packet',
 				},
 				transcriptArtifactName: `design-agent-store-transcript-${runId}`,
 				complexityPolicy: complexityDecision,
@@ -468,8 +538,9 @@ const loopPlan = {
 				artifactOutputs: {
 					design_packet: designPacketOutput,
 				},
+				toolRecorders: packetRecorder('design_packet'),
 				engineDataOutputs: {
-					design_packet: 'metadata.artifacts.DesignPacket',
+					design_packet: 'metadata.engine_data.wpsg_packets.design_packet',
 				},
 				transcriptArtifactName: `design-agent-website-transcript-${runId}`,
 				complexityPolicy: complexityDecision,

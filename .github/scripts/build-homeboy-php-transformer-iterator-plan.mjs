@@ -11,6 +11,9 @@ const model = process.env.HOMEBOY_WP_CODEBOX_MODEL || '';
 const provider = process.env.HOMEBOY_WP_CODEBOX_PROVIDER || '';
 const providerPluginPaths = splitList(process.env.HOMEBOY_WP_CODEBOX_PROVIDER_PLUGIN_PATHS || '');
 const secretEnv = splitList(process.env.HOMEBOY_WP_CODEBOX_SECRET_ENV || '');
+const runtimeEnv = parseJsonObject(process.env.HOMEBOY_WP_CODEBOX_RUNTIME_ENV || '');
+const runtimeConfigMounts = parseJsonArray(process.env.HOMEBOY_WP_CODEBOX_RUNTIME_CONFIG_MOUNTS || '');
+const runtimeStateMounts = parseJsonArray(process.env.HOMEBOY_WP_CODEBOX_RUNTIME_STATE_MOUNTS || '');
 const workflowPath = args.get('--workflow') || process.env.DATAMACHINE_WORKFLOW_PATH || '.ci/datamachine-iterator-workflow.json';
 const outputPath = args.get('--output') || process.env.HOMEBOY_ITERATOR_PLAN_PATH || path.join(root, '.ci', 'php-transformer-iterator.agent-task-plan.json');
 const artifactsRoot = process.env.HOMEBOY_ARTIFACT_ROOT || '.ci/homeboy-agent-task-artifacts';
@@ -20,25 +23,20 @@ const validationRunId = process.env.VALIDATION_RUN_ID || args.get('--validation-
 const wpCodeboxBin = process.env.HOMEBOY_WP_CODEBOX_BIN || '';
 
 const ci = (name) => `.ci/${name}`;
-const executorConfig = {
-	execution_kind: 'datamachine_bundle',
-	agents_api: ci('agents-api'),
-	data_machine: ci('data-machine'),
-	data_machine_code: ci('data-machine-code'),
-	homeboy_extensions: `${ci('homeboy-extensions')}/wordpress`,
-	bundle_host_path: 'bundles/php-transformer-iterator-agent',
-	bundle_path: '/workspace/wp-site-generator/bundles/php-transformer-iterator-agent',
+const runtimeBundlePath = '/workspace/wp-site-generator/bundles/php-transformer-iterator-agent';
+const runtimeTaskInput = {
+	source: runtimeBundlePath,
 	agent_slug: 'php-transformer-iterator-agent',
 	pipeline_slug: 'php-transformer-iterator-pipeline',
 	flow_slug: 'php-transformer-iterator-manual-flow',
 	target_repo: repository,
 	prompt: 'Run the static-site validation iterator now. The prebuilt workflow embeds grouped finding context; process it as the source of truth.',
+	wait_for_completion: true,
 	success_requires_pr: true,
 	success_completion_outcomes: ['pull_request_path'],
 	max_turns: 24,
 	step_budget: 20,
 	time_budget_ms: 600000,
-	task_timeout_seconds: 900,
 	engine_data_outputs: {
 		upstream_action_url: 'metadata.engine_data.php_transformer_iterator.upstream_action_url',
 		source_callback_url: 'metadata.engine_data.php_transformer_iterator.source_callback_url',
@@ -52,18 +50,43 @@ const executorConfig = {
 	transcript_artifact_name: `php-transformer-iterator-transcript-${runId}`,
 	artifacts: path.join(artifactsRoot, 'php-transformer-iterator-agent', `php-transformer-iterator-transcript-${runId}`),
 };
+const executorConfig = {
+	runtime_component_paths: {
+		agents_api: ci('agents-api'),
+		agent_runtime: ci('data-machine'),
+		agent_runtime_tools: ci('data-machine-code'),
+	},
+	homeboy_extensions: `${ci('homeboy-extensions')}/wordpress`,
+	agent_bundles: [{ source: runtimeBundlePath, slug: 'php-transformer-iterator-agent' }],
+	runtime_task: {
+		ability: 'datamachine/run-agent-bundle',
+		input: runtimeTaskInput,
+	},
+	task_timeout_seconds: 900,
+};
 
 if (provider) {
 	executorConfig.provider = provider;
+	runtimeTaskInput.provider = provider;
 }
 if (model) {
 	executorConfig.model = model;
+	runtimeTaskInput.model = model;
 }
 if (providerPluginPaths.length > 0) {
 	executorConfig.provider_plugin_paths = providerPluginPaths;
 }
 if (secretEnv.length > 0) {
 	executorConfig.secret_env = secretEnv;
+}
+if (runtimeEnv) {
+	executorConfig.runtime_env = runtimeEnv;
+}
+if (runtimeConfigMounts) {
+	executorConfig.runtime_config_mounts = runtimeConfigMounts;
+}
+if (runtimeStateMounts) {
+	executorConfig.runtime_state_mounts = runtimeStateMounts;
 }
 
 if (wpCodeboxBin) {
@@ -136,4 +159,26 @@ function splitList(value) {
 		.split(',')
 		.map((item) => item.trim())
 		.filter(Boolean);
+}
+
+function parseJsonObject(value) {
+	if (!value) {
+		return null;
+	}
+	const parsed = JSON.parse(value);
+	if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) {
+		throw new Error('Expected JSON object');
+	}
+	return parsed;
+}
+
+function parseJsonArray(value) {
+	if (!value) {
+		return null;
+	}
+	const parsed = JSON.parse(value);
+	if (!Array.isArray(parsed)) {
+		throw new Error('Expected JSON array');
+	}
+	return parsed;
 }
