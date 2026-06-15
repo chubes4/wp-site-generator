@@ -20,31 +20,31 @@ assert.equal(controllerResult.status, 0, controllerResult.stderr || controllerRe
 
 const controller = JSON.parse(await readFile(controllerPath, 'utf8'));
 assert.equal(controller.schema, 'homeboy/controller-spec/v1', 'native controller builder emits a Homeboy controller spec');
-assert.ok(controller.phases.some((phase) => phase.id === 'iterator_subloops'), 'controller includes iterator subloop phase');
-assert.ok(controller.phases.some((phase) => phase.id === 'revalidation'), 'controller includes revalidation phase');
 assert.equal(controller.authority.builder, '.github/scripts/build-homeboy-ssi-loop-controller.mjs', 'controller records its repo-owned builder');
+assert.equal(controller.authority.contract_issue, 'https://github.com/Extra-Chill/homeboy/issues/4658', 'controller records the upstream contract issue');
 assert.equal(controller.authority.execution_surface, undefined, 'controller spec does not select a Homeboy execution surface');
 assert.equal(controller.execution, undefined, 'controller spec does not carry backend abstraction details');
 assert.equal(controller.runtime, undefined, 'controller spec does not embed runtime backend configuration');
 assert.equal(controller.authority.action_types, undefined, 'controller spec does not define Homeboy action vocabulary');
 assert.equal(controller.state, undefined, 'controller spec does not own Homeboy state');
 assert.equal(controller.events, undefined, 'controller spec does not own Homeboy lineage events');
-assert.ok(controller.ingredients.agents.includes('static-site-agent'), 'controller declares WPSG agents as domain ingredients');
-assert.ok(controller.ingredients.tools.includes('datamachine/run-agent-bundle'), 'controller declares required ability/tool ingredients');
-assert.equal(controller.ingredients.workflows.generation.builder, '.github/scripts/build-homeboy-site-generation-plan.mjs', 'controller declares generation builder ingredient');
-assert.ok(controller.ingredients.artifact_schemas.some((artifact) => artifact.id === 'revalidation_attempt'), 'controller declares artifact schema ingredients');
-assert.ok(controller.ingredients.dependencies.some((dependency) => dependency.repo === 'chubes4/static-site-importer'), 'controller declares SSI stack dependencies');
-assert.equal(controller.quality_gates.fallback_blocks.pass_when, 'value === 0', 'fallback block gate is explicit');
-assert.equal(controller.quality_gates.conversion_findings.pass_when, 'value === 0', 'conversion finding gate is explicit');
-assert.equal(controller.quality_gates.visual_parity.pass_when, 'status === "pass" && mismatch_count === 0 && max_delta_ratio === 0', 'visual parity gate is explicit');
-assert.equal(controller.phases.find((phase) => phase.id === 'generation').workflow, 'generation', 'generation phase references a workflow ingredient');
-assert.equal(controller.phases.find((phase) => phase.id === 'generation').actions, undefined, 'generation phase does not define Homeboy actions');
-assert.equal(controller.phases.find((phase) => phase.id === 'static_validation').workflow, 'static_validation', 'static validation references a workflow ingredient');
-assert.equal(controller.phases.find((phase) => phase.id === 'iterator_subloops').workflow, 'iterator', 'iterator phase references a workflow ingredient');
-assert.equal(controller.phases.find((phase) => phase.id === 'iterator_subloops').dedupe_by, undefined, 'iterator phase does not own Homeboy dedupe behavior');
-assert.equal(controller.phases.find((phase) => phase.id === 'revalidation').on_fail, 'iterator_subloops', 'failed revalidation loops back to iterator subloops');
-assert.equal(controller.tracking.issue, 'https://github.com/chubes4/wp-site-generator/issues/639', 'controller links issue 639');
-assert.ok(controller.blockers.some((blocker) => blocker.repo === 'Extra-Chill/homeboy' && blocker.issue === 4647), 'controller records Homeboy repo-loop compiler gap');
+assert.equal(controller.backend, undefined, 'controller spec does not name a backend');
+assert.equal(controller.provider, undefined, 'controller spec does not name a provider');
+assert.equal(controller.phases, undefined, 'controller spec does not define Homeboy execution phases');
+assert.equal(controller.blockers, undefined, 'controller spec does not encode upstream execution blockers');
+assert.equal(controller.ingredients, undefined, 'controller exposes declaration groups directly');
+assert.equal(controller.agents.static_site.slug, 'static-site-agent', 'controller declares WPSG agents in repo-domain terms');
+assert.ok(controller.tools.abilities.includes('datamachine/run-agent-bundle'), 'controller declares required ability/tool contracts');
+assert.deepEqual(controller.workflows.generation.uses_agents, ['store_idea', 'website_idea', 'design_store', 'design_website', 'static_store', 'static_site'], 'generation workflow declares agent participation');
+assert.deepEqual(controller.workflows.static_validation.requires, ['static_site_pull_request'], 'static validation declares artifact dependencies');
+assert.deepEqual(controller.workflows.iterator.emits, ['iterator_upstream_issue', 'iterator_upstream_pull_request'], 'iterator workflow declares emitted artifacts');
+assert.equal(controller.workflows.iterator.builder, undefined, 'iterator workflow does not expose backend-specific builder policy');
+assert.equal(controller.artifacts.revalidation_attempt.schema, 'wp-site-generator/RevalidationAttempt/v1', 'controller declares artifact schemas');
+assert.ok(controller.dependencies.some((dependency) => dependency.repo === 'chubes4/static-site-importer'), 'controller declares SSI stack dependencies');
+assert.equal(controller.gates.fallback_blocks.pass_when, 'value === 0', 'fallback block metric gate is explicit');
+assert.equal(controller.gates.conversion_findings.pass_when, 'value === 0', 'conversion finding metric gate is explicit');
+assert.equal(controller.gates.visual_parity.pass_when, 'status === "pass" && mismatch_count === 0 && max_delta_ratio === 0', 'visual parity metric gate is explicit');
+assert.equal(controller.gates.fallback_blocks.on_fail, undefined, 'gates do not encode Homeboy routing decisions');
 
 const settingsResult = spawnSync(process.execPath, ['.github/scripts/build-static-validation-settings.mjs', '--site', 'issue-123-native-loop', '--output', settingsPath], {
 	cwd: repoRoot,
@@ -195,4 +195,4 @@ const validationWorkflow = await readFile(path.join(repoRoot, '.github/workflows
 assert.match(validationWorkflow, /build-static-validation-settings\.mjs/, 'Actions validation uses shared Homeboy settings adapter');
 assert.match(validationWorkflow, /build-static-preview-blueprint\.mjs/, 'Actions validation uses shared preview adapter');
 
-console.log('SSI native loop adapter smoke passed');
+console.log('SSI native loop adapter contract passed');
