@@ -23,33 +23,25 @@ assert.equal(controller.schema, 'homeboy/controller-spec/v1', 'native controller
 assert.ok(controller.phases.some((phase) => phase.id === 'iterator_subloops'), 'controller includes iterator subloop phase');
 assert.ok(controller.phases.some((phase) => phase.id === 'revalidation'), 'controller includes revalidation phase');
 assert.equal(controller.authority.builder, '.github/scripts/build-homeboy-ssi-loop-controller.mjs', 'controller records its repo-owned builder');
-assert.equal(controller.authority.execution_surface, 'homeboy_controller', 'controller targets Homeboy controller execution');
-assert.equal(controller.execution.backend_agnostic, true, 'controller spec does not select an executor backend');
-assert.equal(controller.execution.backend_details_owner, 'homeboy-extensions/wordpress', 'WordPress backend details belong to Homeboy Extensions');
+assert.equal(controller.authority.execution_surface, undefined, 'controller spec does not select a Homeboy execution surface');
+assert.equal(controller.execution, undefined, 'controller spec does not carry backend abstraction details');
 assert.equal(controller.runtime, undefined, 'controller spec does not embed runtime backend configuration');
-assert.equal(controller.authority.action_types.spawn_subloop.includes('nested controller'), true, 'controller declares subloop action vocabulary');
-assert.equal(controller.state.store, 'homeboy_controller_state', 'controller records resumable state store');
-assert.ok(controller.state.tracked_entities.includes('revalidation_attempt'), 'controller tracks revalidation attempts');
+assert.equal(controller.authority.action_types, undefined, 'controller spec does not define Homeboy action vocabulary');
+assert.equal(controller.state, undefined, 'controller spec does not own Homeboy state');
+assert.equal(controller.events, undefined, 'controller spec does not own Homeboy lineage events');
+assert.ok(controller.ingredients.agents.includes('static-site-agent'), 'controller declares WPSG agents as domain ingredients');
+assert.ok(controller.ingredients.tools.includes('datamachine/run-agent-bundle'), 'controller declares required ability/tool ingredients');
+assert.equal(controller.ingredients.workflows.generation.builder, '.github/scripts/build-homeboy-site-generation-plan.mjs', 'controller declares generation builder ingredient');
+assert.ok(controller.ingredients.artifact_schemas.some((artifact) => artifact.id === 'revalidation_attempt'), 'controller declares artifact schema ingredients');
+assert.ok(controller.ingredients.dependencies.some((dependency) => dependency.repo === 'chubes4/static-site-importer'), 'controller declares SSI stack dependencies');
 assert.equal(controller.quality_gates.fallback_blocks.pass_when, 'value === 0', 'fallback block gate is explicit');
 assert.equal(controller.quality_gates.conversion_findings.pass_when, 'value === 0', 'conversion finding gate is explicit');
 assert.equal(controller.quality_gates.visual_parity.pass_when, 'status === "pass" && mismatch_count === 0 && max_delta_ratio === 0', 'visual parity gate is explicit');
-assert.deepEqual(
-	controller.phases.find((phase) => phase.id === 'generation').actions.map((phaseAction) => phaseAction.type),
-	['build_plan', 'run_plan'],
-	'generation compiles from action intent instead of shell commands',
-);
-assert.equal(controller.phases.find((phase) => phase.id === 'generation').run, undefined, 'generation phase does not document shell run commands');
-assert.deepEqual(
-	controller.phases.find((phase) => phase.id === 'static_validation').actions.map((phaseAction) => phaseAction.type),
-	['build_workload', 'run_workload', 'build_workload', 'run_gates'],
-	'static validation declares workload and gate actions',
-);
-assert.deepEqual(
-	controller.phases.find((phase) => phase.id === 'iterator_subloops').actions.map((phaseAction) => phaseAction.type),
-	['fan_out', 'build_plan', 'spawn_subloop', 'wait_for_subloops'],
-	'iterator phase declares first-class fan-out and subloop actions',
-);
-assert.equal(controller.phases.find((phase) => phase.id === 'iterator_subloops').dedupe_by.length, 2, 'iterator subloops have dedupe keys');
+assert.equal(controller.phases.find((phase) => phase.id === 'generation').workflow, 'generation', 'generation phase references a workflow ingredient');
+assert.equal(controller.phases.find((phase) => phase.id === 'generation').actions, undefined, 'generation phase does not define Homeboy actions');
+assert.equal(controller.phases.find((phase) => phase.id === 'static_validation').workflow, 'static_validation', 'static validation references a workflow ingredient');
+assert.equal(controller.phases.find((phase) => phase.id === 'iterator_subloops').workflow, 'iterator', 'iterator phase references a workflow ingredient');
+assert.equal(controller.phases.find((phase) => phase.id === 'iterator_subloops').dedupe_by, undefined, 'iterator phase does not own Homeboy dedupe behavior');
 assert.equal(controller.phases.find((phase) => phase.id === 'revalidation').on_fail, 'iterator_subloops', 'failed revalidation loops back to iterator subloops');
 assert.equal(controller.tracking.issue, 'https://github.com/chubes4/wp-site-generator/issues/639', 'controller links issue 639');
 assert.ok(controller.blockers.some((blocker) => blocker.repo === 'Extra-Chill/homeboy' && blocker.issue === 4647), 'controller records Homeboy repo-loop compiler gap');
