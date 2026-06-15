@@ -1,8 +1,8 @@
 # SSI Native Loop Adapter
 
-This repo owns the Static Site Importer-specific domain ingredients for the continuous site-generation loop. GitHub Actions remains a supported trigger, but the reusable contract is the generated Homeboy controller spec at `.github/homeboy/controllers/static-site-generation-loop.controller.json` so Homeboy can consume the same ingredients without using Actions as the orchestrator.
+This repo owns the Static Site Importer-specific domain declaration for the continuous site-generation loop. GitHub Actions remains a supported trigger, but the reusable contract is the generated Homeboy controller spec at `.github/homeboy/controllers/static-site-generation-loop.controller.json` so Homeboy can consume the same repo-domain terms without using Actions as the orchestrator.
 
-The controller builder is `.github/scripts/build-homeboy-ssi-loop-controller.mjs`. It emits the WPSG-owned domain contract: agents, tools/abilities, workflows, artifact schemas, SSI stack dependencies, and quality gate metric definitions.
+The controller builder is `.github/scripts/build-homeboy-ssi-loop-controller.mjs`. It emits only the WPSG-owned domain contract: agents, tools/abilities, workflows, artifact schemas, SSI stack dependencies, and quality gate metric definitions.
 
 The controller spec is the authority for the full self-improving loop:
 
@@ -12,7 +12,7 @@ generation -> import validation -> publish PR
   -> iterator subloops -> revalidation -> reviewer gate
 ```
 
-WPSG does not define the backend abstraction layer. WPSG declares domain ingredients. Homeboy owns controller execution, fan-out, retries, state, lineage, gate decisions, and backend selection. WordPress runtime and Codebox details belong to `homeboy-extensions/wordpress`, not to this repo-owned spec.
+WPSG does not define a backend abstraction layer and does not encode WordPress or WP Codebox execution knowledge. WPSG declares domain ingredients only. Homeboy owns controller execution, fan-out, retries, state, lineage, gate decisions, and executor/provider contracts. WordPress runtime and Codebox mapping belongs to `homeboy-extensions/wordpress`, not to this repo-owned spec.
 
 ## Native Controller Path
 
@@ -22,55 +22,44 @@ Build or refresh the checked-in controller spec:
 node .github/scripts/build-homeboy-ssi-loop-controller.mjs
 ```
 
-The generated spec is intended for a Homeboy repo-loop bridge that consumes repo-owned domain ingredients. The repo spec does not pick an executor backend, runtime provider, controller state store, retry policy, dedupe implementation, or fan-out mechanism.
+The generated spec is intended for a Homeboy repo-loop bridge that consumes repo-owned domain ingredients. The repo spec does not pick an executor backend, runtime provider, WordPress runtime, WP Codebox API, controller state store, retry policy, dedupe implementation, routing policy, or fan-out mechanism.
 
-Homeboy should checkpoint events after candidate generation, import validation, PR publication, static validation, grouped findings, iterator subloops, revalidation, and the reviewer gate. Resume, dedupe, joins, retries, and lineage persistence are Homeboy responsibilities.
+Homeboy should derive execution behavior from the declaration and its own controller policy. Resume, dedupe, joins, retries, routing, gate decisions, and lineage persistence are Homeboy responsibilities.
 
 ## Domain Ingredients
 
-The generated spec declares these ingredient groups:
+The generated spec declares these groups directly:
 
 - `agents`: WPSG Data Machine bundles participating in generation, iterator, and reviewer flows.
 - `tools`: required abilities/tool contracts such as bundle execution and GitHub publishing/commenting.
-- `workflows`: repo-owned builders and generated plan/settings/artifact paths.
-- `artifact_schemas`: WPSG and GitHub/Homeboy artifact schemas the loop emits or consumes.
+- `workflows`: repo-domain artifact dependencies, emissions, participating agents, and required abilities.
+- `artifacts`: WPSG and GitHub/Homeboy artifact schemas the loop emits or consumes.
 - `dependencies`: SSI stack repositories and the behavior each owns.
-- `quality_gates`: WPSG metric definitions and pass expressions.
+- `gates`: WPSG metric definitions and pass expressions.
 
-Homeboy maps these ingredients to durable controller policy/actions. Homeboy Extensions WordPress supplies WordPress/Codebox runtime details when Homeboy selects that backend.
+Homeboy maps these declarations to durable controller policy/actions. Homeboy Extensions WordPress supplies WordPress/Codebox runtime details behind generic Homeboy executor/provider contracts when Homeboy selects that implementation.
 
 ## Quality Gates
 
-The native controller stops publication/advancement unless the declared gates pass:
+The native controller exposes these WPSG-owned gate metrics and pass conditions:
 
 - **Fallback blocks:** `fallback_blocks`, `fallback_block_count`, or `ssi_fallback_count` must be `0`.
-- **Conversion findings:** actionable conversion finding count must be `0`; fallback/core HTML/freeform findings route to iterator subloops.
+- **Conversion findings:** actionable conversion finding count must be `0`; fallback/core HTML/freeform finding kinds are identified for Homeboy-owned routing.
 - **Visual parity:** visual parity must report `status === "pass"`, `mismatch_count === 0`, and `max_delta_ratio === 0`.
 - **Reviewer evidence:** reviewer-facing evidence must link to GitHub artifacts, PRs, or issues and must not use local-only URLs or filesystem paths.
 
-Failed import/static/revalidation gates route through finding packet generation, grouped iterator workflows, upstream PR/issue tracking, and bounded revalidation attempts. Passing gates route to the SSI stack reviewer gate and then completion.
+The gate declarations define metrics and pass conditions only. Homeboy owns fail/pass routing, bounded revalidation, escalation, and completion decisions.
 
-## Builder Contracts
+## Workflow Contracts
 
-The controller references existing repo-owned builders as workflow ingredients. Homeboy decides how to execute them:
+The controller declares workflow artifact dependencies and emissions. Homeboy decides how to execute the repo workflows:
 
-1. `generation` uses `.github/scripts/build-homeboy-site-generation-plan.mjs` to materialize `.ci/site-generation-loop.agent-task-plan.json`.
-
-The generated plan records `.github/homeboy/controllers/static-site-generation-loop.controller.json` in `metadata.controller_spec`. Lab controllers use that field to bind plan execution back to controller lineage.
-
-2. `import_validation` reuses the generation plan's validation tasks and exposes the fallback/conversion gate metrics before PR publication.
-
-3. `publish_pr` reuses the generation plan's publication tasks and emits the static-site PR artifact.
-
-4. `static_validation` builds `.ci/static-validation-settings-${site}.json` and visual parity evidence, then exposes fallback/conversion/visual-parity gate metrics.
-
-5. `finding_packets` runs the finding-packet and grouping builders and materializes `.ci/datamachine-iterator-workflow.json` when actionable work exists.
-
-6. `iterator_subloops` declares the iterator workflow and owner repo routing for grouped findings. Homeboy owns fan-out, dedupe, spawning, and joins.
-
-7. `revalidation` repeats validation and finding normalization until gates pass or `max_attempts` is exhausted.
-
-8. `reviewer_gate` builds `.ci/ssi-stack-reviewer.agent-task-plan.json` and emits reviewer gate outcome evidence.
+1. `generation` declares concept, design, static-site candidate, import validation, and static-site PR artifacts.
+2. `static_validation` declares static validation, import validation, and visual parity artifacts for a generated PR.
+3. `finding_packets` declares normalized finding packets and grouped finding artifacts from validation evidence.
+4. `iterator` declares grouped findings as input and upstream issue/PR artifacts as outputs.
+5. `revalidation` declares validation artifacts after upstream iterator work.
+6. `reviewer` declares reviewer gate outcome evidence from PR, validation, visual parity, findings, or iterator outputs.
 
 ## Complexity And Randomness Policy
 
@@ -130,14 +119,13 @@ GitHub Actions exposes these optional inputs, which map directly to environment 
 - `randomness_seed` -> `WPSG_RANDOMNESS_SEED`
 - `quality_signals_path` -> `WPSG_QUALITY_SIGNALS_PATH`
 
-Additional local-only knobs are available for controller/lab runs:
+Additional WPSG policy inputs are available for local plan generation:
 
 - `WPSG_CURRENT_COMPLEXITY_TIER`: current tier when the signal file does not include one
 - `WPSG_SITE_KIND_MIX`: comma-separated site-kind override
 - `WPSG_TARGET_PARALLEL_CANDIDATES`: candidate budget override, bounded by the selected tier
-- `HOMEBOY_MAX_CONCURRENCY`: optional lower cap for plan `max_concurrency`
 
-Homeboy remains the controller, executor, and scheduler. It receives WPSG domain ingredients, plan artifacts, task inputs, workload settings, and metadata that WPSG has computed.
+Homeboy remains the controller, executor, and scheduler. It receives WPSG domain declarations, artifact contracts, task inputs, workload settings, and metadata that WPSG has computed.
 
 ## Actions Compatibility
 
@@ -145,10 +133,6 @@ Homeboy remains the controller, executor, and scheduler. It receives WPSG domain
 
 `static-site-validation.yml` calls the same shared scripts for Homeboy settings, Playground preview URLs, and php-transformer iterator dispatch. The Actions path still dispatches `php-transformer-iterator.yml`; native controllers should let Homeboy map the declared workflow ingredients to controller actions and then resume through the revalidation phase.
 
-## Current Native Blockers
+## Upstream Contract
 
-- Extra-Chill/homeboy#3905: autonomous controller pending-action execution.
-- Extra-Chill/homeboy#3904: Lab `@file` plan staging.
-- Extra-Chill/homeboy#4216: native nested controller/subloop execution for validation and iterator fan-out.
-- Extra-Chill/homeboy#4218: controller lineage/event persistence for PRs, validation runs, findings, upstream PRs, and reviewer gates.
-- Extra-Chill/homeboy#4647: generic repo loop bridge that maps WPSG domain ingredients to executable controller policy/actions.
+Extra-Chill/homeboy#4658 is the upstream contract seam for compiling these repo declarations into controller execution. If a backend-specific WordPress or WP Codebox mapping is needed, it belongs behind generic Homeboy executor/provider contracts in `homeboy-extensions/wordpress`, not in this WPSG spec.
