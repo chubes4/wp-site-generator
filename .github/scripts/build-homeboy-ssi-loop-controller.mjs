@@ -18,27 +18,41 @@ const planContracts = {
 	reviewer: '.ci/ssi-stack-reviewer.agent-task-plan.json',
 };
 
+const actionTypes = {
+	build_plan: 'Run a repo-owned builder and materialize an agent-task plan artifact.',
+	run_plan: 'Submit a materialized agent-task plan through Homeboy executor resolution.',
+	build_workload: 'Run a repo-owned builder and materialize workload/settings artifacts.',
+	run_workload: 'Submit a materialized workload through Homeboy workload execution.',
+	normalize_findings: 'Convert validation artifacts into WPSG finding packets and groups.',
+	run_gates: 'Evaluate Homeboy gate decisions from repo-owned metric definitions.',
+	fan_out: 'Expand grouped findings into deduped subloop work items.',
+	spawn_subloop: 'Start a nested controller or task loop for one deduped work item.',
+	wait_for_subloops: 'Join nested controller/task loop outcomes before transition.',
+	complete: 'Mark the controller complete with reviewer-facing evidence.',
+	escalate: 'Block the controller with the exact missing evidence or exhausted gate.',
+};
+
+function action(type, options = {}) {
+	return { type, ...options };
+}
+
 const controller = {
 	schema: 'homeboy/controller-spec/v1',
 	controller_id: 'wp-site-generator/static-site-generation-loop',
 	title: 'Static Site Importer self-improving site-generation loop',
 	description: 'WPSG-owned native controller contract for generating a static-site candidate, validating it through Static Site Importer, opening iterator upstream work, revalidating, and publishing only when quality gates clear.',
 	authority: {
-		execution_surface: 'homeboy_lab',
-		native_runner: 'homeboy controller run --spec @.github/homeboy/controllers/static-site-generation-loop.controller.json',
+		execution_surface: 'homeboy_controller',
+		compiler: 'homeboy repo-loop compile',
 		builder: '.github/scripts/build-homeboy-ssi-loop-controller.mjs',
 		plan_contracts: planContracts,
+		action_types: actionTypes,
 	},
-	runtime: {
-		backend: 'codebox',
-		wordpress_runtime: 'wp-codebox',
-		agent_runtime: 'datamachine_bundle',
-		provider: {
-			kind: 'codex',
-			location: 'in_sandbox',
-			assumption: 'The Codebox sandbox has the Codex provider plugin/runtime overlay and required secret_env values mounted by Homeboy Lab.',
-		},
-		secret_env: ['AI_PROVIDER_OPENAI_CODEX_API_KEY', 'OPENAI_API_KEY', 'GITHUB_TOKEN'],
+	execution: {
+		backend_agnostic: true,
+		executor_resolution: 'homeboy_executor_resolution',
+		required_capabilities: ['agent_task_plan', 'wordpress_workload', 'github_pr_publish', 'repo_worktree', 'artifact_store'],
+		backend_details_owner: 'homeboy-extensions/wordpress',
 	},
 	state: {
 		resume_key: 'wp-site-generator/static-site-generation-loop:${source_ref}:${candidate.slug}',
@@ -121,8 +135,10 @@ const controller = {
 			id: 'generation',
 			label: 'Generate candidate artifacts',
 			plan: 'generation',
-			builder: '.github/scripts/build-homeboy-site-generation-plan.mjs',
-			run: 'homeboy agent-task run-plan --plan @.ci/site-generation-loop.agent-task-plan.json',
+			actions: [
+				action('build_plan', { builder: '.github/scripts/build-homeboy-site-generation-plan.mjs', output: planContracts.generation }),
+				action('run_plan', { plan: 'generation', records: ['concept_packet', 'design_packet', 'static_site_candidate'] }),
+			],
 			tasks: ['store-idea-agent', 'website-idea-agent', 'design-store-packet', 'design-website-packet', 'generate-store-candidate', 'generate-website-candidate'],
 			emits: ['concept_packet', 'design_packet', 'static_site_candidate'],
 			on_success: 'import_validation',
@@ -131,6 +147,10 @@ const controller = {
 			id: 'import_validation',
 			label: 'Import candidate before publication',
 			plan: 'generation',
+			actions: [
+				action('run_plan', { plan: 'generation', task_filter: ['validate-store-candidate', 'validate-website-candidate'], records: ['import_validation_result', 'finding_packet_set'] }),
+				action('run_gates', { gates: ['fallback_blocks', 'conversion_findings'], on_pass: 'publish_pr', on_fail: 'finding_packets' }),
+			],
 			tasks: ['validate-store-candidate', 'validate-website-candidate'],
 			requires: ['static_site_candidate'],
 			emits: ['import_validation_result', 'finding_packet_set'],
@@ -142,6 +162,9 @@ const controller = {
 			id: 'publish_pr',
 			label: 'Publish generated static-site PR',
 			plan: 'generation',
+			actions: [
+				action('run_plan', { plan: 'generation', task_filter: ['publish-store-pr', 'publish-website-pr'], records: ['static_site_pull_request'] }),
+			],
 			tasks: ['publish-store-pr', 'publish-website-pr'],
 			requires: ['static_site_candidate', 'import_validation_result'],
 			emits: ['static_site_pull_request'],
@@ -150,8 +173,13 @@ const controller = {
 		{
 			id: 'static_validation',
 			label: 'Validate published PR and visual parity',
+			actions: [
+				action('build_workload', { builder: '.github/scripts/build-static-validation-settings.mjs', output: planContracts.validation_settings }),
+				action('run_workload', { workload: 'ssi-import', settings: 'validation_settings', records: ['static_validation_run', 'import_validation_result'] }),
+				action('build_workload', { builder: '.github/scripts/static-visual-parity.mjs', output: 'visual_parity_artifact' }),
+				action('run_gates', { gates: ['fallback_blocks', 'conversion_findings', 'visual_parity'], on_pass: 'reviewer_gate', on_fail: 'finding_packets' }),
+			],
 			builders: ['.github/scripts/build-static-validation-settings.mjs', '.github/scripts/static-visual-parity.mjs'],
-			run: 'homeboy bench run --settings @.ci/static-validation-settings-${site}.json',
 			tasks: ['static-site-importer-bench', 'visual-parity'],
 			requires: ['static_site_pull_request'],
 			emits: ['static_validation_run', 'import_validation_result', 'visual_parity_artifact'],
@@ -162,6 +190,14 @@ const controller = {
 		{
 			id: 'finding_packets',
 			label: 'Normalize validation artifacts into finding packets',
+			actions: [
+				action('normalize_findings', {
+					builders: ['.github/scripts/build-ssi-finding-packets.mjs', '.github/scripts/group-ssi-finding-packets.mjs'],
+					outputs: ['finding_packets', 'finding_groups'],
+					dedupe_by: 'state.dedupe_keys.finding_group',
+				}),
+				action('build_plan', { builder: '.github/scripts/build-datamachine-iterator-workflow.mjs', output: planContracts.iterator_workflow, when: 'actionable_findings' }),
+			],
 			builders: ['.github/scripts/build-ssi-finding-packets.mjs', '.github/scripts/group-ssi-finding-packets.mjs', '.github/scripts/build-datamachine-iterator-workflow.mjs'],
 			requires_any: ['import_validation_result', 'static_validation_run', 'visual_parity_artifact'],
 			emits: ['finding_packet_set', 'finding_group'],
@@ -173,8 +209,12 @@ const controller = {
 			id: 'iterator_subloops',
 			label: 'Run upstream iterator subloops per finding group',
 			plan: 'iterator',
-			builder: '.github/scripts/build-homeboy-php-transformer-iterator-plan.mjs',
-			run: 'homeboy agent-task run-plan --plan @.ci/php-transformer-iterator.agent-task-plan.json',
+			actions: [
+				action('fan_out', { per: 'finding_group', dedupe_by: ['state.dedupe_keys.iterator_worktree', 'state.dedupe_keys.upstream_pr'], max_concurrency: 1 }),
+				action('build_plan', { builder: '.github/scripts/build-homeboy-php-transformer-iterator-plan.mjs', output: planContracts.iterator, per: 'finding_group' }),
+				action('spawn_subloop', { plan: 'iterator', records: ['iterator_worktree', 'iterator_upstream_issue', 'iterator_upstream_pull_request'] }),
+				action('wait_for_subloops', { on_success: 'revalidation', on_blocked: 'escalate' }),
+			],
 			requires: ['finding_group'],
 			emits: ['iterator_worktree', 'iterator_upstream_issue', 'iterator_upstream_pull_request'],
 			dedupe_by: ['state.dedupe_keys.iterator_worktree', 'state.dedupe_keys.upstream_pr'],
@@ -189,6 +229,12 @@ const controller = {
 		{
 			id: 'revalidation',
 			label: 'Re-run validation after upstream iterator work',
+			actions: [
+				action('build_workload', { builder: '.github/scripts/build-static-validation-settings.mjs', output: planContracts.validation_settings }),
+				action('run_workload', { workload: 'ssi-import', settings: 'validation_settings', records: ['revalidation_attempt', 'static_validation_run', 'import_validation_result'] }),
+				action('normalize_findings', { builders: ['.github/scripts/build-ssi-finding-packets.mjs', '.github/scripts/group-ssi-finding-packets.mjs'], outputs: ['finding_packets', 'finding_groups'] }),
+				action('run_gates', { gates: ['fallback_blocks', 'conversion_findings', 'visual_parity'], on_pass: 'reviewer_gate', on_fail: 'iterator_subloops', on_exhausted: 'escalate' }),
+			],
 			builders: ['.github/scripts/build-static-validation-settings.mjs', '.github/scripts/build-ssi-finding-packets.mjs', '.github/scripts/group-ssi-finding-packets.mjs'],
 			requires: ['static_site_pull_request', 'iterator_upstream_pull_request'],
 			emits: ['revalidation_attempt', 'static_validation_run', 'import_validation_result', 'visual_parity_artifact', 'finding_packet_set'],
@@ -202,7 +248,13 @@ const controller = {
 			id: 'reviewer_gate',
 			label: 'Run SSI stack reviewer gate',
 			plan: 'reviewer',
-			builder: '.github/scripts/build-ssi-stack-reviewer-workflow.mjs',
+			actions: [
+				action('build_plan', { builder: '.github/scripts/build-ssi-stack-reviewer-workflow.mjs', output: planContracts.reviewer }),
+				action('run_gates', { gates: ['reviewer_evidence'], on_fail: 'escalate' }),
+				action('run_plan', { plan: 'reviewer', records: ['reviewer_gate_outcome'] }),
+				action('complete', { when: 'reviewer_gate_outcome.decision === "PASS"' }),
+				action('escalate', { when: 'reviewer_gate_outcome.decision !== "PASS"' }),
+			],
 			requires: ['static_site_pull_request', 'static_validation_run', 'visual_parity_artifact'],
 			requires_any: ['finding_packet_set', 'iterator_upstream_pull_request'],
 			emits: ['reviewer_gate_outcome'],
@@ -231,6 +283,7 @@ const controller = {
 		{ repo: 'Extra-Chill/homeboy', issue: 3904, needed_for: 'Lab @file plan staging for controller-submitted plans' },
 		{ repo: 'Extra-Chill/homeboy', issue: 4216, needed_for: 'native nested controller/subloop execution for validation and iterator fan-out' },
 		{ repo: 'Extra-Chill/homeboy', issue: 4218, needed_for: 'controller lineage/event persistence for PRs, validation runs, findings, upstream PRs, and reviewer gates' },
+		{ repo: 'Extra-Chill/homeboy', issue: 4647, needed_for: 'generic repo loop spec compiler that turns phase actions into executable controller policy/actions' },
 		{ repo: 'Extra-Chill/homeboy-extensions', issue: 1319, needed_for: 'Codex provider defaults through Codebox sandbox execution' },
 	],
 };

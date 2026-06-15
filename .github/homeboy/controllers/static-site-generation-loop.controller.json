@@ -4,8 +4,8 @@
   "title": "Static Site Importer self-improving site-generation loop",
   "description": "WPSG-owned native controller contract for generating a static-site candidate, validating it through Static Site Importer, opening iterator upstream work, revalidating, and publishing only when quality gates clear.",
   "authority": {
-    "execution_surface": "homeboy_lab",
-    "native_runner": "homeboy controller run --spec @.github/homeboy/controllers/static-site-generation-loop.controller.json",
+    "execution_surface": "homeboy_controller",
+    "compiler": "homeboy repo-loop compile",
     "builder": ".github/scripts/build-homeboy-ssi-loop-controller.mjs",
     "plan_contracts": {
       "generation": ".ci/site-generation-loop.agent-task-plan.json",
@@ -15,22 +15,32 @@
       "iterator_workflow": ".ci/datamachine-iterator-workflow.json",
       "iterator": ".ci/php-transformer-iterator.agent-task-plan.json",
       "reviewer": ".ci/ssi-stack-reviewer.agent-task-plan.json"
+    },
+    "action_types": {
+      "build_plan": "Run a repo-owned builder and materialize an agent-task plan artifact.",
+      "run_plan": "Submit a materialized agent-task plan through Homeboy executor resolution.",
+      "build_workload": "Run a repo-owned builder and materialize workload/settings artifacts.",
+      "run_workload": "Submit a materialized workload through Homeboy workload execution.",
+      "normalize_findings": "Convert validation artifacts into WPSG finding packets and groups.",
+      "run_gates": "Evaluate Homeboy gate decisions from repo-owned metric definitions.",
+      "fan_out": "Expand grouped findings into deduped subloop work items.",
+      "spawn_subloop": "Start a nested controller or task loop for one deduped work item.",
+      "wait_for_subloops": "Join nested controller/task loop outcomes before transition.",
+      "complete": "Mark the controller complete with reviewer-facing evidence.",
+      "escalate": "Block the controller with the exact missing evidence or exhausted gate."
     }
   },
-  "runtime": {
-    "backend": "codebox",
-    "wordpress_runtime": "wp-codebox",
-    "agent_runtime": "datamachine_bundle",
-    "provider": {
-      "kind": "codex",
-      "location": "in_sandbox",
-      "assumption": "The Codebox sandbox has the Codex provider plugin/runtime overlay and required secret_env values mounted by Homeboy Lab."
-    },
-    "secret_env": [
-      "AI_PROVIDER_OPENAI_CODEX_API_KEY",
-      "OPENAI_API_KEY",
-      "GITHUB_TOKEN"
-    ]
+  "execution": {
+    "backend_agnostic": true,
+    "executor_resolution": "homeboy_executor_resolution",
+    "required_capabilities": [
+      "agent_task_plan",
+      "wordpress_workload",
+      "github_pr_publish",
+      "repo_worktree",
+      "artifact_store"
+    ],
+    "backend_details_owner": "homeboy-extensions/wordpress"
   },
   "state": {
     "resume_key": "wp-site-generator/static-site-generation-loop:${source_ref}:${candidate.slug}",
@@ -178,8 +188,22 @@
       "id": "generation",
       "label": "Generate candidate artifacts",
       "plan": "generation",
-      "builder": ".github/scripts/build-homeboy-site-generation-plan.mjs",
-      "run": "homeboy agent-task run-plan --plan @.ci/site-generation-loop.agent-task-plan.json",
+      "actions": [
+        {
+          "type": "build_plan",
+          "builder": ".github/scripts/build-homeboy-site-generation-plan.mjs",
+          "output": ".ci/site-generation-loop.agent-task-plan.json"
+        },
+        {
+          "type": "run_plan",
+          "plan": "generation",
+          "records": [
+            "concept_packet",
+            "design_packet",
+            "static_site_candidate"
+          ]
+        }
+      ],
       "tasks": [
         "store-idea-agent",
         "website-idea-agent",
@@ -199,6 +223,29 @@
       "id": "import_validation",
       "label": "Import candidate before publication",
       "plan": "generation",
+      "actions": [
+        {
+          "type": "run_plan",
+          "plan": "generation",
+          "task_filter": [
+            "validate-store-candidate",
+            "validate-website-candidate"
+          ],
+          "records": [
+            "import_validation_result",
+            "finding_packet_set"
+          ]
+        },
+        {
+          "type": "run_gates",
+          "gates": [
+            "fallback_blocks",
+            "conversion_findings"
+          ],
+          "on_pass": "publish_pr",
+          "on_fail": "finding_packets"
+        }
+      ],
       "tasks": [
         "validate-store-candidate",
         "validate-website-candidate"
@@ -221,6 +268,19 @@
       "id": "publish_pr",
       "label": "Publish generated static-site PR",
       "plan": "generation",
+      "actions": [
+        {
+          "type": "run_plan",
+          "plan": "generation",
+          "task_filter": [
+            "publish-store-pr",
+            "publish-website-pr"
+          ],
+          "records": [
+            "static_site_pull_request"
+          ]
+        }
+      ],
       "tasks": [
         "publish-store-pr",
         "publish-website-pr"
@@ -237,11 +297,41 @@
     {
       "id": "static_validation",
       "label": "Validate published PR and visual parity",
+      "actions": [
+        {
+          "type": "build_workload",
+          "builder": ".github/scripts/build-static-validation-settings.mjs",
+          "output": ".ci/static-validation-settings-${site}.json"
+        },
+        {
+          "type": "run_workload",
+          "workload": "ssi-import",
+          "settings": "validation_settings",
+          "records": [
+            "static_validation_run",
+            "import_validation_result"
+          ]
+        },
+        {
+          "type": "build_workload",
+          "builder": ".github/scripts/static-visual-parity.mjs",
+          "output": "visual_parity_artifact"
+        },
+        {
+          "type": "run_gates",
+          "gates": [
+            "fallback_blocks",
+            "conversion_findings",
+            "visual_parity"
+          ],
+          "on_pass": "reviewer_gate",
+          "on_fail": "finding_packets"
+        }
+      ],
       "builders": [
         ".github/scripts/build-static-validation-settings.mjs",
         ".github/scripts/static-visual-parity.mjs"
       ],
-      "run": "homeboy bench run --settings @.ci/static-validation-settings-${site}.json",
       "tasks": [
         "static-site-importer-bench",
         "visual-parity"
@@ -265,6 +355,26 @@
     {
       "id": "finding_packets",
       "label": "Normalize validation artifacts into finding packets",
+      "actions": [
+        {
+          "type": "normalize_findings",
+          "builders": [
+            ".github/scripts/build-ssi-finding-packets.mjs",
+            ".github/scripts/group-ssi-finding-packets.mjs"
+          ],
+          "outputs": [
+            "finding_packets",
+            "finding_groups"
+          ],
+          "dedupe_by": "state.dedupe_keys.finding_group"
+        },
+        {
+          "type": "build_plan",
+          "builder": ".github/scripts/build-datamachine-iterator-workflow.mjs",
+          "output": ".ci/datamachine-iterator-workflow.json",
+          "when": "actionable_findings"
+        }
+      ],
       "builders": [
         ".github/scripts/build-ssi-finding-packets.mjs",
         ".github/scripts/group-ssi-finding-packets.mjs",
@@ -287,8 +397,37 @@
       "id": "iterator_subloops",
       "label": "Run upstream iterator subloops per finding group",
       "plan": "iterator",
-      "builder": ".github/scripts/build-homeboy-php-transformer-iterator-plan.mjs",
-      "run": "homeboy agent-task run-plan --plan @.ci/php-transformer-iterator.agent-task-plan.json",
+      "actions": [
+        {
+          "type": "fan_out",
+          "per": "finding_group",
+          "dedupe_by": [
+            "state.dedupe_keys.iterator_worktree",
+            "state.dedupe_keys.upstream_pr"
+          ],
+          "max_concurrency": 1
+        },
+        {
+          "type": "build_plan",
+          "builder": ".github/scripts/build-homeboy-php-transformer-iterator-plan.mjs",
+          "output": ".ci/php-transformer-iterator.agent-task-plan.json",
+          "per": "finding_group"
+        },
+        {
+          "type": "spawn_subloop",
+          "plan": "iterator",
+          "records": [
+            "iterator_worktree",
+            "iterator_upstream_issue",
+            "iterator_upstream_pull_request"
+          ]
+        },
+        {
+          "type": "wait_for_subloops",
+          "on_success": "revalidation",
+          "on_blocked": "escalate"
+        }
+      ],
       "requires": [
         "finding_group"
       ],
@@ -317,6 +456,45 @@
     {
       "id": "revalidation",
       "label": "Re-run validation after upstream iterator work",
+      "actions": [
+        {
+          "type": "build_workload",
+          "builder": ".github/scripts/build-static-validation-settings.mjs",
+          "output": ".ci/static-validation-settings-${site}.json"
+        },
+        {
+          "type": "run_workload",
+          "workload": "ssi-import",
+          "settings": "validation_settings",
+          "records": [
+            "revalidation_attempt",
+            "static_validation_run",
+            "import_validation_result"
+          ]
+        },
+        {
+          "type": "normalize_findings",
+          "builders": [
+            ".github/scripts/build-ssi-finding-packets.mjs",
+            ".github/scripts/group-ssi-finding-packets.mjs"
+          ],
+          "outputs": [
+            "finding_packets",
+            "finding_groups"
+          ]
+        },
+        {
+          "type": "run_gates",
+          "gates": [
+            "fallback_blocks",
+            "conversion_findings",
+            "visual_parity"
+          ],
+          "on_pass": "reviewer_gate",
+          "on_fail": "iterator_subloops",
+          "on_exhausted": "escalate"
+        }
+      ],
       "builders": [
         ".github/scripts/build-static-validation-settings.mjs",
         ".github/scripts/build-ssi-finding-packets.mjs",
@@ -347,7 +525,35 @@
       "id": "reviewer_gate",
       "label": "Run SSI stack reviewer gate",
       "plan": "reviewer",
-      "builder": ".github/scripts/build-ssi-stack-reviewer-workflow.mjs",
+      "actions": [
+        {
+          "type": "build_plan",
+          "builder": ".github/scripts/build-ssi-stack-reviewer-workflow.mjs",
+          "output": ".ci/ssi-stack-reviewer.agent-task-plan.json"
+        },
+        {
+          "type": "run_gates",
+          "gates": [
+            "reviewer_evidence"
+          ],
+          "on_fail": "escalate"
+        },
+        {
+          "type": "run_plan",
+          "plan": "reviewer",
+          "records": [
+            "reviewer_gate_outcome"
+          ]
+        },
+        {
+          "type": "complete",
+          "when": "reviewer_gate_outcome.decision === \"PASS\""
+        },
+        {
+          "type": "escalate",
+          "when": "reviewer_gate_outcome.decision !== \"PASS\""
+        }
+      ],
       "requires": [
         "static_site_pull_request",
         "static_validation_run",
@@ -472,6 +678,11 @@
       "repo": "Extra-Chill/homeboy",
       "issue": 4218,
       "needed_for": "controller lineage/event persistence for PRs, validation runs, findings, upstream PRs, and reviewer gates"
+    },
+    {
+      "repo": "Extra-Chill/homeboy",
+      "issue": 4647,
+      "needed_for": "generic repo loop spec compiler that turns phase actions into executable controller policy/actions"
     },
     {
       "repo": "Extra-Chill/homeboy-extensions",
