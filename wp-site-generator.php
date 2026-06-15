@@ -10,8 +10,26 @@ defined( 'ABSPATH' ) || exit;
 add_action( 'wp_abilities_api_init', 'wpsg_register_packet_materializer_ability' );
 add_action( 'init', 'wpsg_register_packet_materializer_tool' );
 
+if ( function_exists( 'doing_action' ) && doing_action( 'wp_abilities_api_init' ) ) {
+	wpsg_register_packet_materializer_ability();
+}
+
+if ( ( function_exists( 'doing_action' ) && doing_action( 'init' ) ) || ( function_exists( 'did_action' ) && did_action( 'init' ) ) ) {
+	wpsg_register_packet_materializer_tool();
+}
+
 function wpsg_register_packet_materializer_ability(): void {
+	static $registered = false;
+
+	if ( $registered && wpsg_packet_materializer_ability_is_registered() ) {
+		return;
+	}
+
 	if ( ! function_exists( 'wp_register_ability' ) ) {
+		return;
+	}
+
+	if ( ! function_exists( 'doing_action' ) || ! doing_action( 'wp_abilities_api_init' ) ) {
 		return;
 	}
 
@@ -28,14 +46,42 @@ function wpsg_register_packet_materializer_ability(): void {
 			'readonly'            => true,
 		)
 	);
+
+	$registered = wpsg_packet_materializer_ability_is_registered();
+}
+
+function wpsg_packet_materializer_ability_is_registered(): bool {
+	if ( class_exists( 'WP_Abilities_Registry' ) && method_exists( 'WP_Abilities_Registry', 'get_instance' ) ) {
+		$registry = WP_Abilities_Registry::get_instance();
+		if ( is_object( $registry ) && method_exists( $registry, 'is_registered' ) ) {
+			return (bool) $registry->is_registered( 'wp-site-generator/materialize-packet' );
+		}
+
+		if ( is_object( $registry ) && method_exists( $registry, 'get_registered' ) ) {
+			return is_object( $registry->get_registered( 'wp-site-generator/materialize-packet' ) );
+		}
+	}
+
+	if ( function_exists( 'wp_get_ability' ) ) {
+		$ability = wp_get_ability( 'wp-site-generator/materialize-packet' );
+		return null !== $ability && false !== $ability;
+	}
+
+	return false;
 }
 
 function wpsg_register_packet_materializer_tool(): void {
+	static $registered = false;
+
+	if ( $registered ) {
+		return;
+	}
+
 	if ( ! function_exists( 'datamachine_register_ability_tool' ) ) {
 		return;
 	}
 
-	datamachine_register_ability_tool(
+	$registered = datamachine_register_ability_tool(
 		'wpsg_materialize_packet',
 		array(
 			'ability'     => 'wp-site-generator/materialize-packet',
