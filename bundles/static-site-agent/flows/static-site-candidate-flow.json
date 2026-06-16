@@ -7,9 +7,6 @@
     "slug": "static-site-candidate-flow",
     "steps": [
         {
-            "enabled_tools": [
-                "wpsg_materialize_packet"
-            ],
             "disabled_tools": [
                 "github_pull_request_publish"
             ],

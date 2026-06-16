@@ -176,9 +176,6 @@
     },
     {
       "ability_id": "comment_github_pull_request"
-    },
-    {
-      "ability_id": "wpsg_materialize_packet"
     }
   ],
   "workflows": [
@@ -187,8 +184,7 @@
       "agent_id": "store_idea",
       "prompt": "Produce a commerce concept packet for the WPSG static-site generation loop.",
       "abilities": [
-        "datamachine/run-agent-bundle",
-        "wpsg_materialize_packet"
+        "datamachine/run-agent-bundle"
       ],
       "inputs": {
         "source": "bundles/store-idea-agent",
@@ -208,8 +204,7 @@
       "agent_id": "website_idea",
       "prompt": "Produce a content-site concept packet for the WPSG static-site generation loop.",
       "abilities": [
-        "datamachine/run-agent-bundle",
-        "wpsg_materialize_packet"
+        "datamachine/run-agent-bundle"
       ],
       "inputs": {
         "source": "bundles/website-idea-agent",
@@ -229,8 +224,7 @@
       "agent_id": "design_store",
       "prompt": "Produce a design packet from a commerce concept packet for the WPSG static-site generation loop.",
       "abilities": [
-        "datamachine/run-agent-bundle",
-        "wpsg_materialize_packet"
+        "datamachine/run-agent-bundle"
       ],
       "inputs": {
         "source": "bundles/design-agent",
@@ -254,8 +248,7 @@
       "agent_id": "design_website",
       "prompt": "Produce a design packet from a content-site concept packet for the WPSG static-site generation loop.",
       "abilities": [
-        "datamachine/run-agent-bundle",
-        "wpsg_materialize_packet"
+        "datamachine/run-agent-bundle"
       ],
       "inputs": {
         "source": "bundles/design-agent",
@@ -279,8 +272,7 @@
       "agent_id": "static_store",
       "prompt": "Produce a commerce static-site candidate artifact from a WPSG design packet.",
       "abilities": [
-        "datamachine/run-agent-bundle",
-        "wpsg_materialize_packet"
+        "datamachine/run-agent-bundle"
       ],
       "inputs": {
         "source": "bundles/static-site-agent",
@@ -307,8 +299,7 @@
       "agent_id": "static_site",
       "prompt": "Produce a content static-site candidate artifact from a WPSG design packet.",
       "abilities": [
-        "datamachine/run-agent-bundle",
-        "wpsg_materialize_packet"
+        "datamachine/run-agent-bundle"
       ],
       "inputs": {
         "source": "bundles/static-site-agent",

@@ -148,7 +148,8 @@ try {
 		['fallback_blocks', 'conversion_findings', 'visual_parity'],
 		'revalidation reruns all quality gates'
 	);
-	assert.equal(controllerSpec.abilities.some((ability) => ability.ability_id === 'wpsg_materialize_packet'), true, 'controller records the WPSG model-facing packet materializer ability');
+	assert.equal(controllerSpec.abilities.some((ability) => ability.ability_id === 'wpsg_materialize_packet'), false, 'controller no longer exposes the WPSG model-facing packet materializer ability');
+	assert.doesNotMatch(serialized, /wpsg_materialize_packet|wp-site-generator\/materialize-packet|wpsg_packets/, 'plan no longer uses the custom WPSG packet materializer transport');
 	assert.doesNotMatch(serialized, /artifact_refs|artifactReferences|siteSlug|currentTier|validations/, 'plan omits removed compatibility field spellings');
 
 	for (const taskId of ['design-store-packet', 'design-website-packet']) {
@@ -193,28 +194,34 @@ try {
 		assert.equal(config.runtime_task.ability, 'datamachine/run-agent-bundle', `${taskId} runs the bundle through a WP Codebox runtime task`);
 		assert.deepEqual(runtimeInput.success_completion_outcomes, ['design_packet'], `${taskId} requires DesignPacket completion`);
 		assert.match(runtimeInput.prompt, /ConceptPacket/, `${taskId} consumes ConceptPacket`);
-		assert.match(runtimeInput.prompt, /wpsg_materialize_packet/, `${taskId} records packet through deterministic WPSG tool`);
+		assert.match(runtimeInput.prompt, /DesignPacket typed artifact/, `${taskId} asks for a typed DesignPacket artifact`);
 		assert.match(runtimeInput.prompt, /Generation complexity policy:/, `${taskId} records policy guidance in prompt`);
 		assert.equal(runtimeInput.complexity_policy.selected_tier, 'foundation', `${taskId} records selected complexity tier`);
 		assert.equal(plan.tasks.find((task) => task.task_id === taskId).inputs.complexity_policy.randomness_seed.length, 12, `${taskId} carries reproducible randomness seed`);
 		assert.doesNotMatch(runtimeInput.prompt, /create_github_issue/, `${taskId} does not create a design handoff issue`);
-		assert.deepEqual(runtimeInput.tool_recorders[0].record.fields, { design_packet: 'data.design_packet' }, `${taskId} records DesignPacket tool output`);
+		assert.deepEqual(runtimeInput.tool_recorders, [], `${taskId} does not use a packet tool recorder`);
 		assert.equal(runtimeInput.artifact_outputs.design_packet.schema, 'wp-site-generator/DesignPacket/v1');
-		assert.equal(runtimeInput.engine_data_outputs.design_packet, 'metadata.engine_data.wpsg_packets.design_packet');
-		assert.deepEqual(config.ability_tools, [{
-			name: 'wpsg_materialize_packet',
-			ability: 'wp-site-generator/materialize-packet',
-			description: 'Record the generated WPSG ConceptPacket, DesignPacket, or StaticSiteCandidate. Use exactly once when the packet content is ready.',
-		}], `${taskId} maps the WPSG ability through the Codebox workload adapter`);
+		assert.equal(runtimeInput.engine_data_outputs.design_packet, 'outputs.typed_artifacts.design_packet.payload');
+		assert.deepEqual(config.ability_tools, [], `${taskId} does not expose packet ability_tools`);
+		assert.deepEqual(config.structured_artifacts[0], {
+			schema: 'wp-codebox/structured-artifact/v1',
+			name: 'design_packet',
+			type: 'DesignPacket',
+			payload_schema: 'wp-site-generator/DesignPacket/v1',
+			payload: null,
+			metadata: { artifact_path: '/artifacts/DesignPacket.json' },
+			provenance: { source: 'wp-site-generator' },
+		}, `${taskId} declares the typed DesignPacket output contract`);
 	}
 
 	for (const taskId of ['store-idea-agent', 'website-idea-agent']) {
 		const config = plan.tasks.find((task) => task.task_id === taskId).executor.config;
 		const runtimeInput = config.runtime_task.input;
-		assert.match(runtimeInput.prompt, /wpsg_materialize_packet/, `${taskId} records concept through deterministic WPSG tool`);
-		assert.deepEqual(runtimeInput.tool_recorders[0].record.fields, { concept_packet: 'data.concept_packet' }, `${taskId} records ConceptPacket tool output`);
-		assert.equal(runtimeInput.engine_data_outputs.concept_packet, 'metadata.engine_data.wpsg_packets.concept_packet');
-		assert.equal(config.ability_tools[0].ability, 'wp-site-generator/materialize-packet', `${taskId} uses Codebox ability_tools for packet materialization`);
+		assert.match(runtimeInput.prompt, /ConceptPacket typed artifact/, `${taskId} asks for a typed ConceptPacket artifact`);
+		assert.deepEqual(runtimeInput.tool_recorders, [], `${taskId} does not use a packet tool recorder`);
+		assert.equal(runtimeInput.engine_data_outputs.concept_packet, 'outputs.typed_artifacts.concept_packet.payload');
+		assert.deepEqual(config.ability_tools, [], `${taskId} does not expose packet ability_tools`);
+		assert.equal(config.structured_artifacts[0].payload_schema, 'wp-site-generator/ConceptPacket/v1', `${taskId} declares the typed ConceptPacket output schema`);
 	}
 
 	for (const taskId of ['generate-store-candidate', 'generate-website-candidate']) {
@@ -223,10 +230,10 @@ try {
 		assert.deepEqual(runtimeInput.success_completion_outcomes, ['static_site_candidate'], `${taskId} stops at candidate artifact`);
 		assert.equal(runtimeInput.success_requires_pr, false, `${taskId} does not publish a PR`);
 		assert.equal(runtimeInput.artifact_outputs.static_site_candidate.schema, 'wp-site-generator/StaticSiteCandidate/v1');
-		assert.deepEqual(runtimeInput.tool_recorders[0].record.fields, { static_site_candidate: 'data.static_site_candidate' }, `${taskId} records StaticSiteCandidate tool output`);
-		assert.equal(runtimeInput.engine_data_outputs.static_site_candidate, 'metadata.engine_data.wpsg_packets.static_site_candidate');
-		assert.equal(config.ability_tools[0].name, 'wpsg_materialize_packet', `${taskId} exposes the model-facing tool at the Codebox workload boundary`);
-		assert.match(runtimeInput.prompt, /packet_type=static_site_candidate/, `${taskId} records a StaticSiteCandidate artifact`);
+		assert.deepEqual(runtimeInput.tool_recorders, [], `${taskId} does not use a packet tool recorder`);
+		assert.equal(runtimeInput.engine_data_outputs.static_site_candidate, 'outputs.typed_artifacts.static_site_candidate.payload');
+		assert.deepEqual(config.ability_tools, [], `${taskId} does not expose packet ability_tools`);
+		assert.match(runtimeInput.prompt, /StaticSiteCandidate typed artifact/, `${taskId} records a StaticSiteCandidate artifact`);
 		assert.match(runtimeInput.prompt, /Record the tier, randomness profile, randomness seed/, `${taskId} asks candidate to preserve policy metadata`);
 	}
 
@@ -256,9 +263,23 @@ try {
   assert.match(staticAiStep.step_config.system_prompt, /preserve the remaining title text verbatim/, 'static agent preserves full source concept title text');
   assert.match(staticAiStep.step_config.system_prompt, /full source concept title without its leading emoji\/icon marker/, 'static agent PR title formula keeps full source concept title');
 
+	const packetPipelines = [
+		['bundles/store-idea-agent/pipelines/store-idea-artifact-pipeline.json', 'concept_packet', 'wp-site-generator/ConceptPacket/v1'],
+		['bundles/website-idea-agent/pipelines/website-idea-artifact-pipeline.json', 'concept_packet', 'wp-site-generator/ConceptPacket/v1'],
+		['bundles/design-agent/pipelines/design-artifact-pipeline.json', 'design_packet', 'wp-site-generator/DesignPacket/v1'],
+		['bundles/static-site-agent/pipelines/static-site-candidate-pipeline.json', 'static_site_candidate', 'wp-site-generator/StaticSiteCandidate/v1'],
+	];
+	for (const [pipelinePath, outputKey, schema] of packetPipelines) {
+		const packetPipeline = JSON.parse(await readFile(path.join(repoRoot, pipelinePath), 'utf8'));
+		const assertions = packetPipeline.steps[0].step_config.completion_assertions;
+		assert.equal(assertions.required_artifact_outputs[0].output_key, outputKey, `${pipelinePath} asserts the typed packet output key`);
+		assert.equal(assertions.required_artifact_outputs[0].schema, schema, `${pipelinePath} asserts the typed packet schema`);
+		assert.equal(assertions.required_tool_names, undefined, `${pipelinePath} no longer requires the WPSG tool`);
+	}
+
   const pluginShim = await readFile(path.join(repoRoot, 'wp-site-generator.php'), 'utf8');
   assert.match(pluginShim, /Plugin Name:\s*WP Site Generator CI Fixture/, 'repo exposes a plugin header for Homeboy bench component mounting');
-  assert.match(pluginShim, /wp-site-generator\/materialize-packet/, 'plugin registers the WPSG packet materializer ability');
+	assert.doesNotMatch(pluginShim, /wp-site-generator\/materialize-packet/, 'plugin no longer registers the WPSG packet materializer ability');
   assert.doesNotMatch(pluginShim, /datamachine_ability_tool_projections/, 'WPSG plugin does not know Data Machine projection internals');
   assert.doesNotMatch(pluginShim, /datamachine_register_ability_tool/, 'WPSG plugin does not call Data Machine ability-tool helpers');
 
