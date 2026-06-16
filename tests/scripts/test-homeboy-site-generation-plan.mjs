@@ -67,27 +67,30 @@ try {
 	assert.equal(plan.options.max_concurrency, 1, 'foundation tier keeps one active candidate by default');
 
 	const controllerSpec = JSON.parse(await readFile(path.join(repoRoot, '.github/homeboy/controllers/static-site-generation-loop.controller.json'), 'utf8'));
-	assert.equal(controllerSpec.schema, 'homeboy/controller-spec/v1');
-	assert.equal(controllerSpec.controller_id, 'wp-site-generator/static-site-generation-loop');
-	assert.ok(controllerSpec.phases.find((phase) => phase.id === 'revalidation').emits.includes('revalidation_attempt'), 'controller checkpoints revalidation attempts');
+	assert.equal(controllerSpec.schema, 'homeboy/agent-task-loop-spec/v1');
+	assert.equal(controllerSpec.loop_id, 'wp-site-generator/static-site-generation-loop');
+	assert.ok(controllerSpec.workflows.find((workflow) => workflow.workflow_id === 'revalidation').artifacts.includes('revalidation_attempt'), 'controller checkpoints revalidation attempts');
 	assert.deepEqual(
-		controllerSpec.phases.map((phase) => phase.id),
+		controllerSpec.workflows.map((workflow) => workflow.workflow_id),
 		[
-			'generation',
-			'import_validation',
-			'publish_pr',
-			'static_validation',
-			'finding_packets',
-			'iterator_subloops',
+			'store-idea',
+			'website-idea',
+			'design-store',
+			'design-website',
+			'static-store',
+			'static-site',
+			'static-validation',
+			'finding-packets',
+			'iterator',
 			'revalidation',
-			'reviewer_gate',
+			'reviewer',
 		],
 		'controller records the full static-site generation loop order'
 	);
-	assert.ok(controllerSpec.phases.find((phase) => phase.id === 'iterator_subloops').requires.includes('finding_group'), 'iterator phase fans out per grouped finding');
-	assert.equal(controllerSpec.phases.find((phase) => phase.id === 'revalidation').max_attempts, 3, 'revalidation attempts are bounded');
+	assert.ok(controllerSpec.workflows.find((workflow) => workflow.workflow_id === 'iterator').artifacts.includes('finding_group'), 'iterator workflow consumes grouped findings');
+	assert.equal(controllerSpec.workflows.find((workflow) => workflow.workflow_id === 'revalidation').max_attempts, undefined, 'revalidation attempt bounds belong to Homeboy policy');
 	assert.deepEqual(
-		controllerSpec.phases.find((phase) => phase.id === 'revalidation').gates,
+		controllerSpec.workflows.find((workflow) => workflow.workflow_id === 'revalidation').gates,
 		['fallback_blocks', 'conversion_findings', 'visual_parity'],
 		'revalidation reruns all quality gates'
 	);
