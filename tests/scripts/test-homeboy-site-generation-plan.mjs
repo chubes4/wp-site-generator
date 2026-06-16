@@ -71,6 +71,36 @@ try {
 	assert.equal(controllerSpec.loop_id, 'wp-site-generator/static-site-generation-loop');
 	assert.ok(controllerSpec.workflows.find((workflow) => workflow.workflow_id === 'revalidation').artifacts.includes('revalidation_attempt'), 'controller checkpoints revalidation attempts');
 	assert.deepEqual(
+		controllerSpec.artifact_flow.map((edge) => `${edge.edge_id}:${edge.artifact}`),
+		[
+			'concept-to-design:concept_packet',
+			'design-to-static:design_packet',
+			'static-to-validation:static_site_pull_request',
+			'validation-to-findings:static_validation_run',
+			'visual-to-findings:visual_parity_artifact',
+			'findings-to-iterator-groups:finding_group',
+			'iterator-to-revalidation:iterator_upstream_pull_request',
+			'revalidation-to-reviewer:revalidation_attempt',
+			'iterator-evidence-to-reviewer:iterator_upstream_pull_request',
+		],
+		'controller records the enforceable artifact handoff chain'
+	);
+	assert.deepEqual(
+		controllerSpec.artifact_flow.filter((edge) => edge.fan_out).map((edge) => edge.edge_id),
+		['findings-to-iterator-groups'],
+		'only grouped findings fan out iterator work'
+	);
+	assert.deepEqual(
+		controllerSpec.iterator_groups,
+		{
+			artifact: 'finding_group',
+			group_by: ['owner_repo', 'root_cause', 'group_id'],
+			fan_out_workflow: 'iterator',
+			join_workflows: ['revalidation', 'reviewer'],
+		},
+		'iterator fan-out is scoped by finding group ownership and joined before review'
+	);
+	assert.deepEqual(
 		controllerSpec.workflows.map((workflow) => workflow.workflow_id),
 		[
 			'store-idea',
@@ -87,7 +117,21 @@ try {
 		],
 		'controller records the full static-site generation loop order'
 	);
-	assert.ok(controllerSpec.workflows.find((workflow) => workflow.workflow_id === 'iterator').artifacts.includes('finding_group'), 'iterator workflow consumes grouped findings');
+	const workflows = Object.fromEntries(controllerSpec.workflows.map((workflow) => [workflow.workflow_id, workflow]));
+	assert.deepEqual(workflows['design-store'].consumes, ['concept_packet'], 'design-store consumes concept packets explicitly');
+	assert.deepEqual(workflows['design-store'].emits, ['design_packet'], 'design-store emits design packets explicitly');
+	assert.deepEqual(workflows['static-site'].consumes, ['design_packet'], 'static generation consumes design packets explicitly');
+	assert.deepEqual(workflows['static-validation'].consumes, ['static_site_pull_request'], 'static validation waits for the generated PR artifact');
+	assert.deepEqual(workflows['finding-packets'].consumes, ['import_validation_result', 'static_validation_run', 'visual_parity_artifact'], 'finding packets consume validation and visual evidence');
+	assert.deepEqual(workflows.iterator.consumes, ['finding_group'], 'iterator workflow consumes grouped findings');
+	assert.deepEqual(workflows.iterator.fan_out.group_by, ['owner_repo', 'root_cause', 'group_id'], 'iterator fan-out is grouped by owner/root cause/group id');
+	assert.deepEqual(workflows.revalidation.consumes, ['static_site_pull_request', 'iterator_upstream_pull_request'], 'revalidation waits for generated PR and iterator PR artifacts');
+	assert.deepEqual(workflows.reviewer.consumes, ['static_site_pull_request', 'static_validation_run', 'visual_parity_artifact', 'finding_packet_set', 'iterator_upstream_pull_request', 'revalidation_attempt'], 'reviewer consumes the full iterator and revalidation evidence set');
+	assert.deepEqual(workflows.reviewer.promotion_gate, {
+		requires: ['reviewer_gate_outcome.decision'],
+		passing_decisions: ['PASS'],
+		blocks_on_missing_evidence: true,
+	}, 'reviewer gate blocks promotion without passing evidence');
 	assert.equal(controllerSpec.workflows.find((workflow) => workflow.workflow_id === 'revalidation').max_attempts, undefined, 'revalidation attempt bounds belong to Homeboy policy');
 	assert.deepEqual(
 		controllerSpec.workflows.find((workflow) => workflow.workflow_id === 'revalidation').gates,
@@ -95,6 +139,7 @@ try {
 		'revalidation reruns all quality gates'
 	);
 	assert.equal(controllerSpec.abilities.some((ability) => ability.ability_id === 'wpsg_materialize_packet'), true, 'controller records the WPSG model-facing packet materializer ability');
+	assert.doesNotMatch(serialized, /artifact_refs|artifactReferences|siteSlug|currentTier|validations/, 'plan omits removed compatibility field spellings');
 
 	for (const taskId of ['design-store-packet', 'design-website-packet']) {
 		assert.equal(
@@ -249,6 +294,17 @@ try {
 	assert.equal(overrideDecision.selected_tier, 'stress', 'explicit tier override selects requested tier');
 	assert.equal(overrideDecision.randomness_seed, 'manual-seed', 'explicit seed override is recorded');
 	assert.deepEqual(overrideDecision.site_kind_mix, ['publication'], 'explicit site-kind mix override is recorded');
+
+	assert.throws(
+		() => evaluateComplexityPolicy({ policy, qualitySignals: [{ status: 'passed' }], runId: 'legacy-array' }),
+		/recent_results/,
+		'quality signals no longer accept array compatibility shape'
+	);
+	assert.throws(
+		() => evaluateComplexityPolicy({ policy, qualitySignals: { results: [{ status: 'passed' }] }, runId: 'legacy-results' }),
+		/recent_results/,
+		'quality signals no longer accept results compatibility shape'
+	);
 
 	await writeFile(qualitySignalsPath, JSON.stringify({ current_tier: 'foundation', recent_results: stableDecision.quality_summary.count ? Array.from({ length: 4 }, () => ({ status: 'passed', fallback_block_count: 0, visual_mismatch_ratio: 0.01, actionable_findings: 0 })) : [] }));
 	const qualityResult = spawnSync(process.execPath, ['.github/scripts/build-homeboy-site-generation-plan.mjs'], {

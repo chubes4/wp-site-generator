@@ -7,9 +7,9 @@ The controller builder is `.github/scripts/build-homeboy-ssi-loop-controller.mjs
 The controller spec is the authority for the full self-improving loop:
 
 ```text
-generation -> import validation -> publish PR
+concept -> design -> static candidate + PR
   -> static validation + visual parity -> finding packets
-  -> iterator subloops -> revalidation -> reviewer gate
+  -> iterator groups -> revalidation -> reviewer gate
 ```
 
 WPSG does not define a backend abstraction layer and does not encode WordPress or WP Codebox execution knowledge. WPSG declares domain ingredients only. Homeboy owns controller execution, fan-out, retries, state, lineage, gate decisions, and executor/provider contracts. WordPress runtime and Codebox mapping belongs to `homeboy-extensions/wordpress`, not to this repo-owned spec.
@@ -32,7 +32,8 @@ The generated spec declares these groups directly:
 
 - `agents`: WPSG Data Machine bundles participating in generation, iterator, and reviewer flows.
 - `abilities`: required ability contracts such as bundle execution and GitHub publishing/commenting.
-- `workflows`: Homeboy-ingestible repo-domain prompts/tasks, artifact dependencies, participating agents, and required abilities.
+- `workflows`: Homeboy-ingestible repo-domain prompts/tasks, explicit `consumes`/`emits` artifact handoffs, participating agents, fan-out rules, reviewer gates, and required abilities.
+- `artifact_flow`: the enforceable handoff graph from concept packets through reviewer gate evidence.
 - `artifacts`: WPSG and GitHub/Homeboy artifact schemas the loop emits or consumes.
 - `dependencies`: SSI stack repositories and the behavior each owns.
 - `gates` and `metrics`: WPSG metric definitions and pass expressions.
@@ -54,12 +55,14 @@ The gate declarations define metrics and pass conditions only. Homeboy owns fail
 
 The controller declares workflow artifact dependencies and emissions. Homeboy decides how to execute the repo workflows:
 
-1. `store-idea`, `website-idea`, `design-store`, `design-website`, `static-store`, and `static-site` declare concept, design, static-site candidate, import validation, and static-site PR artifacts.
-2. `static-validation` declares static validation, import validation, and visual parity artifacts for a generated PR.
-3. `finding-packets` declares normalized finding packets and grouped finding artifacts from validation evidence.
-4. `iterator` declares grouped findings as input and upstream issue/PR artifacts as outputs.
-5. `revalidation` declares validation artifacts after upstream iterator work.
-6. `reviewer` declares reviewer gate outcome evidence from PR, validation, visual parity, findings, or iterator outputs.
+1. `store-idea` and `website-idea` emit `concept_packet` artifacts.
+2. `design-store` and `design-website` consume `concept_packet` and emit `design_packet`.
+3. `static-store` and `static-site` consume `design_packet` and emit `static_site_candidate`, `import_validation_result`, and `static_site_pull_request`.
+4. `static-validation` consumes `static_site_pull_request` and emits `static_validation_run`, `import_validation_result`, and `visual_parity_artifact`.
+5. `finding-packets` consumes validation and visual artifacts, then emits `finding_packet_set` and grouped `finding_group` artifacts.
+6. `iterator` fans out per `finding_group`, grouped by `owner_repo`, `root_cause`, and `group_id`, then emits upstream issue and pull-request artifacts.
+7. `revalidation` consumes the generated-site PR and iterator PR, then emits a `revalidation_attempt` plus refreshed validation artifacts.
+8. `reviewer` consumes generated-site PR, validation, visual, finding, iterator, and revalidation evidence, then emits `reviewer_gate_outcome`. Promotion requires `reviewer_gate_outcome.decision === "PASS"` and blocks when evidence is missing.
 
 ## Complexity And Randomness Policy
 
@@ -80,7 +83,7 @@ The same policy decision is also attached to generation task `inputs.complexity_
 
 Quality signals are optional JSON supplied through `WPSG_QUALITY_SIGNALS_PATH` or `HOMEBOY_QUALITY_SIGNALS_PATH`. When no signal file is supplied, the loop holds at the configured default tier.
 
-Accepted shapes are either an array of recent results or an object with `recent_results`, `results`, or `validations`:
+Accepted quality signals use the current object shape with `recent_results`:
 
 ```json
 {
@@ -126,12 +129,6 @@ Additional WPSG policy inputs are available for local plan generation:
 - `WPSG_TARGET_PARALLEL_CANDIDATES`: candidate budget override, bounded by the selected tier
 
 Homeboy remains the controller, executor, and scheduler. It receives WPSG domain declarations, artifact contracts, task inputs, workload settings, and metadata that WPSG has computed.
-
-## Actions Compatibility
-
-`site-generation-loop.yml` builds the same generation plan and records `HOMEBOY_CONTROLLER_SPEC_PATH` so Actions-triggered runs point back to the Lab controller contract.
-
-`static-site-validation.yml` calls the same shared scripts for Homeboy settings, Playground preview URLs, and php-transformer iterator dispatch. The Actions path still dispatches `php-transformer-iterator.yml`; native controllers should let Homeboy map the declared workflow ingredients to controller actions and then resume through the revalidation phase.
 
 ## Upstream Contract
 

@@ -10,7 +10,7 @@ export function evaluateComplexityPolicy({ policy, qualitySignals = {}, runId = 
 	const tiers = [...policy.tiers].sort((a, b) => a.rank - b.rank);
 	const tierIds = tiers.map((tier) => tier.id);
 	const defaultTier = tierById(tiers, policy.default_tier) || tiers[0];
-	const currentTier = tierById(tiers, overrides.currentTier || qualitySignals.current_tier || qualitySignals.currentTier || defaultTier.id) || defaultTier;
+	const currentTier = tierById(tiers, overrides.current_tier || qualitySignals.current_tier || defaultTier.id) || defaultTier;
 	const results = recentResults(qualitySignals).slice(-Number(policy.quality_window || 6));
 	const summary = summarizeResults(results);
 	const criteria = policy.ramp || {};
@@ -109,7 +109,7 @@ export function resolvePolicyInputs({ root, env = process.env }) {
 		overrides: {
 			policyPath: path.relative(root, policyPath),
 			qualitySignalsPath: qualitySignalsPath ? path.relative(root, path.resolve(root, qualitySignalsPath)) : '',
-			currentTier: env.WPSG_CURRENT_COMPLEXITY_TIER || '',
+			current_tier: env.WPSG_CURRENT_COMPLEXITY_TIER || '',
 			tier: env.WPSG_COMPLEXITY_TIER || '',
 			randomnessProfile: env.WPSG_RANDOMNESS_PROFILE || '',
 			seed: env.WPSG_RANDOMNESS_SEED || '',
@@ -121,9 +121,15 @@ export function resolvePolicyInputs({ root, env = process.env }) {
 
 function recentResults(qualitySignals) {
 	if (Array.isArray(qualitySignals)) {
-		return qualitySignals;
+		throw new Error('Quality signals must be an object with a recent_results array.');
 	}
-	return qualitySignals.recent_results || qualitySignals.results || qualitySignals.validations || [];
+	if (!qualitySignals || typeof qualitySignals !== 'object') {
+		return [];
+	}
+	if ('results' in qualitySignals || 'validations' in qualitySignals) {
+		throw new Error('Quality signals must use recent_results; results and validations are no longer accepted.');
+	}
+	return qualitySignals.recent_results || [];
 }
 
 function summarizeResults(results) {
@@ -144,15 +150,15 @@ function summarizeResults(results) {
 }
 
 function normalizeResult(result) {
-	const status = String(result.status || result.outcome || '').toLowerCase();
-	const passed = result.passed === true || result.pass === true || status === 'pass' || status === 'passed' || status === 'success';
+	const status = String(result.status || '').toLowerCase();
+	const passed = result.passed === true || status === 'passed';
 	return {
 		passed,
-		fallbackBlocks: numberValue(result.fallback_block_count ?? result.fallback_blocks ?? result.ssi_fallback_count),
-		visualMismatchRatio: numberValue(result.visual_mismatch_ratio ?? result.visual_parity?.mismatch_ratio ?? result.visualDiff?.mismatchRatio),
-		actionableFindings: numberValue(result.actionable_findings ?? result.finding_counts?.actionable ?? result.findings?.actionable),
-		siteKind: result.site_kind || result.siteKind || '',
-		patternFamily: result.pattern_family || result.patternFamily || '',
+		fallbackBlocks: numberValue(result.fallback_block_count),
+		visualMismatchRatio: numberValue(result.visual_mismatch_ratio),
+		actionableFindings: numberValue(result.actionable_findings),
+		siteKind: result.site_kind || '',
+		patternFamily: result.pattern_family || '',
 	};
 }
 

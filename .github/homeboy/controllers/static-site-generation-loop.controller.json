@@ -189,6 +189,10 @@
         "github_issue_publish",
         "wpsg_materialize_packet"
       ],
+      "consumes": [],
+      "emits": [
+        "concept_packet"
+      ],
       "artifacts": [
         "concept_packet"
       ]
@@ -202,6 +206,10 @@
         "github_issue_publish",
         "wpsg_materialize_packet"
       ],
+      "consumes": [],
+      "emits": [
+        "concept_packet"
+      ],
       "artifacts": [
         "concept_packet"
       ]
@@ -213,6 +221,12 @@
       "abilities": [
         "datamachine/run-agent-bundle",
         "wpsg_materialize_packet"
+      ],
+      "consumes": [
+        "concept_packet"
+      ],
+      "emits": [
+        "design_packet"
       ],
       "artifacts": [
         "concept_packet",
@@ -227,6 +241,12 @@
         "datamachine/run-agent-bundle",
         "wpsg_materialize_packet"
       ],
+      "consumes": [
+        "concept_packet"
+      ],
+      "emits": [
+        "design_packet"
+      ],
       "artifacts": [
         "concept_packet",
         "design_packet"
@@ -240,6 +260,14 @@
         "datamachine/run-agent-bundle",
         "github_pull_request_publish",
         "wpsg_materialize_packet"
+      ],
+      "consumes": [
+        "design_packet"
+      ],
+      "emits": [
+        "static_site_candidate",
+        "import_validation_result",
+        "static_site_pull_request"
       ],
       "artifacts": [
         "design_packet",
@@ -260,6 +288,14 @@
         "github_pull_request_publish",
         "wpsg_materialize_packet"
       ],
+      "consumes": [
+        "design_packet"
+      ],
+      "emits": [
+        "static_site_candidate",
+        "import_validation_result",
+        "static_site_pull_request"
+      ],
       "artifacts": [
         "design_packet",
         "static_site_candidate",
@@ -274,6 +310,14 @@
       "workflow_id": "static-validation",
       "tasks": [
         "Validate a static-site pull request through SSI import, static checks, and visual parity."
+      ],
+      "consumes": [
+        "static_site_pull_request"
+      ],
+      "emits": [
+        "static_validation_run",
+        "import_validation_result",
+        "visual_parity_artifact"
       ],
       "artifacts": [
         "static_site_pull_request",
@@ -304,6 +348,15 @@
       "tasks": [
         "Group SSI and BFB diagnostic artifacts into finding packets for upstream routing."
       ],
+      "consumes": [
+        "import_validation_result",
+        "static_validation_run",
+        "visual_parity_artifact"
+      ],
+      "emits": [
+        "finding_packet_set",
+        "finding_group"
+      ],
       "artifacts": [
         "import_validation_result",
         "static_validation_run",
@@ -329,11 +382,28 @@
         "github_pull_request_publish",
         "comment_github_pull_request"
       ],
+      "consumes": [
+        "finding_group"
+      ],
+      "emits": [
+        "iterator_upstream_issue",
+        "iterator_upstream_pull_request"
+      ],
       "artifacts": [
         "finding_group",
         "iterator_upstream_issue",
         "iterator_upstream_pull_request"
       ],
+      "fan_out": {
+        "mode": "per_artifact",
+        "artifact": "finding_group",
+        "group_by": [
+          "owner_repo",
+          "root_cause",
+          "group_id"
+        ],
+        "requires_non_empty": true
+      },
       "dependencies": [
         "static-site-importer",
         "html-to-blocks-converter",
@@ -345,6 +415,17 @@
       "workflow_id": "revalidation",
       "tasks": [
         "Revalidate the generated-site pull request after an upstream iterator pull request is available."
+      ],
+      "consumes": [
+        "static_site_pull_request",
+        "iterator_upstream_pull_request"
+      ],
+      "emits": [
+        "revalidation_attempt",
+        "static_validation_run",
+        "import_validation_result",
+        "visual_parity_artifact",
+        "finding_packet_set"
       ],
       "artifacts": [
         "static_site_pull_request",
@@ -381,12 +462,24 @@
         "datamachine/run-agent-bundle",
         "comment_github_pull_request"
       ],
+      "consumes": [
+        "static_site_pull_request",
+        "static_validation_run",
+        "visual_parity_artifact",
+        "finding_packet_set",
+        "iterator_upstream_pull_request",
+        "revalidation_attempt"
+      ],
+      "emits": [
+        "reviewer_gate_outcome"
+      ],
       "artifacts": [
         "static_site_pull_request",
         "static_validation_run",
         "visual_parity_artifact",
         "finding_packet_set",
         "iterator_upstream_pull_request",
+        "revalidation_attempt",
         "reviewer_gate_outcome"
       ],
       "dependencies": [
@@ -398,9 +491,138 @@
       ],
       "gates": [
         "reviewer_evidence"
-      ]
+      ],
+      "promotion_gate": {
+        "requires": [
+          "reviewer_gate_outcome.decision"
+        ],
+        "passing_decisions": [
+          "PASS"
+        ],
+        "blocks_on_missing_evidence": true
+      }
     }
   ],
+  "artifact_flow": [
+    {
+      "edge_id": "concept-to-design",
+      "from": [
+        "store-idea",
+        "website-idea"
+      ],
+      "to": [
+        "design-store",
+        "design-website"
+      ],
+      "artifact": "concept_packet",
+      "required": true
+    },
+    {
+      "edge_id": "design-to-static",
+      "from": [
+        "design-store",
+        "design-website"
+      ],
+      "to": [
+        "static-store",
+        "static-site"
+      ],
+      "artifact": "design_packet",
+      "required": true
+    },
+    {
+      "edge_id": "static-to-validation",
+      "from": [
+        "static-store",
+        "static-site"
+      ],
+      "to": [
+        "static-validation"
+      ],
+      "artifact": "static_site_pull_request",
+      "required": true
+    },
+    {
+      "edge_id": "validation-to-findings",
+      "from": [
+        "static-validation"
+      ],
+      "to": [
+        "finding-packets"
+      ],
+      "artifact": "static_validation_run",
+      "required": true
+    },
+    {
+      "edge_id": "visual-to-findings",
+      "from": [
+        "static-validation"
+      ],
+      "to": [
+        "finding-packets"
+      ],
+      "artifact": "visual_parity_artifact",
+      "required": true
+    },
+    {
+      "edge_id": "findings-to-iterator-groups",
+      "from": [
+        "finding-packets"
+      ],
+      "to": [
+        "iterator"
+      ],
+      "artifact": "finding_group",
+      "required": true,
+      "fan_out": "per_finding_group"
+    },
+    {
+      "edge_id": "iterator-to-revalidation",
+      "from": [
+        "iterator"
+      ],
+      "to": [
+        "revalidation"
+      ],
+      "artifact": "iterator_upstream_pull_request",
+      "required": true
+    },
+    {
+      "edge_id": "revalidation-to-reviewer",
+      "from": [
+        "revalidation"
+      ],
+      "to": [
+        "reviewer"
+      ],
+      "artifact": "revalidation_attempt",
+      "required": true
+    },
+    {
+      "edge_id": "iterator-evidence-to-reviewer",
+      "from": [
+        "iterator"
+      ],
+      "to": [
+        "reviewer"
+      ],
+      "artifact": "iterator_upstream_pull_request",
+      "required": true
+    }
+  ],
+  "iterator_groups": {
+    "artifact": "finding_group",
+    "group_by": [
+      "owner_repo",
+      "root_cause",
+      "group_id"
+    ],
+    "fan_out_workflow": "iterator",
+    "join_workflows": [
+      "revalidation",
+      "reviewer"
+    ]
+  },
   "artifacts": [
     {
       "artifact_id": "concept_packet",

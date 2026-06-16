@@ -5,9 +5,9 @@ import { pathToFileURL } from 'node:url';
 
 export function renderStaticSitePrBody({ candidate = {}, validation = {}, closes = '' } = {}) {
 	const title = text(candidate.title || candidate.site_title || candidate.name || 'Static site candidate');
-	const siteId = text(candidate.site_id || candidate.slug || candidate.siteSlug || '');
+	const siteId = text(candidate.site_id || candidate.slug || '');
 	const summary = text(candidate.summary || candidate.description || 'Generated static site candidate ready for review.');
-	const artifactRefs = normalizeArtifactRefs(validation.artifacts || validation.artifact_refs || validation.artifactReferences || candidate.artifacts);
+	const artifactRefs = normalizeArtifactRefs(validation.artifacts);
 	const metrics = normalizeValidationMetrics(validation);
 	const lines = [
 		'## Summary',
