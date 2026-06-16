@@ -19,13 +19,16 @@ const controllerResult = spawnSync(process.execPath, ['.github/scripts/build-hom
 assert.equal(controllerResult.status, 0, controllerResult.stderr || controllerResult.stdout);
 
 const controller = JSON.parse(await readFile(controllerPath, 'utf8'));
-assert.equal(controller.schema, 'homeboy/controller-spec/v1', 'native controller builder emits a Homeboy controller spec');
-assert.equal(controller.authority.builder, '.github/scripts/build-homeboy-ssi-loop-controller.mjs', 'controller records its repo-owned builder');
-assert.equal(controller.authority.contract_issue, 'https://github.com/Extra-Chill/homeboy/issues/4658', 'controller records the upstream contract issue');
-assert.equal(controller.authority.execution_surface, undefined, 'controller spec does not select a Homeboy execution surface');
+assert.equal(controller.schema, 'homeboy/agent-task-loop-spec/v1', 'native controller builder emits a Homeboy from-spec loop contract');
+assert.equal(controller.loop_id, 'wp-site-generator/static-site-generation-loop', 'controller records the Homeboy loop id');
+assert.equal(controller.config_version, 'wpsg-ssi-loop-v1', 'controller records the WPSG declaration version');
+assert.equal(controller.metadata.authority.builder, '.github/scripts/build-homeboy-ssi-loop-controller.mjs', 'controller records its repo-owned builder');
+assert.equal(controller.metadata.authority.contract_issue, 'https://github.com/Extra-Chill/homeboy/issues/4658', 'controller records the upstream contract issue');
+assert.deepEqual(controller.metadata.authority.homeboy_from_spec, ['https://github.com/Extra-Chill/homeboy/issues/4722', 'https://github.com/Extra-Chill/homeboy/issues/4723'], 'controller records the Homeboy from-spec ingestion alignment issues');
+assert.equal(controller.metadata.authority.execution_surface, undefined, 'controller spec does not select a Homeboy execution surface');
 assert.equal(controller.execution, undefined, 'controller spec does not carry backend abstraction details');
 assert.equal(controller.runtime, undefined, 'controller spec does not embed runtime backend configuration');
-assert.equal(controller.authority.action_types, undefined, 'controller spec does not define Homeboy action vocabulary');
+assert.equal(controller.metadata.authority.action_types, undefined, 'controller spec does not define Homeboy action vocabulary');
 assert.equal(controller.state, undefined, 'controller spec does not own Homeboy state');
 assert.equal(controller.events, undefined, 'controller spec does not own Homeboy lineage events');
 assert.equal(controller.backend, undefined, 'controller spec does not name a backend');
@@ -33,18 +36,22 @@ assert.equal(controller.provider, undefined, 'controller spec does not name a pr
 assert.equal(controller.phases, undefined, 'controller spec does not define Homeboy execution phases');
 assert.equal(controller.blockers, undefined, 'controller spec does not encode upstream execution blockers');
 assert.equal(controller.ingredients, undefined, 'controller exposes declaration groups directly');
-assert.equal(controller.agents.static_site.slug, 'static-site-agent', 'controller declares WPSG agents in repo-domain terms');
-assert.ok(controller.tools.abilities.includes('datamachine/run-agent-bundle'), 'controller declares required ability/tool contracts');
-assert.deepEqual(controller.workflows.generation.uses_agents, ['store_idea', 'website_idea', 'design_store', 'design_website', 'static_store', 'static_site'], 'generation workflow declares agent participation');
-assert.deepEqual(controller.workflows.static_validation.requires, ['static_site_pull_request'], 'static validation declares artifact dependencies');
-assert.deepEqual(controller.workflows.iterator.emits, ['iterator_upstream_issue', 'iterator_upstream_pull_request'], 'iterator workflow declares emitted artifacts');
-assert.equal(controller.workflows.iterator.builder, undefined, 'iterator workflow does not expose backend-specific builder policy');
-assert.equal(controller.artifacts.revalidation_attempt.schema, 'wp-site-generator/RevalidationAttempt/v1', 'controller declares artifact schemas');
-assert.ok(controller.dependencies.some((dependency) => dependency.repo === 'chubes4/static-site-importer'), 'controller declares SSI stack dependencies');
-assert.equal(controller.gates.fallback_blocks.pass_when, 'value === 0', 'fallback block metric gate is explicit');
-assert.equal(controller.gates.conversion_findings.pass_when, 'value === 0', 'conversion finding metric gate is explicit');
-assert.equal(controller.gates.visual_parity.pass_when, 'status === "pass" && mismatch_count === 0 && max_delta_ratio === 0', 'visual parity metric gate is explicit');
-assert.equal(controller.gates.fallback_blocks.on_fail, undefined, 'gates do not encode Homeboy routing decisions');
+assert.equal(controller.policy, undefined, 'controller spec does not encode Homeboy transition policy');
+assert.equal(controller.actions, undefined, 'controller spec does not enqueue Homeboy actions directly');
+assert.equal(controller.initial_event, undefined, 'controller spec does not seed Homeboy events');
+assert.equal(controller.agents.find((agent) => agent.agent_id === 'static_site').metadata.slug, 'static-site-agent', 'controller declares WPSG agents in repo-domain terms');
+assert.ok(controller.abilities.some((ability) => ability.ability_id === 'datamachine/run-agent-bundle'), 'controller declares required ability contracts');
+assert.ok(controller.workflows.every((workflow) => workflow.prompt || workflow.tasks?.length), 'each workflow is ingestible by Homeboy from-spec dispatch');
+assert.deepEqual(controller.workflows.filter((workflow) => workflow.agent_id).map((workflow) => workflow.agent_id), ['store_idea', 'website_idea', 'design_store', 'design_website', 'static_store', 'static_site', 'php_transformer_iterator', 'ssi_stack_reviewer'], 'agent-backed workflows declare agent participation');
+assert.deepEqual(controller.workflows.find((workflow) => workflow.workflow_id === 'static-validation').artifacts.slice(0, 1), ['static_site_pull_request'], 'static validation declares artifact dependencies');
+assert.deepEqual(controller.workflows.find((workflow) => workflow.workflow_id === 'iterator').artifacts.slice(-2), ['iterator_upstream_issue', 'iterator_upstream_pull_request'], 'iterator workflow declares emitted artifacts');
+assert.equal(controller.workflows.find((workflow) => workflow.workflow_id === 'iterator').builder, undefined, 'iterator workflow does not expose backend-specific builder policy');
+assert.equal(controller.artifacts.find((artifact) => artifact.artifact_id === 'revalidation_attempt').kind, 'wp-site-generator/RevalidationAttempt/v1', 'controller declares artifact schemas');
+assert.ok(controller.dependencies.some((dependency) => dependency.value === 'chubes4/static-site-importer'), 'controller declares SSI stack dependencies');
+assert.equal(controller.metrics.find((metric) => metric.metric_id === 'fallback_blocks').target, 'value === 0', 'fallback block metric gate is explicit');
+assert.equal(controller.metrics.find((metric) => metric.metric_id === 'conversion_findings').target, 'value === 0', 'conversion finding metric gate is explicit');
+assert.equal(controller.metrics.find((metric) => metric.metric_id === 'visual_parity').target, 'status === "pass" && mismatch_count === 0 && max_delta_ratio === 0', 'visual parity metric gate is explicit');
+assert.equal(controller.gates.find((gate) => gate.gate_id === 'fallback_blocks').on_fail, undefined, 'gates do not encode Homeboy routing decisions');
 
 const settingsResult = spawnSync(process.execPath, ['.github/scripts/build-static-validation-settings.mjs', '--site', 'issue-123-native-loop', '--output', settingsPath], {
 	cwd: repoRoot,

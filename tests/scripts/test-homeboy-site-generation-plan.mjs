@@ -67,17 +67,34 @@ try {
 	assert.equal(plan.options.max_concurrency, 1, 'foundation tier keeps one active candidate by default');
 
 	const controllerSpec = JSON.parse(await readFile(path.join(repoRoot, '.github/homeboy/controllers/static-site-generation-loop.controller.json'), 'utf8'));
-	assert.equal(controllerSpec.schema, 'homeboy/controller-spec/v1');
-	assert.equal(controllerSpec.controller_id, 'wp-site-generator/static-site-generation-loop');
-	assert.ok(controllerSpec.workflows.revalidation.emits.includes('revalidation_attempt'), 'controller checkpoints revalidation attempts');
-	assert.ok(controllerSpec.workflows.iterator.requires.includes('finding_group'), 'iterator workflow fans out per grouped finding');
+	assert.equal(controllerSpec.schema, 'homeboy/agent-task-loop-spec/v1');
+	assert.equal(controllerSpec.loop_id, 'wp-site-generator/static-site-generation-loop');
+	assert.ok(controllerSpec.workflows.find((workflow) => workflow.workflow_id === 'revalidation').artifacts.includes('revalidation_attempt'), 'controller checkpoints revalidation attempts');
 	assert.deepEqual(
-		controllerSpec.workflows.revalidation.gates,
+		controllerSpec.workflows.map((workflow) => workflow.workflow_id),
+		[
+			'store-idea',
+			'website-idea',
+			'design-store',
+			'design-website',
+			'static-store',
+			'static-site',
+			'static-validation',
+			'finding-packets',
+			'iterator',
+			'revalidation',
+			'reviewer',
+		],
+		'controller records the full static-site generation loop order'
+	);
+	assert.ok(controllerSpec.workflows.find((workflow) => workflow.workflow_id === 'iterator').artifacts.includes('finding_group'), 'iterator workflow consumes grouped findings');
+	assert.equal(controllerSpec.workflows.find((workflow) => workflow.workflow_id === 'revalidation').max_attempts, undefined, 'revalidation attempt bounds belong to Homeboy policy');
+	assert.deepEqual(
+		controllerSpec.workflows.find((workflow) => workflow.workflow_id === 'revalidation').gates,
 		['fallback_blocks', 'conversion_findings', 'visual_parity'],
 		'revalidation reruns all quality gates'
 	);
-	assert.equal(controllerSpec.tools.abilities.includes('wp-site-generator/materialize-packet'), true, 'controller records the WPSG WordPress ability contract');
-	assert.deepEqual(controllerSpec.tools.ability_tools, [{ name: 'wpsg_materialize_packet', ability: 'wp-site-generator/materialize-packet' }], 'controller maps the WPSG ability to a model-facing Codebox tool');
+	assert.equal(controllerSpec.abilities.some((ability) => ability.ability_id === 'wpsg_materialize_packet'), true, 'controller records the WPSG model-facing packet materializer ability');
 
 	for (const taskId of ['design-store-packet', 'design-website-packet']) {
 		assert.equal(
