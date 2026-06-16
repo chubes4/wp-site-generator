@@ -24,12 +24,12 @@ const artifactSchemas = {
 };
 
 const agentBundles = {
-	store_idea: { bundle: 'bundles/store-idea-agent', slug: 'store-idea-agent', emits: ['concept_packet'] },
-	website_idea: { bundle: 'bundles/website-idea-agent', slug: 'website-idea-agent', emits: ['concept_packet'] },
-	design_store: { bundle: 'bundles/design-store-agent', slug: 'design-store-agent', requires: ['concept_packet'], emits: ['design_packet'] },
-	design_website: { bundle: 'bundles/design-website-agent', slug: 'design-website-agent', requires: ['concept_packet'], emits: ['design_packet'] },
-	static_store: { bundle: 'bundles/static-store-agent', slug: 'static-store-agent', requires: ['design_packet'], emits: ['static_site_candidate', 'import_validation_result', 'static_site_pull_request'] },
-	static_site: { bundle: 'bundles/static-site-agent', slug: 'static-site-agent', requires: ['design_packet'], emits: ['static_site_candidate', 'import_validation_result', 'static_site_pull_request'] },
+	store_idea: { bundle: 'bundles/store-idea-agent', slug: 'store-idea-agent', flow: 'store-idea-artifact-flow', emits: ['concept_packet'] },
+	website_idea: { bundle: 'bundles/website-idea-agent', slug: 'website-idea-agent', flow: 'website-idea-artifact-flow', emits: ['concept_packet'] },
+	design_store: { bundle: 'bundles/design-agent', slug: 'design-agent', flow: 'design-artifact-flow', requires: ['concept_packet'], emits: ['design_packet'] },
+	design_website: { bundle: 'bundles/design-agent', slug: 'design-agent', flow: 'design-artifact-flow', requires: ['concept_packet'], emits: ['design_packet'] },
+	static_store: { bundle: 'bundles/static-site-agent', slug: 'static-site-agent', flow: 'static-site-candidate-flow', requires: ['design_packet'], emits: ['static_site_candidate'] },
+	static_site: { bundle: 'bundles/static-site-agent', slug: 'static-site-agent', flow: 'static-site-candidate-flow', requires: ['design_packet'], emits: ['static_site_candidate'] },
 	php_transformer_iterator: { bundle: 'bundles/php-transformer-iterator-agent', slug: 'php-transformer-iterator-agent', requires: ['finding_group'], emits: ['iterator_upstream_issue', 'iterator_upstream_pull_request'] },
 	ssi_stack_reviewer: { bundle: 'bundles/ssi-stack-reviewer-agent', slug: 'ssi-stack-reviewer-agent', requires: ['static_site_pull_request', 'static_validation_run', 'visual_parity_artifact'], emits: ['reviewer_gate_outcome'] },
 };
@@ -45,7 +45,10 @@ const abilityIds = [
 const artifactFlow = [
 	{ edge_id: 'concept-to-design', from: ['store-idea', 'website-idea'], to: ['design-store', 'design-website'], artifact: 'concept_packet', required: true },
 	{ edge_id: 'design-to-static', from: ['design-store', 'design-website'], to: ['static-store', 'static-site'], artifact: 'design_packet', required: true },
-	{ edge_id: 'static-to-validation', from: ['static-store', 'static-site'], to: ['static-validation'], artifact: 'static_site_pull_request', required: true },
+	{ edge_id: 'static-to-validation', from: ['static-store', 'static-site'], to: ['static-validation'], artifact: 'static_site_candidate', required: true },
+	{ edge_id: 'validation-to-publication', from: ['static-validation'], to: ['static-publication'], artifact: 'import_validation_result', required: true },
+	{ edge_id: 'publication-to-revalidation', from: ['static-publication'], to: ['revalidation'], artifact: 'static_site_pull_request', required: true },
+	{ edge_id: 'publication-to-reviewer', from: ['static-publication'], to: ['reviewer'], artifact: 'static_site_pull_request', required: true },
 	{ edge_id: 'validation-to-findings', from: ['static-validation'], to: ['finding-packets'], artifact: 'static_validation_run', required: true },
 	{ edge_id: 'visual-to-findings', from: ['static-validation'], to: ['finding-packets'], artifact: 'visual_parity_artifact', required: true },
 	{ edge_id: 'findings-to-iterator-groups', from: ['finding-packets'], to: ['iterator'], artifact: 'finding_group', required: true, fan_out: 'per_finding_group' },
@@ -56,6 +59,18 @@ const artifactFlow = [
 
 function handoff({ consumes = [], emits = [] } = {}) {
 	return { consumes, emits, artifacts: [...consumes, ...emits] };
+}
+
+function bundleInputs(agent_id, extra = {}) {
+	const bundle = agentBundles[agent_id];
+	return {
+		inputs: {
+			source: bundle.bundle,
+			flow: bundle.flow,
+			wait_for_completion: true,
+			...extra,
+		},
+	};
 }
 
 const controller = {
@@ -88,14 +103,16 @@ const controller = {
 			workflow_id: 'store-idea',
 			agent_id: 'store_idea',
 			prompt: 'Produce a commerce concept packet for the WPSG static-site generation loop.',
-			abilities: ['datamachine/run-agent-bundle', 'github_issue_publish', 'wpsg_materialize_packet'],
+			abilities: ['datamachine/run-agent-bundle', 'wpsg_materialize_packet'],
+			...bundleInputs('store_idea'),
 			...handoff({ emits: ['concept_packet'] }),
 		},
 		{
 			workflow_id: 'website-idea',
 			agent_id: 'website_idea',
 			prompt: 'Produce a content-site concept packet for the WPSG static-site generation loop.',
-			abilities: ['datamachine/run-agent-bundle', 'github_issue_publish', 'wpsg_materialize_packet'],
+			abilities: ['datamachine/run-agent-bundle', 'wpsg_materialize_packet'],
+			...bundleInputs('website_idea'),
 			...handoff({ emits: ['concept_packet'] }),
 		},
 		{
@@ -103,6 +120,7 @@ const controller = {
 			agent_id: 'design_store',
 			prompt: 'Produce a design packet from a commerce concept packet for the WPSG static-site generation loop.',
 			abilities: ['datamachine/run-agent-bundle', 'wpsg_materialize_packet'],
+			...bundleInputs('design_store', { site_kind: 'store' }),
 			...handoff({ consumes: ['concept_packet'], emits: ['design_packet'] }),
 		},
 		{
@@ -110,29 +128,41 @@ const controller = {
 			agent_id: 'design_website',
 			prompt: 'Produce a design packet from a content-site concept packet for the WPSG static-site generation loop.',
 			abilities: ['datamachine/run-agent-bundle', 'wpsg_materialize_packet'],
+			...bundleInputs('design_website', { site_kind: 'website' }),
 			...handoff({ consumes: ['concept_packet'], emits: ['design_packet'] }),
 		},
 		{
 			workflow_id: 'static-store',
 			agent_id: 'static_store',
-			prompt: 'Produce a commerce static-site candidate and pull request from a WPSG design packet.',
-			abilities: ['datamachine/run-agent-bundle', 'github_pull_request_publish', 'wpsg_materialize_packet'],
-			...handoff({ consumes: ['design_packet'], emits: ['static_site_candidate', 'import_validation_result', 'static_site_pull_request'] }),
+			prompt: 'Produce a commerce static-site candidate from a WPSG design packet. Do not publish a GitHub pull request.',
+			abilities: ['datamachine/run-agent-bundle', 'wpsg_materialize_packet'],
+			...bundleInputs('static_store', { site_kind: 'store' }),
+			...handoff({ consumes: ['design_packet'], emits: ['static_site_candidate'] }),
 			dependencies: ['wp-site-generator'],
 		},
 		{
 			workflow_id: 'static-site',
 			agent_id: 'static_site',
-			prompt: 'Produce a content static-site candidate and pull request from a WPSG design packet.',
-			abilities: ['datamachine/run-agent-bundle', 'github_pull_request_publish', 'wpsg_materialize_packet'],
-			...handoff({ consumes: ['design_packet'], emits: ['static_site_candidate', 'import_validation_result', 'static_site_pull_request'] }),
+			prompt: 'Produce a content static-site candidate from a WPSG design packet. Do not publish a GitHub pull request.',
+			abilities: ['datamachine/run-agent-bundle', 'wpsg_materialize_packet'],
+			...bundleInputs('static_site', { site_kind: 'website' }),
+			...handoff({ consumes: ['design_packet'], emits: ['static_site_candidate'] }),
 			dependencies: ['wp-site-generator'],
 		},
 		{
 			workflow_id: 'static-validation',
-			tasks: ['Validate a static-site pull request through SSI import, static checks, and visual parity.'],
-			...handoff({ consumes: ['static_site_pull_request'], emits: ['static_validation_run', 'import_validation_result', 'visual_parity_artifact'] }),
+			tasks: ['Validate a StaticSiteCandidate artifact through SSI import, static checks, and visual parity before any generated-site pull request is published.'],
+			...handoff({ consumes: ['static_site_candidate'], emits: ['static_validation_run', 'import_validation_result', 'visual_parity_artifact'] }),
 			dependencies: ['wp-site-generator', 'static-site-importer', 'html-to-blocks-converter', 'block-format-bridge', 'block-artifact-compiler'],
+			gates: ['fallback_blocks', 'conversion_findings', 'visual_parity'],
+			metrics: ['fallback_blocks', 'conversion_findings', 'visual_parity'],
+		},
+		{
+			workflow_id: 'static-publication',
+			tasks: ['Publish one generated-site pull request from a validated StaticSiteCandidate and its ImportValidationResult artifact.'],
+			abilities: ['github_pull_request_publish'],
+			...handoff({ consumes: ['static_site_candidate', 'import_validation_result', 'visual_parity_artifact'], emits: ['static_site_pull_request'] }),
+			dependencies: ['wp-site-generator'],
 			gates: ['fallback_blocks', 'conversion_findings', 'visual_parity'],
 			metrics: ['fallback_blocks', 'conversion_findings', 'visual_parity'],
 		},

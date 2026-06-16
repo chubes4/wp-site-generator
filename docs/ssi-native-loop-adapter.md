@@ -7,8 +7,8 @@ The controller builder is `.github/scripts/build-homeboy-ssi-loop-controller.mjs
 The controller spec is the authority for the full self-improving loop:
 
 ```text
-concept -> design -> static candidate + PR
-  -> static validation + visual parity -> finding packets
+concept -> design -> static candidate
+  -> static validation + visual parity -> publication PR + finding packets
   -> iterator groups -> revalidation -> reviewer gate
 ```
 
@@ -31,7 +31,7 @@ Homeboy should derive execution behavior from the declaration and its own contro
 The generated spec declares these groups directly:
 
 - `agents`: WPSG Data Machine bundles participating in generation, iterator, and reviewer flows.
-- `abilities`: required ability contracts such as bundle execution and GitHub publishing/commenting.
+- `abilities`: required ability contracts such as bundle execution, packet materialization, deterministic publication, and GitHub commenting.
 - `workflows`: Homeboy-ingestible repo-domain prompts/tasks, explicit `consumes`/`emits` artifact handoffs, participating agents, fan-out rules, reviewer gates, and required abilities.
 - `artifact_flow`: the enforceable handoff graph from concept packets through reviewer gate evidence.
 - `artifacts`: WPSG and GitHub/Homeboy artifact schemas the loop emits or consumes.
@@ -57,12 +57,13 @@ The controller declares workflow artifact dependencies and emissions. Homeboy de
 
 1. `store-idea` and `website-idea` emit `concept_packet` artifacts.
 2. `design-store` and `design-website` consume `concept_packet` and emit `design_packet`.
-3. `static-store` and `static-site` consume `design_packet` and emit `static_site_candidate`, `import_validation_result`, and `static_site_pull_request`.
-4. `static-validation` consumes `static_site_pull_request` and emits `static_validation_run`, `import_validation_result`, and `visual_parity_artifact`.
-5. `finding-packets` consumes validation and visual artifacts, then emits `finding_packet_set` and grouped `finding_group` artifacts.
-6. `iterator` fans out per `finding_group`, grouped by `owner_repo`, `root_cause`, and `group_id`, then emits upstream issue and pull-request artifacts.
-7. `revalidation` consumes the generated-site PR and iterator PR, then emits a `revalidation_attempt` plus refreshed validation artifacts.
-8. `reviewer` consumes generated-site PR, validation, visual, finding, iterator, and revalidation evidence, then emits `reviewer_gate_outcome`. Promotion requires `reviewer_gate_outcome.decision === "PASS"` and blocks when evidence is missing.
+3. `static-store` and `static-site` consume `design_packet` and emit `static_site_candidate` without publishing a pull request.
+4. `static-validation` consumes `static_site_candidate` and emits `static_validation_run`, `import_validation_result`, and `visual_parity_artifact`.
+5. `static-publication` consumes the validated candidate evidence and emits `static_site_pull_request` through deterministic publication.
+6. `finding-packets` consumes validation and visual artifacts, then emits `finding_packet_set` and grouped `finding_group` artifacts.
+7. `iterator` fans out per `finding_group`, grouped by `owner_repo`, `root_cause`, and `group_id`, then emits upstream issue and pull-request artifacts.
+8. `revalidation` consumes the generated-site PR and iterator PR, then emits a `revalidation_attempt` plus refreshed validation artifacts.
+9. `reviewer` consumes generated-site PR, validation, visual, finding, iterator, and revalidation evidence, then emits `reviewer_gate_outcome`. Promotion requires `reviewer_gate_outcome.decision === "PASS"` and blocks when evidence is missing.
 
 ## Complexity And Randomness Policy
 

@@ -43,7 +43,15 @@ assert.equal(controller.agents.find((agent) => agent.agent_id === 'static_site')
 assert.ok(controller.abilities.some((ability) => ability.ability_id === 'datamachine/run-agent-bundle'), 'controller declares required ability contracts');
 assert.ok(controller.workflows.every((workflow) => workflow.prompt || workflow.tasks?.length), 'each workflow is ingestible by Homeboy from-spec dispatch');
 assert.deepEqual(controller.workflows.filter((workflow) => workflow.agent_id).map((workflow) => workflow.agent_id), ['store_idea', 'website_idea', 'design_store', 'design_website', 'static_store', 'static_site', 'php_transformer_iterator', 'ssi_stack_reviewer'], 'agent-backed workflows declare agent participation');
-assert.deepEqual(controller.workflows.find((workflow) => workflow.workflow_id === 'static-validation').artifacts.slice(0, 1), ['static_site_pull_request'], 'static validation declares artifact dependencies');
+assert.equal(controller.agents.find((agent) => agent.agent_id === 'design_store').metadata.bundle, 'bundles/design-agent', 'design-store uses the checked-in design bundle');
+assert.equal(controller.workflows.find((workflow) => workflow.workflow_id === 'store-idea').inputs.flow, 'store-idea-artifact-flow', 'store idea selects the artifact flow');
+assert.equal(controller.workflows.find((workflow) => workflow.workflow_id === 'website-idea').inputs.flow, 'website-idea-artifact-flow', 'website idea selects the artifact flow');
+assert.equal(controller.workflows.find((workflow) => workflow.workflow_id === 'design-store').inputs.flow, 'design-artifact-flow', 'design workflow selects the artifact flow');
+assert.equal(controller.workflows.find((workflow) => workflow.workflow_id === 'static-site').inputs.flow, 'static-site-candidate-flow', 'static workflow selects the candidate artifact flow');
+assert.equal(controller.workflows.find((workflow) => workflow.workflow_id === 'store-idea').abilities.includes('github_issue_publish'), false, 'concept artifact workflows do not publish GitHub issues');
+assert.equal(controller.workflows.find((workflow) => workflow.workflow_id === 'static-site').abilities.includes('github_pull_request_publish'), false, 'candidate artifact workflows do not publish GitHub pull requests');
+assert.deepEqual(controller.workflows.find((workflow) => workflow.workflow_id === 'static-validation').artifacts.slice(0, 1), ['static_site_candidate'], 'static validation declares candidate artifact dependencies');
+assert.deepEqual(controller.workflows.find((workflow) => workflow.workflow_id === 'static-publication').emits, ['static_site_pull_request'], 'static publication emits the generated PR artifact');
 assert.deepEqual(controller.workflows.find((workflow) => workflow.workflow_id === 'iterator').artifacts.slice(-2), ['iterator_upstream_issue', 'iterator_upstream_pull_request'], 'iterator workflow declares emitted artifacts');
 assert.equal(controller.workflows.find((workflow) => workflow.workflow_id === 'iterator').builder, undefined, 'iterator workflow does not expose backend-specific builder policy');
 assert.equal(controller.artifacts.find((artifact) => artifact.artifact_id === 'revalidation_attempt').kind, 'wp-site-generator/RevalidationAttempt/v1', 'controller declares artifact schemas');
