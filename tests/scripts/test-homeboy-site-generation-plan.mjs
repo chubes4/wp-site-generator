@@ -226,7 +226,7 @@ try {
 		assert.deepEqual(runtimeInput.tool_recorders[0].record.fields, { static_site_candidate: 'data.static_site_candidate' }, `${taskId} records StaticSiteCandidate tool output`);
 		assert.equal(runtimeInput.engine_data_outputs.static_site_candidate, 'metadata.engine_data.wpsg_packets.static_site_candidate');
 		assert.equal(config.ability_tools[0].name, 'wpsg_materialize_packet', `${taskId} exposes the model-facing tool at the Codebox workload boundary`);
-		assert.match(runtimeInput.prompt, /Do not open a pull request/, `${taskId} separates candidate generation from publication`);
+		assert.match(runtimeInput.prompt, /packet_type=static_site_candidate/, `${taskId} records a StaticSiteCandidate artifact`);
 		assert.match(runtimeInput.prompt, /Record the tier, randomness profile, randomness seed/, `${taskId} asks candidate to preserve policy metadata`);
 	}
 

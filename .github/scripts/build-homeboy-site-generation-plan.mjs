@@ -257,10 +257,10 @@ const packetAbilityTools = [
   },
 ];
 
-const conceptPacketPrompt = 'Generate one buildable concept. When the content is ready, call wpsg_materialize_packet exactly once with packet_type=concept_packet, title, body sections, lane labels, concept kind, and source provenance. Do not create GitHub issues or pull requests; Homeboy owns orchestration and GitHub publication happens only after a validated static-site candidate exists.';
-const loopDesignPrompt = 'Consume ConceptPacket {{outputs.concept_packet}} and decide one design direction. When the design is ready, call wpsg_materialize_packet exactly once with packet_type=design_packet. Preserve the concept title, body sections, lane labels, and provenance. Include palette, typography, layout direction, mood, accessibility notes, and any implementation constraints needed by the static-site candidate generator. Do not create GitHub issues or pull requests.';
-const loopCandidatePrompt = 'Consume ConceptPacket {{outputs.concept_packet}} and DesignPacket {{outputs.design_packet}}, then generate a static-site candidate file set or patch. When the candidate is ready, call wpsg_materialize_packet exactly once with packet_type=static_site_candidate, generated files, metadata, branch/title proposal, and reproduction context. Do not create a pull request; validation must run before publication.';
-const loopPublishPrompt = 'Consume StaticSiteCandidate {{outputs.static_site_candidate}} and ImportValidationResult {{outputs.import_validation_result}}, then publish exactly one static-site PR. Use the candidate files and metadata as source of truth. Render the PR body with .github/scripts/render-static-site-pr-body.mjs so the initial PR body includes the import validation summary, fallback block count, conversion finding counts, and artifact references. Do not add a separate follow-up metrics comment in the normal flow.';
+const conceptPacketPrompt = 'Generate one buildable concept. When the content is ready, call wpsg_materialize_packet exactly once with packet_type=concept_packet, title, body sections, lane labels, concept kind, and source provenance. Homeboy owns orchestration and GitHub publication happens after a validated static-site candidate exists.';
+const loopDesignPrompt = 'Consume ConceptPacket {{outputs.concept_packet}} and decide one design direction. When the design is ready, call wpsg_materialize_packet exactly once with packet_type=design_packet. Preserve the concept title, body sections, lane labels, and provenance. Include palette, typography, layout direction, mood, accessibility notes, and any implementation constraints needed by the static-site candidate generator.';
+const loopCandidatePrompt = 'Consume ConceptPacket {{outputs.concept_packet}} and DesignPacket {{outputs.design_packet}}, then generate a static-site candidate file set or patch. When the candidate is ready, call wpsg_materialize_packet exactly once with packet_type=static_site_candidate, generated files, metadata, branch/title proposal, and reproduction context. Validation runs before publication.';
+const loopPublishPrompt = 'Consume StaticSiteCandidate {{outputs.static_site_candidate}} and ImportValidationResult {{outputs.import_validation_result}}, then publish exactly one static-site PR. Use the candidate files and metadata as source of truth. Render the PR body with .github/scripts/render-static-site-pr-body.mjs so the initial PR body includes the import validation summary, fallback block count, conversion finding counts, and artifact references.';
 
 function storeIdeaTask({ id = 'store-idea-agent', flow = 'store-idea-artifact-flow', prompt = ' ', title = 'Generate store idea', lane = 'store concept lane' } = {}) {
 	const lanePolicyPrompt = policyPrompt(complexityDecision, lane);
@@ -329,7 +329,7 @@ function websiteIdeaTask({ id = 'website-idea-agent', flow = 'website-idea-artif
 }
 
 function designTask({ id, conceptPacket = '{{outputs.concept_packet}}', title, lane = 'design lane' }) {
-	const prompt = [`Consume ConceptPacket ${conceptPacket} and record one DesignPacket by calling wpsg_materialize_packet exactly once with packet_type=design_packet. Preserve source concept identity and lane metadata. Do not create GitHub issues or pull requests.`, policyPrompt(complexityDecision, lane)].join('\n\n');
+	const prompt = [`Consume ConceptPacket ${conceptPacket} and record one DesignPacket by calling wpsg_materialize_packet exactly once with packet_type=design_packet. Preserve source concept identity and lane metadata.`, policyPrompt(complexityDecision, lane)].join('\n\n');
 	return task({
 		id,
 		title,
@@ -359,7 +359,7 @@ function designTask({ id, conceptPacket = '{{outputs.concept_packet}}', title, l
 }
 
 function staticSiteCandidateTask({ id, conceptPacket = '{{outputs.concept_packet}}', designPacket = '{{outputs.design_packet}}', title, lane = 'static-site candidate lane' }) {
-	const prompt = [`Consume ConceptPacket ${conceptPacket} and DesignPacket ${designPacket}. Generate one static-site candidate and record it by calling wpsg_materialize_packet exactly once with packet_type=static_site_candidate, generated files, metadata, branch/title proposal, and reproduction context. Do not open a pull request.`, policyPrompt(complexityDecision, lane)].join('\n\n');
+	const prompt = [`Consume ConceptPacket ${conceptPacket} and DesignPacket ${designPacket}. Generate one static-site candidate and record it by calling wpsg_materialize_packet exactly once with packet_type=static_site_candidate, generated files, metadata, branch/title proposal, and reproduction context.`, policyPrompt(complexityDecision, lane)].join('\n\n');
 	return task({
 		id,
 		title,

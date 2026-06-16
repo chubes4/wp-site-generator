@@ -134,7 +134,7 @@ const controller = {
 		{
 			workflow_id: 'static-store',
 			agent_id: 'static_store',
-			prompt: 'Produce a commerce static-site candidate from a WPSG design packet. Do not publish a GitHub pull request.',
+			prompt: 'Produce a commerce static-site candidate artifact from a WPSG design packet.',
 			abilities: ['datamachine/run-agent-bundle', 'wpsg_materialize_packet'],
 			...bundleInputs('static_store', { site_kind: 'store' }),
 			...handoff({ consumes: ['design_packet'], emits: ['static_site_candidate'] }),
@@ -143,7 +143,7 @@ const controller = {
 		{
 			workflow_id: 'static-site',
 			agent_id: 'static_site',
-			prompt: 'Produce a content static-site candidate from a WPSG design packet. Do not publish a GitHub pull request.',
+			prompt: 'Produce a content static-site candidate artifact from a WPSG design packet.',
 			abilities: ['datamachine/run-agent-bundle', 'wpsg_materialize_packet'],
 			...bundleInputs('static_site', { site_kind: 'website' }),
 			...handoff({ consumes: ['design_packet'], emits: ['static_site_candidate'] }),
