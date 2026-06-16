@@ -209,6 +209,29 @@ const designPacketOutput = artifactOutput('wp-site-generator/DesignPacket/v1', '
 const staticSiteCandidateOutput = artifactOutput('wp-site-generator/StaticSiteCandidate/v1', 'StaticSiteCandidate.json');
 const importValidationResultOutput = artifactOutput('wp-site-generator/ImportValidationResult/v1', 'ImportValidationResult.json');
 
+const packetArtifactSpecs = {
+	concept_packet: {
+		type: 'ConceptPacket',
+		schema: 'wp-site-generator/ConceptPacket/v1',
+		file: 'ConceptPacket.json',
+	},
+	design_packet: {
+		type: 'DesignPacket',
+		schema: 'wp-site-generator/DesignPacket/v1',
+		file: 'DesignPacket.json',
+	},
+	static_site_candidate: {
+		type: 'StaticSiteCandidate',
+		schema: 'wp-site-generator/StaticSiteCandidate/v1',
+		file: 'StaticSiteCandidate.json',
+	},
+	import_validation_result: {
+		type: 'ImportValidationResult',
+		schema: 'wp-site-generator/ImportValidationResult/v1',
+		file: 'ImportValidationResult.json',
+	},
+};
+
 function artifactBinding(taskId, field, required = true) {
 	return {
 		task_id: taskId,
@@ -235,31 +258,40 @@ const prRecorder = [
   },
 ];
 
-function packetRecorder(packetKey) {
-  return [
-    {
-      tool: 'wpsg_materialize_packet',
-      record: {
-        engine_key: 'wpsg_packets',
-        fields: {
-          [packetKey]: `data.${packetKey}`,
-        },
-      },
-    },
-  ];
+function typedPacketArtifact(packetKey) {
+	const spec = packetArtifactSpecs[packetKey];
+	return {
+		schema: 'wp-codebox/structured-artifact/v1',
+		name: packetKey,
+		type: spec.type,
+		payload_schema: spec.schema,
+		payload: null,
+		metadata: {
+			artifact_path: `/artifacts/${spec.file}`,
+		},
+		provenance: {
+			source: 'wp-site-generator',
+		},
+	};
 }
 
-const packetAbilityTools = [
-  {
-    name: 'wpsg_materialize_packet',
-    ability: 'wp-site-generator/materialize-packet',
-    description: 'Record the generated WPSG ConceptPacket, DesignPacket, or StaticSiteCandidate. Use exactly once when the packet content is ready.',
-  },
-];
+function packetDatamachineConfig({ packetKey, ...config }) {
+	const spec = packetArtifactSpecs[packetKey];
+	return datamachineConfig({
+		...config,
+		artifactOutputs: {
+			[packetKey]: artifactOutput(spec.schema, spec.file),
+		},
+		structuredArtifacts: [typedPacketArtifact(packetKey)],
+		engineDataOutputs: {
+			[packetKey]: `outputs.typed_artifacts.${packetKey}.payload`,
+		},
+	});
+}
 
-const conceptPacketPrompt = 'Generate one buildable concept. When the content is ready, call wpsg_materialize_packet exactly once with packet_type=concept_packet, title, body sections, lane labels, concept kind, and source provenance. Homeboy owns orchestration and GitHub publication happens after a validated static-site candidate exists.';
-const loopDesignPrompt = 'Consume ConceptPacket {{outputs.concept_packet}} and decide one design direction. When the design is ready, call wpsg_materialize_packet exactly once with packet_type=design_packet. Preserve the concept title, body sections, lane labels, and provenance. Include palette, typography, layout direction, mood, accessibility notes, and any implementation constraints needed by the static-site candidate generator.';
-const loopCandidatePrompt = 'Consume ConceptPacket {{outputs.concept_packet}} and DesignPacket {{outputs.design_packet}}, then generate a static-site candidate file set or patch. When the candidate is ready, call wpsg_materialize_packet exactly once with packet_type=static_site_candidate, generated files, metadata, branch/title proposal, and reproduction context. Validation runs before publication.';
+const conceptPacketPrompt = 'Generate one buildable ConceptPacket typed artifact using schema wp-site-generator/ConceptPacket/v1 with concept_packet as the output key. Include schema_version, concept kind, title, body sections, lane labels, target lane, and source provenance. Homeboy owns orchestration and GitHub publication happens after a validated StaticSiteCandidate exists.';
+const loopDesignPrompt = 'Consume ConceptPacket {{outputs.concept_packet}} and produce one DesignPacket typed artifact using schema wp-site-generator/DesignPacket/v1 with design_packet as the output key. Preserve the concept title, body sections, lane labels, and provenance. Include palette, typography, layout direction, mood, accessibility notes, and any implementation constraints needed by the static-site candidate generator.';
+const loopCandidatePrompt = 'Consume ConceptPacket {{outputs.concept_packet}} and DesignPacket {{outputs.design_packet}}, then produce one StaticSiteCandidate typed artifact using schema wp-site-generator/StaticSiteCandidate/v1 with static_site_candidate as the output key. Include generated files, metadata, branch/title proposal, and reproduction context. Validation runs before publication.';
 const loopPublishPrompt = 'Consume StaticSiteCandidate {{outputs.static_site_candidate}} and ImportValidationResult {{outputs.import_validation_result}}, then publish exactly one static-site PR. Use the candidate files and metadata as source of truth. Render the PR body with .github/scripts/render-static-site-pr-body.mjs so the initial PR body includes the import validation summary, fallback block count, conversion finding counts, and artifact references.';
 
 function storeIdeaTask({ id = 'store-idea-agent', flow = 'store-idea-artifact-flow', prompt = ' ', title = 'Generate store idea', lane = 'store concept lane' } = {}) {
@@ -268,10 +300,11 @@ function storeIdeaTask({ id = 'store-idea-agent', flow = 'store-idea-artifact-fl
 	return task({
 		id,
 		title,
-		instructions: 'Generate one store concept and record it with wpsg_materialize_packet.',
+		instructions: 'Generate one store concept as a typed ConceptPacket artifact.',
 		inputs: complexityTaskInput,
 		expectedArtifacts: ['datamachine-transcript', 'ConceptPacket'],
-		config: datamachineConfig({
+		config: packetDatamachineConfig({
+			packetKey: 'concept_packet',
 			bundle: 'bundles/store-idea-agent',
 			agent: 'store-idea-agent',
 			pipeline: 'store-idea-artifact-pipeline',
@@ -279,17 +312,9 @@ function storeIdeaTask({ id = 'store-idea-agent', flow = 'store-idea-artifact-fl
 			prompt: [taskPrompt, lanePolicyPrompt].join('\n\n'),
 			successRequiresPr: false,
 			successCompletionOutcomes: ['concept_packet'],
-			artifactOutputs: {
-				concept_packet: conceptPacketOutput,
-			},
 			maxTurns: 6,
 			stepBudget: 8,
 			timeBudgetMs: 180000,
-			abilityTools: packetAbilityTools,
-			toolRecorders: packetRecorder('concept_packet'),
-			engineDataOutputs: {
-				concept_packet: 'metadata.engine_data.wpsg_packets.concept_packet',
-			},
 			transcriptArtifactName: `${id}-transcript-${runId}`,
 			complexityPolicy: complexityDecision,
 		}),
@@ -303,10 +328,11 @@ function websiteIdeaTask({ id = 'website-idea-agent', flow = 'website-idea-artif
 	return task({
 		id,
 		title,
-		instructions: 'Generate one website concept and record it with wpsg_materialize_packet.',
+		instructions: 'Generate one website concept as a typed ConceptPacket artifact.',
 		inputs: complexityTaskInput,
 		expectedArtifacts: ['datamachine-transcript', 'ConceptPacket'],
-		config: datamachineConfig({
+		config: packetDatamachineConfig({
+			packetKey: 'concept_packet',
 			bundle: 'bundles/website-idea-agent',
 			agent: 'website-idea-agent',
 			pipeline: 'website-idea-artifact-pipeline',
@@ -314,14 +340,6 @@ function websiteIdeaTask({ id = 'website-idea-agent', flow = 'website-idea-artif
 			prompt: [taskPrompt, lanePolicyPrompt].join('\n\n'),
 			successRequiresPr: false,
 			successCompletionOutcomes: ['concept_packet'],
-			artifactOutputs: {
-				concept_packet: conceptPacketOutput,
-			},
-			abilityTools: packetAbilityTools,
-			toolRecorders: packetRecorder('concept_packet'),
-			engineDataOutputs: {
-				concept_packet: 'metadata.engine_data.wpsg_packets.concept_packet',
-			},
 			transcriptArtifactName: `${id}-transcript-${runId}`,
 			complexityPolicy: complexityDecision,
 		}),
@@ -329,14 +347,15 @@ function websiteIdeaTask({ id = 'website-idea-agent', flow = 'website-idea-artif
 }
 
 function designTask({ id, conceptPacket = '{{outputs.concept_packet}}', title, lane = 'design lane' }) {
-	const prompt = [`Consume ConceptPacket ${conceptPacket} and record one DesignPacket by calling wpsg_materialize_packet exactly once with packet_type=design_packet. Preserve source concept identity and lane metadata.`, policyPrompt(complexityDecision, lane)].join('\n\n');
+	const prompt = [`Consume ConceptPacket ${conceptPacket} and produce one DesignPacket typed artifact using schema wp-site-generator/DesignPacket/v1 with design_packet as the output key. Preserve source concept identity and lane metadata.`, policyPrompt(complexityDecision, lane)].join('\n\n');
 	return task({
 		id,
 		title,
 		instructions: prompt,
 		inputs: complexityTaskInput,
 		expectedArtifacts: ['datamachine-transcript', 'DesignPacket'],
-		config: datamachineConfig({
+		config: packetDatamachineConfig({
+			packetKey: 'design_packet',
 			bundle: 'bundles/design-agent',
 			agent: 'design-agent',
 			pipeline: 'design-artifact-pipeline',
@@ -344,14 +363,6 @@ function designTask({ id, conceptPacket = '{{outputs.concept_packet}}', title, l
 			prompt,
 			successRequiresPr: false,
 			successCompletionOutcomes: ['design_packet'],
-			artifactOutputs: {
-				design_packet: designPacketOutput,
-			},
-			abilityTools: packetAbilityTools,
-			toolRecorders: packetRecorder('design_packet'),
-			engineDataOutputs: {
-				design_packet: 'metadata.engine_data.wpsg_packets.design_packet',
-			},
 			transcriptArtifactName: `${id}-transcript-${runId}`,
 			complexityPolicy: complexityDecision,
 		}),
@@ -359,14 +370,15 @@ function designTask({ id, conceptPacket = '{{outputs.concept_packet}}', title, l
 }
 
 function staticSiteCandidateTask({ id, conceptPacket = '{{outputs.concept_packet}}', designPacket = '{{outputs.design_packet}}', title, lane = 'static-site candidate lane' }) {
-	const prompt = [`Consume ConceptPacket ${conceptPacket} and DesignPacket ${designPacket}. Generate one static-site candidate and record it by calling wpsg_materialize_packet exactly once with packet_type=static_site_candidate, generated files, metadata, branch/title proposal, and reproduction context.`, policyPrompt(complexityDecision, lane)].join('\n\n');
+	const prompt = [`Consume ConceptPacket ${conceptPacket} and DesignPacket ${designPacket}. Produce one StaticSiteCandidate typed artifact using schema wp-site-generator/StaticSiteCandidate/v1 with static_site_candidate as the output key. Include generated files, metadata, branch/title proposal, and reproduction context.`, policyPrompt(complexityDecision, lane)].join('\n\n');
 	return task({
 		id,
 		title,
 		instructions: prompt,
 		inputs: complexityTaskInput,
 		expectedArtifacts: ['datamachine-transcript', 'StaticSiteCandidate'],
-		config: datamachineConfig({
+		config: packetDatamachineConfig({
+			packetKey: 'static_site_candidate',
 			bundle: 'bundles/static-site-agent',
 			agent: 'static-site-agent',
 			pipeline: 'static-site-candidate-pipeline',
@@ -374,14 +386,6 @@ function staticSiteCandidateTask({ id, conceptPacket = '{{outputs.concept_packet
 			prompt,
 			successRequiresPr: false,
 			successCompletionOutcomes: ['static_site_candidate'],
-			artifactOutputs: {
-				static_site_candidate: staticSiteCandidateOutput,
-			},
-			abilityTools: packetAbilityTools,
-			toolRecorders: packetRecorder('static_site_candidate'),
-			engineDataOutputs: {
-				static_site_candidate: 'metadata.engine_data.wpsg_packets.static_site_candidate',
-			},
 			transcriptArtifactName: `${id}-transcript-${runId}`,
 			complexityPolicy: complexityDecision,
 		}),
@@ -516,7 +520,8 @@ const loopPlan = {
 			instructions: loopDesignPrompt,
 			inputs: complexityTaskInput,
 			expectedArtifacts: ['datamachine-transcript', 'DesignPacket'],
-			config: datamachineConfig({
+			config: packetDatamachineConfig({
+				packetKey: 'design_packet',
 				bundle: 'bundles/design-agent',
 				agent: 'design-agent',
 				pipeline: 'design-artifact-pipeline',
@@ -524,14 +529,6 @@ const loopPlan = {
 				prompt: [loopDesignPrompt, policyPrompt(complexityDecision, 'store design lane')].join('\n\n'),
 				successRequiresPr: false,
 				successCompletionOutcomes: ['design_packet'],
-				artifactOutputs: {
-					design_packet: designPacketOutput,
-				},
-				abilityTools: packetAbilityTools,
-				toolRecorders: packetRecorder('design_packet'),
-				engineDataOutputs: {
-					design_packet: 'metadata.engine_data.wpsg_packets.design_packet',
-				},
 				transcriptArtifactName: `design-agent-store-transcript-${runId}`,
 				complexityPolicy: complexityDecision,
 			}),
@@ -542,7 +539,8 @@ const loopPlan = {
 			instructions: loopDesignPrompt,
 			inputs: complexityTaskInput,
 			expectedArtifacts: ['datamachine-transcript', 'DesignPacket'],
-			config: datamachineConfig({
+			config: packetDatamachineConfig({
+				packetKey: 'design_packet',
 				bundle: 'bundles/design-agent',
 				agent: 'design-agent',
 				pipeline: 'design-artifact-pipeline',
@@ -550,14 +548,6 @@ const loopPlan = {
 				prompt: [loopDesignPrompt, policyPrompt(complexityDecision, 'website design lane')].join('\n\n'),
 				successRequiresPr: false,
 				successCompletionOutcomes: ['design_packet'],
-				artifactOutputs: {
-					design_packet: designPacketOutput,
-				},
-				abilityTools: packetAbilityTools,
-				toolRecorders: packetRecorder('design_packet'),
-				engineDataOutputs: {
-					design_packet: 'metadata.engine_data.wpsg_packets.design_packet',
-				},
 				transcriptArtifactName: `design-agent-website-transcript-${runId}`,
 				complexityPolicy: complexityDecision,
 			}),
