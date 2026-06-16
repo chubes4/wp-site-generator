@@ -75,7 +75,10 @@ try {
 		[
 			'concept-to-design:concept_packet',
 			'design-to-static:design_packet',
-			'static-to-validation:static_site_pull_request',
+			'static-to-validation:static_site_candidate',
+			'validation-to-publication:import_validation_result',
+			'publication-to-revalidation:static_site_pull_request',
+			'publication-to-reviewer:static_site_pull_request',
 			'validation-to-findings:static_validation_run',
 			'visual-to-findings:visual_parity_artifact',
 			'findings-to-iterator-groups:finding_group',
@@ -110,6 +113,7 @@ try {
 			'static-store',
 			'static-site',
 			'static-validation',
+			'static-publication',
 			'finding-packets',
 			'iterator',
 			'revalidation',
@@ -121,7 +125,13 @@ try {
 	assert.deepEqual(workflows['design-store'].consumes, ['concept_packet'], 'design-store consumes concept packets explicitly');
 	assert.deepEqual(workflows['design-store'].emits, ['design_packet'], 'design-store emits design packets explicitly');
 	assert.deepEqual(workflows['static-site'].consumes, ['design_packet'], 'static generation consumes design packets explicitly');
-	assert.deepEqual(workflows['static-validation'].consumes, ['static_site_pull_request'], 'static validation waits for the generated PR artifact');
+	assert.equal(workflows['store-idea'].inputs.flow, 'store-idea-artifact-flow', 'store concept generation selects the artifact flow');
+	assert.equal(workflows['static-site'].inputs.flow, 'static-site-candidate-flow', 'static generation selects the candidate artifact flow');
+	assert.equal(workflows['store-idea'].abilities.includes('github_issue_publish'), false, 'concept generation does not publish GitHub issues');
+	assert.equal(workflows['static-site'].abilities.includes('github_pull_request_publish'), false, 'candidate generation does not publish GitHub pull requests');
+	assert.deepEqual(workflows['static-validation'].consumes, ['static_site_candidate'], 'static validation waits for the candidate artifact');
+	assert.deepEqual(workflows['static-publication'].consumes, ['static_site_candidate', 'import_validation_result', 'visual_parity_artifact'], 'publication waits for validated candidate evidence');
+	assert.deepEqual(workflows['static-publication'].emits, ['static_site_pull_request'], 'publication emits the generated PR artifact');
 	assert.deepEqual(workflows['finding-packets'].consumes, ['import_validation_result', 'static_validation_run', 'visual_parity_artifact'], 'finding packets consume validation and visual evidence');
 	assert.deepEqual(workflows.iterator.consumes, ['finding_group'], 'iterator workflow consumes grouped findings');
 	assert.deepEqual(workflows.iterator.fan_out.group_by, ['owner_repo', 'root_cause', 'group_id'], 'iterator fan-out is grouped by owner/root cause/group id');
@@ -216,7 +226,7 @@ try {
 		assert.deepEqual(runtimeInput.tool_recorders[0].record.fields, { static_site_candidate: 'data.static_site_candidate' }, `${taskId} records StaticSiteCandidate tool output`);
 		assert.equal(runtimeInput.engine_data_outputs.static_site_candidate, 'metadata.engine_data.wpsg_packets.static_site_candidate');
 		assert.equal(config.ability_tools[0].name, 'wpsg_materialize_packet', `${taskId} exposes the model-facing tool at the Codebox workload boundary`);
-		assert.match(runtimeInput.prompt, /Do not open a pull request/, `${taskId} separates candidate generation from publication`);
+		assert.match(runtimeInput.prompt, /packet_type=static_site_candidate/, `${taskId} records a StaticSiteCandidate artifact`);
 		assert.match(runtimeInput.prompt, /Record the tier, randomness profile, randomness seed/, `${taskId} asks candidate to preserve policy metadata`);
 	}
 

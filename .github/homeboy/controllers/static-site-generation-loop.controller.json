@@ -26,6 +26,7 @@
       "metadata": {
         "bundle": "bundles/store-idea-agent",
         "slug": "store-idea-agent",
+        "flow": "store-idea-artifact-flow",
         "emits": [
           "concept_packet"
         ]
@@ -41,6 +42,7 @@
       "metadata": {
         "bundle": "bundles/website-idea-agent",
         "slug": "website-idea-agent",
+        "flow": "website-idea-artifact-flow",
         "emits": [
           "concept_packet"
         ]
@@ -48,14 +50,15 @@
     },
     {
       "agent_id": "design_store",
-      "role": "design-store-agent",
-      "instructions": "Run the design-store-agent bundle for the WPSG SSI loop when Homeboy selects this workflow.",
+      "role": "design-agent",
+      "instructions": "Run the design-agent bundle for the WPSG SSI loop when Homeboy selects this workflow.",
       "abilities": [
         "datamachine/run-agent-bundle"
       ],
       "metadata": {
-        "bundle": "bundles/design-store-agent",
-        "slug": "design-store-agent",
+        "bundle": "bundles/design-agent",
+        "slug": "design-agent",
+        "flow": "design-artifact-flow",
         "requires": [
           "concept_packet"
         ],
@@ -66,14 +69,15 @@
     },
     {
       "agent_id": "design_website",
-      "role": "design-website-agent",
-      "instructions": "Run the design-website-agent bundle for the WPSG SSI loop when Homeboy selects this workflow.",
+      "role": "design-agent",
+      "instructions": "Run the design-agent bundle for the WPSG SSI loop when Homeboy selects this workflow.",
       "abilities": [
         "datamachine/run-agent-bundle"
       ],
       "metadata": {
-        "bundle": "bundles/design-website-agent",
-        "slug": "design-website-agent",
+        "bundle": "bundles/design-agent",
+        "slug": "design-agent",
+        "flow": "design-artifact-flow",
         "requires": [
           "concept_packet"
         ],
@@ -84,21 +88,20 @@
     },
     {
       "agent_id": "static_store",
-      "role": "static-store-agent",
-      "instructions": "Run the static-store-agent bundle for the WPSG SSI loop when Homeboy selects this workflow.",
+      "role": "static-site-agent",
+      "instructions": "Run the static-site-agent bundle for the WPSG SSI loop when Homeboy selects this workflow.",
       "abilities": [
         "datamachine/run-agent-bundle"
       ],
       "metadata": {
-        "bundle": "bundles/static-store-agent",
-        "slug": "static-store-agent",
+        "bundle": "bundles/static-site-agent",
+        "slug": "static-site-agent",
+        "flow": "static-site-candidate-flow",
         "requires": [
           "design_packet"
         ],
         "emits": [
-          "static_site_candidate",
-          "import_validation_result",
-          "static_site_pull_request"
+          "static_site_candidate"
         ]
       }
     },
@@ -112,13 +115,12 @@
       "metadata": {
         "bundle": "bundles/static-site-agent",
         "slug": "static-site-agent",
+        "flow": "static-site-candidate-flow",
         "requires": [
           "design_packet"
         ],
         "emits": [
-          "static_site_candidate",
-          "import_validation_result",
-          "static_site_pull_request"
+          "static_site_candidate"
         ]
       }
     },
@@ -186,9 +188,13 @@
       "prompt": "Produce a commerce concept packet for the WPSG static-site generation loop.",
       "abilities": [
         "datamachine/run-agent-bundle",
-        "github_issue_publish",
         "wpsg_materialize_packet"
       ],
+      "inputs": {
+        "source": "bundles/store-idea-agent",
+        "flow": "store-idea-artifact-flow",
+        "wait_for_completion": true
+      },
       "consumes": [],
       "emits": [
         "concept_packet"
@@ -203,9 +209,13 @@
       "prompt": "Produce a content-site concept packet for the WPSG static-site generation loop.",
       "abilities": [
         "datamachine/run-agent-bundle",
-        "github_issue_publish",
         "wpsg_materialize_packet"
       ],
+      "inputs": {
+        "source": "bundles/website-idea-agent",
+        "flow": "website-idea-artifact-flow",
+        "wait_for_completion": true
+      },
       "consumes": [],
       "emits": [
         "concept_packet"
@@ -222,6 +232,12 @@
         "datamachine/run-agent-bundle",
         "wpsg_materialize_packet"
       ],
+      "inputs": {
+        "source": "bundles/design-agent",
+        "flow": "design-artifact-flow",
+        "wait_for_completion": true,
+        "site_kind": "store"
+      },
       "consumes": [
         "concept_packet"
       ],
@@ -241,6 +257,12 @@
         "datamachine/run-agent-bundle",
         "wpsg_materialize_packet"
       ],
+      "inputs": {
+        "source": "bundles/design-agent",
+        "flow": "design-artifact-flow",
+        "wait_for_completion": true,
+        "site_kind": "website"
+      },
       "consumes": [
         "concept_packet"
       ],
@@ -255,25 +277,26 @@
     {
       "workflow_id": "static-store",
       "agent_id": "static_store",
-      "prompt": "Produce a commerce static-site candidate and pull request from a WPSG design packet.",
+      "prompt": "Produce a commerce static-site candidate artifact from a WPSG design packet.",
       "abilities": [
         "datamachine/run-agent-bundle",
-        "github_pull_request_publish",
         "wpsg_materialize_packet"
       ],
+      "inputs": {
+        "source": "bundles/static-site-agent",
+        "flow": "static-site-candidate-flow",
+        "wait_for_completion": true,
+        "site_kind": "store"
+      },
       "consumes": [
         "design_packet"
       ],
       "emits": [
-        "static_site_candidate",
-        "import_validation_result",
-        "static_site_pull_request"
+        "static_site_candidate"
       ],
       "artifacts": [
         "design_packet",
-        "static_site_candidate",
-        "import_validation_result",
-        "static_site_pull_request"
+        "static_site_candidate"
       ],
       "dependencies": [
         "wp-site-generator"
@@ -282,25 +305,26 @@
     {
       "workflow_id": "static-site",
       "agent_id": "static_site",
-      "prompt": "Produce a content static-site candidate and pull request from a WPSG design packet.",
+      "prompt": "Produce a content static-site candidate artifact from a WPSG design packet.",
       "abilities": [
         "datamachine/run-agent-bundle",
-        "github_pull_request_publish",
         "wpsg_materialize_packet"
       ],
+      "inputs": {
+        "source": "bundles/static-site-agent",
+        "flow": "static-site-candidate-flow",
+        "wait_for_completion": true,
+        "site_kind": "website"
+      },
       "consumes": [
         "design_packet"
       ],
       "emits": [
-        "static_site_candidate",
-        "import_validation_result",
-        "static_site_pull_request"
+        "static_site_candidate"
       ],
       "artifacts": [
         "design_packet",
-        "static_site_candidate",
-        "import_validation_result",
-        "static_site_pull_request"
+        "static_site_candidate"
       ],
       "dependencies": [
         "wp-site-generator"
@@ -309,10 +333,10 @@
     {
       "workflow_id": "static-validation",
       "tasks": [
-        "Validate a static-site pull request through SSI import, static checks, and visual parity."
+        "Validate a StaticSiteCandidate artifact through SSI import, static checks, and visual parity before any generated-site pull request is published."
       ],
       "consumes": [
-        "static_site_pull_request"
+        "static_site_candidate"
       ],
       "emits": [
         "static_validation_run",
@@ -320,7 +344,7 @@
         "visual_parity_artifact"
       ],
       "artifacts": [
-        "static_site_pull_request",
+        "static_site_candidate",
         "static_validation_run",
         "import_validation_result",
         "visual_parity_artifact"
@@ -331,6 +355,42 @@
         "html-to-blocks-converter",
         "block-format-bridge",
         "block-artifact-compiler"
+      ],
+      "gates": [
+        "fallback_blocks",
+        "conversion_findings",
+        "visual_parity"
+      ],
+      "metrics": [
+        "fallback_blocks",
+        "conversion_findings",
+        "visual_parity"
+      ]
+    },
+    {
+      "workflow_id": "static-publication",
+      "tasks": [
+        "Publish one generated-site pull request from a validated StaticSiteCandidate and its ImportValidationResult artifact."
+      ],
+      "abilities": [
+        "github_pull_request_publish"
+      ],
+      "consumes": [
+        "static_site_candidate",
+        "import_validation_result",
+        "visual_parity_artifact"
+      ],
+      "emits": [
+        "static_site_pull_request"
+      ],
+      "artifacts": [
+        "static_site_candidate",
+        "import_validation_result",
+        "visual_parity_artifact",
+        "static_site_pull_request"
+      ],
+      "dependencies": [
+        "wp-site-generator"
       ],
       "gates": [
         "fallback_blocks",
@@ -538,6 +598,39 @@
       ],
       "to": [
         "static-validation"
+      ],
+      "artifact": "static_site_candidate",
+      "required": true
+    },
+    {
+      "edge_id": "validation-to-publication",
+      "from": [
+        "static-validation"
+      ],
+      "to": [
+        "static-publication"
+      ],
+      "artifact": "import_validation_result",
+      "required": true
+    },
+    {
+      "edge_id": "publication-to-revalidation",
+      "from": [
+        "static-publication"
+      ],
+      "to": [
+        "revalidation"
+      ],
+      "artifact": "static_site_pull_request",
+      "required": true
+    },
+    {
+      "edge_id": "publication-to-reviewer",
+      "from": [
+        "static-publication"
+      ],
+      "to": [
+        "reviewer"
       ],
       "artifact": "static_site_pull_request",
       "required": true
