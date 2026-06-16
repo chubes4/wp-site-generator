@@ -9,7 +9,6 @@ define( 'ABSPATH', sys_get_temp_dir() . '/wpsg-ability-lifecycle/' );
 
 $GLOBALS['wpsg_lifecycle_test'] = (object) array(
 	'actions'                 => array(),
-	'filters'                 => array(),
 	'doing'                   => array(),
 	'did'                     => array(),
 	'abilities'               => array(),
@@ -39,18 +38,6 @@ class WP_Abilities_Registry {
 
 function add_action( string $hook, callable $callback ): void {
 	$GLOBALS['wpsg_lifecycle_test']->actions[ $hook ][] = $callback;
-}
-
-function add_filter( string $hook, callable $callback ): void {
-	$GLOBALS['wpsg_lifecycle_test']->filters[ $hook ][] = $callback;
-}
-
-function apply_filters( string $hook, $value ) {
-	foreach ( $GLOBALS['wpsg_lifecycle_test']->filters[ $hook ] ?? array() as $callback ) {
-		$value = $callback( $value );
-	}
-
-	return $value;
 }
 
 function do_action( string $hook ): void {
@@ -125,46 +112,11 @@ class WPSG_Lifecycle_Test_Ability {
 	}
 }
 
-function wpsg_lifecycle_resolve_ability_tools( array $modes ): array {
-	$registry = WP_Abilities_Registry::get_instance();
-	$tools    = array();
-
-	foreach ( apply_filters( 'datamachine_ability_tool_projections', array() ) as $tool_name => $declaration ) {
-		$ability_slug = is_array( $declaration ) && is_string( $declaration['ability'] ?? null ) ? $declaration['ability'] : '';
-		if ( '' === $ability_slug || ! $registry->is_registered( $ability_slug ) ) {
-			continue;
-		}
-
-		$tool_modes = is_array( $declaration['modes'] ?? null ) ? $declaration['modes'] : array( 'chat' );
-		if ( empty( array_intersect( $tool_modes, $modes ) ) ) {
-			continue;
-		}
-
-		$ability            = $registry->get_registered( $ability_slug );
-		$tools[ $tool_name ] = array_merge(
-			array(
-				'ability'           => $ability_slug,
-				'execution_ability' => $ability_slug,
-				'label'             => $ability->get_label(),
-				'description'       => $ability->get_description(),
-				'parameters'        => $ability->get_input_schema(),
-			),
-			$declaration
-		);
-	}
-
-	return $tools;
-}
-
 require dirname( __DIR__, 2 ) . '/wp-site-generator.php';
 
 assert_wpsg_lifecycle(
 	'plugin hooks packet materializer ability to wp_abilities_api_init',
 	isset( $GLOBALS['wpsg_lifecycle_test']->actions['wp_abilities_api_init'] )
-);
-assert_wpsg_lifecycle(
-	'plugin registers packet materializer projection filter before Data Machine helper exists',
-	isset( $GLOBALS['wpsg_lifecycle_test']->filters['datamachine_ability_tool_projections'] )
 );
 
 wpsg_register_packet_materializer_ability();
@@ -179,11 +131,9 @@ assert_wpsg_lifecycle(
 );
 do_action( 'init' );
 
-$early_tools = apply_filters( 'datamachine_ability_tool_projections', array() );
 assert_wpsg_lifecycle(
-	'init before wp_abilities_api_init keeps Data Machine projection available',
-	isset( $early_tools['wpsg_materialize_packet'] )
-		&& 'wp-site-generator/materialize-packet' === $early_tools['wpsg_materialize_packet']['ability']
+	'init before wp_abilities_api_init does not register the WPSG ability early',
+	empty( $GLOBALS['wpsg_lifecycle_test']->abilities )
 );
 
 do_action( 'wp_abilities_api_init' );
@@ -196,21 +146,11 @@ assert_wpsg_lifecycle(
 	'valid lifecycle registration calls wp_register_ability exactly once',
 	1 === $GLOBALS['wpsg_lifecycle_test']->valid_register_calls
 );
-
-$tools = apply_filters( 'datamachine_ability_tool_projections', array() );
+$registered_ability = $GLOBALS['wpsg_lifecycle_test']->abilities['wp-site-generator/materialize-packet'];
+$input_schema       = $registered_ability->get_input_schema();
 assert_wpsg_lifecycle(
-	'Data Machine projection exposes wpsg_materialize_packet in pipeline mode',
-	isset( $tools['wpsg_materialize_packet'] )
-		&& 'wp-site-generator/materialize-packet' === $tools['wpsg_materialize_packet']['ability']
-		&& array( 'pipeline' ) === $tools['wpsg_materialize_packet']['modes']
-);
-
-$resolved_tools = wpsg_lifecycle_resolve_ability_tools( array( 'pipeline' ) );
-assert_wpsg_lifecycle(
-	'AbilityToolSource resolution can expose wpsg_materialize_packet after ability registration',
-	isset( $resolved_tools['wpsg_materialize_packet'] )
-		&& 'wp-site-generator/materialize-packet' === $resolved_tools['wpsg_materialize_packet']['execution_ability']
-		&& isset( $resolved_tools['wpsg_materialize_packet']['parameters']['properties']['packet_type'] )
+	'WPSG ability exposes the packet materializer schema',
+	isset( $input_schema['properties']['packet_type'] )
 );
 
 echo "WPSG packet materializer ability lifecycle smoke passed.\n";

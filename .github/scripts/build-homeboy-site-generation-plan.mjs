@@ -87,6 +87,7 @@ function datamachineConfig({
 	stepBudget,
 	timeBudgetMs,
 	flowStepPatches = [],
+	abilityTools = [],
 	toolRecorders = [],
   engineDataOutputs = {},
   transcriptArtifactName,
@@ -125,6 +126,7 @@ function datamachineConfig({
       ability: 'datamachine/run-agent-bundle',
       input: runtimeTaskInput,
     },
+    ability_tools: abilityTools,
     structured_artifacts: structuredArtifacts,
   };
 
@@ -247,6 +249,14 @@ function packetRecorder(packetKey) {
   ];
 }
 
+const packetAbilityTools = [
+  {
+    name: 'wpsg_materialize_packet',
+    ability: 'wp-site-generator/materialize-packet',
+    description: 'Record the generated WPSG ConceptPacket, DesignPacket, or StaticSiteCandidate. Use exactly once when the packet content is ready.',
+  },
+];
+
 const conceptPacketPrompt = 'Generate one buildable concept. When the content is ready, call wpsg_materialize_packet exactly once with packet_type=concept_packet, title, body sections, lane labels, concept kind, and source provenance. Do not create GitHub issues or pull requests; Homeboy owns orchestration and GitHub publication happens only after a validated static-site candidate exists.';
 const loopDesignPrompt = 'Consume ConceptPacket {{outputs.concept_packet}} and decide one design direction. When the design is ready, call wpsg_materialize_packet exactly once with packet_type=design_packet. Preserve the concept title, body sections, lane labels, and provenance. Include palette, typography, layout direction, mood, accessibility notes, and any implementation constraints needed by the static-site candidate generator. Do not create GitHub issues or pull requests.';
 const loopCandidatePrompt = 'Consume ConceptPacket {{outputs.concept_packet}} and DesignPacket {{outputs.design_packet}}, then generate a static-site candidate file set or patch. When the candidate is ready, call wpsg_materialize_packet exactly once with packet_type=static_site_candidate, generated files, metadata, branch/title proposal, and reproduction context. Do not create a pull request; validation must run before publication.';
@@ -275,6 +285,7 @@ function storeIdeaTask({ id = 'store-idea-agent', flow = 'store-idea-artifact-fl
 			maxTurns: 6,
 			stepBudget: 8,
 			timeBudgetMs: 180000,
+			abilityTools: packetAbilityTools,
 			toolRecorders: packetRecorder('concept_packet'),
 			engineDataOutputs: {
 				concept_packet: 'metadata.engine_data.wpsg_packets.concept_packet',
@@ -306,6 +317,7 @@ function websiteIdeaTask({ id = 'website-idea-agent', flow = 'website-idea-artif
 			artifactOutputs: {
 				concept_packet: conceptPacketOutput,
 			},
+			abilityTools: packetAbilityTools,
 			toolRecorders: packetRecorder('concept_packet'),
 			engineDataOutputs: {
 				concept_packet: 'metadata.engine_data.wpsg_packets.concept_packet',
@@ -335,6 +347,7 @@ function designTask({ id, conceptPacket = '{{outputs.concept_packet}}', title, l
 			artifactOutputs: {
 				design_packet: designPacketOutput,
 			},
+			abilityTools: packetAbilityTools,
 			toolRecorders: packetRecorder('design_packet'),
 			engineDataOutputs: {
 				design_packet: 'metadata.engine_data.wpsg_packets.design_packet',
@@ -364,6 +377,7 @@ function staticSiteCandidateTask({ id, conceptPacket = '{{outputs.concept_packet
 			artifactOutputs: {
 				static_site_candidate: staticSiteCandidateOutput,
 			},
+			abilityTools: packetAbilityTools,
 			toolRecorders: packetRecorder('static_site_candidate'),
 			engineDataOutputs: {
 				static_site_candidate: 'metadata.engine_data.wpsg_packets.static_site_candidate',
@@ -513,6 +527,7 @@ const loopPlan = {
 				artifactOutputs: {
 					design_packet: designPacketOutput,
 				},
+				abilityTools: packetAbilityTools,
 				toolRecorders: packetRecorder('design_packet'),
 				engineDataOutputs: {
 					design_packet: 'metadata.engine_data.wpsg_packets.design_packet',
@@ -538,6 +553,7 @@ const loopPlan = {
 				artifactOutputs: {
 					design_packet: designPacketOutput,
 				},
+				abilityTools: packetAbilityTools,
 				toolRecorders: packetRecorder('design_packet'),
 				engineDataOutputs: {
 					design_packet: 'metadata.engine_data.wpsg_packets.design_packet',
