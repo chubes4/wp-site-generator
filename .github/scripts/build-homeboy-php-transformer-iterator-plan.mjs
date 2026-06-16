@@ -7,20 +7,13 @@ const args = parseArgs(process.argv.slice(2));
 const root = process.env.GITHUB_WORKSPACE || process.cwd();
 const runId = process.env.GITHUB_RUN_ID || String(Date.now());
 const repository = process.env.GITHUB_REPOSITORY || process.env.SOURCE_REPO || 'chubes4/wp-site-generator';
-const model = process.env.HOMEBOY_WP_CODEBOX_MODEL || '';
-const provider = process.env.HOMEBOY_WP_CODEBOX_PROVIDER || '';
-const providerPluginPaths = splitList(process.env.HOMEBOY_WP_CODEBOX_PROVIDER_PLUGIN_PATHS || '');
-const secretEnv = splitList(process.env.HOMEBOY_WP_CODEBOX_SECRET_ENV || '');
-const runtimeEnv = parseJsonObject(process.env.HOMEBOY_WP_CODEBOX_RUNTIME_ENV || '');
-const runtimeConfigMounts = parseJsonArray(process.env.HOMEBOY_WP_CODEBOX_RUNTIME_CONFIG_MOUNTS || '');
-const runtimeStateMounts = parseJsonArray(process.env.HOMEBOY_WP_CODEBOX_RUNTIME_STATE_MOUNTS || '');
 const workflowPath = args.get('--workflow') || process.env.DATAMACHINE_WORKFLOW_PATH || '.ci/datamachine-iterator-workflow.json';
 const outputPath = args.get('--output') || process.env.HOMEBOY_ITERATOR_PLAN_PATH || path.join(root, '.ci', 'php-transformer-iterator.agent-task-plan.json');
 const artifactsRoot = process.env.HOMEBOY_ARTIFACT_ROOT || '.ci/homeboy-agent-task-artifacts';
 const sourcePr = process.env.SOURCE_PR || args.get('--source-pr') || '';
 const sourceHeadSha = process.env.SOURCE_HEAD_SHA || args.get('--source-head-sha') || '';
 const validationRunId = process.env.VALIDATION_RUN_ID || args.get('--validation-run-id') || '';
-const wpCodeboxBin = process.env.HOMEBOY_WP_CODEBOX_BIN || '';
+const runtimeOverrides = readRuntimeOverrides(process.env);
 
 const ci = (name) => `.ci/${name}`;
 const runtimeBundlePath = '/workspace/wp-site-generator/bundles/php-transformer-iterator-agent';
@@ -65,33 +58,7 @@ const executorConfig = {
 	task_timeout_seconds: 900,
 };
 
-if (provider) {
-	executorConfig.provider = provider;
-	runtimeTaskInput.provider = provider;
-}
-if (model) {
-	executorConfig.model = model;
-	runtimeTaskInput.model = model;
-}
-if (providerPluginPaths.length > 0) {
-	executorConfig.provider_plugin_paths = providerPluginPaths;
-}
-if (secretEnv.length > 0) {
-	executorConfig.secret_env = secretEnv;
-}
-if (runtimeEnv) {
-	executorConfig.runtime_env = runtimeEnv;
-}
-if (runtimeConfigMounts) {
-	executorConfig.runtime_config_mounts = runtimeConfigMounts;
-}
-if (runtimeStateMounts) {
-	executorConfig.runtime_state_mounts = runtimeStateMounts;
-}
-
-if (wpCodeboxBin) {
-	executorConfig.wp_codebox_bin = wpCodeboxBin;
-}
+applyRuntimeOverrides(executorConfig, runtimeTaskInput);
 
 const plan = {
 	schema: 'homeboy/agent-task-plan/v1',
@@ -126,6 +93,7 @@ const plan = {
 	metadata: {
 		source: 'wp-site-generator php-transformer-iterator native adapter',
 		generated_by: '.github/scripts/build-homeboy-php-transformer-iterator-plan.mjs',
+		runtime_input_contract: runtimeOverrides.source,
 		workflow_path: workflowPath,
 		source_repo: repository,
 		source_pr: sourcePr,
@@ -181,4 +149,49 @@ function parseJsonArray(value) {
 		throw new Error('Expected JSON array');
 	}
 	return parsed;
+}
+
+function readRuntimeOverrides(env) {
+	return {
+		source: 'homeboy-agent-runtime-env',
+		runtimeId: env.HOMEBOY_AGENT_RUNTIME || 'wp-codebox',
+		runtimeBin: env.HOMEBOY_AGENT_RUNTIME_BIN || '',
+		provider: env.HOMEBOY_AGENT_RUNTIME_PROVIDER || '',
+		model: env.HOMEBOY_AGENT_RUNTIME_MODEL || '',
+		providerPluginPaths: splitList(env.HOMEBOY_AGENT_RUNTIME_PROVIDER_PLUGIN_PATHS || ''),
+		secretEnv: splitList(env.HOMEBOY_AGENT_RUNTIME_SECRET_ENV || ''),
+		runtimeEnv: parseJsonObject(env.HOMEBOY_AGENT_RUNTIME_ENV || ''),
+		runtimeConfigMounts: parseJsonArray(env.HOMEBOY_AGENT_RUNTIME_CONFIG_MOUNTS || ''),
+		runtimeStateMounts: parseJsonArray(env.HOMEBOY_AGENT_RUNTIME_STATE_MOUNTS || ''),
+	};
+}
+
+function applyRuntimeOverrides(config, runtimeTaskInput) {
+	if (runtimeOverrides.provider) {
+		config.provider = runtimeOverrides.provider;
+		runtimeTaskInput.provider = runtimeOverrides.provider;
+	}
+	if (runtimeOverrides.model) {
+		config.model = runtimeOverrides.model;
+		runtimeTaskInput.model = runtimeOverrides.model;
+	}
+	if (runtimeOverrides.providerPluginPaths.length > 0) {
+		config.provider_plugin_paths = runtimeOverrides.providerPluginPaths;
+	}
+	if (runtimeOverrides.secretEnv.length > 0) {
+		config.secret_env = runtimeOverrides.secretEnv;
+	}
+	if (runtimeOverrides.runtimeEnv) {
+		config.runtime_env = runtimeOverrides.runtimeEnv;
+	}
+	if (runtimeOverrides.runtimeConfigMounts) {
+		config.runtime_config_mounts = runtimeOverrides.runtimeConfigMounts;
+	}
+	if (runtimeOverrides.runtimeStateMounts) {
+		config.runtime_state_mounts = runtimeOverrides.runtimeStateMounts;
+	}
+	config.runtime_id = runtimeOverrides.runtimeId;
+	if (runtimeOverrides.runtimeBin) {
+		config.runtime_bin = runtimeOverrides.runtimeBin;
+	}
 }

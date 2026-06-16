@@ -110,7 +110,7 @@ assert.equal(planResult.status, 0, planResult.stderr || planResult.stdout);
 const plan = JSON.parse(await readFile(planPath, 'utf8'));
 assert.equal(plan.schema, 'homeboy/agent-task-plan/v1', 'native iterator adapter emits a Homeboy plan');
 assert.equal(plan.tasks[0].executor.config.runtime_task.ability, 'datamachine/run-agent-bundle', 'iterator runs through a WP Codebox runtime task');
-assert.equal(plan.tasks[0].executor.config.wp_codebox_bin, undefined, 'iterator plan defers WP Codebox binary selection to the runner by default');
+assert.equal(plan.tasks[0].executor.config.runtime_bin, undefined, 'iterator plan defers runtime binary selection to the runner by default');
 assert.equal(plan.tasks[0].executor.model, undefined, 'iterator plan defers executor model selection to the runner by default');
 assert.equal(plan.tasks[0].executor.config.provider, undefined, 'iterator plan defers provider selection to the runner by default');
 assert.equal(plan.tasks[0].executor.config.model, undefined, 'iterator plan defers config model selection to the runner by default');
@@ -127,6 +127,7 @@ assert.equal(plan.tasks[0].executor.config.runtime_task.input.wait_for_completio
 assert.match(plan.tasks[0].executor.config.runtime_task.input.artifacts, /^\.ci\/homeboy-agent-task-artifacts\//, 'iterator uses a repo-relative artifact directory');
 assert.deepEqual(plan.tasks[0].executor.config.runtime_task.input.success_completion_outcomes, ['pull_request_path'], 'native iterator keeps PR-first completion gate');
 assert.equal(plan.tasks[0].inputs.source_pr, '456', 'source PR metadata flows into native plan');
+assert.equal(plan.metadata.runtime_input_contract, 'homeboy-agent-runtime-env', 'iterator plan records the Homeboy agent runtime env contract');
 
 const explicitIteratorPlanPath = path.join(tempDir, 'iterator-plan-codebox.json');
 const explicitIteratorResult = spawnSync(
@@ -138,13 +139,13 @@ const explicitIteratorResult = spawnSync(
 		env: {
 			...process.env,
 			GITHUB_RUN_ID: '516',
-			HOMEBOY_WP_CODEBOX_BIN: '/runner/wp-codebox/packages/cli/dist/index.js',
+			HOMEBOY_AGENT_RUNTIME_BIN: '/runner/wp-codebox/packages/cli/dist/index.js',
 		},
 	},
 );
 assert.equal(explicitIteratorResult.status, 0, explicitIteratorResult.stderr || explicitIteratorResult.stdout);
 const explicitIteratorPlan = JSON.parse(await readFile(explicitIteratorPlanPath, 'utf8'));
-assert.equal(explicitIteratorPlan.tasks[0].executor.config.wp_codebox_bin, '/runner/wp-codebox/packages/cli/dist/index.js', 'iterator plan preserves explicit runner WP Codebox path');
+assert.equal(explicitIteratorPlan.tasks[0].executor.config.runtime_bin, '/runner/wp-codebox/packages/cli/dist/index.js', 'iterator plan preserves explicit runtime path');
 
 const explicitProviderIteratorPlanPath = path.join(tempDir, 'iterator-plan-provider.json');
 const explicitProviderIteratorResult = spawnSync(
@@ -156,13 +157,13 @@ const explicitProviderIteratorResult = spawnSync(
 		env: {
 			...process.env,
 			GITHUB_RUN_ID: '517',
-			HOMEBOY_WP_CODEBOX_PROVIDER: 'opencode',
-			HOMEBOY_WP_CODEBOX_MODEL: 'opencode-go/kimi-k2.6',
-			HOMEBOY_WP_CODEBOX_PROVIDER_PLUGIN_PATHS: '/runner/ai-provider-for-opencode-current',
-			HOMEBOY_WP_CODEBOX_SECRET_ENV: 'OPENCODE_API_KEY,GITHUB_TOKEN',
-			HOMEBOY_WP_CODEBOX_RUNTIME_ENV: JSON.stringify({ XDG_CONFIG_HOME: '/runtime/config', XDG_STATE_HOME: '/runtime/state' }),
-			HOMEBOY_WP_CODEBOX_RUNTIME_CONFIG_MOUNTS: JSON.stringify([{ source: '/runner/config', target: '/runtime/config', mode: 'readonly' }]),
-			HOMEBOY_WP_CODEBOX_RUNTIME_STATE_MOUNTS: JSON.stringify([{ source: '/runner/state', target: '/runtime/state', mode: 'readonly' }]),
+			HOMEBOY_AGENT_RUNTIME_PROVIDER: 'opencode',
+			HOMEBOY_AGENT_RUNTIME_MODEL: 'opencode-go/kimi-k2.6',
+			HOMEBOY_AGENT_RUNTIME_PROVIDER_PLUGIN_PATHS: '/runner/ai-provider-for-opencode-current',
+			HOMEBOY_AGENT_RUNTIME_SECRET_ENV: 'OPENCODE_API_KEY,GITHUB_TOKEN',
+			HOMEBOY_AGENT_RUNTIME_ENV: JSON.stringify({ XDG_CONFIG_HOME: '/runtime/config', XDG_STATE_HOME: '/runtime/state' }),
+			HOMEBOY_AGENT_RUNTIME_CONFIG_MOUNTS: JSON.stringify([{ source: '/runner/config', target: '/runtime/config', mode: 'readonly' }]),
+			HOMEBOY_AGENT_RUNTIME_STATE_MOUNTS: JSON.stringify([{ source: '/runner/state', target: '/runtime/state', mode: 'readonly' }]),
 		},
 	},
 );
@@ -209,5 +210,10 @@ assert.equal(dispatch.payload.inputs.openai_model, 'gpt-5.5', 'dispatch adapter 
 const validationWorkflow = await readFile(path.join(repoRoot, '.github/workflows/static-site-validation.yml'), 'utf8');
 assert.match(validationWorkflow, /build-static-validation-settings\.mjs/, 'Actions validation uses shared Homeboy settings adapter');
 assert.match(validationWorkflow, /build-static-preview-blueprint\.mjs/, 'Actions validation uses shared preview adapter');
+
+for (const workflowPath of ['.github/workflows/php-transformer-iterator.yml', '.github/workflows/php-transformer-iterator-smoke.yml', '.github/workflows/ssi-stack-reviewer.yml']) {
+	const workflow = await readFile(path.join(repoRoot, workflowPath), 'utf8');
+	assert.doesNotMatch(workflow, /agent_runtime:/, `${workflowPath} leaves runtime selection to reusable Agent CI`);
+}
 
 console.log('SSI native loop adapter contract passed');
