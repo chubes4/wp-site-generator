@@ -42,6 +42,22 @@ const abilityIds = [
 	'wpsg_materialize_packet',
 ];
 
+const artifactFlow = [
+	{ edge_id: 'concept-to-design', from: ['store-idea', 'website-idea'], to: ['design-store', 'design-website'], artifact: 'concept_packet', required: true },
+	{ edge_id: 'design-to-static', from: ['design-store', 'design-website'], to: ['static-store', 'static-site'], artifact: 'design_packet', required: true },
+	{ edge_id: 'static-to-validation', from: ['static-store', 'static-site'], to: ['static-validation'], artifact: 'static_site_pull_request', required: true },
+	{ edge_id: 'validation-to-findings', from: ['static-validation'], to: ['finding-packets'], artifact: 'static_validation_run', required: true },
+	{ edge_id: 'visual-to-findings', from: ['static-validation'], to: ['finding-packets'], artifact: 'visual_parity_artifact', required: true },
+	{ edge_id: 'findings-to-iterator-groups', from: ['finding-packets'], to: ['iterator'], artifact: 'finding_group', required: true, fan_out: 'per_finding_group' },
+	{ edge_id: 'iterator-to-revalidation', from: ['iterator'], to: ['revalidation'], artifact: 'iterator_upstream_pull_request', required: true },
+	{ edge_id: 'revalidation-to-reviewer', from: ['revalidation'], to: ['reviewer'], artifact: 'revalidation_attempt', required: true },
+	{ edge_id: 'iterator-evidence-to-reviewer', from: ['iterator'], to: ['reviewer'], artifact: 'iterator_upstream_pull_request', required: true },
+];
+
+function handoff({ consumes = [], emits = [] } = {}) {
+	return { consumes, emits, artifacts: [...consumes, ...emits] };
+}
+
 const controller = {
 	schema: 'homeboy/agent-task-loop-spec/v1',
 	loop_id: 'wp-site-generator/static-site-generation-loop',
@@ -73,35 +89,35 @@ const controller = {
 			agent_id: 'store_idea',
 			prompt: 'Produce a commerce concept packet for the WPSG static-site generation loop.',
 			abilities: ['datamachine/run-agent-bundle', 'github_issue_publish', 'wpsg_materialize_packet'],
-			artifacts: ['concept_packet'],
+			...handoff({ emits: ['concept_packet'] }),
 		},
 		{
 			workflow_id: 'website-idea',
 			agent_id: 'website_idea',
 			prompt: 'Produce a content-site concept packet for the WPSG static-site generation loop.',
 			abilities: ['datamachine/run-agent-bundle', 'github_issue_publish', 'wpsg_materialize_packet'],
-			artifacts: ['concept_packet'],
+			...handoff({ emits: ['concept_packet'] }),
 		},
 		{
 			workflow_id: 'design-store',
 			agent_id: 'design_store',
 			prompt: 'Produce a design packet from a commerce concept packet for the WPSG static-site generation loop.',
 			abilities: ['datamachine/run-agent-bundle', 'wpsg_materialize_packet'],
-			artifacts: ['concept_packet', 'design_packet'],
+			...handoff({ consumes: ['concept_packet'], emits: ['design_packet'] }),
 		},
 		{
 			workflow_id: 'design-website',
 			agent_id: 'design_website',
 			prompt: 'Produce a design packet from a content-site concept packet for the WPSG static-site generation loop.',
 			abilities: ['datamachine/run-agent-bundle', 'wpsg_materialize_packet'],
-			artifacts: ['concept_packet', 'design_packet'],
+			...handoff({ consumes: ['concept_packet'], emits: ['design_packet'] }),
 		},
 		{
 			workflow_id: 'static-store',
 			agent_id: 'static_store',
 			prompt: 'Produce a commerce static-site candidate and pull request from a WPSG design packet.',
 			abilities: ['datamachine/run-agent-bundle', 'github_pull_request_publish', 'wpsg_materialize_packet'],
-			artifacts: ['design_packet', 'static_site_candidate', 'import_validation_result', 'static_site_pull_request'],
+			...handoff({ consumes: ['design_packet'], emits: ['static_site_candidate', 'import_validation_result', 'static_site_pull_request'] }),
 			dependencies: ['wp-site-generator'],
 		},
 		{
@@ -109,13 +125,13 @@ const controller = {
 			agent_id: 'static_site',
 			prompt: 'Produce a content static-site candidate and pull request from a WPSG design packet.',
 			abilities: ['datamachine/run-agent-bundle', 'github_pull_request_publish', 'wpsg_materialize_packet'],
-			artifacts: ['design_packet', 'static_site_candidate', 'import_validation_result', 'static_site_pull_request'],
+			...handoff({ consumes: ['design_packet'], emits: ['static_site_candidate', 'import_validation_result', 'static_site_pull_request'] }),
 			dependencies: ['wp-site-generator'],
 		},
 		{
 			workflow_id: 'static-validation',
 			tasks: ['Validate a static-site pull request through SSI import, static checks, and visual parity.'],
-			artifacts: ['static_site_pull_request', 'static_validation_run', 'import_validation_result', 'visual_parity_artifact'],
+			...handoff({ consumes: ['static_site_pull_request'], emits: ['static_validation_run', 'import_validation_result', 'visual_parity_artifact'] }),
 			dependencies: ['wp-site-generator', 'static-site-importer', 'html-to-blocks-converter', 'block-format-bridge', 'block-artifact-compiler'],
 			gates: ['fallback_blocks', 'conversion_findings', 'visual_parity'],
 			metrics: ['fallback_blocks', 'conversion_findings', 'visual_parity'],
@@ -123,7 +139,7 @@ const controller = {
 		{
 			workflow_id: 'finding-packets',
 			tasks: ['Group SSI and BFB diagnostic artifacts into finding packets for upstream routing.'],
-			artifacts: ['import_validation_result', 'static_validation_run', 'visual_parity_artifact', 'finding_packet_set', 'finding_group'],
+			...handoff({ consumes: ['import_validation_result', 'static_validation_run', 'visual_parity_artifact'], emits: ['finding_packet_set', 'finding_group'] }),
 			dependencies: ['wp-site-generator', 'static-site-importer', 'html-to-blocks-converter', 'block-format-bridge', 'block-artifact-compiler'],
 		},
 		{
@@ -131,13 +147,19 @@ const controller = {
 			agent_id: 'php_transformer_iterator',
 			prompt: 'Route each finding group to the owning SSI stack repository and open the focused upstream issue or pull request described by the packet evidence.',
 			abilities: ['datamachine/run-agent-bundle', 'github_issue_publish', 'github_pull_request_publish', 'comment_github_pull_request'],
-			artifacts: ['finding_group', 'iterator_upstream_issue', 'iterator_upstream_pull_request'],
+			...handoff({ consumes: ['finding_group'], emits: ['iterator_upstream_issue', 'iterator_upstream_pull_request'] }),
+			fan_out: {
+				mode: 'per_artifact',
+				artifact: 'finding_group',
+				group_by: ['owner_repo', 'root_cause', 'group_id'],
+				requires_non_empty: true,
+			},
 			dependencies: ['static-site-importer', 'html-to-blocks-converter', 'block-format-bridge', 'block-artifact-compiler'],
 		},
 		{
 			workflow_id: 'revalidation',
 			tasks: ['Revalidate the generated-site pull request after an upstream iterator pull request is available.'],
-			artifacts: ['static_site_pull_request', 'iterator_upstream_pull_request', 'revalidation_attempt', 'static_validation_run', 'import_validation_result', 'visual_parity_artifact', 'finding_packet_set'],
+			...handoff({ consumes: ['static_site_pull_request', 'iterator_upstream_pull_request'], emits: ['revalidation_attempt', 'static_validation_run', 'import_validation_result', 'visual_parity_artifact', 'finding_packet_set'] }),
 			dependencies: ['wp-site-generator', 'static-site-importer', 'html-to-blocks-converter', 'block-format-bridge', 'block-artifact-compiler'],
 			gates: ['fallback_blocks', 'conversion_findings', 'visual_parity'],
 			metrics: ['fallback_blocks', 'conversion_findings', 'visual_parity'],
@@ -147,11 +169,23 @@ const controller = {
 			agent_id: 'ssi_stack_reviewer',
 			prompt: 'Review the upstream iterator action with the static validation and visual parity evidence before promotion.',
 			abilities: ['datamachine/run-agent-bundle', 'comment_github_pull_request'],
-			artifacts: ['static_site_pull_request', 'static_validation_run', 'visual_parity_artifact', 'finding_packet_set', 'iterator_upstream_pull_request', 'reviewer_gate_outcome'],
+			...handoff({ consumes: ['static_site_pull_request', 'static_validation_run', 'visual_parity_artifact', 'finding_packet_set', 'iterator_upstream_pull_request', 'revalidation_attempt'], emits: ['reviewer_gate_outcome'] }),
 			dependencies: ['wp-site-generator', 'static-site-importer', 'html-to-blocks-converter', 'block-format-bridge', 'block-artifact-compiler'],
 			gates: ['reviewer_evidence'],
+			promotion_gate: {
+				requires: ['reviewer_gate_outcome.decision'],
+				passing_decisions: ['PASS'],
+				blocks_on_missing_evidence: true,
+			},
 		},
 	],
+	artifact_flow: artifactFlow,
+	iterator_groups: {
+		artifact: 'finding_group',
+		group_by: ['owner_repo', 'root_cause', 'group_id'],
+		fan_out_workflow: 'iterator',
+		join_workflows: ['revalidation', 'reviewer'],
+	},
 	artifacts: Object.entries(artifactSchemas).map(([artifact_id, schema]) => ({
 		artifact_id,
 		kind: schema,
