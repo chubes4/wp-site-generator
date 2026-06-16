@@ -47,7 +47,10 @@ const controller = {
 			'github_issue_publish',
 			'github_pull_request_publish',
 			'comment_github_pull_request',
-			'wpsg_materialize_packet',
+			'wp-site-generator/materialize-packet',
+		],
+		ability_tools: [
+			{ name: 'wpsg_materialize_packet', ability: 'wp-site-generator/materialize-packet' },
 		],
 	},
 	workflows: {

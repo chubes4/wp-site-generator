@@ -8,14 +8,9 @@
 defined( 'ABSPATH' ) || exit;
 
 add_action( 'wp_abilities_api_init', 'wpsg_register_packet_materializer_ability' );
-add_action( 'init', 'wpsg_register_packet_materializer_tool' );
 
 if ( function_exists( 'doing_action' ) && doing_action( 'wp_abilities_api_init' ) ) {
 	wpsg_register_packet_materializer_ability();
-}
-
-if ( ( function_exists( 'doing_action' ) && doing_action( 'init' ) ) || ( function_exists( 'did_action' ) && did_action( 'init' ) ) ) {
-	wpsg_register_packet_materializer_tool();
 }
 
 function wpsg_register_packet_materializer_ability(): void {
@@ -68,28 +63,6 @@ function wpsg_packet_materializer_ability_is_registered(): bool {
 	}
 
 	return false;
-}
-
-function wpsg_register_packet_materializer_tool(): void {
-	static $registered = false;
-
-	if ( $registered ) {
-		return;
-	}
-
-	if ( ! function_exists( 'datamachine_register_ability_tool' ) ) {
-		return;
-	}
-
-	$registered = datamachine_register_ability_tool(
-		'wpsg_materialize_packet',
-		array(
-			'ability'     => 'wp-site-generator/materialize-packet',
-			'modes'       => array( 'pipeline' ),
-			'description' => 'Record the generated WPSG ConceptPacket, DesignPacket, or StaticSiteCandidate. Use exactly once when the packet content is ready.',
-			'parameters'  => wpsg_packet_materializer_schema(),
-		)
-	);
 }
 
 function wpsg_packet_materializer_schema(): array {

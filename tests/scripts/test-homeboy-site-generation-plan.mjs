@@ -69,28 +69,15 @@ try {
 	const controllerSpec = JSON.parse(await readFile(path.join(repoRoot, '.github/homeboy/controllers/static-site-generation-loop.controller.json'), 'utf8'));
 	assert.equal(controllerSpec.schema, 'homeboy/controller-spec/v1');
 	assert.equal(controllerSpec.controller_id, 'wp-site-generator/static-site-generation-loop');
-	assert.ok(controllerSpec.phases.find((phase) => phase.id === 'revalidation').emits.includes('revalidation_attempt'), 'controller checkpoints revalidation attempts');
+	assert.ok(controllerSpec.workflows.revalidation.emits.includes('revalidation_attempt'), 'controller checkpoints revalidation attempts');
+	assert.ok(controllerSpec.workflows.iterator.requires.includes('finding_group'), 'iterator workflow fans out per grouped finding');
 	assert.deepEqual(
-		controllerSpec.phases.map((phase) => phase.id),
-		[
-			'generation',
-			'import_validation',
-			'publish_pr',
-			'static_validation',
-			'finding_packets',
-			'iterator_subloops',
-			'revalidation',
-			'reviewer_gate',
-		],
-		'controller records the full static-site generation loop order'
-	);
-	assert.ok(controllerSpec.phases.find((phase) => phase.id === 'iterator_subloops').requires.includes('finding_group'), 'iterator phase fans out per grouped finding');
-	assert.equal(controllerSpec.phases.find((phase) => phase.id === 'revalidation').max_attempts, 3, 'revalidation attempts are bounded');
-	assert.deepEqual(
-		controllerSpec.phases.find((phase) => phase.id === 'revalidation').gates,
+		controllerSpec.workflows.revalidation.gates,
 		['fallback_blocks', 'conversion_findings', 'visual_parity'],
 		'revalidation reruns all quality gates'
 	);
+	assert.equal(controllerSpec.tools.abilities.includes('wp-site-generator/materialize-packet'), true, 'controller records the WPSG WordPress ability contract');
+	assert.deepEqual(controllerSpec.tools.ability_tools, [{ name: 'wpsg_materialize_packet', ability: 'wp-site-generator/materialize-packet' }], 'controller maps the WPSG ability to a model-facing Codebox tool');
 
 	for (const taskId of ['design-store-packet', 'design-website-packet']) {
 		assert.equal(
@@ -142,6 +129,11 @@ try {
 		assert.deepEqual(runtimeInput.tool_recorders[0].record.fields, { design_packet: 'data.design_packet' }, `${taskId} records DesignPacket tool output`);
 		assert.equal(runtimeInput.artifact_outputs.design_packet.schema, 'wp-site-generator/DesignPacket/v1');
 		assert.equal(runtimeInput.engine_data_outputs.design_packet, 'metadata.engine_data.wpsg_packets.design_packet');
+		assert.deepEqual(config.ability_tools, [{
+			name: 'wpsg_materialize_packet',
+			ability: 'wp-site-generator/materialize-packet',
+			description: 'Record the generated WPSG ConceptPacket, DesignPacket, or StaticSiteCandidate. Use exactly once when the packet content is ready.',
+		}], `${taskId} maps the WPSG ability through the Codebox workload adapter`);
 	}
 
 	for (const taskId of ['store-idea-agent', 'website-idea-agent']) {
@@ -150,6 +142,7 @@ try {
 		assert.match(runtimeInput.prompt, /wpsg_materialize_packet/, `${taskId} records concept through deterministic WPSG tool`);
 		assert.deepEqual(runtimeInput.tool_recorders[0].record.fields, { concept_packet: 'data.concept_packet' }, `${taskId} records ConceptPacket tool output`);
 		assert.equal(runtimeInput.engine_data_outputs.concept_packet, 'metadata.engine_data.wpsg_packets.concept_packet');
+		assert.equal(config.ability_tools[0].ability, 'wp-site-generator/materialize-packet', `${taskId} uses Codebox ability_tools for packet materialization`);
 	}
 
 	for (const taskId of ['generate-store-candidate', 'generate-website-candidate']) {
@@ -160,6 +153,7 @@ try {
 		assert.equal(runtimeInput.artifact_outputs.static_site_candidate.schema, 'wp-site-generator/StaticSiteCandidate/v1');
 		assert.deepEqual(runtimeInput.tool_recorders[0].record.fields, { static_site_candidate: 'data.static_site_candidate' }, `${taskId} records StaticSiteCandidate tool output`);
 		assert.equal(runtimeInput.engine_data_outputs.static_site_candidate, 'metadata.engine_data.wpsg_packets.static_site_candidate');
+		assert.equal(config.ability_tools[0].name, 'wpsg_materialize_packet', `${taskId} exposes the model-facing tool at the Codebox workload boundary`);
 		assert.match(runtimeInput.prompt, /Do not open a pull request/, `${taskId} separates candidate generation from publication`);
 		assert.match(runtimeInput.prompt, /Record the tier, randomness profile, randomness seed/, `${taskId} asks candidate to preserve policy metadata`);
 	}
@@ -193,7 +187,8 @@ try {
   const pluginShim = await readFile(path.join(repoRoot, 'wp-site-generator.php'), 'utf8');
   assert.match(pluginShim, /Plugin Name:\s*WP Site Generator CI Fixture/, 'repo exposes a plugin header for Homeboy bench component mounting');
   assert.match(pluginShim, /wp-site-generator\/materialize-packet/, 'plugin registers the WPSG packet materializer ability');
-  assert.match(pluginShim, /wpsg_materialize_packet/, 'plugin projects the packet materializer as an agent tool');
+  assert.doesNotMatch(pluginShim, /datamachine_ability_tool_projections/, 'WPSG plugin does not know Data Machine projection internals');
+  assert.doesNotMatch(pluginShim, /datamachine_register_ability_tool/, 'WPSG plugin does not call Data Machine ability-tool helpers');
 
 	const policy = loadPolicy(path.join(repoRoot, '.github/site-generation-complexity-policy.json'));
 	const stableDecision = evaluateComplexityPolicy({
