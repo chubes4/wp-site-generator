@@ -211,4 +211,9 @@ const validationWorkflow = await readFile(path.join(repoRoot, '.github/workflows
 assert.match(validationWorkflow, /build-static-validation-settings\.mjs/, 'Actions validation uses shared Homeboy settings adapter');
 assert.match(validationWorkflow, /build-static-preview-blueprint\.mjs/, 'Actions validation uses shared preview adapter');
 
+for (const workflowPath of ['.github/workflows/php-transformer-iterator.yml', '.github/workflows/php-transformer-iterator-smoke.yml', '.github/workflows/ssi-stack-reviewer.yml']) {
+	const workflow = await readFile(path.join(repoRoot, workflowPath), 'utf8');
+	assert.doesNotMatch(workflow, /agent_runtime:/, `${workflowPath} leaves runtime selection to reusable Agent CI`);
+}
+
 console.log('SSI native loop adapter contract passed');

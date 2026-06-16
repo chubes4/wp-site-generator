@@ -42,7 +42,7 @@ Homeboy maps these declarations to durable controller policy/actions through `ag
 
 ## Runtime Input Migration
 
-WPSG keeps its controller and domain specs backend-agnostic. Agent runtime selection uses Homeboy runtime inputs such as `agent_runtime` in reusable workflows and `HOMEBOY_AGENT_RUNTIME_*` environment variables in generated local plans. WPSG does not expose WP Codebox-specific agent runtime fields in its controller/domain specs.
+WPSG keeps its controller and domain specs backend-agnostic. Reusable Homeboy Agent CI selects the WP Codebox runtime behind its own contract, so WPSG callers pass domain inputs only. Generated local plans use clean `HOMEBOY_AGENT_RUNTIME_*` environment variables that compile to `runtime_*` config fields. WPSG does not expose WP Codebox-specific agent runtime fields in its controller/domain specs.
 
 Generated plans record `metadata.runtime_input_contract: "homeboy-agent-runtime-env"` to make the seam visible. Keep runtime selection behind the Homeboy runtime contract; do not add backend-specific fields to `.github/homeboy/controllers/static-site-generation-loop.controller.json`.
 
