@@ -13,7 +13,7 @@ const artifactsRoot = process.env.HOMEBOY_ARTIFACT_ROOT || '.ci/homeboy-agent-ta
 const sourcePr = process.env.SOURCE_PR || args.get('--source-pr') || '';
 const sourceHeadSha = process.env.SOURCE_HEAD_SHA || args.get('--source-head-sha') || '';
 const validationRunId = process.env.VALIDATION_RUN_ID || args.get('--validation-run-id') || '';
-const runtimeOverrides = readLegacyRuntimeOverrides(process.env);
+const runtimeOverrides = readRuntimeOverrides(process.env);
 
 const ci = (name) => `.ci/${name}`;
 const runtimeBundlePath = '/workspace/wp-site-generator/bundles/php-transformer-iterator-agent';
@@ -93,7 +93,7 @@ const plan = {
 	metadata: {
 		source: 'wp-site-generator php-transformer-iterator native adapter',
 		generated_by: '.github/scripts/build-homeboy-php-transformer-iterator-plan.mjs',
-		runtime_input_migration: runtimeOverrides.source,
+		runtime_input_contract: runtimeOverrides.source,
 		workflow_path: workflowPath,
 		source_repo: repository,
 		source_pr: sourcePr,
@@ -151,17 +151,18 @@ function parseJsonArray(value) {
 	return parsed;
 }
 
-function readLegacyRuntimeOverrides(env) {
+function readRuntimeOverrides(env) {
 	return {
-		source: 'homeboy-wp-codebox-env-compat',
-		wpCodeboxBin: env.HOMEBOY_WP_CODEBOX_BIN || '',
-		provider: env.HOMEBOY_WP_CODEBOX_PROVIDER || '',
-		model: env.HOMEBOY_WP_CODEBOX_MODEL || '',
-		providerPluginPaths: splitList(env.HOMEBOY_WP_CODEBOX_PROVIDER_PLUGIN_PATHS || ''),
-		secretEnv: splitList(env.HOMEBOY_WP_CODEBOX_SECRET_ENV || ''),
-		runtimeEnv: parseJsonObject(env.HOMEBOY_WP_CODEBOX_RUNTIME_ENV || ''),
-		runtimeConfigMounts: parseJsonArray(env.HOMEBOY_WP_CODEBOX_RUNTIME_CONFIG_MOUNTS || ''),
-		runtimeStateMounts: parseJsonArray(env.HOMEBOY_WP_CODEBOX_RUNTIME_STATE_MOUNTS || ''),
+		source: 'homeboy-agent-runtime-env',
+		runtimeId: env.HOMEBOY_AGENT_RUNTIME || 'wp-codebox',
+		runtimeBin: env.HOMEBOY_AGENT_RUNTIME_BIN || '',
+		provider: env.HOMEBOY_AGENT_RUNTIME_PROVIDER || '',
+		model: env.HOMEBOY_AGENT_RUNTIME_MODEL || '',
+		providerPluginPaths: splitList(env.HOMEBOY_AGENT_RUNTIME_PROVIDER_PLUGIN_PATHS || ''),
+		secretEnv: splitList(env.HOMEBOY_AGENT_RUNTIME_SECRET_ENV || ''),
+		runtimeEnv: parseJsonObject(env.HOMEBOY_AGENT_RUNTIME_ENV || ''),
+		runtimeConfigMounts: parseJsonArray(env.HOMEBOY_AGENT_RUNTIME_CONFIG_MOUNTS || ''),
+		runtimeStateMounts: parseJsonArray(env.HOMEBOY_AGENT_RUNTIME_STATE_MOUNTS || ''),
 	};
 }
 
@@ -189,7 +190,8 @@ function applyRuntimeOverrides(config, runtimeTaskInput) {
 	if (runtimeOverrides.runtimeStateMounts) {
 		config.runtime_state_mounts = runtimeOverrides.runtimeStateMounts;
 	}
-	if (runtimeOverrides.wpCodeboxBin) {
-		config.wp_codebox_bin = runtimeOverrides.wpCodeboxBin;
+	config.runtime_id = runtimeOverrides.runtimeId;
+	if (runtimeOverrides.runtimeBin) {
+		config.runtime_bin = runtimeOverrides.runtimeBin;
 	}
 }

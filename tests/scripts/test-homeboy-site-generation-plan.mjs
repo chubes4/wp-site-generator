@@ -57,7 +57,7 @@ try {
 	assert.deepEqual(plan.metadata.artifact_stages, ['ConceptPacket', 'DesignPacket', 'StaticSiteCandidate', 'ImportValidationResult', 'StaticSitePullRequest']);
 	assert.equal(plan.metadata.controller_spec, '.github/homeboy/controllers/static-site-generation-loop.controller.json');
 	assert.equal(plan.metadata.controller_contract, 'wp-site-generator/static-site-generation-loop');
-	assert.equal(plan.metadata.runtime_input_migration, 'homeboy-wp-codebox-env-compat', 'plan records legacy runtime env compatibility boundary');
+	assert.equal(plan.metadata.runtime_input_contract, 'homeboy-agent-runtime-env', 'plan records the Homeboy agent runtime env contract');
 	assert.equal(plan.metadata.complexity_policy.schema, 'wp-site-generator/site-generation-complexity-policy/v1');
 	assert.equal(plan.metadata.complexity_policy.current_tier, 'foundation');
 	assert.equal(plan.metadata.complexity_policy.selected_tier, 'foundation');
@@ -363,12 +363,12 @@ try {
 			...process.env,
 			GITHUB_RUN_ID: '411',
 			HOMEBOY_PLAN_PATH: explicitCodeboxPlanPath,
-			HOMEBOY_WP_CODEBOX_BIN: explicitCodeboxPath,
+			HOMEBOY_AGENT_RUNTIME_BIN: explicitCodeboxPath,
 		},
 	});
 	assert.equal(explicitCodeboxResult.status, 0, explicitCodeboxResult.stderr || explicitCodeboxResult.stdout);
   const explicitCodeboxPlan = JSON.parse(await readFile(explicitCodeboxPlanPath, 'utf8'));
-  assert.equal(explicitCodeboxPlan.tasks[0].executor.config.wp_codebox_bin, explicitCodeboxPath, 'explicit runner WP Codebox path is preserved');
+  assert.equal(explicitCodeboxPlan.tasks[0].executor.config.runtime_bin, explicitCodeboxPath, 'explicit runtime binary path is preserved');
 
   const explicitProviderPlanPath = path.join(tempDir, 'plan-provider.json');
   const explicitProviderResult = spawnSync(process.execPath, ['.github/scripts/build-homeboy-site-generation-plan.mjs'], {
@@ -378,13 +378,13 @@ try {
       ...process.env,
       GITHUB_RUN_ID: '412',
       HOMEBOY_PLAN_PATH: explicitProviderPlanPath,
-      HOMEBOY_WP_CODEBOX_PROVIDER: 'opencode',
-      HOMEBOY_WP_CODEBOX_MODEL: 'opencode-go/kimi-k2.6',
-      HOMEBOY_WP_CODEBOX_PROVIDER_PLUGIN_PATHS: '/runner/ai-provider-for-opencode-current',
-      HOMEBOY_WP_CODEBOX_SECRET_ENV: 'OPENCODE_API_KEY,GITHUB_TOKEN',
-      HOMEBOY_WP_CODEBOX_RUNTIME_ENV: JSON.stringify({ XDG_CONFIG_HOME: '/runtime/config', XDG_STATE_HOME: '/runtime/state' }),
-      HOMEBOY_WP_CODEBOX_RUNTIME_CONFIG_MOUNTS: JSON.stringify([{ source: '/runner/config', target: '/runtime/config', mode: 'readonly' }]),
-      HOMEBOY_WP_CODEBOX_RUNTIME_STATE_MOUNTS: JSON.stringify([{ source: '/runner/state', target: '/runtime/state', mode: 'readonly' }]),
+      HOMEBOY_AGENT_RUNTIME_PROVIDER: 'opencode',
+      HOMEBOY_AGENT_RUNTIME_MODEL: 'opencode-go/kimi-k2.6',
+      HOMEBOY_AGENT_RUNTIME_PROVIDER_PLUGIN_PATHS: '/runner/ai-provider-for-opencode-current',
+      HOMEBOY_AGENT_RUNTIME_SECRET_ENV: 'OPENCODE_API_KEY,GITHUB_TOKEN',
+      HOMEBOY_AGENT_RUNTIME_ENV: JSON.stringify({ XDG_CONFIG_HOME: '/runtime/config', XDG_STATE_HOME: '/runtime/state' }),
+      HOMEBOY_AGENT_RUNTIME_CONFIG_MOUNTS: JSON.stringify([{ source: '/runner/config', target: '/runtime/config', mode: 'readonly' }]),
+      HOMEBOY_AGENT_RUNTIME_STATE_MOUNTS: JSON.stringify([{ source: '/runner/state', target: '/runtime/state', mode: 'readonly' }]),
     },
   });
   assert.equal(explicitProviderResult.status, 0, explicitProviderResult.stderr || explicitProviderResult.stdout);

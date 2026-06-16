@@ -20,7 +20,7 @@ const groupKey = manualTaskKind ? `site-generator-${manualTaskKind}` : 'site-gen
 
 const ci = (name) => `.ci/${name}`;
 const artifactsRoot = process.env.HOMEBOY_ARTIFACT_ROOT || '.ci/homeboy-agent-task-artifacts';
-const runtimeOverrides = readLegacyRuntimeOverrides(process.env);
+const runtimeOverrides = readRuntimeOverrides(process.env);
 const policyInputs = resolvePolicyInputs({ root });
 const complexityPolicy = loadPolicy(policyInputs.policyPath);
 const qualitySignals = loadQualitySignals(policyInputs.qualitySignalsPath);
@@ -63,17 +63,18 @@ function parseJsonArray(value) {
   return parsed;
 }
 
-function readLegacyRuntimeOverrides(env) {
+function readRuntimeOverrides(env) {
   return {
-    source: 'homeboy-wp-codebox-env-compat',
-    wpCodeboxBin: env.HOMEBOY_WP_CODEBOX_BIN || '',
-    provider: env.HOMEBOY_WP_CODEBOX_PROVIDER || '',
-    model: env.HOMEBOY_WP_CODEBOX_MODEL || '',
-    providerPluginPaths: splitList(env.HOMEBOY_WP_CODEBOX_PROVIDER_PLUGIN_PATHS || ''),
-    secretEnv: splitList(env.HOMEBOY_WP_CODEBOX_SECRET_ENV || ''),
-    runtimeEnv: parseJsonObject(env.HOMEBOY_WP_CODEBOX_RUNTIME_ENV || ''),
-    runtimeConfigMounts: parseJsonArray(env.HOMEBOY_WP_CODEBOX_RUNTIME_CONFIG_MOUNTS || ''),
-    runtimeStateMounts: parseJsonArray(env.HOMEBOY_WP_CODEBOX_RUNTIME_STATE_MOUNTS || ''),
+    source: 'homeboy-agent-runtime-env',
+    runtimeId: env.HOMEBOY_AGENT_RUNTIME || 'wp-codebox',
+    runtimeBin: env.HOMEBOY_AGENT_RUNTIME_BIN || '',
+    provider: env.HOMEBOY_AGENT_RUNTIME_PROVIDER || '',
+    model: env.HOMEBOY_AGENT_RUNTIME_MODEL || '',
+    providerPluginPaths: splitList(env.HOMEBOY_AGENT_RUNTIME_PROVIDER_PLUGIN_PATHS || ''),
+    secretEnv: splitList(env.HOMEBOY_AGENT_RUNTIME_SECRET_ENV || ''),
+    runtimeEnv: parseJsonObject(env.HOMEBOY_AGENT_RUNTIME_ENV || ''),
+    runtimeConfigMounts: parseJsonArray(env.HOMEBOY_AGENT_RUNTIME_CONFIG_MOUNTS || ''),
+    runtimeStateMounts: parseJsonArray(env.HOMEBOY_AGENT_RUNTIME_STATE_MOUNTS || ''),
   };
 }
 
@@ -101,8 +102,9 @@ function applyRuntimeOverrides(config, runtimeTaskInput) {
   if (runtimeOverrides.runtimeStateMounts) {
     config.runtime_state_mounts = runtimeOverrides.runtimeStateMounts;
   }
-  if (runtimeOverrides.wpCodeboxBin) {
-    config.wp_codebox_bin = runtimeOverrides.wpCodeboxBin;
+  config.runtime_id = runtimeOverrides.runtimeId;
+  if (runtimeOverrides.runtimeBin) {
+    config.runtime_bin = runtimeOverrides.runtimeBin;
   }
 }
 
@@ -504,7 +506,7 @@ function manualPlan() {
 			artifact_driven: true,
 			controller_spec: controllerSpecPath,
 			controller_contract: 'wp-site-generator/static-site-generation-loop',
-			runtime_input_migration: runtimeOverrides.source,
+			runtime_input_contract: runtimeOverrides.source,
 			complexity_policy: complexityDecision,
 			generated_by: '.github/scripts/build-homeboy-site-generation-plan.mjs',
 		},
@@ -638,7 +640,7 @@ const loopPlan = {
 		artifact_stages: ['ConceptPacket', 'DesignPacket', 'StaticSiteCandidate', 'ImportValidationResult', 'StaticSitePullRequest'],
 		controller_spec: controllerSpecPath,
 		controller_contract: 'wp-site-generator/static-site-generation-loop',
-		runtime_input_migration: runtimeOverrides.source,
+		runtime_input_contract: runtimeOverrides.source,
 		complexity_policy: complexityDecision,
 		generated_by: '.github/scripts/build-homeboy-site-generation-plan.mjs',
 	},
