@@ -127,6 +127,7 @@ assert.equal(plan.tasks[0].executor.config.runtime_task.input.wait_for_completio
 assert.match(plan.tasks[0].executor.config.runtime_task.input.artifacts, /^\.ci\/homeboy-agent-task-artifacts\//, 'iterator uses a repo-relative artifact directory');
 assert.deepEqual(plan.tasks[0].executor.config.runtime_task.input.success_completion_outcomes, ['pull_request_path'], 'native iterator keeps PR-first completion gate');
 assert.equal(plan.tasks[0].inputs.source_pr, '456', 'source PR metadata flows into native plan');
+assert.equal(plan.metadata.runtime_input_migration, 'homeboy-wp-codebox-env-compat', 'iterator plan records legacy runtime env compatibility boundary');
 
 const explicitIteratorPlanPath = path.join(tempDir, 'iterator-plan-codebox.json');
 const explicitIteratorResult = spawnSync(

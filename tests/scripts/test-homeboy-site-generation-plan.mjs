@@ -57,6 +57,7 @@ try {
 	assert.deepEqual(plan.metadata.artifact_stages, ['ConceptPacket', 'DesignPacket', 'StaticSiteCandidate', 'ImportValidationResult', 'StaticSitePullRequest']);
 	assert.equal(plan.metadata.controller_spec, '.github/homeboy/controllers/static-site-generation-loop.controller.json');
 	assert.equal(plan.metadata.controller_contract, 'wp-site-generator/static-site-generation-loop');
+	assert.equal(plan.metadata.runtime_input_migration, 'homeboy-wp-codebox-env-compat', 'plan records legacy runtime env compatibility boundary');
 	assert.equal(plan.metadata.complexity_policy.schema, 'wp-site-generator/site-generation-complexity-policy/v1');
 	assert.equal(plan.metadata.complexity_policy.current_tier, 'foundation');
 	assert.equal(plan.metadata.complexity_policy.selected_tier, 'foundation');
