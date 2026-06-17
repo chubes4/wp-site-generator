@@ -14,8 +14,8 @@ export function buildSsiRuntimeBlueprint(options = {}, manifest = buildSsiStackM
 	return buildSsiStackBlueprint(options, buildSsiRuntimeProfile(manifest));
 }
 
-export function buildSsiValidationSettings({ site, lane = 'wordpress', manifest = buildSsiStackManifest() } = {}) {
-	const workloads = [buildSsiImportWorkload(site)];
+export function buildSsiValidationSettings({ site, lane = 'wordpress', manifest = buildSsiStackManifest(), sourceHtmlPath = '' } = {}) {
+	const workloads = [buildSsiImportWorkload(site, { htmlPath: sourceHtmlPath })];
 	return {
 		settings: {
 			wp_codebox_blueprint: buildSsiRuntimeBlueprint({ lane }, manifest),

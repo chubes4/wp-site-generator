@@ -62,9 +62,8 @@ export function requiresCommerceStack(lane = '') {
 	return normalized === 'woocommerce' || normalized === 'commerce' || normalized === 'store';
 }
 
-export function buildSsiImportWorkload(siteSlug) {
-	const htmlPath = `/wordpress/wp-content/plugins/wp-site-generator/static-sites/${siteSlug}/index.html`;
-
+export function buildSsiImportWorkload(siteSlug, { htmlPath = '' } = {}) {
+	const sourceHtmlPath = htmlPath || `/wordpress/wp-content/plugins/wp-site-generator/static-sites/${siteSlug}/index.html`;
 	return {
 		id: 'ssi-import',
 		label: `Static Site Importer: ${siteSlug}`,
@@ -72,7 +71,7 @@ export function buildSsiImportWorkload(siteSlug) {
 			{
 				type: 'php',
 				code: buildSsiImportAbilityPhp({
-					htmlPath,
+					htmlPath: sourceHtmlPath,
 					siteSlug,
 				}),
 			},
