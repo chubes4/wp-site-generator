@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
 import path from 'node:path';
 
+import { githubJson as fetchGithubJson, githubToken } from './lib/github-api.mjs';
 import { buildSsiImportWorkload } from './lib/ssi-stack-profile.mjs';
 
 const args = new Map();
@@ -16,7 +17,7 @@ const planPath = args.get('--plan') || path.join(repoRoot, '.ci', 'site-generati
 const controllerPath = args.get('--controller') || path.join(repoRoot, '.github/homeboy/controllers/static-site-generation-loop.controller.json');
 const fixturePath = args.get('--fixture-state') || '';
 const repo = args.get('--repo') || process.env.GITHUB_REPOSITORY || 'chubes4/wp-site-generator';
-const token = process.env.GITHUB_TOKEN || process.env.GH_TOKEN || '';
+const token = githubToken(process.env, ['GITHUB_TOKEN', 'GH_TOKEN']);
 const validationWaitMs = Number(process.env.STATIC_VALIDATION_WAIT_MS || 15 * 60 * 1000);
 const validationPollMs = Number(process.env.STATIC_VALIDATION_POLL_MS || 15 * 1000);
 
@@ -68,17 +69,12 @@ async function githubApi(endpoint) {
     fail('GITHUB_TOKEN or GH_TOKEN is required for live proof assertions');
   }
 
-  const response = await fetch(`https://api.github.com/repos/${repo}/${endpoint}`, {
-    headers: {
-      Authorization: `Bearer ${token}`,
-      Accept: 'application/vnd.github+json',
-      'X-GitHub-Api-Version': '2022-11-28',
-    },
+  return fetchGithubJson({
+    repo,
+    endpoint,
+    token,
+    failMessage: (message) => `Site generation proof failed: ${message.replace(' failed:', ' fetch failed:')}`,
   });
-  if (!response.ok) {
-    fail(`GitHub API ${endpoint} fetch failed: ${response.status} ${await response.text()}`);
-  }
-  return response.json();
 }
 
 function sleep(ms) {

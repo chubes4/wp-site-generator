@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 
 import { parseArgs, requiredValue } from './lib/ci-runtime-utils.mjs';
+import { githubApi, githubToken } from './lib/github-api.mjs';
 
 const args = parseArgs(process.argv.slice(2));
 const repo = requiredValue('SOURCE_REPO', args.get('--repo') || process.env.SOURCE_REPO || process.env.GITHUB_REPOSITORY);
@@ -14,7 +15,7 @@ const openaiModel = args.get('--openai-model') || process.env.OPENAI_MODEL || 'g
 const dataMachineRef = args.get('--data-machine-ref') || process.env.DATA_MACHINE_REF || 'main';
 const dataMachineCodeRef = args.get('--data-machine-code-ref') || process.env.DATA_MACHINE_CODE_REF || 'main';
 const dryRun = args.has('--dry-run') || process.env.DRY_RUN === '1';
-const token = process.env.GH_TOKEN || process.env.GITHUB_TOKEN || '';
+const token = githubToken();
 
 const payload = {
 	ref,
@@ -37,24 +38,14 @@ if (dryRun) {
 	if (!token) {
 		throw new Error('GH_TOKEN or GITHUB_TOKEN is required to dispatch php-transformer-iterator.yml.');
 	}
-	await githubApi(repo, 'actions/workflows/php-transformer-iterator.yml/dispatches', {
+	await githubApi({
+		repo,
+		endpoint: 'actions/workflows/php-transformer-iterator.yml/dispatches',
+		token,
+		init: {
 		method: 'POST',
 		body: JSON.stringify(payload),
-	});
-	console.log(`dispatched php-transformer-iterator for ${repo} PR #${sourcePr}`);
-}
-
-async function githubApi(repository, endpoint, init = {}) {
-	const response = await fetch(`https://api.github.com/repos/${repository}/${endpoint}`, {
-		...init,
-		headers: {
-			Authorization: `Bearer ${token}`,
-			Accept: 'application/vnd.github+json',
-			'X-GitHub-Api-Version': '2022-11-28',
-			...(init.headers || {}),
 		},
 	});
-	if (!response.ok) {
-		throw new Error(`GitHub API ${endpoint} failed: ${response.status} ${await response.text()}`);
-	}
+	console.log(`dispatched php-transformer-iterator for ${repo} PR #${sourcePr}`);
 }

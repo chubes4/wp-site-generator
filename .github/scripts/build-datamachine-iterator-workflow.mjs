@@ -3,6 +3,7 @@
 import { existsSync, readdirSync, readFileSync } from 'node:fs';
 import { mkdir, readFile, writeFile } from 'node:fs/promises';
 import path from 'node:path';
+import { buildSingleAiWorkflow, buildSingleAiWorkflowStep } from './lib/datamachine-ai-workflow.mjs';
 import { formatRatio, summarizeVisualDiff } from './lib/visual-artifacts.mjs';
 
 const repoRoot = new URL('../..', import.meta.url).pathname;
@@ -67,29 +68,20 @@ function buildWorkflow(packets, pipelineConfig, flowConfig) {
 		};
 	}
 
-	return {
-		workflow: {
-			steps: [
-				{
-					step_type: 'ai',
-					label: aiConfig.label || 'Repair transformer findings',
-					system_prompt: aiConfig.system_prompt || '',
-					prompt_queue: [
-						{
-							prompt: userMessage,
-							added_at: 'static-validation-iterator-build',
-						},
-					],
-					queue_mode: 'static',
-					enabled_tools: iteratorFlowStep.enabled_tools || [],
-					disabled_tools: aiConfig.disabled_tools || iteratorFlowStep.disabled_tools || [],
-					completion_assertions: completionAssertions,
-					tool_runtime_rules: toolRuntimeRules,
-				},
-			],
-		},
-		initial_data: initialData,
-	};
+	return buildSingleAiWorkflow({
+		step: buildSingleAiWorkflowStep({
+			aiConfig: {
+				...aiConfig,
+				completion_assertions: completionAssertions,
+				tool_runtime_rules: toolRuntimeRules,
+			},
+			flowStep: iteratorFlowStep,
+			label: 'Repair transformer findings',
+			prompt: userMessage,
+			addedAt: 'static-validation-iterator-build',
+		}),
+		initialData,
+	});
 }
 
 function formatFindingPrompt(packets) {
