@@ -1,7 +1,8 @@
 #!/usr/bin/env node
 
-import { readFile, writeFile } from 'node:fs/promises';
+import { writeFile } from 'node:fs/promises';
 import { pathToFileURL } from 'node:url';
+import { numberValue, readJsonOrNull, textValue } from './lib/ci-runtime-utils.mjs';
 
 export function evaluateStaticSitePublishGate({ validation = {}, visualParity = {} } = {}) {
 	const metrics = validation.metrics && typeof validation.metrics === 'object' ? validation.metrics : validation;
@@ -22,7 +23,7 @@ export function evaluateStaticSitePublishGate({ validation = {}, visualParity = 
 	const conversionFindingCount = numberValue(
 		conversion.actionable ?? conversion.actionable_count ?? conversion.total ?? metrics.actionable_conversion_count ?? metrics.total_findings ?? metrics.diagnostic_count ?? metrics.ssi_signal_total_count
 	);
-	const visualStatus = text(visualSummary.status || metrics.visual_parity_status || validation.visual_parity_status).toLowerCase();
+	const visualStatus = textValue(visualSummary.status || metrics.visual_parity_status || validation.visual_parity_status).toLowerCase();
 	const visualMismatchCount = numberValue(visualSummary.mismatch_count ?? metrics.visual_mismatch_count);
 	const visualMaxDeltaRatio = numberValue(visualSummary.max_delta_ratio ?? metrics.visual_max_delta_ratio);
 	const visualStatusPasses = ['pass', 'passed', 'ok'].includes(visualStatus);
@@ -59,24 +60,12 @@ export function evaluateStaticSitePublishGate({ validation = {}, visualParity = 
 	};
 }
 
-function numberValue(value) {
-	if (value === undefined || value === null || value === '') {
-		return 0;
-	}
-	const number = Number(value);
-	return Number.isFinite(number) ? number : 0;
-}
-
-function text(value) {
-	return String(value ?? '').trim();
-}
-
 async function cli() {
 	const validationPath = process.env.IMPORT_VALIDATION_RESULT_PATH || process.argv[2];
 	const visualParityPath = process.env.VISUAL_PARITY_ARTIFACT_PATH || process.argv[3];
 	const outputPath = process.env.STATIC_SITE_PUBLISH_GATE_PATH || process.argv[4];
-	const validation = validationPath ? JSON.parse(await readFile(validationPath, 'utf8')) : {};
-	const visualParity = visualParityPath ? JSON.parse(await readFile(visualParityPath, 'utf8')) : {};
+	const validation = await readJsonOrNull(validationPath) || {};
+	const visualParity = await readJsonOrNull(visualParityPath) || {};
 	const result = evaluateStaticSitePublishGate({ validation, visualParity });
 	const json = `${JSON.stringify(result, null, 2)}\n`;
 
