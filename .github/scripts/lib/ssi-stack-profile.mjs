@@ -83,8 +83,6 @@ export function buildSsiImportWorkload(siteSlug, { websiteArtifact = null } = {}
 		artifacts: {
 			import_report: {
 				path: `wp-content/themes/${siteSlug}/import-report.json`,
-				kind: 'json',
-				label: 'Static Site Importer report',
 			},
 		},
 	};
