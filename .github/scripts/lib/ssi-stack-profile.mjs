@@ -62,16 +62,15 @@ export function requiresCommerceStack(lane = '') {
 	return normalized === 'woocommerce' || normalized === 'commerce' || normalized === 'store';
 }
 
-export function buildSsiImportWorkload(siteSlug, { htmlPath = '' } = {}) {
-	const sourceHtmlPath = htmlPath || `/wordpress/wp-content/plugins/wp-site-generator/static-sites/${siteSlug}/index.html`;
+export function buildSsiImportWorkload(siteSlug, { websiteArtifact = null } = {}) {
 	return {
 		id: 'ssi-import',
 		label: `Static Site Importer: ${siteSlug}`,
 		run: [
 			{
 				type: 'php',
-				code: buildSsiImportAbilityPhp({
-					htmlPath: sourceHtmlPath,
+				code: buildSsiImportWebsiteArtifactPhp({
+					artifact: websiteArtifact,
 					siteSlug,
 					includeOpeningTag: false,
 				}),
@@ -89,6 +88,71 @@ export function buildSsiImportWorkload(siteSlug, { htmlPath = '' } = {}) {
 			},
 		},
 	};
+}
+
+export function buildSsiImportWebsiteArtifactPhp({ artifact, siteSlug, markerPath, assertActiveTheme = false, trailingNewline = false, includeOpeningTag = true }) {
+	if (!artifact || typeof artifact !== 'object') {
+		throw new Error('websiteArtifact is required for SSI import validation.');
+	}
+	const artifactJson = Buffer.from(JSON.stringify(artifact)).toString('base64');
+	const lines = [
+		"require_once '/wordpress/wp-load.php';",
+		'wp_set_current_user( 1 );',
+		"if ( ! function_exists( 'wp_get_ability' ) ) {",
+		"\tthrow new RuntimeException( 'WordPress Abilities API is not available.' );",
+		'}',
+		"$ability = wp_get_ability( 'static-site-importer/import-website-artifact' );",
+		'if ( ! $ability ) {',
+		"\tthrow new RuntimeException( 'Static Site Importer website artifact ability is not registered.' );",
+		'}',
+		`$artifact = json_decode( base64_decode( ${phpString(artifactJson)} ), true );`,
+		'if ( ! is_array( $artifact ) ) {',
+		"\tthrow new RuntimeException( 'Static Site Importer website artifact payload is invalid.' );",
+		'}',
+		'$ability_result = $ability->execute( array(',
+		"\t'artifact' => $artifact,",
+		`\t'slug' => ${phpString(siteSlug)},`,
+		"\t'activate' => true,",
+		"\t'overwrite' => true,",
+		') );',
+		'if ( is_wp_error( $ability_result ) ) {',
+		"\tthrow new RuntimeException( $ability_result->get_error_message() );",
+		'}',
+		"if ( empty( $ability_result['success'] ) ) {",
+		"\t$error = isset( $ability_result['error'] ) && is_array( $ability_result['error'] ) ? $ability_result['error'] : array();",
+		"\tthrow new RuntimeException( isset( $error['message'] ) ? (string) $error['message'] : 'Static site import failed.' );",
+		'}',
+	];
+
+	if (assertActiveTheme || markerPath) {
+		lines.push('$theme = wp_get_theme();');
+	}
+
+	if (assertActiveTheme) {
+		lines.push(
+			`if ( $theme->get_stylesheet() !== ${phpString(siteSlug)} ) {`,
+			`\tthrow new RuntimeException( 'Expected active theme ${siteSlug}, got ' . $theme->get_stylesheet() );`,
+			'}'
+		);
+	}
+
+	if (markerPath) {
+		lines.push(
+			'$payload = array(',
+			`\t'site' => ${phpString(siteSlug)},`,
+			"\t'theme' => $theme->get_stylesheet(),",
+			"\t'theme_name' => $theme->get( 'Name' ),",
+			"\t'active_plugins' => get_option( 'active_plugins' ),",
+			"\t'woocommerce_loaded' => class_exists( 'WooCommerce' ),",
+			"\t'import_result' => isset( $ability_result['result'] ) ? $ability_result['result'] : null,",
+			"\t'time' => time(),",
+			');',
+			`file_put_contents( ${phpString(markerPath)}, wp_json_encode( $payload ) );`
+		);
+	}
+
+	const php = includeOpeningTag ? ['<?php', ...lines] : lines;
+	return `${php.join('\n')}${trailingNewline ? '\n' : ''}`;
 }
 
 export function buildSsiImportAbilityPhp({ htmlPath, siteSlug, markerPath, assertActiveTheme = false, trailingNewline = false, includeOpeningTag = true }) {

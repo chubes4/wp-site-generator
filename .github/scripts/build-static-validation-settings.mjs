@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 
 import { appendGithubOutput, parseArgs, writeJsonFile } from './lib/ci-runtime-utils.mjs';
-import { resolveStaticSiteCandidateSource } from './lib/static-site-candidate.mjs';
+import { buildWebsiteArtifactFromSource, resolveStaticSiteCandidateSource } from './lib/static-site-candidate.mjs';
 import { buildSsiValidationSettings, loadSsiStackManifest } from './lib/ssi-stack-runtime.mjs';
 
 const args = parseArgs(process.argv.slice(2));
@@ -15,11 +15,11 @@ const sourceStaticSiteDir = args.get('--source-static-site-dir') || process.env.
 const materializedRoot = args.get('--materialized-root') || process.env.MATERIALIZED_STATIC_SITE_ROOT || '.ci/static-site-candidates';
 
 const candidateSource = await resolveStaticSiteCandidateSource({ site, candidatePath, sourceStaticSiteDir, materializedRoot });
-const sourceHtmlPath = `${candidateSource.mountedSourceDirectory}/index.html`;
+const websiteArtifact = await buildWebsiteArtifactFromSource(candidateSource);
 
 const manifest = await loadSsiStackManifest(manifestPath);
-const { settings, workloads } = buildSsiValidationSettings({ site: candidateSource.site, lane, manifest, sourceHtmlPath });
-const payload = { site: candidateSource.site, lane, candidate_source: candidateSource, settings, workloads, stack_manifest: manifest };
+const { settings, workloads } = buildSsiValidationSettings({ site: candidateSource.site, lane, manifest, websiteArtifact });
+const payload = { site: candidateSource.site, lane, candidate_source: candidateSource, website_artifact: websiteArtifact, settings, workloads, stack_manifest: manifest };
 
 if (outputPath) {
 	await writeJsonFile(outputPath, payload);
