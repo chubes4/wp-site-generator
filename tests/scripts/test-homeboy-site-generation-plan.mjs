@@ -57,6 +57,11 @@ try {
 	assert.deepEqual(plan.metadata.artifact_stages, ['ConceptPacket', 'DesignPacket', 'StaticSiteCandidate', 'ImportValidationResult', 'StaticSitePullRequest']);
 	assert.equal(plan.metadata.controller_spec, '.github/homeboy/controllers/static-site-generation-loop.controller.json');
 	assert.equal(plan.metadata.controller_contract, 'wp-site-generator/static-site-generation-loop');
+	assert.deepEqual(plan.metadata.controller_authority, {
+		spec: '.github/homeboy/controllers/static-site-generation-loop.controller.json',
+		contract: 'wp-site-generator/static-site-generation-loop',
+		builder: '.github/scripts/build-homeboy-ssi-loop-controller.mjs',
+	});
 	assert.equal(plan.metadata.runtime_input_contract, 'homeboy-agent-runtime-env', 'plan records the Homeboy agent runtime env contract');
 	assert.equal(plan.metadata.complexity_policy.schema, 'wp-site-generator/site-generation-complexity-policy/v1');
 	assert.equal(plan.metadata.complexity_policy.current_tier, 'foundation');
