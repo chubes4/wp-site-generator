@@ -163,6 +163,24 @@ function assertTaskArtifacts() {
   }
 }
 
+function assertPublishGates() {
+  for (const taskItem of planTasks.filter((item) => item.executor?.config?.artifact_outputs?.static_site_publish_gate)) {
+    const gate = outputValue(outcome(taskItem.task_id), 'static_site_publish_gate');
+    assert.equal(gate?.publish_allowed, true, `${taskItem.task_id} emitted publish_allowed=true`);
+    for (const gateId of ['fallback_blocks', 'conversion_findings', 'visual_parity']) {
+      assert.equal(gate?.gates?.[gateId]?.passed, true, `${taskItem.task_id} ${gateId} gate passed`);
+    }
+  }
+
+  for (const taskItem of planTasks.filter((item) => item.executor?.config?.runtime_task?.input?.success_completion_outcomes?.includes('static_site_pr'))) {
+    const publishDependency = plan.output_dependencies?.[taskItem.task_id];
+    const gateTaskId = publishDependency?.bindings?.static_site_publish_gate?.task_id;
+    assert.ok(gateTaskId, `${taskItem.task_id} binds a StaticSitePublishGate before publishing`);
+    const gate = outputValue(outcome(gateTaskId), 'static_site_publish_gate');
+    assert.equal(gate?.publish_allowed, true, `${taskItem.task_id} cannot publish unless ${gateTaskId} publish_allowed=true`);
+  }
+}
+
 async function assertStaticPr(taskItem) {
   const taskOutcome = outcome(taskItem.task_id);
   const staticPrNumber = prNumberFromUrl(outputValue(taskOutcome, 'static_site_pr_url') || outputValue(taskOutcome, 'pr_url'));
@@ -233,6 +251,7 @@ async function assertStaticValidationComments(staticPrs) {
 assertGeneratedContracts();
 assertNoRuntimeFailures();
 assertTaskArtifacts();
+assertPublishGates();
 
 const staticPrs = [];
 for (const taskItem of planTasks.filter((item) => item.executor?.config?.runtime_task?.input?.success_completion_outcomes?.includes('static_site_pr'))) {

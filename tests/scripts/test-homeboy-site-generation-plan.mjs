@@ -54,7 +54,7 @@ try {
   }
 
 	assert.equal(plan.metadata.artifact_driven, true, 'normal loop is artifact-driven');
-	assert.deepEqual(plan.metadata.artifact_stages, ['ConceptPacket', 'DesignPacket', 'StaticSiteCandidate', 'ImportValidationResult', 'StaticSitePullRequest']);
+	assert.deepEqual(plan.metadata.artifact_stages, ['ConceptPacket', 'DesignPacket', 'StaticSiteCandidate', 'ImportValidationResult', 'StaticSitePublishGate', 'StaticSitePullRequest']);
 	assert.equal(plan.metadata.controller_spec, '.github/homeboy/controllers/static-site-generation-loop.controller.json');
 	assert.equal(plan.metadata.controller_contract, 'wp-site-generator/static-site-generation-loop');
 	assert.deepEqual(plan.metadata.controller_authority, {
@@ -82,7 +82,9 @@ try {
 			'concept-to-design:concept_packet',
 			'design-to-static:design_packet',
 			'static-to-validation:static_site_candidate',
-			'validation-to-publication:import_validation_result',
+			'validation-to-publication-gate:import_validation_result',
+			'visual-to-publication-gate:visual_parity_artifact',
+			'publication-gate-to-publication:static_site_publish_gate',
 			'publication-to-revalidation:static_site_pull_request',
 			'publication-to-reviewer:static_site_pull_request',
 			'validation-to-findings:static_validation_run',
@@ -119,6 +121,7 @@ try {
 			'static-store',
 			'static-site',
 			'static-validation',
+			'static-publication-gate',
 			'static-publication',
 			'finding-packets',
 			'iterator',
@@ -136,7 +139,15 @@ try {
 	assert.equal(workflows['store-idea'].abilities.includes('github_issue_publish'), false, 'concept generation does not publish GitHub issues');
 	assert.equal(workflows['static-site'].abilities.includes('github_pull_request_publish'), false, 'candidate generation does not publish GitHub pull requests');
 	assert.deepEqual(workflows['static-validation'].consumes, ['static_site_candidate'], 'static validation waits for the candidate artifact');
-	assert.deepEqual(workflows['static-publication'].consumes, ['static_site_candidate', 'import_validation_result', 'visual_parity_artifact'], 'publication waits for validated candidate evidence');
+	assert.deepEqual(workflows['static-publication-gate'].consumes, ['import_validation_result', 'visual_parity_artifact'], 'publication gate consumes validation and visual evidence');
+	assert.deepEqual(workflows['static-publication-gate'].emits, ['static_site_publish_gate'], 'publication gate emits deterministic gate artifact');
+	assert.deepEqual(workflows['static-publication-gate'].publish_gate.requires, ['publish_allowed', 'gates.fallback_blocks.passed', 'gates.conversion_findings.passed', 'gates.visual_parity.passed'], 'publication gate requires explicit pass/fail fields');
+	assert.deepEqual(workflows['static-publication'].consumes, ['static_site_candidate', 'import_validation_result', 'static_site_publish_gate'], 'publication waits for deterministic publish gate');
+	assert.deepEqual(workflows['static-publication'].publish_gate, {
+		artifact: 'static_site_publish_gate',
+		requires: ['publish_allowed'],
+		passing_value: true,
+	}, 'publication requires publish_allowed=true');
 	assert.deepEqual(workflows['static-publication'].emits, ['static_site_pull_request'], 'publication emits the generated PR artifact');
 	assert.deepEqual(workflows['finding-packets'].consumes, ['import_validation_result', 'static_validation_run', 'visual_parity_artifact'], 'finding packets consume validation and visual evidence');
 	assert.deepEqual(workflows.iterator.consumes, ['finding_group'], 'iterator workflow consumes grouped findings');
@@ -185,13 +196,18 @@ try {
 	);
 	assert.deepEqual(
 		plan.output_dependencies['publish-store-pr'].depends_on,
-		['generate-store-candidate', 'validate-store-candidate'],
-		'PR publication waits for candidate generation and validation'
+		['generate-store-candidate', 'validate-store-candidate', 'gate-store-publication'],
+		'PR publication waits for candidate generation, validation, and deterministic gate'
 	);
 	assert.equal(
 		plan.output_dependencies['publish-store-pr'].bindings.import_validation_result.path,
 		'/outputs/import_validation_result',
 		'PR publication consumes ImportValidationResult'
+	);
+	assert.equal(
+		plan.output_dependencies['publish-store-pr'].bindings.static_site_publish_gate.path,
+		'/outputs/static_site_publish_gate',
+		'PR publication consumes StaticSitePublishGate'
 	);
 
 	for (const taskId of ['design-store-packet', 'design-website-packet']) {
@@ -249,10 +265,21 @@ try {
 		assert.equal(config.ability, 'static-site-importer/import-website-artifact', `${taskId} calls SSI artifact import ability`);
 		assert.equal(config.ability_input.artifact, '{{outputs.static_site_candidate}}', `${taskId} passes StaticSiteCandidate as ability input`);
 		assert.equal(config.output_mappings.import_validation_result, 'result.import_validation_result', `${taskId} maps SSI validation result`);
+		assert.equal(config.output_mappings.visual_parity_artifact, 'result.visual_parity_artifact', `${taskId} maps visual parity artifact`);
 		assert.equal(config.output_mappings.finding_packets, 'result.finding_packets', `${taskId} maps SSI finding packets`);
 		assert.equal(config.artifact_outputs.import_validation_result.schema, 'wp-site-generator/ImportValidationResult/v1');
+		assert.equal(config.artifact_outputs.visual_parity_artifact.schema, 'wp-site-generator/VisualParityArtifact/v1');
 		assert.equal(config.engine_data_outputs.import_validation_result, 'outputs.import_validation_result', `${taskId} requires mapped validation output`);
+		assert.equal(config.engine_data_outputs.visual_parity_artifact, 'outputs.visual_parity_artifact', `${taskId} requires mapped visual parity output`);
 		assert.equal(config.engine_data_outputs.finding_packets, 'outputs.finding_packets', `${taskId} requires mapped finding packets`);
+	}
+
+	for (const taskId of ['gate-store-publication', 'gate-website-publication']) {
+		const config = plan.tasks.find((task) => task.task_id === taskId).executor.config;
+		assert.equal(config.execution_kind, 'node_script', `${taskId} uses deterministic local gate evaluation`);
+		assert.equal(config.script, '.github/scripts/evaluate-static-site-publish-gate.mjs', `${taskId} uses the WPSG gate evaluator`);
+		assert.equal(config.artifact_outputs.static_site_publish_gate.schema, 'wp-site-generator/StaticSitePublishGate/v1', `${taskId} emits StaticSitePublishGate`);
+		assert.equal(config.engine_data_outputs.publish_allowed, 'outputs.static_site_publish_gate.publish_allowed', `${taskId} exposes publish_allowed`);
 	}
 
 	for (const taskId of ['publish-store-pr', 'publish-website-pr']) {
@@ -261,6 +288,9 @@ try {
 		assert.equal(runtimeInput.success_requires_pr, true, `${taskId} is the first GitHub-visible publication step`);
 		assert.deepEqual(runtimeInput.success_completion_outcomes, ['static_site_pr'], `${taskId} completes on PR publication`);
 		assert.match(runtimeInput.prompt, /ImportValidationResult/, `${taskId} consumes import validation metrics`);
+		assert.match(runtimeInput.prompt, /StaticSitePublishGate/, `${taskId} consumes the deterministic publish gate`);
+		assert.equal(runtimeInput.required_publish_allowed, true, `${taskId} requires publish_allowed=true`);
+		assert.equal(runtimeInput.publish_gate, '{{outputs.static_site_publish_gate}}', `${taskId} receives the publish gate artifact`);
 		assert.match(runtimeInput.prompt, /render-static-site-pr-body\.mjs/, `${taskId} renders initial PR body metrics`);
 	}
 
