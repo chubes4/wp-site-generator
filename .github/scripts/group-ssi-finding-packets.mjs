@@ -1,7 +1,12 @@
 #!/usr/bin/env node
 
 import { readFile, writeFile } from 'node:fs/promises';
-import path from 'node:path';
+import { routeCandidateRepo, routeReason, routeRepairMode } from './lib/finding-routing.mjs';
+import {
+	normalizeVisualRegions,
+	probeSummary,
+	visualCodeEvidenceFromPacket,
+} from './lib/visual-artifacts.mjs';
 
 const inputPaths = (process.env.FINDING_PACKET_PATHS || process.argv.slice(2).join(','))
 	.split(',')
@@ -53,7 +58,7 @@ function groupPackets(rawPackets) {
 				repair_mode: repairMode,
 				route_reason: routeReason(packet, candidateRepo, repairMode),
 				visual_summary: visualSummary(packet),
-				visual_code_evidence: visualCodeEvidence(packet),
+				visual_code_evidence: visualCodeEvidenceFromPacket(packet, groupVisualOptions()),
 				reason: packet.reason,
 				count: 0,
 				packets: [],
@@ -124,8 +129,8 @@ function normalizePacket(packet) {
 		artifact_names: packet.artifact_names && typeof packet.artifact_names === 'object' ? packet.artifact_names : {},
 		bench_outcome: text(packet.bench_outcome),
 		visual_outcome: text(packet.visual_outcome),
-		visual_regions: visualRegions(packet.visual_regions),
-		visual_code_evidence: visualCodeEvidence(packet),
+		visual_regions: normalizeGroupVisualRegions(packet.visual_regions),
+		visual_code_evidence: visualCodeEvidenceFromPacket(packet, groupVisualOptions()),
 		design_system: designText(packet.design_system),
 		palette_kind: designText(packet.palette_kind),
 		typography_kind: designText(packet.typography_kind),
@@ -135,93 +140,11 @@ function normalizePacket(packet) {
 	};
 }
 
-function visualRegions(value) {
-	return Array.isArray(value)
-		? value.filter((region) => region && typeof region === 'object').slice(0, 8).map((region) => ({
-			rank: numberOrString(region.rank),
-			x: numberOrString(region.x),
-			y: numberOrString(region.y),
-			width: numberOrString(region.width),
-			height: numberOrString(region.height),
-			mismatchPixels: numberOrString(region.mismatchPixels),
-			totalPixels: numberOrString(region.totalPixels),
-			mismatchRatio: numberOrString(region.mismatchRatio),
-			source_matches: visualProbes(region.source_matches),
-			imported_matches: visualProbes(region.imported_matches),
-			layout_deltas: visualLayoutDeltas(region.layout_deltas),
-		}))
-		: [];
-}
-
-function visualProbes(value) {
-	return Array.isArray(value)
-		? value.filter((probe) => probe && typeof probe === 'object').slice(0, 5).map((probe) => ({
-			selector: text(probe.selector),
-			path: text(probe.path),
-			text: text(probe.text),
-			html: text(probe.html),
-			child_summary: text(probe.child_summary),
-			computed_style: objectStrings(probe.computed_style),
-			matched_css_rules: cssRules(probe.matched_css_rules),
-			rect: probe.rect && typeof probe.rect === 'object' ? {
-				x: numberOrString(probe.rect.x),
-				y: numberOrString(probe.rect.y),
-				width: numberOrString(probe.rect.width),
-				height: numberOrString(probe.rect.height),
-			} : {},
-		}))
-		: [];
-}
-
-function visualLayoutDeltas(value) {
-	return Array.isArray(value)
-		? value.filter((delta) => delta && typeof delta === 'object').slice(0, 3).map((delta) => ({
-			pair: numberOrString(delta.pair),
-			source_selector: text(delta.source_selector),
-			imported_selector: text(delta.imported_selector),
-			source_path: text(delta.source_path),
-			imported_path: text(delta.imported_path),
-			source_child_summary: text(delta.source_child_summary),
-			imported_child_summary: text(delta.imported_child_summary),
-			rect_delta: delta.rect_delta && typeof delta.rect_delta === 'object' ? {
-				x: numberOrString(delta.rect_delta.x),
-				y: numberOrString(delta.rect_delta.y),
-				width: numberOrString(delta.rect_delta.width),
-				height: numberOrString(delta.rect_delta.height),
-			} : {},
-			style_diffs: Array.isArray(delta.style_diffs)
-				? delta.style_diffs.filter((diff) => diff && typeof diff === 'object').slice(0, 16).map((diff) => ({
-					property: text(diff.property),
-					source: text(diff.source),
-					imported: text(diff.imported),
-				}))
-				: [],
-		}))
-		: [];
-}
-
-function cssRules(value) {
-	return Array.isArray(value)
-		? value.filter((rule) => rule && typeof rule === 'object').slice(0, 8).map((rule) => ({
-			selector: text(rule.selector),
-			media: text(rule.media),
-			css: text(rule.css),
-		}))
-		: [];
-}
-
-function objectStrings(value) {
-	if (!value || typeof value !== 'object' || Array.isArray(value)) {
-		return {};
-	}
-	return Object.fromEntries(Object.entries(value).map(([key, raw]) => [key, text(raw)]));
-}
-
 function visualSummary(packet) {
 	if (text(packet.kind) !== 'visual_parity_mismatch') {
 		return '';
 	}
-	const region = visualRegions(packet.visual_regions)[0];
+	const region = normalizeGroupVisualRegions(packet.visual_regions)[0];
 	if (!region) {
 		return text(packet.preview);
 	}
@@ -232,30 +155,12 @@ function visualSummary(packet) {
 	].join('; ');
 }
 
-function probeSummary(probes) {
-	const probe = Array.isArray(probes) ? probes[0] : null;
-	if (!probe) {
-		return 'none';
-	}
-	const style = probe.computed_style && typeof probe.computed_style === 'object' ? probe.computed_style : {};
-	return [probe.selector, probe.text, style.display, style['font-size'], style['background-color']]
-		.filter((value) => text(value) !== '')
-		.join(' ');
+function normalizeGroupVisualRegions(value) {
+	return normalizeVisualRegions(value, groupVisualOptions());
 }
 
-function visualCodeEvidence(packet) {
-	const configured = packet.visual_code_evidence;
-	if (configured && typeof configured === 'object' && !Array.isArray(configured)) {
-		return {
-			source: visualProbes(configured.source),
-			imported: visualProbes(configured.imported),
-		};
-	}
-	const region = visualRegions(packet.visual_regions)[0];
-	return region ? {
-		source: region.source_matches,
-		imported: region.imported_matches,
-	} : {};
+function groupVisualOptions() {
+	return { numberMode: 'numberOrString' };
 }
 
 function designText(value) {
@@ -299,110 +204,6 @@ function dedupe(packets) {
 	return deduped;
 }
 
-function routeCandidateRepo(packet) {
-	const kind = text(packet.kind).toLowerCase();
-	if (kind === 'bench_failure') {
-		return 'chubes4/wp-site-generator';
-	}
-	if (kind === 'visual_parity_outcome' || kind === 'visual_parity_mismatch') {
-		return 'chubes4/wp-site-generator';
-	}
-	const explicit = text(packet.candidate_repo);
-	if (explicit === 'chubes4/block-artifact-compiler') {
-		return explicit;
-	}
-	if (kind === 'report_missing' || kind === 'import_clean') {
-		return 'chubes4/static-site-importer';
-	}
-
-	const converter = text(packet.converter).toLowerCase();
-	const repairClass = text(packet.suggested_repair_class).toLowerCase();
-	const category = text(packet.category).toLowerCase();
-	const reasonCode = text(packet.reason_code).toLowerCase();
-	const stage = text(packet.stage).toLowerCase();
-	const haystack = [packet.kind, converter, packet.block_name, stage, packet.reason, packet.path, category, reasonCode, repairClass].join(' ').toLowerCase();
-
-	if ((converter.includes('html-to-block') || converter.includes('h2bc')) && (repairClass.includes('converter_support') || repairClass.includes('replace_fallback') || category.includes('fallback') || kind.includes('fallback') || kind.includes('core_html') || kind.includes('freeform'))) {
-		return 'chubes4/html-to-blocks-converter';
-	}
-	if (haystack.includes('block-format-bridge') || haystack.includes('bfb') || haystack.includes('serialization') || category.includes('adapter') || category.includes('scope') || category.includes('bfb_report')) {
-		return 'chubes4/block-format-bridge';
-	}
-	if (haystack.includes('block-artifact-compiler') || haystack.includes('artifact schema') || haystack.includes('artifact contract') || haystack.includes('artifact compiler') || haystack.includes('artifact_schema') || haystack.includes('artifact_contract') || haystack.includes('artifact_compiler') || haystack.includes('schema_validation') || haystack.includes('compile_artifact') || category.includes('artifact_schema') || category.includes('artifact_contract') || category.includes('artifact_compiler')) {
-		return 'chubes4/block-artifact-compiler';
-	}
-	if (category.includes('source_region') || category.includes('source-selection') || category.includes('unresolved_asset') || category.includes('asset_map') || category.includes('import_report') || stage.includes('source_selection') || stage.includes('asset_map') || haystack.includes('source-selection') || haystack.includes('asset_map')) {
-		return 'chubes4/static-site-importer';
-	}
-	if (haystack.includes('generator') || haystack.includes('static-site-generator') || haystack.includes('visual parity') || haystack.includes('homeboy-bench') || category.includes('generator_policy')) {
-		return 'chubes4/wp-site-generator';
-	}
-
-	if (isCandidateRepo(explicit)) {
-		return explicit;
-	}
-
-	return 'chubes4/static-site-importer';
-}
-
-function routeRepairMode(packet, candidateRepo) {
-	const configured = text(packet.repair_mode);
-	if (configured) {
-		return configured;
-	}
-	const kind = text(packet.kind).toLowerCase();
-	if (kind === 'bench_failure' || kind === 'report_missing') {
-		return 'issue_only';
-	}
-	if (kind === 'visual_parity_mismatch' && !hasSourceSitePatchEvidence(packet)) {
-		return 'issue_only';
-	}
-	const hasPatchEvidence = Boolean(text(packet.source_html_preview) || text(packet.selector) || text(packet.source_path));
-	if (!hasPatchEvidence) {
-		return 'issue_only';
-	}
-	if (candidateRepo === 'chubes4/wp-site-generator' && !hasSourceSitePatchEvidence(packet)) {
-		return 'issue_only';
-	}
-	return 'pr_or_issue';
-}
-
-function hasSourceSitePatchEvidence(packet) {
-	if (text(packet.kind).toLowerCase() !== 'visual_parity_mismatch') {
-		return false;
-	}
-
-	const repairClass = text(packet.suggested_repair_class).toLowerCase();
-	const category = text(packet.category).toLowerCase();
-	const reasonCode = text(packet.reason_code).toLowerCase();
-	const stage = text(packet.stage).toLowerCase();
-	const routeFields = [repairClass, category, reasonCode, stage, text(packet.reason).toLowerCase()].join(' ');
-	if (routeFields.includes('generated_source') || routeFields.includes('source_site') || routeFields.includes('source_css') || routeFields.includes('source_html')) {
-		return true;
-	}
-
-	return false;
-}
-
-function routeReason(packet, candidateRepo, repairMode) {
-	if (repairMode === 'issue_only') {
-		return 'insufficient evidence for a safe automated PR path; group remains issue-only';
-	}
-	if (candidateRepo === 'chubes4/html-to-blocks-converter') {
-		return 'converter diagnostic routes to html-to-blocks-converter';
-	}
-	if (candidateRepo === 'chubes4/block-format-bridge') {
-		return 'BFB adapter/report/scope diagnostic routes to block-format-bridge';
-	}
-	if (candidateRepo === 'chubes4/block-artifact-compiler') {
-		return 'artifact schema/contract/compiler diagnostic routes to block-artifact-compiler';
-	}
-	if (candidateRepo === 'chubes4/static-site-importer') {
-		return 'SSI import/source-selection/asset-map diagnostic routes to static-site-importer';
-	}
-	return 'visual parity or generator policy diagnostic routes to wp-site-generator';
-}
-
 function groupSignature(packet) {
 	const html = text(packet.source_html_preview).toLowerCase();
 	if (/<figure\b/.test(html) && /<figcaption\b/.test(html) && !/<img\b|<picture\b|<video\b|<svg\b/.test(html)) {
@@ -414,16 +215,6 @@ function groupSignature(packet) {
 
 	const selector = text(packet.selector).toLowerCase().replace(/\.[-_a-z0-9]+/g, '.class');
 	return selector || normalizeReason(packet.reason);
-}
-
-function isCandidateRepo(value) {
-	return [
-		'chubes4/static-site-importer',
-		'chubes4/html-to-blocks-converter',
-		'chubes4/block-format-bridge',
-		'chubes4/block-artifact-compiler',
-		'chubes4/wp-site-generator',
-	].includes(value);
 }
 
 function normalizeReason(reason) {
