@@ -71,6 +71,23 @@ export async function resolveStaticSiteCandidateSource({
 	return materializeCandidateFile({ repoRoot, site, candidatePath: resolvedCandidatePath, materializedRoot });
 }
 
+export async function buildWebsiteArtifactFromSource(candidateSource) {
+	const files = await readSourceFiles(candidateSource.sourceDirectory);
+	if (!files.some((file) => file.path === 'website/index.html')) {
+		throw new Error(`StaticSiteCandidate source must include index.html: ${candidateSource.sourceDirectory}`);
+	}
+
+	return {
+		schema: 'block-artifact-compiler/website-artifact/v1',
+		files,
+		metadata: {
+			source: 'wp-site-generator/StaticSiteCandidate',
+			site: candidateSource.site,
+			candidate_source: candidateSource.source,
+		},
+	};
+}
+
 async function materializeCandidateFile({ repoRoot, site, candidatePath, materializedRoot }) {
 	const candidate = unwrapCandidate(JSON.parse(await readFile(candidatePath, 'utf8')));
 	const candidateSite = site || candidate.site_id || candidate.slug || candidate.site_slug || candidate.id || path.basename(candidatePath, path.extname(candidatePath));
@@ -170,6 +187,26 @@ async function assertIndexHtml(sourceDirectory) {
 	if (!existsSync(path.join(sourceDirectory, 'index.html'))) {
 		throw new Error(`Missing source static storefront: ${path.join(sourceDirectory, 'index.html')}`);
 	}
+}
+
+async function readSourceFiles(sourceDirectory, relativeRoot = '') {
+	const entries = await readdir(path.join(sourceDirectory, relativeRoot), { withFileTypes: true });
+	const files = [];
+	for (const entry of entries) {
+		const relativePath = relativeRoot ? `${relativeRoot}/${entry.name}` : entry.name;
+		if (entry.isDirectory()) {
+			files.push(...await readSourceFiles(sourceDirectory, relativePath));
+			continue;
+		}
+		if (!entry.isFile()) {
+			continue;
+		}
+		files.push({
+			path: `website/${relativePath}`,
+			content: await readFile(path.join(sourceDirectory, relativePath), 'utf8'),
+		});
+	}
+	return files.sort((a, b) => a.path.localeCompare(b.path));
 }
 
 function resolveInputPath(repoRoot, inputPath) {

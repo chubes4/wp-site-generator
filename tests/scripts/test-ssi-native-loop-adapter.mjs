@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import { mkdtemp, readFile, writeFile } from 'node:fs/promises';
+import { mkdir, mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { spawnSync } from 'node:child_process';
@@ -9,6 +9,10 @@ import { assertIteratorPlanUsesReusableWorkflowRunner } from '../helpers/artifac
 const repoRoot = path.resolve(new URL('../..', import.meta.url).pathname);
 const tempDir = await mkdtemp(path.join(tmpdir(), 'wpsg-ssi-native-loop-'));
 const settingsPath = path.join(tempDir, 'settings.json');
+
+await mkdir(path.join(repoRoot, 'static-sites/issue-123-native-loop/assets'), { recursive: true });
+await writeFile(path.join(repoRoot, 'static-sites/issue-123-native-loop/index.html'), '<!doctype html><html><body>Native loop</body></html>');
+await writeFile(path.join(repoRoot, 'static-sites/issue-123-native-loop/assets/styles.css'), 'body { color: #111; }');
 const workflowPath = path.join(tempDir, 'workflow.json');
 const planPath = path.join(tempDir, 'iterator-plan.json');
 const dispatchPath = path.join(tempDir, 'dispatch.json');
@@ -75,9 +79,11 @@ assert.equal(settingsResult.status, 0, settingsResult.stderr || settingsResult.s
 const settingsPayload = JSON.parse(await readFile(settingsPath, 'utf8'));
 assert.equal(settingsPayload.workloads[0].id, 'ssi-import', 'native validation adapter emits SSI bench workload');
 assert.equal(settingsPayload.workloads[0].run[0].type, 'php', 'workload imports through PHP');
-assert.match(settingsPayload.workloads[0].run[0].code, /wp_get_ability\( 'static-site-importer\/import-theme' \)/, 'workload runs SSI import ability');
+assert.match(settingsPayload.workloads[0].run[0].code, /wp_get_ability\( 'static-site-importer\/import-website-artifact' \)/, 'workload runs SSI website artifact import ability');
 assert.doesNotMatch(settingsPayload.workloads[0].run[0].code, /static-site-importer import-theme/, 'workload does not depend on the SSI WP-CLI command');
+assert.doesNotMatch(settingsPayload.workloads[0].run[0].code, /static-site-importer\/import-theme/, 'workload does not depend on the legacy import-theme ability');
 assert.doesNotMatch(settingsPayload.workloads[0].run[0].code, /^<\?php/, 'inline PHP workload code omits an opening tag for eval execution');
+assert.deepEqual(settingsPayload.website_artifact.files.map((file) => file.path), ['website/assets/styles.css', 'website/index.html'], 'validation settings pass candidate files as a BAC website artifact');
 assert.deepEqual(
 	settingsPayload.settings.wp_codebox_blueprint.steps.map((step) => step.options.targetFolderName).slice(0, 3),
 	['block-artifact-compiler', 'block-format-bridge', 'static-site-importer'],
@@ -259,5 +265,7 @@ for (const workflowPath of ['.github/workflows/php-transformer-iterator.yml', '.
 	const workflow = await readFile(path.join(repoRoot, workflowPath), 'utf8');
 	assert.doesNotMatch(workflow, /agent_runtime:/, `${workflowPath} leaves runtime selection to reusable Agent CI`);
 }
+
+await rm(path.join(repoRoot, 'static-sites/issue-123-native-loop'), { recursive: true, force: true });
 
 console.log('SSI native loop adapter contract passed');

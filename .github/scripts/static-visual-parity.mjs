@@ -5,8 +5,8 @@ import { mkdir, rm } from 'node:fs/promises';
 import { existsSync } from 'node:fs';
 import path from 'node:path';
 
-import { buildSsiImportAbilityPhp, requiresCommerceStack } from './lib/ssi-stack-profile.mjs';
-import { resolveStaticSiteCandidateSource } from './lib/static-site-candidate.mjs';
+import { buildSsiImportWebsiteArtifactPhp, requiresCommerceStack } from './lib/ssi-stack-profile.mjs';
+import { buildWebsiteArtifactFromSource, resolveStaticSiteCandidateSource } from './lib/static-site-candidate.mjs';
 import { buildSsiRuntimeBlueprint, loadSsiStackManifest } from './lib/ssi-stack-runtime.mjs';
 
 const require = createRequire(import.meta.url);
@@ -34,14 +34,15 @@ const candidateSource = await resolveStaticSiteCandidateSource({
 });
 const site = candidateSource.site;
 const siteRoot = candidateSource.sourceDirectory;
+const websiteArtifact = await buildWebsiteArtifactFromSource(candidateSource);
 const indexPath = path.join(siteRoot, 'index.html');
 const outputDir = path.join(repoRoot, outputRoot, site);
 const importReadyPath = path.join(outputDir, 'import-ready.json');
 const mountedImportReadyPath = toPosix(
 	path.join('/wordpress/wp-content/plugins/wp-site-generator', path.relative(repoRoot, importReadyPath))
 );
-const importViaAbilityPhp = buildSsiImportAbilityPhp({
-	htmlPath: `${candidateSource.mountedSourceDirectory}/index.html`,
+const importViaAbilityPhp = buildSsiImportWebsiteArtifactPhp({
+	artifact: websiteArtifact,
 	siteSlug: site,
 	markerPath: mountedImportReadyPath,
 	assertActiveTheme: true,
