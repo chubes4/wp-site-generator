@@ -193,7 +193,8 @@ async function assertImportAndIteratorWorkflow() {
   const validationWorkload = buildSsiImportWorkload('proof-site');
   const validationWorkloadJson = JSON.stringify(validationWorkload);
   assert.match(workflow, /build-static-validation-settings\.mjs/, 'static validation delegates SSI settings to the shared builder');
-  assert.match(validationWorkloadJson, /static-site-importer import-theme/, 'static validation settings import generated static sites');
+  assert.match(validationWorkloadJson, /wp_get_ability\( 'static-site-importer\/import-theme' \)/, 'static validation settings import generated static sites through the SSI ability');
+  assert.doesNotMatch(validationWorkloadJson, /static-site-importer import-theme/, 'static validation settings do not depend on the SSI WP-CLI command');
   assert.match(validationWorkloadJson, /static-sites\/proof-site\/index\.html/, 'static validation imports the requested generated site');
   assert.match(workflow, /Build SSI finding packets/, 'static validation builds SSI finding packets');
   assert.match(workflow, /dispatch-php-transformer-iterator\.mjs/, 'static validation delegates transformer iterator dispatch to the shared builder');

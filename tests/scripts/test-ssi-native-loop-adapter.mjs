@@ -71,7 +71,9 @@ assert.equal(settingsResult.status, 0, settingsResult.stderr || settingsResult.s
 
 const settingsPayload = JSON.parse(await readFile(settingsPath, 'utf8'));
 assert.equal(settingsPayload.workloads[0].id, 'ssi-import', 'native validation adapter emits SSI bench workload');
-assert.match(settingsPayload.workloads[0].run[0].command, /static-site-importer import-theme/, 'workload runs SSI import command');
+assert.equal(settingsPayload.workloads[0].run[0].type, 'php', 'workload imports through PHP');
+assert.match(settingsPayload.workloads[0].run[0].code, /wp_get_ability\( 'static-site-importer\/import-theme' \)/, 'workload runs SSI import ability');
+assert.doesNotMatch(settingsPayload.workloads[0].run[0].code, /static-site-importer import-theme/, 'workload does not depend on the SSI WP-CLI command');
 assert.deepEqual(
 	settingsPayload.settings.wp_codebox_blueprint.steps.map((step) => step.options.targetFolderName).slice(0, 3),
 	['block-artifact-compiler', 'block-format-bridge', 'static-site-importer'],
