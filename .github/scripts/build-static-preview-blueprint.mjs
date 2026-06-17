@@ -2,6 +2,8 @@
 
 import { writeFile } from 'node:fs/promises';
 
+import { buildSsiImportAbilityPhp, buildSsiStackBlueprint } from './lib/ssi-stack-profile.mjs';
+
 const args = parseArgs(process.argv.slice(2));
 const site = args.get('--site') || process.env.SITE || '';
 const branch = args.get('--branch') || process.env.BRANCH || process.env.SOURCE_BRANCH || 'main';
@@ -26,15 +28,9 @@ if (githubOutput) {
 }
 
 function buildBlueprint(siteSlug, branchName) {
-	return {
-		$schema: 'https://playground.wordpress.net/blueprint-schema.json',
+	return buildSsiStackBlueprint({
 		landingPage: '/',
-		preferredVersions: { php: '8.3', wp: 'latest' },
 		steps: [
-			pluginStep('wordpress.org/plugins', 'woocommerce', 'woocommerce'),
-			pluginStep('git:directory', 'block-artifact-compiler', 'block-artifact-compiler', 'https://github.com/chubes4/block-artifact-compiler'),
-			pluginStep('git:directory', 'block-format-bridge', 'block-format-bridge', 'https://github.com/chubes4/block-format-bridge'),
-			pluginStep('git:directory', 'static-site-importer', 'static-site-importer', 'https://github.com/chubes4/static-site-importer'),
 			{
 				step: 'writeFiles',
 				writeToPath: '/tmp/static-site',
@@ -48,52 +44,15 @@ function buildBlueprint(siteSlug, branchName) {
 			},
 			{
 				step: 'runPHP',
-				code: importPhp(siteSlug),
+				code: buildSsiImportAbilityPhp({
+					htmlPath: '/tmp/static-site/index.html',
+					siteSlug,
+					trailingNewline: true,
+				}),
 			},
 			{ step: 'login', username: 'admin', password: 'password' },
 		],
-	};
-}
-
-function importPhp(siteSlug) {
-	return `<?php
-require_once '/wordpress/wp-load.php';
-wp_set_current_user( 1 );
-$ability = wp_get_ability( 'static-site-importer/import-theme' );
-if ( ! $ability ) {
-	throw new RuntimeException( 'Static Site Importer import ability is not registered.' );
-}
-$ability_result = $ability->execute( array(
-	'html_path' => '/tmp/static-site/index.html',
-	'slug' => ${phpString(siteSlug)},
-	'activate' => true,
-	'overwrite' => true,
-	'keep_source' => true,
-) );
-if ( is_wp_error( $ability_result ) ) {
-	throw new RuntimeException( $ability_result->get_error_message() );
-}
-if ( empty( $ability_result['success'] ) ) {
-	$error = isset( $ability_result['error'] ) && is_array( $ability_result['error'] ) ? $ability_result['error'] : array();
-	throw new RuntimeException( isset( $error['message'] ) ? (string) $error['message'] : 'Static site import failed.' );
-}
-`;
-}
-
-function phpString(value) {
-	return `'${String(value).replaceAll('\\', '\\\\').replaceAll("'", "\\'")}'`;
-}
-
-function pluginStep(resource, slug, targetFolderName, url = '') {
-	const pluginData = resource === 'wordpress.org/plugins'
-		? { resource, slug }
-		: { resource, url, ref: 'main', refType: 'branch' };
-
-	return {
-		step: 'installPlugin',
-		pluginData,
-		options: { activate: true, targetFolderName },
-	};
+	});
 }
 
 function parseArgs(argv) {
