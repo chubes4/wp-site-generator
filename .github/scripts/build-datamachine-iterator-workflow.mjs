@@ -3,6 +3,7 @@
 import { existsSync, readdirSync, readFileSync } from 'node:fs';
 import { mkdir, readFile, writeFile } from 'node:fs/promises';
 import path from 'node:path';
+import { formatRatio, summarizeVisualDiff } from './lib/visual-artifacts.mjs';
 
 const repoRoot = new URL('../..', import.meta.url).pathname;
 const packetsPath = process.env.FINDING_PACKETS_PATH || process.argv[2] || 'homeboy-ci-results/finding-packets.json';
@@ -265,99 +266,6 @@ function existingArtifactFiles(artifactDirPath) {
 	return known.filter((file) => entries.has(file));
 }
 
-function summarizeVisualDiff(diff) {
-	if (!diff || typeof diff !== 'object') {
-		return null;
-	}
-
-	return {
-		pass: Boolean(diff.pass),
-		threshold: numberOrNull(diff.threshold),
-		mismatch_pixels: numberOrNull(diff.mismatchPixels),
-		total_pixels: numberOrNull(diff.totalPixels),
-		mismatch_ratio: numberOrNull(diff.mismatchRatio),
-		dimension_mismatch: Boolean(diff.dimensionMismatch),
-		source: imageSummary(diff.source),
-		imported: imageSummary(diff.imported),
-		diff: imageSummary(diff.diff),
-		regions: Array.isArray(diff.regions) ? diff.regions.slice(0, 3).map(summarizeRegion) : [],
-	};
-}
-
-function imageSummary(value) {
-	return value && typeof value === 'object'
-		? {
-			path: text(value.path),
-			width: numberOrNull(value.width),
-			height: numberOrNull(value.height),
-		}
-		: null;
-}
-
-function summarizeRegion(region) {
-	return {
-		rank: numberOrNull(region.rank),
-		x: numberOrNull(region.x),
-		y: numberOrNull(region.y),
-		width: numberOrNull(region.width),
-		height: numberOrNull(region.height),
-		mismatch_pixels: numberOrNull(region.mismatchPixels),
-		total_pixels: numberOrNull(region.totalPixels),
-		mismatch_ratio: numberOrNull(region.mismatchRatio),
-		source_matches: summarizeMatches(region.source_matches),
-		imported_matches: summarizeMatches(region.imported_matches),
-		layout_deltas: summarizeLayoutDeltas(region.layout_deltas),
-	};
-}
-
-function summarizeMatches(matches) {
-	return Array.isArray(matches)
-		? matches.slice(0, 1).map((match) => ({
-			selector: text(match.selector),
-			path: text(match.path),
-			text: compactText(match.text, 120),
-			child_summary: compactText(match.child_summary, 160),
-			rect: match.rect && typeof match.rect === 'object'
-				? {
-					x: numberOrNull(match.rect.x),
-					y: numberOrNull(match.rect.y),
-					width: numberOrNull(match.rect.width),
-					height: numberOrNull(match.rect.height),
-				}
-				: null,
-		}))
-		: [];
-}
-
-function summarizeLayoutDeltas(deltas) {
-	return Array.isArray(deltas)
-		? deltas.slice(0, 1).map((delta) => ({
-			pair: numberOrNull(delta.pair),
-			source_selector: text(delta.source_selector),
-			imported_selector: text(delta.imported_selector),
-			source_path: text(delta.source_path),
-			imported_path: text(delta.imported_path),
-			source_child_summary: compactText(delta.source_child_summary, 160),
-			imported_child_summary: compactText(delta.imported_child_summary, 160),
-			rect_delta: delta.rect_delta && typeof delta.rect_delta === 'object'
-				? {
-					x: numberOrNull(delta.rect_delta.x),
-					y: numberOrNull(delta.rect_delta.y),
-					width: numberOrNull(delta.rect_delta.width),
-					height: numberOrNull(delta.rect_delta.height),
-				}
-				: null,
-			style_diffs: Array.isArray(delta.style_diffs)
-				? delta.style_diffs.slice(0, 3).map((diff) => ({
-					property: text(diff.property),
-					source: compactText(diff.source, 80),
-					imported: compactText(diff.imported, 80),
-				}))
-				: [],
-		}))
-		: [];
-}
-
 function formatVisualArtifactContext(artifact) {
 	const lines = [
 		'Visual parity artifact context:',
@@ -459,16 +367,6 @@ function summarizeRefs(value, maxItems) {
 function numberOrDefault(value, fallback) {
 	const number = Number(value);
 	return Number.isFinite(number) && number > 0 ? number : fallback;
-}
-
-function numberOrNull(value) {
-	const number = Number(value);
-	return Number.isFinite(number) ? number : null;
-}
-
-function formatRatio(value) {
-	const number = Number(value);
-	return Number.isFinite(number) ? `${(number * 100).toFixed(2)}%` : 'unknown';
 }
 
 function joinPosix(...parts) {

@@ -2,6 +2,14 @@
 
 import { mkdir, readFile, writeFile } from 'node:fs/promises';
 import path from 'node:path';
+import { candidateRepoFromDiagnostic } from './lib/finding-routing.mjs';
+import {
+	formatRatio,
+	normalizeVisualRegions,
+	probeSummary,
+	visualCodeEvidenceFromRegion,
+	visualRegionSummary,
+} from './lib/visual-artifacts.mjs';
 
 const schemaVersion = 3;
 const site = requiredEnv('SITE');
@@ -289,30 +297,6 @@ function packetFromModernDiagnostic(diagnostic, summary) {
 	};
 }
 
-function candidateRepoFromDiagnostic(diagnostic, type, category, suggestedRepairClass) {
-	const explicit = text(diagnostic?.candidate_repo);
-	if (explicit) {
-		return explicit;
-	}
-
-	const converter = text(diagnostic?.converter).toLowerCase();
-	const haystack = `${type} ${category} ${suggestedRepairClass}`.toLowerCase();
-	if (
-		converter === 'html-to-blocks-converter'
-		|| ['unsupported_html_fallback', 'core_html_block', 'freeform_block'].includes(text(type).toLowerCase())
-		|| haystack.includes('fallback_block')
-		|| haystack.includes('replace_unsupported_html')
-		|| haystack.includes('replace_fallback_block')
-	) {
-		return 'chubes4/html-to-blocks-converter';
-	}
-	if (converter === 'block-format-bridge' || haystack.includes('bridge') || haystack.includes('bfb')) {
-		return 'chubes4/block-format-bridge';
-	}
-
-	return '';
-}
-
 function packetFromBenchFailure(failure) {
 	const reasonParts = [];
 	if (failure.status) {
@@ -442,10 +426,10 @@ function packetFromVisualDiff(diff) {
 	const thresholdPercent = `${(Number(diff.threshold || 0) * 100).toFixed(2)}%`;
 	const sourceSize = `${diff.source?.width || 0}x${diff.source?.height || 0}`;
 	const importedSize = `${diff.imported?.width || 0}x${diff.imported?.height || 0}`;
-	const regions = visualRegions(diff);
+	const regions = normalizePacketVisualRegions(diff?.regions);
 	const topRegion = regions[0] || null;
 	const regionSummary = topRegion
-		? ` top_region=x:${topRegion.x},y:${topRegion.y},w:${topRegion.width},h:${topRegion.height},mismatch=${formatRatio(topRegion.mismatchRatio)} source=${probeSummary(topRegion.source_matches)} imported=${probeSummary(topRegion.imported_matches)}`
+		? ` top_region=x:${topRegion.x},y:${topRegion.y},w:${topRegion.width},h:${topRegion.height},mismatch=${formatRatio(topRegion.mismatchRatio)} source=${probeSummary(topRegion.source_matches, { includeStyleLabels: true })} imported=${probeSummary(topRegion.imported_matches, { includeStyleLabels: true })}`
 		: '';
 	return {
 		...packetBase(generatorRepo),
@@ -468,156 +452,29 @@ function packetFromVisualDiff(diff) {
 		diagnostic_refs: [],
 		asset_map_refs: [],
 		visual_regions: regions,
-		visual_code_evidence: topRegion ? visualCodeEvidence(topRegion) : {},
+		visual_code_evidence: topRegion ? visualCodeEvidenceFromRegion(topRegion, visualPacketOptions()) : {},
 	};
-}
-
-function visualRegions(diff) {
-	return asArray(diff?.regions)
-		.filter((region) => region && typeof region === 'object')
-		.slice(0, 8)
-		.map((region) => ({
-			rank: Number(region.rank || 0),
-			x: Number(region.x || 0),
-			y: Number(region.y || 0),
-			width: Number(region.width || 0),
-			height: Number(region.height || 0),
-			mismatchPixels: Number(region.mismatchPixels || 0),
-			totalPixels: Number(region.totalPixels || 0),
-			mismatchRatio: Number(region.mismatchRatio || 0),
-			source_matches: visualProbes(region.source_matches),
-			imported_matches: visualProbes(region.imported_matches),
-			layout_deltas: visualLayoutDeltas(region.layout_deltas),
-		}));
-}
-
-function visualProbes(probes) {
-	return asArray(probes)
-		.filter((probe) => probe && typeof probe === 'object')
-		.slice(0, 5)
-		.map((probe) => ({
-			selector: text(probe.selector),
-			path: text(probe.path),
-			text: truncate(probe.text, 180),
-			html: truncate(probe.html, 1000),
-			child_summary: truncate(probe.child_summary, 500),
-			computed_style: styleSnapshot(probe.computed_style),
-			matched_css_rules: cssRules(probe.matched_css_rules),
-			rect: probe.rect && typeof probe.rect === 'object' ? {
-				x: Number(probe.rect.x || 0),
-				y: Number(probe.rect.y || 0),
-				width: Number(probe.rect.width || 0),
-				height: Number(probe.rect.height || 0),
-			} : {},
-		}));
-}
-
-function visualCodeEvidence(region) {
-	return {
-		source: asArray(region.source_matches).slice(0, 3).map(probeCodeEvidence),
-		imported: asArray(region.imported_matches).slice(0, 3).map(probeCodeEvidence),
-	};
-}
-
-function probeCodeEvidence(probe) {
-	return {
-		selector: text(probe.selector),
-		path: text(probe.path),
-		text: truncate(probe.text, 180),
-		html: truncate(probe.html, 1000),
-		child_summary: truncate(probe.child_summary, 500),
-		computed_style: styleSnapshot(probe.computed_style),
-		matched_css_rules: cssRules(probe.matched_css_rules),
-	};
-}
-
-function visualLayoutDeltas(value) {
-	return asArray(value)
-		.filter((delta) => delta && typeof delta === 'object')
-		.slice(0, 3)
-		.map((delta) => ({
-			pair: Number(delta.pair || 0),
-			source_selector: text(delta.source_selector),
-			imported_selector: text(delta.imported_selector),
-			source_path: text(delta.source_path),
-			imported_path: text(delta.imported_path),
-			source_child_summary: truncate(delta.source_child_summary, 500),
-			imported_child_summary: truncate(delta.imported_child_summary, 500),
-			rect_delta: delta.rect_delta && typeof delta.rect_delta === 'object' ? {
-				x: Number(delta.rect_delta.x || 0),
-				y: Number(delta.rect_delta.y || 0),
-				width: Number(delta.rect_delta.width || 0),
-				height: Number(delta.rect_delta.height || 0),
-			} : {},
-			style_diffs: asArray(delta.style_diffs)
-				.filter((diff) => diff && typeof diff === 'object')
-				.slice(0, 16)
-				.map((diff) => ({
-					property: text(diff.property),
-					source: truncate(diff.source, 180),
-					imported: truncate(diff.imported, 180),
-				})),
-		}));
-}
-
-function styleSnapshot(value) {
-	if (!value || typeof value !== 'object' || Array.isArray(value)) {
-		return {};
-	}
-	const snapshot = {};
-	for (const [key, rawValue] of Object.entries(value)) {
-		const normalized = truncate(rawValue, 180);
-		if (normalized !== '') {
-			snapshot[key] = normalized;
-		}
-	}
-	return snapshot;
-}
-
-function cssRules(value) {
-	return asArray(value)
-		.filter((rule) => rule && typeof rule === 'object')
-		.slice(0, 8)
-		.map((rule) => ({
-			selector: text(rule.selector),
-			media: text(rule.media),
-			css: truncate(rule.css, 700),
-		}));
-}
-
-function probeSummary(probes) {
-	const probe = asArray(probes)[0];
-	if (!probe) {
-		return 'none';
-	}
-	return truncate([probe.selector, probe.text, styleSummary(probe.computed_style)].filter(Boolean).join(' '), 160);
-}
-
-function styleSummary(style) {
-	if (!style || typeof style !== 'object') {
-		return '';
-	}
-	return [
-		['display', style.display],
-		['font', style['font-family']],
-		['size', style['font-size']],
-		['bg', style['background-color']],
-	]
-		.filter(([, value]) => text(value) !== '')
-		.map(([key, value]) => `${key}=${text(value)}`)
-		.join(' ');
 }
 
 function topRegionExcerpt(region) {
-	return truncate([
-		`region ${region.x},${region.y} ${region.width}x${region.height}`,
-		`source: ${probeSummary(region.source_matches)}`,
-		`imported: ${probeSummary(region.imported_matches)}`,
-	].join('; '), 260);
+	return truncate(visualRegionSummary(region, { includeStyleLabels: true, maxSummaryLength: 160 }), 260);
 }
 
-function formatRatio(value) {
-	return `${(Number(value || 0) * 100).toFixed(2)}%`;
+function normalizePacketVisualRegions(regions) {
+	return normalizeVisualRegions(regions, visualPacketOptions());
+}
+
+function visualPacketOptions() {
+	return {
+		textLimit: 180,
+		htmlLimit: 1000,
+		childSummaryLimit: 500,
+		styleLimit: 180,
+		styleDiffLimit: 180,
+		cssLimit: 700,
+		dropEmptyStyleValues: true,
+		includeStyleLabels: true,
+	};
 }
 
 function kindFromDiagnostic(type, category, blockName) {

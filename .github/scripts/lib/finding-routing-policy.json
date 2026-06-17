@@ -1,0 +1,70 @@
+{
+  "candidate_repos": [
+    "chubes4/static-site-importer",
+    "chubes4/html-to-blocks-converter",
+    "chubes4/block-format-bridge",
+    "chubes4/block-artifact-compiler",
+    "chubes4/wp-site-generator"
+  ],
+  "default_repo": "chubes4/static-site-importer",
+  "rules": [
+    {
+      "id": "bench-failure",
+      "repo": "chubes4/wp-site-generator",
+      "kind": ["bench_failure"]
+    },
+    {
+      "id": "visual-parity",
+      "repo": "chubes4/wp-site-generator",
+      "kind": ["visual_parity_outcome", "visual_parity_mismatch"]
+    },
+    {
+      "id": "block-artifact-compiler-explicit",
+      "repo": "chubes4/block-artifact-compiler",
+      "explicit_repo": ["chubes4/block-artifact-compiler"]
+    },
+    {
+      "id": "ssi-baseline",
+      "repo": "chubes4/static-site-importer",
+      "kind": ["report_missing", "import_clean"]
+    },
+    {
+      "id": "html-to-blocks-converter",
+      "repo": "chubes4/html-to-blocks-converter",
+      "converter_includes": ["html-to-block", "h2bc"],
+      "any_includes": ["converter_support", "replace_fallback", "fallback", "core_html", "freeform"]
+    },
+    {
+      "id": "block-format-bridge",
+      "repo": "chubes4/block-format-bridge",
+      "haystack_includes": ["block-format-bridge", "bfb", "serialization"],
+      "category_includes": ["adapter", "scope", "bfb_report"]
+    },
+    {
+      "id": "block-artifact-compiler",
+      "repo": "chubes4/block-artifact-compiler",
+      "haystack_includes": ["block-artifact-compiler", "artifact schema", "artifact contract", "artifact compiler", "artifact_schema", "artifact_contract", "artifact_compiler", "schema_validation", "compile_artifact"],
+      "category_includes": ["artifact_schema", "artifact_contract", "artifact_compiler"]
+    },
+    {
+      "id": "static-site-importer",
+      "repo": "chubes4/static-site-importer",
+      "category_includes": ["source_region", "source-selection", "unresolved_asset", "asset_map", "import_report"],
+      "stage_includes": ["source_selection", "asset_map"],
+      "haystack_includes": ["source-selection", "asset_map"]
+    },
+    {
+      "id": "wp-site-generator",
+      "repo": "chubes4/wp-site-generator",
+      "haystack_includes": ["generator", "static-site-generator", "visual parity", "homeboy-bench"],
+      "category_includes": ["generator_policy"]
+    }
+  ],
+  "route_reasons": {
+    "chubes4/html-to-blocks-converter": "converter diagnostic routes to html-to-blocks-converter",
+    "chubes4/block-format-bridge": "BFB adapter/report/scope diagnostic routes to block-format-bridge",
+    "chubes4/block-artifact-compiler": "artifact schema/contract/compiler diagnostic routes to block-artifact-compiler",
+    "chubes4/static-site-importer": "SSI import/source-selection/asset-map diagnostic routes to static-site-importer",
+    "chubes4/wp-site-generator": "visual parity or generator policy diagnostic routes to wp-site-generator"
+  }
+}
