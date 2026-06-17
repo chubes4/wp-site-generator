@@ -84,7 +84,7 @@ assert.doesNotMatch(settingsPayload.workloads[0].run[0].code, /static-site-impor
 assert.doesNotMatch(settingsPayload.workloads[0].run[0].code, /static-site-importer\/import-theme/, 'workload does not depend on the legacy import-theme ability');
 assert.doesNotMatch(settingsPayload.workloads[0].run[0].code, /^<\?php/, 'inline PHP workload code omits an opening tag for eval execution');
 assert.deepEqual(settingsPayload.website_artifact.files.map((file) => file.path), ['website/assets/styles.css', 'website/index.html'], 'validation settings pass candidate files as a BAC website artifact');
-assert.deepEqual(settingsPayload.workloads[0].artifacts.import_report, { path: 'wp-content/themes/issue-123-native-loop/import-report.json' }, 'import report artifact declaration matches WP Codebox bench result schema');
+assert.equal(settingsPayload.workloads[0].artifacts, undefined, 'runtime import report stays in workload metadata instead of a collectable bench artifact declaration');
 assert.deepEqual(
 	settingsPayload.settings.wp_codebox_blueprint.steps.map((step) => step.options.targetFolderName).slice(0, 3),
 	['block-artifact-compiler', 'block-format-bridge', 'static-site-importer'],

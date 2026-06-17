@@ -80,11 +80,6 @@ export function buildSsiImportWorkload(siteSlug, { websiteArtifact = null } = {}
 				file: '.github/homeboy/ssi-import-diagnostics.php',
 			},
 		],
-		artifacts: {
-			import_report: {
-				path: `wp-content/themes/${siteSlug}/import-report.json`,
-			},
-		},
 	};
 }
 
