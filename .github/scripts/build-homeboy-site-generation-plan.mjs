@@ -2,6 +2,11 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import {
+	applyHomeboyAgentRuntimeOverrides,
+	readHomeboyAgentRuntimeOverrides,
+	writeJsonFile,
+} from './lib/ci-runtime-utils.mjs';
+import {
 	evaluateComplexityPolicy,
 	loadPolicy,
 	loadQualitySignals,
@@ -20,7 +25,7 @@ const groupKey = manualTaskKind ? `site-generator-${manualTaskKind}` : 'site-gen
 
 const ci = (name) => `.ci/${name}`;
 const artifactsRoot = process.env.HOMEBOY_ARTIFACT_ROOT || '.ci/homeboy-agent-task-artifacts';
-const runtimeOverrides = readRuntimeOverrides(process.env);
+const runtimeOverrides = readHomeboyAgentRuntimeOverrides(process.env);
 const policyInputs = resolvePolicyInputs({ root });
 const complexityPolicy = loadPolicy(policyInputs.policyPath);
 const qualitySignals = loadQualitySignals(policyInputs.qualitySignalsPath);
@@ -33,80 +38,6 @@ const complexityDecision = evaluateComplexityPolicy({
 const complexityTaskInput = {
 	complexity_policy: complexityDecision,
 };
-
-function splitList(value) {
-  return String(value || '')
-    .split(',')
-    .map((item) => item.trim())
-    .filter(Boolean);
-}
-
-function parseJsonObject(value) {
-  if (!value) {
-    return null;
-  }
-  const parsed = JSON.parse(value);
-  if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) {
-    throw new Error('Expected JSON object');
-  }
-  return parsed;
-}
-
-function parseJsonArray(value) {
-  if (!value) {
-    return null;
-  }
-  const parsed = JSON.parse(value);
-  if (!Array.isArray(parsed)) {
-    throw new Error('Expected JSON array');
-  }
-  return parsed;
-}
-
-function readRuntimeOverrides(env) {
-  return {
-    source: 'homeboy-agent-runtime-env',
-    runtimeId: env.HOMEBOY_AGENT_RUNTIME || 'wp-codebox',
-    runtimeBin: env.HOMEBOY_AGENT_RUNTIME_BIN || '',
-    provider: env.HOMEBOY_AGENT_RUNTIME_PROVIDER || '',
-    model: env.HOMEBOY_AGENT_RUNTIME_MODEL || '',
-    providerPluginPaths: splitList(env.HOMEBOY_AGENT_RUNTIME_PROVIDER_PLUGIN_PATHS || ''),
-    secretEnv: splitList(env.HOMEBOY_AGENT_RUNTIME_SECRET_ENV || ''),
-    runtimeEnv: parseJsonObject(env.HOMEBOY_AGENT_RUNTIME_ENV || ''),
-    runtimeConfigMounts: parseJsonArray(env.HOMEBOY_AGENT_RUNTIME_CONFIG_MOUNTS || ''),
-    runtimeStateMounts: parseJsonArray(env.HOMEBOY_AGENT_RUNTIME_STATE_MOUNTS || ''),
-  };
-}
-
-function applyRuntimeOverrides(config, runtimeTaskInput) {
-  if (runtimeOverrides.provider) {
-    config.provider = runtimeOverrides.provider;
-    runtimeTaskInput.provider = runtimeOverrides.provider;
-  }
-  if (runtimeOverrides.model) {
-    config.model = runtimeOverrides.model;
-    runtimeTaskInput.model = runtimeOverrides.model;
-  }
-  if (runtimeOverrides.providerPluginPaths.length > 0) {
-    config.provider_plugin_paths = runtimeOverrides.providerPluginPaths;
-  }
-  if (runtimeOverrides.secretEnv.length > 0) {
-    config.secret_env = runtimeOverrides.secretEnv;
-  }
-  if (runtimeOverrides.runtimeEnv) {
-    config.runtime_env = runtimeOverrides.runtimeEnv;
-  }
-  if (runtimeOverrides.runtimeConfigMounts) {
-    config.runtime_config_mounts = runtimeOverrides.runtimeConfigMounts;
-  }
-  if (runtimeOverrides.runtimeStateMounts) {
-    config.runtime_state_mounts = runtimeOverrides.runtimeStateMounts;
-  }
-  config.runtime_id = runtimeOverrides.runtimeId;
-  if (runtimeOverrides.runtimeBin) {
-    config.runtime_bin = runtimeOverrides.runtimeBin;
-  }
-}
 
 function taskOutputPath(field) {
   return `/outputs/${field}`;
@@ -168,7 +99,7 @@ function datamachineConfig({
     structured_artifacts: structuredArtifacts,
   };
 
-  applyRuntimeOverrides(config, runtimeTaskInput);
+  applyHomeboyAgentRuntimeOverrides(config, runtimeTaskInput, runtimeOverrides);
 
 	if (taskComplexityPolicy) {
 		runtimeTaskInput.complexity_policy = taskComplexityPolicy;
@@ -649,5 +580,5 @@ const loopPlan = {
 const plan = manualTaskKind ? manualPlan() : loopPlan;
 
 fs.mkdirSync(path.dirname(outputPath), { recursive: true });
-fs.writeFileSync(outputPath, `${JSON.stringify(plan, null, 2)}\n`);
+await writeJsonFile(outputPath, plan);
 console.log(outputPath);

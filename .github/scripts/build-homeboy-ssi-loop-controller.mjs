@@ -2,6 +2,7 @@
 
 import { mkdir, writeFile } from 'node:fs/promises';
 import path from 'node:path';
+import { parseArgs } from './lib/ci-runtime-utils.mjs';
 
 const args = parseArgs(process.argv.slice(2));
 const root = process.env.GITHUB_WORKSPACE || process.cwd();
@@ -270,19 +271,3 @@ const controller = {
 await mkdir(path.dirname(outputPath), { recursive: true });
 await writeFile(outputPath, `${JSON.stringify(controller, null, 2)}\n`);
 console.log(outputPath);
-
-function parseArgs(argv) {
-	const parsed = new Map();
-	for (let i = 0; i < argv.length; i += 1) {
-		const arg = argv[i];
-		if (!arg.startsWith('--')) {
-			continue;
-		}
-		const next = argv[i + 1];
-		parsed.set(arg, next && !next.startsWith('--') ? next : '1');
-		if (next && !next.startsWith('--')) {
-			i += 1;
-		}
-	}
-	return parsed;
-}
