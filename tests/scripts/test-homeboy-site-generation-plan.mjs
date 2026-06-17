@@ -90,7 +90,8 @@ try {
 			'findings-to-iterator-groups:finding_group',
 			'iterator-to-revalidation:iterator_upstream_pull_request',
 			'revalidation-to-reviewer:revalidation_attempt',
-			'iterator-evidence-to-reviewer:iterator_upstream_pull_request',
+			'iterator-issue-evidence-to-reviewer:iterator_upstream_issue',
+			'iterator-pr-evidence-to-reviewer:iterator_upstream_pull_request',
 		],
 		'controller records the enforceable artifact handoff chain'
 	);
@@ -142,7 +143,8 @@ try {
 	assert.deepEqual(workflows.iterator.consumes, ['finding_group'], 'iterator workflow consumes grouped findings');
 	assert.deepEqual(workflows.iterator.fan_out.group_by, ['owner_repo', 'root_cause', 'group_id'], 'iterator fan-out is grouped by owner/root cause/group id');
 	assert.deepEqual(workflows.revalidation.consumes, ['static_site_pull_request', 'iterator_upstream_pull_request'], 'revalidation waits for generated PR and iterator PR artifacts');
-	assert.deepEqual(workflows.reviewer.consumes, ['static_site_pull_request', 'static_validation_run', 'visual_parity_artifact', 'finding_packet_set', 'iterator_upstream_pull_request', 'revalidation_attempt'], 'reviewer consumes the full iterator and revalidation evidence set');
+	assert.deepEqual(workflows.reviewer.consumes, ['static_site_pull_request', 'static_validation_run', 'visual_parity_artifact', 'finding_packet_set', 'iterator_upstream_issue', 'iterator_upstream_pull_request', 'revalidation_attempt'], 'reviewer consumes issue-only and PR iterator evidence');
+	assert.equal(controllerSpec.artifact_flow.find((edge) => edge.edge_id === 'iterator-to-revalidation').required, false, 'issue-only iterator groups do not require PR-first revalidation');
 	assert.deepEqual(workflows.reviewer.promotion_gate, {
 		requires: ['reviewer_gate_outcome.decision'],
 		passing_decisions: ['PASS'],

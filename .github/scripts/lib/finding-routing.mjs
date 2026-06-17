@@ -28,16 +28,16 @@ export function candidateRepoFromDiagnostic(diagnostic, type, category, suggeste
 
 export function routeCandidateRepo(packet) {
 	const explicit = text(packet.candidate_repo);
+	if (isCandidateRepo(explicit)) {
+		return explicit;
+	}
+
 	const fields = routingFields(packet, explicit);
 
 	for (const rule of policy.rules) {
 		if (matchesRule(rule, fields)) {
 			return rule.repo;
 		}
-	}
-
-	if (isCandidateRepo(explicit)) {
-		return explicit;
 	}
 
 	return policy.default_repo;

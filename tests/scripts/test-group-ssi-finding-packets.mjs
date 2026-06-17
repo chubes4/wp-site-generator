@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 
 import assert from 'node:assert/strict';
-import { mkdtemp, readFile } from 'node:fs/promises';
+import { mkdtemp, readFile, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { spawnSync } from 'node:child_process';
@@ -91,6 +91,12 @@ for (const packet of grouped.groups.flatMap((group) => group.packets)) {
 	assert.ok(Array.isArray(packet.asset_map_refs), 'schema v3 packets carry asset map refs');
 }
 
+for (const group of grouped.groups) {
+	assert.equal(group.owner_repo, group.candidate_repo, 'FindingGroup owner_repo agrees with routed candidate_repo');
+	assert.ok(group.root_cause, `FindingGroup ${group.candidate_repo}/${group.kind} exposes root_cause`);
+	assert.ok(group.group_id, `FindingGroup ${group.candidate_repo}/${group.kind} exposes group_id`);
+}
+
 // Design metadata must flow through grouping without changing routing keys.
 const designFields = [
 	'design_system',
@@ -138,3 +144,38 @@ for (const field of designFields) {
 // Routing must stay stable: groups are keyed by diagnostic signals, not design metadata.
 const h2bcGroups = grouped.groups.filter((group) => group.candidate_repo === 'chubes4/html-to-blocks-converter');
 assert.equal(h2bcGroups.length, 3, 'Design fields must not split converter routing groups');
+
+const explicitOutputPath = path.join(tmp, 'explicit-owner-groups.json');
+const explicitFixturePath = path.join(tmp, 'explicit-owner-packets.json');
+await writeFile(explicitFixturePath, `${JSON.stringify([
+	{
+		schema_version: 3,
+		diagnostic_id: 'diag-explicit-visual-artifact-owner',
+		kind: 'visual_parity_mismatch',
+		category: 'artifact_schema',
+		reason_code: 'schema_validation_failed',
+		suggested_repair_class: 'repair_artifact_schema_contract',
+		candidate_repo: 'chubes4/block-artifact-compiler',
+		converter: 'block-artifact-compiler',
+		stage: 'artifact_contract_validation',
+		source_path: 'artifacts/site.json',
+		selector: '$.blocks[0]',
+		source_html_preview: '<section class="hero"><h1>Shop</h1></section>',
+		reason: 'Visual evidence points at an explicitly owned artifact contract failure.',
+	},
+], null, 2)}\n`);
+
+const explicitResult = spawnSync(process.execPath, [
+	path.join(repoRoot, '.github/scripts/group-ssi-finding-packets.mjs'),
+	explicitFixturePath,
+], {
+	cwd: repoRoot,
+	env: { ...process.env, FINDING_GROUPS_PATH: explicitOutputPath },
+	encoding: 'utf8',
+});
+
+assert.equal(explicitResult.status, 0, explicitResult.stderr || explicitResult.stdout);
+const explicitGrouped = JSON.parse(await readFile(explicitOutputPath, 'utf8'));
+assert.equal(explicitGrouped.groups.length, 1);
+assert.equal(explicitGrouped.groups[0].owner_repo, 'chubes4/block-artifact-compiler', 'Valid explicit candidate_repo wins before broad visual routing');
+assert.equal(explicitGrouped.groups[0].candidate_repo, 'chubes4/block-artifact-compiler');

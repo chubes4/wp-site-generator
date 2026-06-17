@@ -518,6 +518,7 @@
         "static_validation_run",
         "visual_parity_artifact",
         "finding_packet_set",
+        "iterator_upstream_issue",
         "iterator_upstream_pull_request",
         "revalidation_attempt"
       ],
@@ -529,6 +530,7 @@
         "static_validation_run",
         "visual_parity_artifact",
         "finding_packet_set",
+        "iterator_upstream_issue",
         "iterator_upstream_pull_request",
         "revalidation_attempt",
         "reviewer_gate_outcome"
@@ -669,7 +671,7 @@
         "revalidation"
       ],
       "artifact": "iterator_upstream_pull_request",
-      "required": true
+      "required": false
     },
     {
       "edge_id": "revalidation-to-reviewer",
@@ -683,7 +685,18 @@
       "required": true
     },
     {
-      "edge_id": "iterator-evidence-to-reviewer",
+      "edge_id": "iterator-issue-evidence-to-reviewer",
+      "from": [
+        "iterator"
+      ],
+      "to": [
+        "reviewer"
+      ],
+      "artifact": "iterator_upstream_issue",
+      "required": false
+    },
+    {
+      "edge_id": "iterator-pr-evidence-to-reviewer",
       "from": [
         "iterator"
       ],
@@ -691,7 +704,7 @@
         "reviewer"
       ],
       "artifact": "iterator_upstream_pull_request",
-      "required": true
+      "required": false
     }
   ],
   "iterator_groups": {
