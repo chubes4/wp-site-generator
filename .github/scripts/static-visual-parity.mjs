@@ -5,9 +5,8 @@ import { mkdir, rm } from 'node:fs/promises';
 import { existsSync } from 'node:fs';
 import path from 'node:path';
 
-import { readJsonFile } from './lib/ci-runtime-utils.mjs';
-import { buildSsiStackManifest } from './lib/ssi-stack-manifest.mjs';
-import { buildSsiImportAbilityPhp, buildSsiStackBlueprint, buildSsiStackProfile, requiresCommerceStack } from './lib/ssi-stack-profile.mjs';
+import { buildSsiImportAbilityPhp, requiresCommerceStack } from './lib/ssi-stack-profile.mjs';
+import { buildSsiRuntimeBlueprint, loadSsiStackManifest } from './lib/ssi-stack-runtime.mjs';
 
 const require = createRequire(import.meta.url);
 const { runStaticVisualParity } = require('homeboy-extension-wordpress/static-visual-parity');
@@ -52,8 +51,8 @@ if (!existsSync(wpCodeboxCli)) {
 await mkdir(outputDir, { recursive: true });
 await rm(importReadyPath, { force: true });
 
-const manifest = manifestPath ? await readJsonFile(manifestPath) : buildSsiStackManifest();
-const blueprint = buildSsiStackBlueprint({
+const manifest = await loadSsiStackManifest(manifestPath);
+const blueprint = buildSsiRuntimeBlueprint({
 	lane,
 	landingPage: '/',
 	steps: [
@@ -62,7 +61,7 @@ const blueprint = buildSsiStackBlueprint({
 			code: importViaAbilityPhp,
 		},
 	],
-}, buildSsiStackProfile(manifest));
+}, manifest);
 
 try {
 	await runStaticVisualParity({

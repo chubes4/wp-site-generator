@@ -1,9 +1,7 @@
 #!/usr/bin/env node
 
-import { appendGithubOutput, parseArgs, readJsonFile, writeJsonFile } from './lib/ci-runtime-utils.mjs';
-import { buildSsiStackManifest } from './lib/ssi-stack-manifest.mjs';
-
-import { buildSsiImportAbilityPhp, buildSsiStackBlueprint, buildSsiStackProfile } from './lib/ssi-stack-profile.mjs';
+import { appendGithubOutput, parseArgs, writeJsonFile } from './lib/ci-runtime-utils.mjs';
+import { buildSsiPreviewBlueprint, buildSsiPreviewSource, loadSsiStackManifest } from './lib/ssi-stack-runtime.mjs';
 
 const args = parseArgs(process.argv.slice(2));
 const site = args.get('--site') || process.env.SITE || '';
@@ -19,9 +17,9 @@ if (!site) {
 	throw new Error('SITE or --site is required.');
 }
 
-const source = buildSourceProvenance({ sourceRepo, sourceHeadSha, branch });
-const manifest = manifestPath ? await readJsonFile(manifestPath) : buildSsiStackManifest();
-const blueprint = buildBlueprint(site, source, lane, manifest);
+const source = buildSsiPreviewSource({ repo: sourceRepo, sha: sourceHeadSha, branch });
+const manifest = await loadSsiStackManifest(manifestPath);
+const blueprint = buildSsiPreviewBlueprint({ site, source, lane, manifest });
 const url = `https://playground.wordpress.net/#${encodeURIComponent(JSON.stringify(blueprint))}`;
 
 if (outputPath) {
@@ -32,52 +30,4 @@ if (githubOutput) {
 	await appendGithubOutput(githubOutput, { url }, { multiline: false });
 } else {
 	console.log(JSON.stringify({ site, lane, branch, source, url, blueprint, stack_manifest: manifest }, null, 2));
-}
-
-function buildSourceProvenance({ sourceRepo: repo, sourceHeadSha: sha, branch: branchName }) {
-	if (sha) {
-		return {
-			repo,
-			ref: sha,
-			refType: 'commit',
-			provenance: 'immutable-head-sha',
-		};
-	}
-
-	return {
-		repo,
-		ref: branchName,
-		refType: 'branch',
-		provenance: 'mutable-branch-fallback',
-		fallback_reason: 'SOURCE_HEAD_SHA was not provided, so Playground preview must use SOURCE_BRANCH/BRANCH.',
-	};
-}
-
-function buildBlueprint(siteSlug, source, targetLane, manifest) {
-	return buildSsiStackBlueprint({
-		lane: targetLane,
-		landingPage: '/',
-		steps: [
-			{
-				step: 'writeFiles',
-				writeToPath: '/tmp/static-site',
-				filesTree: {
-					resource: 'git:directory',
-					url: `https://github.com/${source.repo}`,
-					ref: source.ref,
-					refType: source.refType,
-					path: `static-sites/${siteSlug}`,
-				},
-			},
-			{
-				step: 'runPHP',
-				code: buildSsiImportAbilityPhp({
-					htmlPath: '/tmp/static-site/index.html',
-					siteSlug,
-					trailingNewline: true,
-				}),
-			},
-			{ step: 'login', username: 'admin', password: 'password' },
-		],
-	}, buildSsiStackProfile(manifest));
 }

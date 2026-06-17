@@ -4,7 +4,7 @@ import { execFile } from 'node:child_process';
 import { promisify } from 'node:util';
 
 import { appendGithubOutput, parseArgs, writeJsonFile } from './lib/ci-runtime-utils.mjs';
-import { buildSsiStackManifest, ssiStackRepositories } from './lib/ssi-stack-manifest.mjs';
+import { buildSsiStackManifest, ssiStackHarness, ssiStackRepositories } from './lib/ssi-stack-manifest.mjs';
 
 const execFileAsync = promisify(execFile);
 const args = parseArgs(process.argv.slice(2));
@@ -13,7 +13,7 @@ const githubOutput = args.get('--github-output') || process.env.GITHUB_OUTPUT ||
 const harnessSha = args.get('--harness-sha') || process.env.VALIDATION_HARNESS_SHA || '';
 
 const resolved = {};
-for (const repository of Object.values(ssiStackRepositories)) {
+for (const repository of [ssiStackHarness, ...Object.values(ssiStackRepositories)]) {
 	resolved[repository.id] = await resolveRemoteRef(repository.gitUrl, repository.ref, repository.refType);
 }
 

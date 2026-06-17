@@ -2,7 +2,7 @@
 
 import { readFile } from 'node:fs/promises';
 import { pathToFileURL } from 'node:url';
-import { ssiPrBodyMetrics, validationMetricValue } from './lib/ssi-metrics.mjs';
+import { normalizePublishGateRows as normalizeSsiPublishGateRows, normalizeValidationMetricRows } from './lib/ssi-metrics.mjs';
 
 export function renderStaticSitePrBody({ candidate = {}, validation = {}, publishGate = {}, closes = '' } = {}) {
 	const title = text(candidate.title || candidate.site_title || candidate.name || 'Static site candidate');
@@ -47,26 +47,11 @@ export function renderStaticSitePrBody({ candidate = {}, validation = {}, publis
 }
 
 export function normalizePublishGateRows(publishGate = {}) {
-	const gates = publishGate.gates && typeof publishGate.gates === 'object' ? publishGate.gates : {};
-	return [
-		['fallback_blocks', 'Fallback blocks'],
-		['conversion_findings', 'Conversion findings'],
-		['visual_parity', 'Visual parity'],
-	].filter(([key]) => gates[key] && typeof gates[key] === 'object').map(([key, label]) => ({
-		label,
-		passed: gates[key].passed === true,
-		value: key === 'visual_parity'
-			? `status=${gates[key].status ?? ''}; mismatches=${gates[key].mismatch_count ?? 0}; max_delta=${gates[key].max_delta_ratio ?? 0}`
-			: gates[key].value,
-		target: gates[key].target || '',
-	}));
+	return normalizeSsiPublishGateRows(publishGate);
 }
 
 export function normalizeValidationMetrics(validation = {}) {
-	return [
-		['Status', validation.passed === false || validation.status === 'failed' ? 'failed' : validation.status || 'passed'],
-		...ssiPrBodyMetrics.map(([label, key]) => [label, validationMetricValue(validation, key)]),
-	];
+	return normalizeValidationMetricRows(validation);
 }
 
 function normalizeArtifactRefs(refs) {
