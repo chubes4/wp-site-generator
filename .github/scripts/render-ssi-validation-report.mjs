@@ -2,10 +2,13 @@
 
 import { readFile } from 'node:fs/promises';
 
+import { manifestSummaryRows } from './lib/ssi-stack-manifest.mjs';
+
 const site = process.env.SITE || '';
 const benchPath = process.env.BENCH_PATH || 'homeboy-ci-results/bench.json';
 const visualSummaryPath = process.env.VISUAL_SUMMARY_PATH || `visual-parity-artifacts/${site}/summary.json`;
 const importReadyPath = process.env.IMPORT_READY_PATH || `visual-parity-artifacts/${site}/import-ready.json`;
+const manifestPath = process.env.SSI_STACK_MANIFEST_PATH || 'homeboy-ci-results/ssi-stack-manifest.json';
 
 const signalMetrics = [
 	['ssi_signal_total_count', 'total classified signals'],
@@ -40,27 +43,28 @@ const benchRead = await readInput(benchPath)
 	.then((text) => ({ text, error: '' }))
 	.catch((error) => ({ text: '', error: error?.message || String(error) }));
 const bench = benchRead.text ? parseJson(benchRead.text) : null;
+const stackManifest = await loadJson(manifestPath);
 const ssi = (bench?.data?.payload || bench?.data)?.results?.scenarios?.find((scenario) => scenario?.id === 'ssi-import') || await loadRecoveredSsiScenario();
 
 if (!ssi) {
 	if (benchRead.error) {
-		console.log(`_Bench artifact could not be read: ${escapeText(benchRead.error)}_`);
+		console.log([renderStackManifest(stackManifest), `_Bench artifact could not be read: ${escapeText(benchRead.error)}_`].filter(Boolean).join('\n\n'));
 		process.exit(0);
 	}
 	if (benchRead.text && !bench) {
-		console.log('_Bench artifact is not valid JSON._');
+		console.log([renderStackManifest(stackManifest), '_Bench artifact is not valid JSON._'].filter(Boolean).join('\n\n'));
 		process.exit(0);
 	}
 	const benchFailure = detectBenchFailure(bench);
 	if (benchFailure) {
-		console.log(renderBenchFailure(benchFailure));
+		console.log([renderStackManifest(stackManifest), renderBenchFailure(benchFailure)].filter(Boolean).join('\n\n'));
 		process.exit(0);
 	}
-	console.log('_SSI workload did not run._');
+	console.log([renderStackManifest(stackManifest), '_SSI workload did not run._'].filter(Boolean).join('\n\n'));
 	process.exit(0);
 }
 
-console.log(renderReport(ssi));
+console.log(renderReport(ssi, stackManifest));
 
 async function readInput(path) {
 	if (path === '-') {
@@ -122,10 +126,11 @@ function metricsFromImportSummary(summary, quality = null) {
 	};
 }
 
-function renderReport(ssi) {
+function renderReport(ssi, stackManifest) {
 	const metrics = ssi?.metrics && typeof ssi.metrics === 'object' ? ssi.metrics : {};
 	const sections = [];
 
+	sections.push(renderStackManifest(stackManifest));
 	sections.push(renderSignalTable(metrics));
 
 	const perf = renderPerfTable(metrics);
@@ -144,6 +149,24 @@ function renderReport(ssi) {
 	sections.push(renderImportReport(importReportSummary));
 
 	return sections.filter(Boolean).join('\n\n');
+}
+
+function renderStackManifest(manifest) {
+	if (!manifest || typeof manifest !== 'object') {
+		return '';
+	}
+
+	const rows = manifestSummaryRows(manifest)
+		.map((entry) => `| ${escapeCell(entry.label)} | \`${escapeCell(entry.ref)}\` | \`${escapeCell(shortSha(entry.sha))}\` |`);
+	if (rows.length === 0) {
+		return '';
+	}
+
+	return ['### Validation Harness Refs', '| Component | Ref | SHA |', '| --- | --- | --- |', ...rows].join('\n');
+}
+
+function shortSha(value) {
+	return value ? String(value).slice(0, 12) : 'unresolved';
 }
 
 function detectBenchFailure(bench) {

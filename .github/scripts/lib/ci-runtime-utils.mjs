@@ -1,4 +1,4 @@
-import { writeFile } from 'node:fs/promises';
+import { readFile, writeFile } from 'node:fs/promises';
 
 export function parseArgs(argv) {
 	const parsed = new Map();
@@ -25,6 +25,10 @@ export function requiredValue(name, value) {
 
 export async function writeJsonFile(filePath, value) {
 	await writeFile(filePath, `${JSON.stringify(value, null, 2)}\n`);
+}
+
+export async function readJsonFile(filePath) {
+	return JSON.parse(await readFile(filePath, 'utf8'));
 }
 
 export async function appendGithubOutput(filePath, values, { multiline = true } = {}) {

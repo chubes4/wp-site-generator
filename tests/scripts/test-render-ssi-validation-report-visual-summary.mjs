@@ -11,8 +11,29 @@ const renderer = path.join(repoRoot, '.github/scripts/render-ssi-validation-repo
 const tempDir = await mkdtemp(path.join(tmpdir(), 'wp-site-generator-render-visual-summary-'));
 const site = 'issue-356-kiln-shelf-commons';
 const visualDir = path.join(tempDir, 'visual-parity-artifacts', site);
+const manifestPath = path.join(tempDir, 'homeboy-ci-results', 'ssi-stack-manifest.json');
 
 await mkdir(visualDir, { recursive: true });
+await mkdir(path.dirname(manifestPath), { recursive: true });
+await writeJson(manifestPath, {
+	schema_version: 1,
+	harness: {
+		id: 'wp_site_generator_validation_harness',
+		label: 'WP Site Generator validation harness scripts',
+		url: 'https://github.com/chubes4/wp-site-generator',
+		ref: 'main',
+		sha: 'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa',
+	},
+	repositories: {
+		static_site_importer: {
+			id: 'static_site_importer',
+			label: 'Static Site Importer',
+			url: 'https://github.com/chubes4/static-site-importer',
+			ref: 'main',
+			sha: 'dddddddddddddddddddddddddddddddddddddddd',
+		},
+	},
+});
 await writeJson(path.join(visualDir, 'summary.json'), {
 	site,
 	importReadiness: {
@@ -41,6 +62,7 @@ const result = spawnSync(process.execPath, [renderer], {
 		BENCH_PATH: path.join(tempDir, 'homeboy-ci-results/bench.json'),
 		VISUAL_SUMMARY_PATH: path.join(visualDir, 'summary.json'),
 		IMPORT_READY_PATH: path.join(visualDir, 'import-ready.json'),
+		SSI_STACK_MANIFEST_PATH: manifestPath,
 	},
 	encoding: 'utf8',
 });
@@ -48,6 +70,8 @@ const result = spawnSync(process.execPath, [renderer], {
 assert.equal(result.status, 0, result.stderr || result.stdout);
 assert.doesNotMatch(result.stdout, /SSI workload did not run/, 'visual import readiness suppresses missing workload noise');
 assert.match(result.stdout, /### SSI Signals/, 'visual import readiness renders the normal SSI report sections');
+assert.match(result.stdout, /### Validation Harness Refs/, 'stack manifest refs are rendered');
+assert.match(result.stdout, /Static Site Importer \| `main` \| `dddddddddddd`/, 'stack manifest SHA is rendered');
 assert.match(result.stdout, /fallback blocks \| 0/, 'recovered quality metrics are rendered');
 assert.match(result.stdout, /### SSI Import Report/, 'recovered import report summary is rendered');
 assert.match(result.stdout, new RegExp(`/wordpress/wp-content/themes/${site}/import-report\\.json`), 'recovered report path is rendered');

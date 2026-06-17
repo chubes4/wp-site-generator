@@ -1,6 +1,9 @@
+import { buildSsiStackManifest, gitDirectoryResource } from './ssi-stack-manifest.mjs';
+
 export const ssiStackProfile = {
 	blueprintSchema: 'https://playground.wordpress.net/blueprint-schema.json',
 	preferredVersions: { php: '8.3', wp: 'latest' },
+	manifest: buildSsiStackManifest(),
 	components: [
 		{
 			type: 'wordpress.org/plugins',
@@ -9,30 +12,28 @@ export const ssiStackProfile = {
 		},
 		{
 			type: 'git:directory',
-			url: 'https://github.com/chubes4/block-artifact-compiler',
-			ref: 'main',
-			refType: 'branch',
+			manifestId: 'block_artifact_compiler',
 			targetFolderName: 'block-artifact-compiler',
 		},
 		{
 			type: 'git:directory',
-			url: 'https://github.com/chubes4/block-format-bridge',
-			ref: 'main',
-			refType: 'branch',
+			manifestId: 'block_format_bridge',
 			targetFolderName: 'block-format-bridge',
 		},
 		{
 			type: 'git:directory',
-			url: 'https://github.com/chubes4/static-site-importer',
-			ref: 'main',
-			refType: 'branch',
+			manifestId: 'static_site_importer',
 			targetFolderName: 'static-site-importer',
 		},
 	],
 };
 
+export function buildSsiStackProfile(manifest = buildSsiStackManifest()) {
+	return { ...ssiStackProfile, manifest };
+}
+
 export function buildSsiStackInstallSteps(profile = ssiStackProfile) {
-	return profile.components.map((component) => buildPluginInstallStep(component));
+	return profile.components.map((component) => buildPluginInstallStep(component, profile.manifest));
 }
 
 export function buildSsiStackBlueprint({ steps = [], landingPage } = {}, profile = ssiStackProfile) {
@@ -130,15 +131,10 @@ export function buildSsiImportAbilityPhp({ htmlPath, siteSlug, markerPath, asser
 	return `${lines.join('\n')}${trailingNewline ? '\n' : ''}`;
 }
 
-function buildPluginInstallStep(component) {
+function buildPluginInstallStep(component, manifest = ssiStackProfile.manifest) {
 	const pluginData = component.type === 'wordpress.org/plugins'
 		? { resource: component.type, slug: component.slug }
-		: {
-			resource: component.type,
-			url: component.url,
-			ref: component.ref,
-			refType: component.refType,
-		};
+		: gitDirectoryResource(manifest, component.manifestId);
 
 	return {
 		step: 'installPlugin',
