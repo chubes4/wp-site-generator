@@ -6,6 +6,18 @@ import { candidateRepoFromDiagnostic } from './lib/finding-routing.mjs';
 import { loadJsonOrNull, loadRecoveredSsiImportSummary } from './lib/ssi-import-summary.mjs';
 import { ssiAggregateQualityMetrics } from './lib/ssi-metrics.mjs';
 import {
+	categoryFromDiagnostic,
+	converterFromDiagnostic,
+	dedupeFindingPackets,
+	kindFromDiagnostic,
+	numberOrString,
+	repairClassFromDiagnostic,
+	repairModeFromDiagnostic,
+	ssiFindingPacketSchemaVersion,
+	stageFromDiagnostic,
+	text,
+} from './lib/ssi-finding-packets.mjs';
+import {
 	formatRatio,
 	normalizeVisualRegions,
 	probeSummary,
@@ -13,7 +25,6 @@ import {
 	visualRegionSummary,
 } from './lib/visual-artifacts.mjs';
 
-const schemaVersion = 3;
 const site = requiredEnv('SITE');
 const sourceRepo = requiredEnv('SOURCE_REPO');
 const sourcePr = process.env.SOURCE_PR || '';
@@ -100,7 +111,7 @@ async function buildPackets() {
 		packets.push(packetFromVisualOutcome(visualOutcome));
 	}
 
-	return dedupePackets(packets);
+	return dedupeFindingPackets(packets, { scope: 'packet_emission' });
 }
 
 async function loadImportReadiness() {
@@ -198,13 +209,13 @@ function detectBenchFailure(bench, benchReadError) {
 
 function packetBase(overrideRepo) {
 	return {
-		schema_version: schemaVersion,
+		schema_version: ssiFindingPacketSchemaVersion,
 		site,
 		source_repo: sourceRepo,
-		source_pr: normalizeNumber(sourcePr),
+		source_pr: numberOrString(sourcePr),
 		source_head_sha: sourceHeadSha,
 		source_branch: sourceBranch,
-		validation_run_id: normalizeNumber(validationRunId),
+		validation_run_id: numberOrString(validationRunId),
 		candidate_repo: overrideRepo || candidateRepo,
 		artifact_names: artifactNames,
 		bench_outcome: benchOutcome,
@@ -434,95 +445,6 @@ function visualPacketOptions() {
 	};
 }
 
-function kindFromDiagnostic(type, category, blockName) {
-	const normalizedType = text(type).toLowerCase();
-	const normalizedCategory = text(category).toLowerCase();
-	const normalizedBlock = text(blockName).toLowerCase();
-	if (normalizedType === 'unsupported_html_fallback') {
-		return 'unsupported_html_fallback';
-	}
-	if (normalizedType === 'core_html_block' || normalizedBlock === 'core/html') {
-		return 'core_html_block';
-	}
-	if (normalizedType === 'freeform_block' || normalizedBlock === 'core/freeform') {
-		return 'freeform_block';
-	}
-	if (normalizedCategory === 'unresolved_asset' || normalizedType.includes('asset_map')) {
-		return 'asset_map';
-	}
-	if (normalizedCategory === 'source_region') {
-		return 'source_region';
-	}
-	return normalizedType || normalizedCategory || 'import_diagnostic';
-}
-
-function categoryFromDiagnostic(type, diagnostic) {
-	const normalizedType = text(type).toLowerCase();
-	const blockName = text(diagnostic?.block_name).toLowerCase();
-	if (['unsupported_html_fallback', 'core_html_block', 'freeform_block'].includes(normalizedType) || ['core/html', 'core/freeform'].includes(blockName)) {
-		return 'fallback_block';
-	}
-	if (normalizedType.includes('asset')) {
-		return 'unresolved_asset';
-	}
-	if (normalizedType.includes('source_region')) {
-		return 'source_region';
-	}
-	if (normalizedType.includes('bridge') || normalizedType.includes('serialization')) {
-		return 'bfb_report';
-	}
-	return 'import_quality';
-}
-
-function repairClassFromDiagnostic(type) {
-	const normalizedType = text(type).toLowerCase();
-	if (normalizedType.includes('asset')) {
-		return 'materialize_or_rewrite_asset';
-	}
-	if (['unsupported_html_fallback'].includes(normalizedType)) {
-		return 'replace_unsupported_html';
-	}
-	if (['core_html_block', 'freeform_block'].includes(normalizedType)) {
-		return 'replace_fallback_block';
-	}
-	if (normalizedType.includes('source_region')) {
-		return 'assign_or_ignore_source_region';
-	}
-	return '';
-}
-
-function converterFromDiagnostic(type, category) {
-	const haystack = `${type} ${category}`.toLowerCase();
-	if (haystack.includes('bridge') || haystack.includes('bfb')) {
-		return 'block-format-bridge';
-	}
-	return 'static-site-importer';
-}
-
-function stageFromDiagnostic(type, category) {
-	const haystack = `${type} ${category}`.toLowerCase();
-	if (haystack.includes('asset')) {
-		return 'asset_map';
-	}
-	if (haystack.includes('source_region')) {
-		return 'source_selection';
-	}
-	return 'import_report';
-}
-
-function repairModeFromDiagnostic(diagnostic, category, suggestedRepairClass) {
-	if (text(diagnostic?.repair_mode)) {
-		return text(diagnostic.repair_mode);
-	}
-	if (text(diagnostic?.actionable).toLowerCase() === 'false') {
-		return 'issue_only';
-	}
-	if (!text(diagnostic?.source_html_preview) && !text(suggestedRepairClass) && text(category) === 'import_quality') {
-		return 'issue_only';
-	}
-	return 'pr_or_issue';
-}
-
 function diagnosticRefs(diagnostic, summary = {}) {
 	const refs = [];
 	if (Array.isArray(diagnostic?.diagnostic_refs)) {
@@ -583,71 +505,13 @@ function truncate(value, length) {
 	return s.length <= length ? s : s.slice(0, length);
 }
 
-function dedupePackets(packets) {
-	const seen = new Set();
-	const deduped = [];
-
-	for (const packet of packets) {
-		const key = JSON.stringify([
-			packet.kind,
-			packet.path,
-			packet.preview,
-			packet.selector,
-			packet.excerpt,
-			packet.diagnostic_id,
-			packet.source_path,
-			packet.category,
-			packet.reason_code,
-			packet.source_html_preview,
-			packet.emitted_block_preview,
-			packet.block_name,
-			packet.converter,
-			packet.stage,
-			packet.reason,
-			packet.repair_mode,
-		]);
-
-		if (seen.has(key)) {
-			continue;
-		}
-
-		seen.add(key);
-		deduped.push(packet);
-	}
-
-	return deduped;
-}
-
 function asArray(value) {
 	return Array.isArray(value) ? value : [];
-}
-
-function normalizeNumber(value) {
-	if (value === '') {
-		return '';
-	}
-
-	const number = Number(value);
-	return Number.isFinite(number) ? number : text(value);
 }
 
 function numeric(value) {
 	const number = Number(value);
 	return Number.isFinite(number) ? number : null;
-}
-
-function text(value) {
-	if (value === null || value === undefined) {
-		return '';
-	}
-	if (typeof value === 'string') {
-		return value;
-	}
-	if (typeof value === 'number' || typeof value === 'boolean') {
-		return String(value);
-	}
-
-	return JSON.stringify(value);
 }
 
 function requiredEnv(name) {
@@ -717,9 +581,9 @@ function buildDesignDistribution() {
 	return {
 		schema_version: 1,
 		generated_at: new Date().toISOString(),
-		validation_run_id: normalizeNumber(validationRunId),
+		validation_run_id: numberOrString(validationRunId),
 		source_repo: sourceRepo,
-		source_pr: normalizeNumber(sourcePr),
+		source_pr: numberOrString(sourcePr),
 		source_head_sha: sourceHeadSha,
 		source_branch: sourceBranch,
 		sites: [

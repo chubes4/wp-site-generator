@@ -38,3 +38,24 @@ export async function githubJson(options) {
 	const response = await githubApi(options);
 	return response.json();
 }
+
+export async function dispatchWorkflow({ repo, workflow, ref, inputs = {}, token = githubToken(), failMessage } = {}) {
+	if (!workflow) {
+		throw new Error('GitHub workflow is required.');
+	}
+	await githubApi({
+		repo,
+		endpoint: `actions/workflows/${workflow}/dispatches`,
+		token,
+		init: {
+			method: 'POST',
+			body: JSON.stringify({ ref, inputs }),
+		},
+		failMessage,
+	});
+}
+
+export function prNumberFromUrl(url) {
+	const match = String(url || '').match(/\/pull\/(\d+)$/);
+	return match ? Number(match[1]) : 0;
+}

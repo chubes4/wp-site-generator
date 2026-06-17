@@ -1,4 +1,5 @@
 import { readFile, writeFile } from 'node:fs/promises';
+import path from 'node:path';
 
 export function parseArgs(argv) {
 	const parsed = new Map();
@@ -23,12 +24,50 @@ export function requiredValue(name, value) {
 	return value;
 }
 
+export function requiredEnv(env, name) {
+	return requiredValue(name, env[name]);
+}
+
+export function envOrArg(args, argName, env, envName, fallback = '') {
+	return args.get(argName) || env[envName] || fallback;
+}
+
+export function repoPathResolver(repoRoot = process.env.GITHUB_WORKSPACE || process.cwd()) {
+	return (...segments) => path.join(repoRoot, ...segments);
+}
+
 export async function writeJsonFile(filePath, value) {
 	await writeFile(filePath, `${JSON.stringify(value, null, 2)}\n`);
 }
 
 export async function readJsonFile(filePath) {
 	return JSON.parse(await readFile(filePath, 'utf8'));
+}
+
+export async function readJsonOrNull(filePath) {
+	if (!filePath) {
+		return null;
+	}
+	try {
+		return await readJsonFile(filePath);
+	} catch (error) {
+		if (error?.code === 'ENOENT') {
+			return null;
+		}
+		throw error;
+	}
+}
+
+export function textValue(value) {
+	return String(value ?? '').trim();
+}
+
+export function numberValue(value, fallback = 0) {
+	if (value === undefined || value === null || value === '') {
+		return fallback;
+	}
+	const number = Number(value);
+	return Number.isFinite(number) ? number : fallback;
 }
 
 export async function appendGithubOutput(filePath, values, { multiline = true } = {}) {

@@ -1,4 +1,5 @@
 import { readFileSync } from 'node:fs';
+import { text } from './ssi-finding-packets.mjs';
 
 const policy = JSON.parse(readFileSync(new URL('./finding-routing-policy.json', import.meta.url), 'utf8'));
 
@@ -122,17 +123,4 @@ function hasSourceSitePatchEvidence(packet) {
 	const stage = text(packet.stage).toLowerCase();
 	const routeFields = [repairClass, category, reasonCode, stage, text(packet.reason).toLowerCase()].join(' ');
 	return routeFields.includes('generated_source') || routeFields.includes('source_site') || routeFields.includes('source_css') || routeFields.includes('source_html');
-}
-
-function text(value) {
-	if (value === null || value === undefined) {
-		return '';
-	}
-	if (typeof value === 'string') {
-		return value;
-	}
-	if (typeof value === 'number' || typeof value === 'boolean') {
-		return String(value);
-	}
-	return JSON.stringify(value);
 }

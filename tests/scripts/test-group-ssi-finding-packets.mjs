@@ -5,6 +5,8 @@ import { mkdtemp, readFile, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { spawnSync } from 'node:child_process';
+import { routeCandidateRepo, routeReason, routeRepairMode } from '../../.github/scripts/lib/finding-routing.mjs';
+import { groupFindingPackets, normalizeFindingInput } from '../../.github/scripts/lib/ssi-finding-packets.mjs';
 
 const repoRoot = path.resolve(import.meta.dirname, '../..');
 const tmp = await mkdtemp(path.join(tmpdir(), 'ssi-finding-groups-'));
@@ -21,6 +23,10 @@ const result = spawnSync(process.execPath, [
 assert.equal(result.status, 0, result.stderr || result.stdout);
 
 const grouped = JSON.parse(await readFile(outputPath, 'utf8'));
+const fixturePackets = JSON.parse(await readFile(path.join(repoRoot, 'tests/fixtures/ssi-finding-packets.json'), 'utf8'));
+const helperGrouped = groupFindingPackets(normalizeFindingInput({ packets: fixturePackets }), { routeCandidateRepo, routeRepairMode, routeReason });
+assert.deepEqual(grouped, JSON.parse(JSON.stringify(helperGrouped)), 'CLI grouping uses the shared SSI finding packet contract helpers');
+
 assert.equal(grouped.schema_version, 3);
 assert.equal(grouped.packet_count, 8);
 assert.equal(grouped.actionable_packet_count, 8);
