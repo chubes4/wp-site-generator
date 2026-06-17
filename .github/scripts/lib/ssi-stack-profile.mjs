@@ -69,9 +69,11 @@ export function buildSsiImportWorkload(siteSlug, { htmlPath = '' } = {}) {
 		label: `Static Site Importer: ${siteSlug}`,
 		run: [
 			{
-				type: 'wp-cli',
-				command: `static-site-importer import-theme ${shellArg(sourceHtmlPath)} --slug=${shellArg(siteSlug)} --activate --overwrite --keep-source --format=json`,
-				parse: 'json',
+				type: 'php',
+				code: buildSsiImportAbilityPhp({
+					htmlPath: sourceHtmlPath,
+					siteSlug,
+				}),
 			},
 			{
 				type: 'php',
@@ -88,15 +90,14 @@ export function buildSsiImportWorkload(siteSlug, { htmlPath = '' } = {}) {
 	};
 }
 
-function shellArg(value) {
-	return `'${String(value).replaceAll("'", "'\\''")}'`;
-}
-
 export function buildSsiImportAbilityPhp({ htmlPath, siteSlug, markerPath, assertActiveTheme = false, trailingNewline = false }) {
 	const lines = [
 		'<?php',
 		"require_once '/wordpress/wp-load.php';",
 		'wp_set_current_user( 1 );',
+		"if ( ! function_exists( 'wp_get_ability' ) ) {",
+		"\tthrow new RuntimeException( 'WordPress Abilities API is not available.' );",
+		'}',
 		"$ability = wp_get_ability( 'static-site-importer/import-theme' );",
 		'if ( ! $ability ) {',
 		"\tthrow new RuntimeException( 'Static Site Importer import ability is not registered.' );",

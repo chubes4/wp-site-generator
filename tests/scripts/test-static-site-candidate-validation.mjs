@@ -35,7 +35,8 @@ try {
 	assert.equal(payload.site, 'issue-777-direct-candidate', 'validator derives the site slug from the candidate payload');
 	assert.equal(payload.candidate_source.source, 'static-site-candidate-json', 'validator records direct candidate JSON provenance');
 	assert.match(payload.candidate_source.relativeSourceDirectory, /^\.ci\/static-site-candidates\/issue-777-direct-candidate$/, 'candidate is materialized into a concrete static-site directory');
-	assert.match(payload.workloads[0].run[0].command, /\.ci\/static-site-candidates\/issue-777-direct-candidate\/index\.html/, 'SSI workload imports the materialized candidate index.html');
+	assert.equal(payload.workloads[0].run[0].type, 'php', 'SSI workload imports through the ability PHP bridge');
+	assert.match(payload.workloads[0].run[0].code, /\.ci\/static-site-candidates\/issue-777-direct-candidate\/index\.html/, 'SSI workload imports the materialized candidate index.html');
 	assert.equal(
 		await readFile(path.join(repoRoot, payload.candidate_source.relativeSourceDirectory, 'index.html'), 'utf8'),
 		'<!doctype html><html><body><main>Direct candidate</main></body></html>',
@@ -61,7 +62,8 @@ try {
 	const materializedPayload = JSON.parse(await readFile(materializedSettingsPath, 'utf8'));
 	assert.equal(materializedPayload.site, 'direct-static-site', 'validator derives the site slug from a materialized artifact directory');
 	assert.equal(materializedPayload.candidate_source.source, 'source-static-site-dir', 'validator records materialized directory provenance');
-	assert.match(materializedPayload.workloads[0].run[0].command, /direct-static-site\/index\.html/, 'SSI workload imports the provided materialized directory');
+	assert.equal(materializedPayload.workloads[0].run[0].type, 'php', 'materialized directory imports through the ability PHP bridge');
+	assert.match(materializedPayload.workloads[0].run[0].code, /direct-static-site\/index\.html/, 'SSI workload imports the provided materialized directory');
 
 	const unresolvedResult = spawnSync(process.execPath, ['.github/scripts/build-static-validation-settings.mjs'], {
 		cwd: repoRoot,
