@@ -1,30 +1,28 @@
 #!/usr/bin/env node
 import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
-import path from 'node:path';
 
-import { githubJson as fetchGithubJson, githubToken } from './lib/github-api.mjs';
+import { githubJson as fetchGithubJson, githubToken, prNumberFromUrl } from './lib/github-api.mjs';
+import { numberValue, parseArgs, readJsonFile, readJsonOrNull, repoPathResolver } from './lib/ci-runtime-utils.mjs';
 import { buildSsiImportWorkload } from './lib/ssi-stack-profile.mjs';
 
-const args = new Map();
-for (let i = 2; i < process.argv.length; i += 2) {
-  args.set(process.argv[i], process.argv[i + 1]);
-}
+const args = parseArgs(process.argv.slice(2));
 
 const repoRoot = process.env.GITHUB_WORKSPACE || process.cwd();
-const aggregatePath = args.get('--aggregate') || path.join(repoRoot, '.ci', 'homeboy-agent-task-aggregate.json');
-const planPath = args.get('--plan') || path.join(repoRoot, '.ci', 'site-generation-loop.agent-task-plan.json');
-const controllerPath = args.get('--controller') || path.join(repoRoot, '.github/homeboy/controllers/static-site-generation-loop.controller.json');
+const repoPath = repoPathResolver(repoRoot);
+const aggregatePath = args.get('--aggregate') || repoPath('.ci', 'homeboy-agent-task-aggregate.json');
+const planPath = args.get('--plan') || repoPath('.ci', 'site-generation-loop.agent-task-plan.json');
+const controllerPath = args.get('--controller') || repoPath('.github/homeboy/controllers/static-site-generation-loop.controller.json');
 const fixturePath = args.get('--fixture-state') || '';
 const repo = args.get('--repo') || process.env.GITHUB_REPOSITORY || 'chubes4/wp-site-generator';
 const token = githubToken(process.env, ['GITHUB_TOKEN', 'GH_TOKEN']);
-const validationWaitMs = Number(process.env.STATIC_VALIDATION_WAIT_MS || 15 * 60 * 1000);
-const validationPollMs = Number(process.env.STATIC_VALIDATION_POLL_MS || 15 * 1000);
+const validationWaitMs = numberValue(process.env.STATIC_VALIDATION_WAIT_MS, 15 * 60 * 1000);
+const validationPollMs = numberValue(process.env.STATIC_VALIDATION_POLL_MS, 15 * 1000);
 
-const aggregate = JSON.parse(await readFile(aggregatePath, 'utf8'));
-const plan = JSON.parse(await readFile(planPath, 'utf8'));
-const controller = JSON.parse(await readFile(controllerPath, 'utf8'));
-const fixture = fixturePath ? JSON.parse(await readFile(fixturePath, 'utf8')) : null;
+const aggregate = await readJsonFile(aggregatePath);
+const plan = await readJsonFile(planPath);
+const controller = await readJsonFile(controllerPath);
+const fixture = await readJsonOrNull(fixturePath);
 const outcomes = aggregate.outcomes || [];
 const outcomesByTaskId = new Map(outcomes.map((item) => [item.task_id, item]));
 const planTasks = plan.tasks || [];
@@ -44,11 +42,6 @@ function outcome(taskId) {
 
 function labelsOf(value) {
   return (value.labels || []).map((label) => (typeof label === 'string' ? label : label.name)).filter(Boolean);
-}
-
-function prNumberFromUrl(url) {
-  const match = String(url || '').match(/\/pull\/(\d+)$/);
-  return match ? Number(match[1]) : 0;
 }
 
 async function githubJson(kind, number) {
@@ -196,7 +189,7 @@ async function assertStaticPr(taskItem) {
 }
 
 async function assertImportAndIteratorWorkflow() {
-  const workflow = await readFile(path.join(repoRoot, '.github/workflows/static-site-validation.yml'), 'utf8');
+  const workflow = await readFile(repoPath('.github/workflows/static-site-validation.yml'), 'utf8');
   const validationWorkload = buildSsiImportWorkload('proof-site');
   const validationWorkloadJson = JSON.stringify(validationWorkload);
   assert.match(workflow, /build-static-validation-settings\.mjs/, 'static validation delegates SSI settings to the shared builder');

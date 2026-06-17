@@ -4,12 +4,25 @@ import { tmpdir } from 'node:os';
 import path from 'node:path';
 
 import { buildSingleAiWorkflow, buildSingleAiWorkflowStep } from '../../.github/scripts/lib/datamachine-ai-workflow.mjs';
-import { githubToken } from '../../.github/scripts/lib/github-api.mjs';
+import { envOrArg, numberValue, parseArgs, readJsonOrNull, repoPathResolver, textValue } from '../../.github/scripts/lib/ci-runtime-utils.mjs';
+import { githubToken, prNumberFromUrl } from '../../.github/scripts/lib/github-api.mjs';
 import { loadRecoveredSsiImportSummary, recoveredSsiScenarioFromImportSummary } from '../../.github/scripts/lib/ssi-import-summary.mjs';
 import { ssiPrBodyMetrics, validationMetricValue } from '../../.github/scripts/lib/ssi-metrics.mjs';
 
 assert.equal(githubToken({ GH_TOKEN: 'gh', GITHUB_TOKEN: 'github' }), 'gh');
 assert.equal(githubToken({ GH_TOKEN: 'gh', GITHUB_TOKEN: 'github' }, ['GITHUB_TOKEN', 'GH_TOKEN']), 'github');
+assert.equal(prNumberFromUrl('https://github.com/chubes4/wp-site-generator/pull/123'), 123);
+assert.equal(prNumberFromUrl(''), 0);
+
+const args = parseArgs(['--repo', 'owner/repo', '--dry-run']);
+assert.equal(envOrArg(args, '--repo', { SOURCE_REPO: 'env/repo' }, 'SOURCE_REPO'), 'owner/repo');
+assert.equal(envOrArg(new Map(), '--repo', { SOURCE_REPO: 'env/repo' }, 'SOURCE_REPO'), 'env/repo');
+assert.equal(envOrArg(new Map(), '--ref', {}, 'REF', 'main'), 'main');
+assert.equal(args.get('--dry-run'), '1');
+assert.equal(repoPathResolver('/tmp/repo')('.ci', 'artifact.json'), path.join('/tmp/repo', '.ci', 'artifact.json'));
+assert.equal(textValue(' ok '), 'ok');
+assert.equal(numberValue('4'), 4);
+assert.equal(numberValue('bad', 9), 9);
 
 const workflow = buildSingleAiWorkflow({
 	step: buildSingleAiWorkflowStep({
@@ -54,6 +67,16 @@ await writeFile(recoveredPath, `${JSON.stringify({
 }, null, 2)}\n`);
 
 const recovered = await loadRecoveredSsiImportSummary([path.join(tempDir, 'missing.json'), recoveredPath]);
+assert.equal(await readJsonOrNull(path.join(tempDir, 'missing.json')), null);
+assert.deepEqual(await readJsonOrNull(recoveredPath), {
+	importReadiness: {
+		import_result: {
+			report_path: '/wordpress/wp-content/themes/example/import-report.json',
+			quality: { fallback_count: 1, core_html_block_count: 2, freeform_block_count: 3, invalid_block_count: 4, diagnostic_count: 10 },
+			import_report_summary: { status: 'completed' },
+		},
+	},
+});
 const scenario = recoveredSsiScenarioFromImportSummary(recovered);
 assert.equal(scenario.id, 'ssi-import');
 assert.equal(scenario.metadata.import_report_summary.path, '/wordpress/wp-content/themes/example/import-report.json');

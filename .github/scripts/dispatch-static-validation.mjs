@@ -1,19 +1,16 @@
 #!/usr/bin/env node
-import { readFile } from 'node:fs/promises';
-import path from 'node:path';
-import { githubApi, githubToken } from './lib/github-api.mjs';
+import { dispatchWorkflow, githubToken, prNumberFromUrl } from './lib/github-api.mjs';
+import { parseArgs, readJsonFile, repoPathResolver } from './lib/ci-runtime-utils.mjs';
 
-const args = new Map();
-for (let i = 2; i < process.argv.length; i += 2) {
-  args.set(process.argv[i], process.argv[i + 1]);
-}
+const args = parseArgs(process.argv.slice(2));
 
 const repoRoot = process.env.GITHUB_WORKSPACE || process.cwd();
-const aggregatePath = args.get('--aggregate') || path.join(repoRoot, '.ci', 'homeboy-agent-task-aggregate.json');
+const repoPath = repoPathResolver(repoRoot);
+const aggregatePath = args.get('--aggregate') || repoPath('.ci', 'homeboy-agent-task-aggregate.json');
 const repo = args.get('--repo') || process.env.GITHUB_REPOSITORY || 'chubes4/wp-site-generator';
 const ref = args.get('--ref') || 'main';
 const token = githubToken(process.env, ['GITHUB_TOKEN', 'GH_TOKEN']);
-const aggregate = JSON.parse(await readFile(aggregatePath, 'utf8'));
+const aggregate = await readJsonFile(aggregatePath);
 
 if (!token) {
   fail('GITHUB_TOKEN or GH_TOKEN is required to dispatch static validation');
@@ -29,27 +26,17 @@ if (staticPrs.length === 0) {
 }
 
 for (const prNumber of staticPrs) {
-  await githubApi({
+  await dispatchWorkflow({
     repo,
-    endpoint: 'actions/workflows/static-site-validation.yml/dispatches',
-    token,
-    init: {
-    method: 'POST',
-    body: JSON.stringify({
-      ref,
-      inputs: {
-        pr_number: String(prNumber),
-      },
-    }),
+    workflow: 'static-site-validation.yml',
+    ref,
+    inputs: {
+      pr_number: String(prNumber),
     },
+    token,
     failMessage: (message) => `Static validation dispatch failed: ${message}`,
   });
   console.log(`dispatched static validation for PR #${prNumber}`);
-}
-
-function prNumberFromUrl(url) {
-  const match = String(url || '').match(/\/pull\/(\d+)$/);
-  return match ? Number(match[1]) : 0;
 }
 
 function fail(message) {

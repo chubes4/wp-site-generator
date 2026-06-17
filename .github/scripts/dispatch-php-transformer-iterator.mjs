@@ -1,19 +1,19 @@
 #!/usr/bin/env node
 
-import { parseArgs, requiredValue } from './lib/ci-runtime-utils.mjs';
-import { githubApi, githubToken } from './lib/github-api.mjs';
+import { envOrArg, parseArgs, requiredValue } from './lib/ci-runtime-utils.mjs';
+import { dispatchWorkflow, githubToken } from './lib/github-api.mjs';
 
 const args = parseArgs(process.argv.slice(2));
-const repo = requiredValue('SOURCE_REPO', args.get('--repo') || process.env.SOURCE_REPO || process.env.GITHUB_REPOSITORY);
-const sourcePr = requiredValue('SOURCE_PR', args.get('--source-pr') || process.env.SOURCE_PR);
-const sourceHeadSha = args.get('--source-head-sha') || process.env.SOURCE_HEAD_SHA || '';
-const validationRunId = requiredValue('VALIDATION_RUN_ID', args.get('--validation-run-id') || process.env.VALIDATION_RUN_ID || process.env.GITHUB_RUN_ID);
-const artifactName = requiredValue('ARTIFACT_NAME', args.get('--artifact-name') || process.env.ARTIFACT_NAME);
-const visualArtifactName = requiredValue('VISUAL_ARTIFACT_NAME', args.get('--visual-artifact-name') || process.env.VISUAL_ARTIFACT_NAME);
-const ref = args.get('--ref') || process.env.ITERATOR_REF || 'main';
-const openaiModel = args.get('--openai-model') || process.env.OPENAI_MODEL || 'gpt-5.5';
-const dataMachineRef = args.get('--data-machine-ref') || process.env.DATA_MACHINE_REF || 'main';
-const dataMachineCodeRef = args.get('--data-machine-code-ref') || process.env.DATA_MACHINE_CODE_REF || 'main';
+const repo = requiredValue('SOURCE_REPO', envOrArg(args, '--repo', process.env, 'SOURCE_REPO', process.env.GITHUB_REPOSITORY));
+const sourcePr = requiredValue('SOURCE_PR', envOrArg(args, '--source-pr', process.env, 'SOURCE_PR'));
+const sourceHeadSha = envOrArg(args, '--source-head-sha', process.env, 'SOURCE_HEAD_SHA');
+const validationRunId = requiredValue('VALIDATION_RUN_ID', envOrArg(args, '--validation-run-id', process.env, 'VALIDATION_RUN_ID', process.env.GITHUB_RUN_ID));
+const artifactName = requiredValue('ARTIFACT_NAME', envOrArg(args, '--artifact-name', process.env, 'ARTIFACT_NAME'));
+const visualArtifactName = requiredValue('VISUAL_ARTIFACT_NAME', envOrArg(args, '--visual-artifact-name', process.env, 'VISUAL_ARTIFACT_NAME'));
+const ref = envOrArg(args, '--ref', process.env, 'ITERATOR_REF', 'main');
+const openaiModel = envOrArg(args, '--openai-model', process.env, 'OPENAI_MODEL', 'gpt-5.5');
+const dataMachineRef = envOrArg(args, '--data-machine-ref', process.env, 'DATA_MACHINE_REF', 'main');
+const dataMachineCodeRef = envOrArg(args, '--data-machine-code-ref', process.env, 'DATA_MACHINE_CODE_REF', 'main');
 const dryRun = args.has('--dry-run') || process.env.DRY_RUN === '1';
 const token = githubToken();
 
@@ -38,14 +38,12 @@ if (dryRun) {
 	if (!token) {
 		throw new Error('GH_TOKEN or GITHUB_TOKEN is required to dispatch php-transformer-iterator.yml.');
 	}
-	await githubApi({
+	await dispatchWorkflow({
 		repo,
-		endpoint: 'actions/workflows/php-transformer-iterator.yml/dispatches',
+		workflow: 'php-transformer-iterator.yml',
+		ref,
+		inputs: payload.inputs,
 		token,
-		init: {
-		method: 'POST',
-		body: JSON.stringify(payload),
-		},
 	});
 	console.log(`dispatched php-transformer-iterator for ${repo} PR #${sourcePr}`);
 }
