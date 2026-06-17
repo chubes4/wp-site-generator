@@ -14,6 +14,12 @@ const runId = process.env.GITHUB_RUN_ID || String(Date.now());
 const repository = process.env.GITHUB_REPOSITORY || 'chubes4/wp-site-generator';
 const outputPath = process.env.HOMEBOY_PLAN_PATH || path.join(root, '.ci', 'site-generation-loop.agent-task-plan.json');
 const controllerSpecPath = process.env.HOMEBOY_CONTROLLER_SPEC_PATH || '.github/homeboy/controllers/static-site-generation-loop.controller.json';
+const controllerContract = 'wp-site-generator/static-site-generation-loop';
+const controllerAuthority = {
+	spec: controllerSpecPath,
+	contract: controllerContract,
+	builder: '.github/scripts/build-homeboy-ssi-loop-controller.mjs',
+};
 const manualTaskKind = process.env.HOMEBOY_TASK_KIND || '';
 const planId = manualTaskKind ? `site-generator-${manualTaskKind}-${runId}` : `site-generation-loop-${runId}`;
 const groupKey = manualTaskKind ? `site-generator-${manualTaskKind}` : 'site-generation-loop';
@@ -505,7 +511,8 @@ function manualPlan() {
 			task_kind: manualTaskKind,
 			artifact_driven: true,
 			controller_spec: controllerSpecPath,
-			controller_contract: 'wp-site-generator/static-site-generation-loop',
+			controller_contract: controllerContract,
+			controller_authority: controllerAuthority,
 			runtime_input_contract: runtimeOverrides.source,
 			complexity_policy: complexityDecision,
 			generated_by: '.github/scripts/build-homeboy-site-generation-plan.mjs',
@@ -639,7 +646,8 @@ const loopPlan = {
 		artifact_driven: true,
 		artifact_stages: ['ConceptPacket', 'DesignPacket', 'StaticSiteCandidate', 'ImportValidationResult', 'StaticSitePullRequest'],
 		controller_spec: controllerSpecPath,
-		controller_contract: 'wp-site-generator/static-site-generation-loop',
+		controller_contract: controllerContract,
+		controller_authority: controllerAuthority,
 		runtime_input_contract: runtimeOverrides.source,
 		complexity_policy: complexityDecision,
 		generated_by: '.github/scripts/build-homeboy-site-generation-plan.mjs',
