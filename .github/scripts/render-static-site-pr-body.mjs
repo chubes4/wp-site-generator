@@ -2,6 +2,7 @@
 
 import { readFile } from 'node:fs/promises';
 import { pathToFileURL } from 'node:url';
+import { ssiPrBodyMetrics, validationMetricValue } from './lib/ssi-metrics.mjs';
 
 export function renderStaticSitePrBody({ candidate = {}, validation = {}, closes = '' } = {}) {
 	const title = text(candidate.title || candidate.site_title || candidate.name || 'Static site candidate');
@@ -38,20 +39,9 @@ export function renderStaticSitePrBody({ candidate = {}, validation = {}, closes
 }
 
 export function normalizeValidationMetrics(validation = {}) {
-	const metrics = validation.metrics && typeof validation.metrics === 'object' ? validation.metrics : validation;
-	const conversion = validation.conversion_findings && typeof validation.conversion_findings === 'object'
-		? validation.conversion_findings
-		: metrics.conversion_findings && typeof metrics.conversion_findings === 'object'
-			? metrics.conversion_findings
-			: {};
-
 	return [
 		['Status', validation.passed === false || validation.status === 'failed' ? 'failed' : validation.status || 'passed'],
-		['Fallback blocks', numberLike(metrics.fallback_blocks ?? metrics.fallback_block_count ?? metrics.ssi_fallback_count)],
-		['Core HTML blocks', numberLike(conversion.core_html_blocks ?? metrics.core_html_block_count ?? metrics.ssi_core_html_count)],
-		['Freeform blocks', numberLike(conversion.freeform_blocks ?? metrics.freeform_block_count ?? metrics.ssi_freeform_block_count)],
-		['Invalid blocks', numberLike(conversion.invalid_blocks ?? metrics.invalid_block_count ?? metrics.ssi_invalid_block_count)],
-		['Total findings', numberLike(conversion.total ?? metrics.total_findings ?? metrics.diagnostic_count ?? metrics.ssi_signal_total_count)],
+		...ssiPrBodyMetrics.map(([label, key]) => [label, validationMetricValue(validation, key)]),
 	];
 }
 
@@ -68,13 +58,6 @@ function normalizeArtifactRefs(refs) {
 			.filter((entry) => !entry.endsWith(': '));
 	}
 	return [text(refs)].filter(Boolean);
-}
-
-function numberLike(value) {
-	if (value === undefined || value === null || value === '') {
-		return 0;
-	}
-	return value;
 }
 
 function formatValue(value) {

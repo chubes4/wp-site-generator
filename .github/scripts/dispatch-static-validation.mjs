@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 import { readFile } from 'node:fs/promises';
 import path from 'node:path';
+import { githubApi, githubToken } from './lib/github-api.mjs';
 
 const args = new Map();
 for (let i = 2; i < process.argv.length; i += 2) {
@@ -11,7 +12,7 @@ const repoRoot = process.env.GITHUB_WORKSPACE || process.cwd();
 const aggregatePath = args.get('--aggregate') || path.join(repoRoot, '.ci', 'homeboy-agent-task-aggregate.json');
 const repo = args.get('--repo') || process.env.GITHUB_REPOSITORY || 'chubes4/wp-site-generator';
 const ref = args.get('--ref') || 'main';
-const token = process.env.GITHUB_TOKEN || process.env.GH_TOKEN || '';
+const token = githubToken(process.env, ['GITHUB_TOKEN', 'GH_TOKEN']);
 const aggregate = JSON.parse(await readFile(aggregatePath, 'utf8'));
 
 if (!token) {
@@ -28,7 +29,11 @@ if (staticPrs.length === 0) {
 }
 
 for (const prNumber of staticPrs) {
-  await githubApi('actions/workflows/static-site-validation.yml/dispatches', {
+  await githubApi({
+    repo,
+    endpoint: 'actions/workflows/static-site-validation.yml/dispatches',
+    token,
+    init: {
     method: 'POST',
     body: JSON.stringify({
       ref,
@@ -36,6 +41,8 @@ for (const prNumber of staticPrs) {
         pr_number: String(prNumber),
       },
     }),
+    },
+    failMessage: (message) => `Static validation dispatch failed: ${message}`,
   });
   console.log(`dispatched static validation for PR #${prNumber}`);
 }
@@ -43,21 +50,6 @@ for (const prNumber of staticPrs) {
 function prNumberFromUrl(url) {
   const match = String(url || '').match(/\/pull\/(\d+)$/);
   return match ? Number(match[1]) : 0;
-}
-
-async function githubApi(endpoint, init = {}) {
-  const response = await fetch(`https://api.github.com/repos/${repo}/${endpoint}`, {
-    ...init,
-    headers: {
-      Authorization: `Bearer ${token}`,
-      Accept: 'application/vnd.github+json',
-      'X-GitHub-Api-Version': '2022-11-28',
-      ...(init.headers || {}),
-    },
-  });
-  if (!response.ok) {
-    fail(`GitHub API ${endpoint} failed: ${response.status} ${await response.text()}`);
-  }
 }
 
 function fail(message) {

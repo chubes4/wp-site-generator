@@ -1,39 +1,20 @@
 #!/usr/bin/env node
 
 import { readFile } from 'node:fs/promises';
+import { loadRecoveredSsiImportSummary, recoveredSsiScenarioFromImportSummary } from './lib/ssi-import-summary.mjs';
+import { ssiBacMetrics, ssiSignalMetrics } from './lib/ssi-metrics.mjs';
 
 const site = process.env.SITE || '';
 const benchPath = process.env.BENCH_PATH || 'homeboy-ci-results/bench.json';
 const visualSummaryPath = process.env.VISUAL_SUMMARY_PATH || `visual-parity-artifacts/${site}/summary.json`;
 const importReadyPath = process.env.IMPORT_READY_PATH || `visual-parity-artifacts/${site}/import-ready.json`;
 
-const signalMetrics = [
-	['ssi_signal_total_count', 'total classified signals'],
-	['ssi_core_html_count', 'core/html blocks'],
-	['ssi_fallback_count', 'fallback blocks'],
-	['ssi_freeform_block_count', 'freeform blocks'],
-	['ssi_invalid_block_count', 'invalid blocks'],
-	['ssi_manifest_error_count', 'manifest errors'],
-	['ssi_product_candidate_rejected_count', 'rejected product candidates'],
-	['ssi_unassigned_region_count', 'unassigned regions'],
-	['ssi_ignored_region_count', 'ignored regions'],
-];
-
-const bacMetrics = [
-	['ssi_bac_available', 'compiler available'],
-	['ssi_bac_website_artifact_present', 'website artifact present'],
-	['ssi_bac_fragment_count', 'compiled fragments'],
-	['ssi_bac_component_count', 'components'],
-	['ssi_bac_rejected_count', 'rejected inputs'],
-	['ssi_bac_diagnostic_count', 'compiler diagnostics'],
-];
-
 const consumedMetricPatterns = [
 	/^(max|mean|min|p50|p95|p99)_ms$/,
 	/^ssi_report_readable_(max|mean|min|p50|p95|p99)$/,
 	/^ssi_report_top_level_keys_(max|mean|min|p50|p95|p99)$/,
-	...signalMetrics.map(([key]) => new RegExp(`^${escapeRegExp(key)}(_(max|mean|min|p50|p95|p99))?$`)),
-	...bacMetrics.map(([key]) => new RegExp(`^${escapeRegExp(key)}(_(max|mean|min|p50|p95|p99))?$`)),
+	...ssiSignalMetrics.map(([key]) => new RegExp(`^${escapeRegExp(key)}(_(max|mean|min|p50|p95|p99))?$`)),
+	...ssiBacMetrics.map(([key]) => new RegExp(`^${escapeRegExp(key)}(_(max|mean|min|p50|p95|p99))?$`)),
 ];
 
 const benchRead = await readInput(benchPath)
@@ -79,47 +60,7 @@ async function readInput(path) {
 }
 
 async function loadRecoveredSsiScenario() {
-	for (const inputPath of [visualSummaryPath, importReadyPath]) {
-		const data = await loadJson(inputPath);
-		const importReadiness = data?.importReadiness && typeof data.importReadiness === 'object' ? data.importReadiness : data;
-		const importResult = importReadiness?.import_result && typeof importReadiness.import_result === 'object' ? importReadiness.import_result : null;
-		const summary = importResult?.import_report_summary && typeof importResult.import_report_summary === 'object'
-			? importResult.import_report_summary
-			: null;
-		if (summary) {
-			const recoveredSummary = {
-				path: importResult?.report_path || summary.path,
-				readable: summary.readable ?? true,
-				...summary,
-			};
-			return {
-				id: 'ssi-import',
-				metrics: metricsFromImportSummary(recoveredSummary, importResult?.quality),
-				metadata: { import_report_summary: recoveredSummary },
-			};
-		}
-	}
-
-	return null;
-}
-
-async function loadJson(inputPath) {
-	try {
-		return JSON.parse(await readFile(inputPath, 'utf8'));
-	} catch {
-		return null;
-	}
-}
-
-function metricsFromImportSummary(summary, quality = null) {
-	const source = quality && typeof quality === 'object' ? { ...summary, ...quality } : summary;
-	return {
-		ssi_signal_total_count: numericValue(source.diagnostic_count),
-		ssi_core_html_count: numericValue(source.core_html_block_count),
-		ssi_fallback_count: numericValue(source.fallback_count),
-		ssi_freeform_block_count: numericValue(source.freeform_block_count),
-		ssi_invalid_block_count: numericValue(source.invalid_block_count),
-	};
+	return recoveredSsiScenarioFromImportSummary(await loadRecoveredSsiImportSummary([visualSummaryPath, importReadyPath]));
 }
 
 function renderReport(ssi) {
@@ -184,7 +125,7 @@ function renderSignalTable(metrics) {
 		return '_No SSI metrics emitted yet._';
 	}
 
-	const rows = signalMetrics.map(([key, label]) => `| ${label} | ${formatCount(metricValue(metrics, key))} |`);
+	const rows = ssiSignalMetrics.map(([key, label]) => `| ${label} | ${formatCount(metricValue(metrics, key))} |`);
 	return ['### SSI Signals', '| Signal | Count |', '| --- | ---: |', ...rows].join('\n');
 }
 
@@ -219,7 +160,7 @@ function renderUnexpectedMetrics(metrics) {
 
 function renderBacStatus(metrics, compiler) {
 	const summary = compiler && typeof compiler === 'object' ? compiler : {};
-	const rows = bacMetrics.map(([key, label]) => `| ${label} | ${formatCount(metricValue(metrics, key))} |`);
+	const rows = ssiBacMetrics.map(([key, label]) => `| ${label} | ${formatCount(metricValue(metrics, key))} |`);
 
 	const lines = ['### Block Artifact Compiler', '| Signal | Count |', '| --- | ---: |', ...rows];
 	if (summary.status) {
