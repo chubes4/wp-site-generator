@@ -4,6 +4,8 @@ import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
 import path from 'node:path';
 
+import { ssiSignalMetrics } from '../../.github/scripts/lib/ssi-metrics.mjs';
+
 const repoRoot = path.resolve(import.meta.dirname, '../..');
 const diagnostics = await readFile(path.join(repoRoot, '.github/homeboy/ssi-import-diagnostics.php'), 'utf8');
 const reportRenderer = await readFile(path.join(repoRoot, '.github/scripts/render-ssi-validation-report.mjs'), 'utf8');
@@ -20,7 +22,7 @@ assert.match(diagnostics, /'source_documents'\s*=>\s*\$source_documents/, 'diagn
 assert.doesNotMatch(diagnostics, /freeform_diagnostics/, 'diagnostics does not expose legacy freeform diagnostic rows');
 assert.doesNotMatch(diagnostics, /fallback_diagnostics/, 'diagnostics does not expose legacy fallback diagnostic rows');
 assert.doesNotMatch(diagnostics, /'findings'/, 'diagnostics does not expose legacy finding rows');
-assert.match(reportRenderer, /\['ssi_freeform_block_count',\s*'freeform blocks'\]/, 'validation report displays freeform block counts with the other SSI signals');
+assert.deepEqual(ssiSignalMetrics.find(([key]) => key === 'ssi_freeform_block_count'), ['ssi_freeform_block_count', 'freeform blocks'], 'validation report displays freeform block counts with the other SSI signals');
 assert.match(reportRenderer, /Block Artifact Compiler/, 'validation report displays BAC status');
 assert.match(reportRenderer, /Website Artifact Summary/, 'validation report displays BAC website artifact summary');
 assert.match(reportRenderer, /Reason Code/, 'validation report displays modern diagnostic fields');

@@ -71,10 +71,46 @@ const settingsPayload = JSON.parse(await readFile(settingsPath, 'utf8'));
 assert.equal(settingsPayload.workloads[0].id, 'ssi-import', 'native validation adapter emits SSI bench workload');
 assert.match(settingsPayload.workloads[0].run[0].command, /static-site-importer import-theme/, 'workload runs SSI import command');
 assert.deepEqual(
-	settingsPayload.settings.wp_codebox_blueprint.steps.map((step) => step.options.targetFolderName).slice(0, 4),
-	['woocommerce', 'block-artifact-compiler', 'block-format-bridge', 'static-site-importer'],
-	'validation settings preserve dependency install order',
+	settingsPayload.settings.wp_codebox_blueprint.steps.map((step) => step.options.targetFolderName).slice(0, 3),
+	['block-artifact-compiler', 'block-format-bridge', 'static-site-importer'],
+	'generic validation settings preserve dependency install order without WooCommerce',
 );
+
+const commerceSettingsPath = path.join(tempDir, 'commerce-settings.json');
+const commerceSettingsResult = spawnSync(process.execPath, ['.github/scripts/build-static-validation-settings.mjs', '--site', 'issue-123-native-loop', '--lane', 'woocommerce', '--output', commerceSettingsPath], {
+	cwd: repoRoot,
+	encoding: 'utf8',
+});
+assert.equal(commerceSettingsResult.status, 0, commerceSettingsResult.stderr || commerceSettingsResult.stdout);
+const commerceSettingsPayload = JSON.parse(await readFile(commerceSettingsPath, 'utf8'));
+assert.deepEqual(
+	commerceSettingsPayload.settings.wp_codebox_blueprint.steps.map((step) => step.options.targetFolderName).slice(0, 4),
+	['woocommerce', 'block-artifact-compiler', 'block-format-bridge', 'static-site-importer'],
+	'commerce validation settings install WooCommerce before the SSI stack',
+);
+
+const previewPath = path.join(tempDir, 'preview.json');
+const previewResult = spawnSync(process.execPath, ['.github/scripts/build-static-preview-blueprint.mjs', '--site', 'issue-123-native-loop', '--source-repo', 'chubes4/wp-site-generator', '--source-head-sha', 'abc1234', '--branch', 'feature/site', '--output', previewPath], {
+	cwd: repoRoot,
+	encoding: 'utf8',
+});
+assert.equal(previewResult.status, 0, previewResult.stderr || previewResult.stdout);
+const previewPayload = JSON.parse(await readFile(previewPath, 'utf8'));
+const previewSourceStep = previewPayload.blueprint.steps.find((step) => step.step === 'writeFiles');
+assert.equal(previewSourceStep.filesTree.ref, 'abc1234', 'preview blueprint consumes immutable head SHA when available');
+assert.equal(previewSourceStep.filesTree.refType, 'commit', 'preview blueprint records commit ref type for immutable previews');
+assert.equal(previewPayload.source.provenance, 'immutable-head-sha', 'preview output records immutable provenance');
+
+const fallbackPreviewPath = path.join(tempDir, 'preview-fallback.json');
+const fallbackPreviewResult = spawnSync(process.execPath, ['.github/scripts/build-static-preview-blueprint.mjs', '--site', 'issue-123-native-loop', '--branch', 'feature/site', '--output', fallbackPreviewPath], {
+	cwd: repoRoot,
+	encoding: 'utf8',
+});
+assert.equal(fallbackPreviewResult.status, 0, fallbackPreviewResult.stderr || fallbackPreviewResult.stdout);
+const fallbackPreviewPayload = JSON.parse(await readFile(fallbackPreviewPath, 'utf8'));
+assert.equal(fallbackPreviewPayload.source.refType, 'branch', 'preview fallback uses branch ref when SHA is unavailable');
+assert.equal(fallbackPreviewPayload.source.provenance, 'mutable-branch-fallback', 'preview fallback records explicit mutable provenance');
+assert.match(fallbackPreviewPayload.source.fallback_reason, /SOURCE_HEAD_SHA/, 'preview fallback records why immutable SHA was unavailable');
 
 const groupResult = spawnSync(process.execPath, ['.github/scripts/group-ssi-finding-packets.mjs', 'tests/fixtures/ssi-finding-packets.json'], {
 	cwd: repoRoot,

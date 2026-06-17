@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 
 import { readFile } from 'node:fs/promises';
-import { loadRecoveredSsiImportSummary, recoveredSsiScenarioFromImportSummary } from './lib/ssi-import-summary.mjs';
+import { loadJsonOrNull, loadRecoveredSsiImportSummary, recoveredSsiScenarioFromImportSummary } from './lib/ssi-import-summary.mjs';
 import { ssiBacMetrics, ssiSignalMetrics } from './lib/ssi-metrics.mjs';
 
 import { manifestSummaryRows } from './lib/ssi-stack-manifest.mjs';
@@ -24,7 +24,7 @@ const benchRead = await readInput(benchPath)
 	.then((text) => ({ text, error: '' }))
 	.catch((error) => ({ text: '', error: error?.message || String(error) }));
 const bench = benchRead.text ? parseJson(benchRead.text) : null;
-const stackManifest = await loadJson(manifestPath);
+const stackManifest = await loadJsonOrNull(manifestPath);
 const ssi = (bench?.data?.payload || bench?.data)?.results?.scenarios?.find((scenario) => scenario?.id === 'ssi-import') || await loadRecoveredSsiScenario();
 
 if (!ssi) {

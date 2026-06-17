@@ -6,6 +6,7 @@ import { buildSsiImportWorkload, buildSsiStackBlueprint, buildSsiStackProfile } 
 
 const args = parseArgs(process.argv.slice(2));
 const site = args.get('--site') || process.env.SITE || '';
+const lane = args.get('--lane') || process.env.TARGET_LANE || process.env.LANE || 'wordpress';
 const outputPath = args.get('--output') || process.env.STATIC_VALIDATION_SETTINGS_PATH || '';
 const githubOutput = args.get('--github-output') || process.env.GITHUB_OUTPUT || '';
 const manifestPath = args.get('--manifest') || process.env.SSI_STACK_MANIFEST_PATH || '';
@@ -14,10 +15,10 @@ if (!site) {
 	throw new Error('SITE or --site is required.');
 }
 
-const workloads = buildWorkloads(site);
 const manifest = manifestPath ? await readJsonFile(manifestPath) : buildSsiStackManifest();
-const settings = buildSettings(workloads, manifest);
-const payload = { site, settings, workloads, stack_manifest: manifest };
+const workloads = buildWorkloads(site);
+const settings = buildSettings(workloads, lane, manifest);
+const payload = { site, lane, settings, workloads, stack_manifest: manifest };
 
 if (outputPath) {
 	await writeJsonFile(outputPath, payload);
@@ -37,9 +38,9 @@ function buildWorkloads(siteSlug) {
 	return [buildSsiImportWorkload(siteSlug)];
 }
 
-function buildSettings(workloads, manifest) {
+function buildSettings(workloads, targetLane, manifest) {
 	return {
-		wp_codebox_blueprint: buildSsiStackBlueprint({}, buildSsiStackProfile(manifest)),
+		wp_codebox_blueprint: buildSsiStackBlueprint({ lane: targetLane }, buildSsiStackProfile(manifest)),
 		wp_codebox_workloads: workloads,
 	};
 }

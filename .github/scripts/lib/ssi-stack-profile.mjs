@@ -6,11 +6,6 @@ export const ssiStackProfile = {
 	manifest: buildSsiStackManifest(),
 	components: [
 		{
-			type: 'wordpress.org/plugins',
-			slug: 'woocommerce',
-			targetFolderName: 'woocommerce',
-		},
-		{
 			type: 'git:directory',
 			manifestId: 'block_artifact_compiler',
 			targetFolderName: 'block-artifact-compiler',
@@ -26,17 +21,24 @@ export const ssiStackProfile = {
 			targetFolderName: 'static-site-importer',
 		},
 	],
+	commerceComponents: [
+		{
+			type: 'wordpress.org/plugins',
+			slug: 'woocommerce',
+			targetFolderName: 'woocommerce',
+		},
+	],
 };
+
+export function buildSsiStackInstallSteps(profile = ssiStackProfile, { lane = '' } = {}) {
+	return getSsiStackComponents(profile, lane).map((component) => buildPluginInstallStep(component, profile.manifest));
+}
 
 export function buildSsiStackProfile(manifest = buildSsiStackManifest()) {
 	return { ...ssiStackProfile, manifest };
 }
 
-export function buildSsiStackInstallSteps(profile = ssiStackProfile) {
-	return profile.components.map((component) => buildPluginInstallStep(component, profile.manifest));
-}
-
-export function buildSsiStackBlueprint({ steps = [], landingPage } = {}, profile = ssiStackProfile) {
+export function buildSsiStackBlueprint({ steps = [], landingPage, lane = '' } = {}, profile = ssiStackProfile) {
 	const blueprint = {
 		$schema: profile.blueprintSchema,
 	};
@@ -46,9 +48,18 @@ export function buildSsiStackBlueprint({ steps = [], landingPage } = {}, profile
 	}
 
 	blueprint.preferredVersions = profile.preferredVersions;
-	blueprint.steps = [...buildSsiStackInstallSteps(profile), ...steps];
+	blueprint.steps = [...buildSsiStackInstallSteps(profile, { lane }), ...steps];
 
 	return blueprint;
+}
+
+export function getSsiStackComponents(profile = ssiStackProfile, lane = '') {
+	return requiresCommerceStack(lane) ? [...profile.commerceComponents, ...profile.components] : [...profile.components];
+}
+
+export function requiresCommerceStack(lane = '') {
+	const normalized = String(lane).toLowerCase().replace(/^target:/, '');
+	return normalized === 'woocommerce' || normalized === 'commerce' || normalized === 'store';
 }
 
 export function buildSsiImportWorkload(siteSlug) {
