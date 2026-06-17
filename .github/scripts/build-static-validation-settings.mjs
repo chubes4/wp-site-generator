@@ -1,8 +1,7 @@
 #!/usr/bin/env node
 
-import { appendGithubOutput, parseArgs, readJsonFile, writeJsonFile } from './lib/ci-runtime-utils.mjs';
-import { buildSsiStackManifest } from './lib/ssi-stack-manifest.mjs';
-import { buildSsiImportWorkload, buildSsiStackBlueprint, buildSsiStackProfile } from './lib/ssi-stack-profile.mjs';
+import { appendGithubOutput, parseArgs, writeJsonFile } from './lib/ci-runtime-utils.mjs';
+import { buildSsiValidationSettings, loadSsiStackManifest } from './lib/ssi-stack-runtime.mjs';
 
 const args = parseArgs(process.argv.slice(2));
 const site = args.get('--site') || process.env.SITE || '';
@@ -15,9 +14,8 @@ if (!site) {
 	throw new Error('SITE or --site is required.');
 }
 
-const manifest = manifestPath ? await readJsonFile(manifestPath) : buildSsiStackManifest();
-const workloads = buildWorkloads(site);
-const settings = buildSettings(workloads, lane, manifest);
+const manifest = await loadSsiStackManifest(manifestPath);
+const { settings, workloads } = buildSsiValidationSettings({ site, lane, manifest });
 const payload = { site, lane, settings, workloads, stack_manifest: manifest };
 
 if (outputPath) {
@@ -32,15 +30,4 @@ if (githubOutput) {
 	});
 } else {
 	console.log(JSON.stringify(payload, null, 2));
-}
-
-function buildWorkloads(siteSlug) {
-	return [buildSsiImportWorkload(siteSlug)];
-}
-
-function buildSettings(workloads, targetLane, manifest) {
-	return {
-		wp_codebox_blueprint: buildSsiStackBlueprint({ lane: targetLane }, buildSsiStackProfile(manifest)),
-		wp_codebox_workloads: workloads,
-	};
 }

@@ -97,10 +97,107 @@ export function validationMetricValue(validation = {}, metricKey) {
 	return 0;
 }
 
+export function normalizeValidationMetricRows(validation = {}) {
+	return [
+		['Status', validation.passed === false || validation.status === 'failed' ? 'failed' : validation.status || 'passed'],
+		...ssiPrBodyMetrics.map(([label, key]) => [label, validationMetricValue(validation, key)]),
+	];
+}
+
+export function normalizePublishGateRows(publishGate = {}) {
+	const gates = publishGate.gates && typeof publishGate.gates === 'object' ? publishGate.gates : {};
+	return [
+		['fallback_blocks', 'Fallback blocks'],
+		['conversion_findings', 'Conversion findings'],
+		['visual_parity', 'Visual parity'],
+	].filter(([key]) => gates[key] && typeof gates[key] === 'object').map(([key, label]) => ({
+		label,
+		passed: gates[key].passed === true,
+		value: key === 'visual_parity'
+			? `status=${gates[key].status ?? ''}; mismatches=${gates[key].mismatch_count ?? 0}; max_delta=${gates[key].max_delta_ratio ?? 0}`
+			: gates[key].value,
+		target: gates[key].target || '',
+	}));
+}
+
+export function evaluateValidationGateContracts({ validation = {}, visualParity = {} } = {}) {
+	const metrics = validation.metrics && typeof validation.metrics === 'object' ? validation.metrics : validation;
+	const conversion = validation.conversion_findings && typeof validation.conversion_findings === 'object'
+		? validation.conversion_findings
+		: metrics.conversion_findings && typeof metrics.conversion_findings === 'object'
+			? metrics.conversion_findings
+			: {};
+	const visualSummary = visualParity.summary && typeof visualParity.summary === 'object'
+		? visualParity.summary
+		: validation.visual_parity && typeof validation.visual_parity === 'object'
+			? validation.visual_parity
+			: metrics.visual_parity && typeof metrics.visual_parity === 'object'
+				? metrics.visual_parity
+				: {};
+
+	const fallbackCount = validationMetricValue(validation, 'ssi_fallback_count');
+	const conversionFindingCount = numberValue(
+		conversion.actionable ?? conversion.actionable_count ?? conversion.total ?? metrics.actionable_conversion_count ?? metrics.total_findings ?? metrics.diagnostic_count ?? metrics.ssi_signal_total_count
+	);
+	const visualStatus = text(visualSummary.status || metrics.visual_parity_status || validation.visual_parity_status).toLowerCase();
+	const visualMismatchCount = numberValue(visualSummary.mismatch_count ?? metrics.visual_mismatch_count);
+	const visualMaxDeltaRatio = numberValue(visualSummary.max_delta_ratio ?? metrics.visual_max_delta_ratio);
+	const visualStatusPasses = ['pass', 'passed', 'ok'].includes(visualStatus);
+
+	const gates = {
+		fallback_blocks: {
+			passed: fallbackCount === 0,
+			value: fallbackCount,
+			target: 'value === 0',
+		},
+		conversion_findings: {
+			passed: conversionFindingCount === 0,
+			value: conversionFindingCount,
+			target: 'value === 0',
+		},
+		visual_parity: {
+			passed: visualStatusPasses && visualMismatchCount === 0 && visualMaxDeltaRatio === 0,
+			status: visualStatus || 'missing',
+			mismatch_count: visualMismatchCount,
+			max_delta_ratio: visualMaxDeltaRatio,
+			target: 'status passes and mismatch_count === 0 and max_delta_ratio === 0',
+		},
+	};
+
+	return gates;
+}
+
+export function evaluateStaticSitePublishGateContract({ validation = {}, visualParity = {} } = {}) {
+	const gates = evaluateValidationGateContracts({ validation, visualParity });
+	const failedGates = Object.entries(gates)
+		.filter(([, gate]) => !gate.passed)
+		.map(([gateId]) => gateId);
+
+	return {
+		schema: 'wp-site-generator/StaticSitePublishGate/v1',
+		publish_allowed: failedGates.length === 0,
+		gates,
+		failed_gates: failedGates,
+	};
+}
+
+export function validationReportMetricValue(metrics = {}, key) {
+	return numericValue(metrics[`${key}_max`] ?? metrics[key]);
+}
+
 function numericValue(value) {
 	if (value === undefined || value === null || value === '') {
 		return null;
 	}
 	const number = Number(value);
 	return Number.isFinite(number) ? number : null;
+}
+
+function numberValue(value) {
+	const valueNumber = numericValue(value);
+	return valueNumber === null ? 0 : valueNumber;
+}
+
+function text(value) {
+	return String(value ?? '').trim();
 }

@@ -2,7 +2,7 @@
 
 import { readFile } from 'node:fs/promises';
 import { loadJsonOrNull, loadRecoveredSsiImportSummary, recoveredSsiScenarioFromImportSummary } from './lib/ssi-import-summary.mjs';
-import { ssiBacMetrics, ssiSignalMetrics } from './lib/ssi-metrics.mjs';
+import { ssiBacMetrics, ssiSignalMetrics, validationReportMetricValue } from './lib/ssi-metrics.mjs';
 
 import { manifestSummaryRows } from './lib/ssi-stack-manifest.mjs';
 
@@ -322,7 +322,7 @@ function renderImportReport(summary) {
 }
 
 function metricValue(metrics, key) {
-	return numericValue(metrics[`${key}_max`] ?? metrics[key]);
+	return validationReportMetricValue(metrics, key);
 }
 
 function numericValue(value) {

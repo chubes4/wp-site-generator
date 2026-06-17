@@ -8,9 +8,8 @@ import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { spawn } from 'node:child_process';
 
-import { readJsonFile } from './lib/ci-runtime-utils.mjs';
-import { buildSsiStackManifest } from './lib/ssi-stack-manifest.mjs';
-import { buildSsiImportAbilityPhp, buildSsiStackBlueprint, buildSsiStackProfile, requiresCommerceStack } from './lib/ssi-stack-profile.mjs';
+import { buildSsiImportAbilityPhp, requiresCommerceStack } from './lib/ssi-stack-profile.mjs';
+import { buildSsiRuntimeBlueprint, buildWpCodeboxRecipe, loadSsiStackManifest } from './lib/ssi-stack-runtime.mjs';
 
 const repoRoot = process.cwd();
 const site = process.env.SITE || process.argv[2];
@@ -59,8 +58,8 @@ const sourceServer = createStaticServer(siteRoot);
 await listen(sourceServer, sourcePort);
 
 const recipePath = path.join(tmpdir(), `wp-static-visual-parity-${site}-${Date.now()}.json`);
-const manifest = manifestPath ? await readJsonFile(manifestPath) : buildSsiStackManifest();
-const blueprint = buildSsiStackBlueprint({
+const manifest = await loadSsiStackManifest(manifestPath);
+const blueprint = buildSsiRuntimeBlueprint({
 	lane,
 	landingPage: '/',
 	steps: [
@@ -69,45 +68,35 @@ const blueprint = buildSsiStackBlueprint({
 			code: importViaAbilityPhp,
 		},
 	],
-}, buildSsiStackProfile(manifest));
-const recipe = {
-	schema: 'wp-codebox/workspace-recipe/v1',
-	runtime: {
-		wp: 'latest',
-		blueprint,
-	},
-	inputs: {
-		mounts: [
-			{
-				source: repoRoot,
-				target: '/wordpress/wp-content/plugins/wp-site-generator',
-				mode: 'readonly',
-			},
-		],
-	},
-	workflow: {
-		steps: [
-			{
-				command: 'wordpress.visual-compare',
-				args: [
-					`source-url=${sourceUrl}`,
-					`candidate-url=${importedUrl}`,
-					`source-label=static-html-${site}`,
-					`candidate-label=imported-wordpress-${site}`,
-					`viewport=${viewport.width}x${viewport.height}`,
-					'full-page=true',
-					'wait-for=domcontentloaded',
-					'threshold=0.1',
-					'include-aa=true',
-					'max-regions=8',
-				],
-			},
-		],
-	},
-	artifacts: {
-		directory: outputDir,
-	},
-};
+}, manifest);
+const recipe = buildWpCodeboxRecipe({
+	blueprint,
+	mounts: [
+		{
+			source: repoRoot,
+			target: '/wordpress/wp-content/plugins/wp-site-generator',
+			mode: 'readonly',
+		},
+	],
+	workflowSteps: [
+		{
+			command: 'wordpress.visual-compare',
+			args: [
+				`source-url=${sourceUrl}`,
+				`candidate-url=${importedUrl}`,
+				`source-label=static-html-${site}`,
+				`candidate-label=imported-wordpress-${site}`,
+				`viewport=${viewport.width}x${viewport.height}`,
+				'full-page=true',
+				'wait-for=domcontentloaded',
+				'threshold=0.1',
+				'include-aa=true',
+				'max-regions=8',
+			],
+		},
+	],
+	artifactsDirectory: outputDir,
+});
 await writeFile(recipePath, `${JSON.stringify(recipe, null, 2)}\n`);
 
 try {
