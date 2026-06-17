@@ -106,10 +106,12 @@ assert.match(iteratorPrompt, /DataPacket child-job hydration/, 'iterator prompt 
 assert.match(iteratorPrompt, /"kind": "visual_parity_mismatch"/, 'visual finding is embedded in the AI prompt');
 assert.match(iteratorPrompt, /"candidate_repo": "chubes4\/block-artifact-compiler"/, 'artifact compiler route is embedded in the AI prompt');
 assert.match(iteratorPrompt, /"repair_mode": "issue_only"/, 'issue-only routing is embedded in the AI prompt');
+assert.match(iteratorPrompt, /Use issue_path for repair_mode=issue_only/, 'issue-only groups use issue completion unless patch evidence exists');
 assert.match(iteratorPrompt, /"source_screenshot_path": "/, 'visual artifact paths are embedded in the AI prompt');
 assert.match(iteratorPrompt, /"selector": "section\.hero"/, 'visual source selector evidence is embedded in the AI prompt');
 const outcomeAssertions = aiStep.completion_assertions.complete_when_any;
 assert.ok(outcomeAssertions.some((outcome) => outcome.name === 'pull_request_path'), 'PR completion outcome is preserved');
+assert.ok(outcomeAssertions.some((outcome) => outcome.name === 'issue_path'), 'issue completion outcome is available for weak-evidence groups');
 assert.deepEqual(aiStep.completion_assertions.required_tool_names, ['comment_github_pull_request'], 'source callback remains a direct required tool');
 assert.match(aiStep.system_prompt, /immediately comment back on the source generated-site PR/, 'prompt requires callback immediately after upstream action');
 for (const outcome of outcomeAssertions) {
@@ -119,6 +121,7 @@ for (const outcome of outcomeAssertions) {
 	);
 }
 assert.ok(aiStep.tool_runtime_rules.some((rule) => rule.id === 'iterator-inspection-budget'), 'tool runtime rules are preserved');
+assert.ok(aiStep.enabled_tools.includes('create_github_issue'), 'issue-only groups can create focused upstream issues');
 assert.ok(
 	aiStep.tool_runtime_rules.some(
 		(rule) =>

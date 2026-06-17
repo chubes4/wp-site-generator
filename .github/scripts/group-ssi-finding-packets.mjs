@@ -36,18 +36,23 @@ function groupPackets(rawPackets) {
 	for (const packet of deduped) {
 		const candidateRepo = routeCandidateRepo(packet);
 		const repairMode = routeRepairMode(packet, candidateRepo);
+		const rootCause = rootCauseForPacket(packet);
+		const groupId = groupIdForPacket(candidateRepo, rootCause, packet);
 		const key = JSON.stringify([
 			candidateRepo,
-			packet.kind,
+			rootCause,
+			groupId,
 			packet.converter,
 			packet.block_name,
 			packet.category,
 			packet.reason_code,
-			groupSignature(packet),
 		]);
 
 		if (!groupMap.has(key)) {
 			groupMap.set(key, {
+				owner_repo: candidateRepo,
+				root_cause: rootCause,
+				group_id: groupId,
 				candidate_repo: candidateRepo,
 				kind: packet.kind,
 				converter: packet.converter,
@@ -215,6 +220,18 @@ function groupSignature(packet) {
 
 	const selector = text(packet.selector).toLowerCase().replace(/\.[-_a-z0-9]+/g, '.class');
 	return selector || normalizeReason(packet.reason);
+}
+
+function rootCauseForPacket(packet) {
+	return text(packet.reason_code) || text(packet.kind) || 'unknown';
+}
+
+function groupIdForPacket(candidateRepo, rootCause, packet) {
+	return slugify([candidateRepo, text(packet.kind), rootCause, groupSignature(packet)].filter(Boolean).join('-')) || 'finding-group';
+}
+
+function slugify(value) {
+	return text(value).toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '').slice(0, 120);
 }
 
 function normalizeReason(reason) {

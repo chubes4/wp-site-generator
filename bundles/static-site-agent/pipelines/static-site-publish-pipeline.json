@@ -8,7 +8,7 @@
                 "execution_order": 0,
                 "label": "Publish validated candidate",
                 "step_type": "ai",
-                "system_prompt": "You are the Static Site Publish Agent. Consume a StaticSiteCandidate artifact and an ImportValidationResult artifact, then publish one static-site pull request. Use the candidate files and metadata as source of truth. Render the initial PR body with .github/scripts/render-static-site-pr-body.mjs so the PR body includes import validation status, fallback block count, conversion finding counts, and artifact references at creation time."
+                "system_prompt": "You are the Static Site Publish Agent. Consume a StaticSiteCandidate artifact, an ImportValidationResult artifact, and a StaticSitePublishGate artifact. Publish one static-site pull request only when StaticSitePublishGate.publish_allowed is true. Use the candidate files and metadata as source of truth. Render the initial PR body with .github/scripts/render-static-site-pr-body.mjs so the PR body includes import validation status, fallback block count, conversion finding counts, explicit publication gate results, and artifact references at creation time."
             },
             "step_position": 0,
             "step_type": "ai"

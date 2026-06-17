@@ -161,7 +161,9 @@ assert.equal(plan.tasks[0].executor.config.agent_bundles[0].source, '/workspace/
 assert.equal(plan.tasks[0].executor.config.runtime_task.input.source, '/workspace/wp-site-generator/bundles/php-transformer-iterator-agent', 'iterator runs a sandbox-local bundle path');
 assert.equal(plan.tasks[0].executor.config.runtime_task.input.wait_for_completion, true, 'iterator waits for typed bundle outputs');
 assert.match(plan.tasks[0].executor.config.runtime_task.input.artifacts, /^\.ci\/homeboy-agent-task-artifacts\//, 'iterator uses a repo-relative artifact directory');
-assert.deepEqual(plan.tasks[0].executor.config.runtime_task.input.success_completion_outcomes, ['pull_request_path'], 'native iterator keeps PR-first completion gate');
+assert.equal(plan.tasks[0].executor.config.runtime_task.input.success_requires_pr, false, 'native iterator allows issue-only completion for weak evidence');
+assert.deepEqual(plan.tasks[0].executor.config.runtime_task.input.success_completion_outcomes, ['pull_request_path', 'issue_path'], 'native iterator accepts PR or issue completion outcomes');
+assert.deepEqual(plan.tasks[0].executor.config.runtime_task.input.tool_recorders, [{ tool: 'create_github_issue' }, { tool: 'create_github_pull_request' }], 'native iterator records issue and PR upstream actions');
 assert.equal(plan.tasks[0].inputs.source_pr, '456', 'source PR metadata flows into native plan');
 assert.equal(plan.metadata.runtime_input_contract, 'homeboy-agent-runtime-env', 'iterator plan records the Homeboy agent runtime env contract');
 

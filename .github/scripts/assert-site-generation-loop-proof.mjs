@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
 import path from 'node:path';
 
+import { githubJson as fetchGithubJson, githubToken } from './lib/github-api.mjs';
 import { buildSsiImportWorkload } from './lib/ssi-stack-profile.mjs';
 
 const args = new Map();
@@ -16,7 +17,7 @@ const planPath = args.get('--plan') || path.join(repoRoot, '.ci', 'site-generati
 const controllerPath = args.get('--controller') || path.join(repoRoot, '.github/homeboy/controllers/static-site-generation-loop.controller.json');
 const fixturePath = args.get('--fixture-state') || '';
 const repo = args.get('--repo') || process.env.GITHUB_REPOSITORY || 'chubes4/wp-site-generator';
-const token = process.env.GITHUB_TOKEN || process.env.GH_TOKEN || '';
+const token = githubToken(process.env, ['GITHUB_TOKEN', 'GH_TOKEN']);
 const validationWaitMs = Number(process.env.STATIC_VALIDATION_WAIT_MS || 15 * 60 * 1000);
 const validationPollMs = Number(process.env.STATIC_VALIDATION_POLL_MS || 15 * 1000);
 
@@ -68,17 +69,12 @@ async function githubApi(endpoint) {
     fail('GITHUB_TOKEN or GH_TOKEN is required for live proof assertions');
   }
 
-  const response = await fetch(`https://api.github.com/repos/${repo}/${endpoint}`, {
-    headers: {
-      Authorization: `Bearer ${token}`,
-      Accept: 'application/vnd.github+json',
-      'X-GitHub-Api-Version': '2022-11-28',
-    },
+  return fetchGithubJson({
+    repo,
+    endpoint,
+    token,
+    failMessage: (message) => `Site generation proof failed: ${message.replace(' failed:', ' fetch failed:')}`,
   });
-  if (!response.ok) {
-    fail(`GitHub API ${endpoint} fetch failed: ${response.status} ${await response.text()}`);
-  }
-  return response.json();
 }
 
 function sleep(ms) {
@@ -163,6 +159,24 @@ function assertTaskArtifacts() {
   }
 }
 
+function assertPublishGates() {
+  for (const taskItem of planTasks.filter((item) => item.executor?.config?.artifact_outputs?.static_site_publish_gate)) {
+    const gate = outputValue(outcome(taskItem.task_id), 'static_site_publish_gate');
+    assert.equal(gate?.publish_allowed, true, `${taskItem.task_id} emitted publish_allowed=true`);
+    for (const gateId of ['fallback_blocks', 'conversion_findings', 'visual_parity']) {
+      assert.equal(gate?.gates?.[gateId]?.passed, true, `${taskItem.task_id} ${gateId} gate passed`);
+    }
+  }
+
+  for (const taskItem of planTasks.filter((item) => item.executor?.config?.runtime_task?.input?.success_completion_outcomes?.includes('static_site_pr'))) {
+    const publishDependency = plan.output_dependencies?.[taskItem.task_id];
+    const gateTaskId = publishDependency?.bindings?.static_site_publish_gate?.task_id;
+    assert.ok(gateTaskId, `${taskItem.task_id} binds a StaticSitePublishGate before publishing`);
+    const gate = outputValue(outcome(gateTaskId), 'static_site_publish_gate');
+    assert.equal(gate?.publish_allowed, true, `${taskItem.task_id} cannot publish unless ${gateTaskId} publish_allowed=true`);
+  }
+}
+
 async function assertStaticPr(taskItem) {
   const taskOutcome = outcome(taskItem.task_id);
   const staticPrNumber = prNumberFromUrl(outputValue(taskOutcome, 'static_site_pr_url') || outputValue(taskOutcome, 'pr_url'));
@@ -233,6 +247,7 @@ async function assertStaticValidationComments(staticPrs) {
 assertGeneratedContracts();
 assertNoRuntimeFailures();
 assertTaskArtifacts();
+assertPublishGates();
 
 const staticPrs = [];
 for (const taskItem of planTasks.filter((item) => item.executor?.config?.runtime_task?.input?.success_completion_outcomes?.includes('static_site_pr'))) {

@@ -8,11 +8,14 @@ import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { spawn } from 'node:child_process';
 
-import { buildSsiImportAbilityPhp, buildSsiStackBlueprint, requiresCommerceStack } from './lib/ssi-stack-profile.mjs';
+import { readJsonFile } from './lib/ci-runtime-utils.mjs';
+import { buildSsiStackManifest } from './lib/ssi-stack-manifest.mjs';
+import { buildSsiImportAbilityPhp, buildSsiStackBlueprint, buildSsiStackProfile, requiresCommerceStack } from './lib/ssi-stack-profile.mjs';
 
 const repoRoot = process.cwd();
 const site = process.env.SITE || process.argv[2];
 const lane = process.env.TARGET_LANE || process.env.LANE || 'wordpress';
+const manifestPath = process.env.SSI_STACK_MANIFEST_PATH || '';
 const outputRoot = process.env.VISUAL_PARITY_OUTPUT || 'visual-parity-artifacts';
 const sourcePort = Number(process.env.SOURCE_PORT || 4173);
 const wpCodeboxCli = process.env.WP_CODEBOX_CLI || path.join(repoRoot, '.ci/wp-codebox/packages/cli/dist/index.js');
@@ -56,6 +59,7 @@ const sourceServer = createStaticServer(siteRoot);
 await listen(sourceServer, sourcePort);
 
 const recipePath = path.join(tmpdir(), `wp-static-visual-parity-${site}-${Date.now()}.json`);
+const manifest = manifestPath ? await readJsonFile(manifestPath) : buildSsiStackManifest();
 const blueprint = buildSsiStackBlueprint({
 	lane,
 	landingPage: '/',
@@ -65,7 +69,7 @@ const blueprint = buildSsiStackBlueprint({
 			code: importViaAbilityPhp,
 		},
 	],
-});
+}, buildSsiStackProfile(manifest));
 const recipe = {
 	schema: 'wp-codebox/workspace-recipe/v1',
 	runtime: {
@@ -113,7 +117,7 @@ try {
 		throw new Error('Visual parity import completed without WooCommerce loaded for commerce lane.');
 	}
 	const visualDiff = await normalizeCodeboxVisualCompare({ codeboxResult, outputDir });
-	await writeSummary({ site, sourceUrl, importedUrl, outputDir, codeboxResult, importReadiness, visualDiff });
+	await writeSummary({ site, sourceUrl, importedUrl, outputDir, codeboxResult, importReadiness, visualDiff, manifest });
 	if (!visualDiff.pass) {
 		throw new Error(
 			`Visual parity mismatch ${formatPercent(visualDiff.mismatchRatio)} exceeds threshold ${formatPercent(visualDiff.threshold)}`
@@ -265,7 +269,7 @@ function visualMismatchRegions(regions) {
 	});
 }
 
-async function writeSummary({ site, sourceUrl, importedUrl, outputDir, codeboxResult, importReadiness, visualDiff }) {
+async function writeSummary({ site, sourceUrl, importedUrl, outputDir, codeboxResult, importReadiness, visualDiff, manifest }) {
 	const comparisonHtml = `<!doctype html>
 <html lang="en">
 <head>
@@ -307,6 +311,7 @@ code { color: #d1d5db; }
 				importedUrl,
 				importReadiness,
 				viewport,
+				stack_manifest: manifest,
 				visualDiff,
 				artifacts: ['source.png', 'imported.png', 'diff.png', 'visual-diff.json', 'comparison.html'],
 				codeboxOutput: {

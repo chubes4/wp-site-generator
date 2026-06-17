@@ -3,6 +3,8 @@
 import { mkdir, readFile, writeFile } from 'node:fs/promises';
 import path from 'node:path';
 import { candidateRepoFromDiagnostic } from './lib/finding-routing.mjs';
+import { loadJsonOrNull, loadRecoveredSsiImportSummary } from './lib/ssi-import-summary.mjs';
+import { ssiAggregateQualityMetrics } from './lib/ssi-metrics.mjs';
 import {
 	formatRatio,
 	normalizeVisualRegions,
@@ -102,27 +104,11 @@ async function buildPackets() {
 }
 
 async function loadImportReadiness() {
-	for (const inputPath of [visualSummaryPath, importReadyPath]) {
-		const data = await loadJson(inputPath);
-		const importReadiness = data?.importReadiness && typeof data.importReadiness === 'object' ? data.importReadiness : data;
-		const importResult = importReadiness?.import_result && typeof importReadiness.import_result === 'object' ? importReadiness.import_result : null;
-		const summary = importResult?.import_report_summary && typeof importResult.import_report_summary === 'object'
-			? importResult.import_report_summary
-			: null;
-		if (summary) {
-			return { import_readiness: importReadiness, import_result: importResult, import_report_summary: summary };
-		}
-	}
-
-	return null;
+	return loadRecoveredSsiImportSummary([visualSummaryPath, importReadyPath]);
 }
 
 async function loadJson(inputPath) {
-	try {
-		return JSON.parse(await readFile(inputPath, 'utf8'));
-	} catch {
-		return null;
-	}
+	return loadJsonOrNull(inputPath);
 }
 
 async function loadVisualDiff(inputPath) {
@@ -147,36 +133,7 @@ function aggregateQualityDiagnostics(summary, readiness = null) {
 	const reportPath = text(summary?.path) || text(readiness?.import_result?.report_path) || 'import-report.json';
 	const entryFile = text(summary?.entry_file) || text(readiness?.import_result?.source_dir) || reportPath;
 
-	for (const config of [
-		{
-			metric: 'fallback_count',
-			type: 'unsupported_html_fallback',
-			block_name: '',
-			reason_code: 'unsupported_html_fallback',
-			message: 'Import readiness reported unsupported HTML fallback blocks.',
-		},
-		{
-			metric: 'core_html_block_count',
-			type: 'core_html_block',
-			block_name: 'core/html',
-			reason_code: 'generated_document_contains_core_html',
-			message: 'Import readiness reported generated core/html blocks.',
-		},
-		{
-			metric: 'freeform_block_count',
-			type: 'freeform_block',
-			block_name: 'core/freeform',
-			reason_code: 'generated_document_contains_core_freeform',
-			message: 'Import readiness reported generated core/freeform blocks.',
-		},
-		{
-			metric: 'invalid_block_count',
-			type: 'invalid_block',
-			block_name: '',
-			reason_code: 'generated_document_contains_invalid_block',
-			message: 'Import readiness reported invalid generated blocks.',
-		},
-	]) {
+	for (const config of ssiAggregateQualityMetrics) {
 		const count = numeric(summary?.[config.metric]) ?? numeric(quality?.[config.metric]);
 		if (!count || count <= 0) {
 			continue;

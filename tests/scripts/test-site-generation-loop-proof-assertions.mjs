@@ -38,6 +38,17 @@ function outputValueForKey(key, taskIndex) {
   if (key === 'static_site_pr') {
     return { url: `https://github.com/chubes4/wp-site-generator/pull/${701 + taskIndex}` };
   }
+  if (key === 'static_site_publish_gate') {
+    return {
+      schema: 'wp-site-generator/StaticSitePublishGate/v1',
+      publish_allowed: true,
+      gates: {
+        fallback_blocks: { passed: true, value: 0 },
+        conversion_findings: { passed: true, value: 0 },
+        visual_parity: { passed: true, status: 'pass', mismatch_count: 0, max_delta_ratio: 0 },
+      },
+    };
+  }
   return { schema: `fixture/${key}/v1`, artifact_url: `https://example.com/artifacts/${taskIndex}/${key}.json` };
 }
 
@@ -69,7 +80,7 @@ function fixture(plan, overrides = {}) {
         {
           number: 701 + index,
           title: `${taskItem.inputs.title} static site`,
-          body: '## Import validation\n\nFallback block count: 0\n\nConversion finding count: 0\n\nArtifact: https://example.com/artifacts/import-validation.json',
+          body: '## Import validation\n\nFallback block count: 0\n\nConversion finding count: 0\n\n## Publication gate\n\nPublish allowed: true\n\nArtifact: https://example.com/artifacts/import-validation.json',
           head: { ref: `static/generated-${index}` },
           labels: [{ name: index === 0 ? 'target:woocommerce' : 'target:wordpress' }],
         },
@@ -175,6 +186,21 @@ try {
   );
   assert.notEqual(weakPr.status, 0, 'static PR without validation artifact context fails proof');
   assert.match(weakPr.stderr, /static PR body includes validation artifact context/);
+
+  const failedGate = await runCase(
+    'failed-gate',
+    aggregate(plan, {
+      aggregate: (value) => {
+        const gateOutcome = value.outcomes.find((item) => item.outputs.static_site_publish_gate);
+        gateOutcome.outputs.static_site_publish_gate.publish_allowed = false;
+        gateOutcome.outputs.static_site_publish_gate.gates.fallback_blocks.passed = false;
+        return value;
+      },
+    }),
+    fixture(plan)
+  );
+  assert.notEqual(failedGate.status, 0, 'failed publication gate fails proof before accepting publish');
+  assert.match(failedGate.stderr, /publish_allowed=true/);
 } finally {
   await rm(tempDir, { recursive: true, force: true });
 }

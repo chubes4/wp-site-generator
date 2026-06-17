@@ -1,0 +1,86 @@
+#!/usr/bin/env node
+
+import assert from 'node:assert/strict';
+import { spawnSync } from 'node:child_process';
+import { mkdir, mkdtemp, readFile, writeFile } from 'node:fs/promises';
+import { tmpdir } from 'node:os';
+import path from 'node:path';
+
+const repoRoot = path.resolve(import.meta.dirname, '../..');
+const tempDir = await mkdtemp(path.join(tmpdir(), 'wp-site-generator-ssi-stack-manifest-'));
+const manifestPath = path.join(tempDir, 'ssi-stack-manifest.json');
+const settingsPath = path.join(tempDir, 'settings.json');
+const previewPath = path.join(tempDir, 'preview.json');
+const site = 'issue-test-ref-manifest';
+
+await mkdir(tempDir, { recursive: true });
+await writeJson(manifestPath, {
+	schema_version: 1,
+	harness: manifestEntry('wp_site_generator_validation_harness', 'WP Site Generator validation harness scripts', 'https://github.com/chubes4/wp-site-generator', 'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa'),
+	repositories: {
+		homeboy_extensions: manifestEntry('homeboy_extensions', 'Homeboy Extensions', 'https://github.com/Extra-Chill/homeboy-extensions', 'bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb'),
+		wp_codebox: manifestEntry('wp_codebox', 'WP Codebox', 'https://github.com/Automattic/wp-codebox', 'cccccccccccccccccccccccccccccccccccccccc'),
+		static_site_importer: manifestEntry('static_site_importer', 'Static Site Importer', 'https://github.com/chubes4/static-site-importer', 'dddddddddddddddddddddddddddddddddddddddd'),
+		block_format_bridge: manifestEntry('block_format_bridge', 'Block Format Bridge', 'https://github.com/chubes4/block-format-bridge', 'eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee'),
+		block_artifact_compiler: manifestEntry('block_artifact_compiler', 'Block Artifact Compiler', 'https://github.com/chubes4/block-artifact-compiler', 'ffffffffffffffffffffffffffffffffffffffff'),
+		html_to_blocks_converter: manifestEntry('html_to_blocks_converter', 'HTML to Blocks Converter', 'https://github.com/chubes4/html-to-blocks-converter', '1111111111111111111111111111111111111111'),
+	},
+});
+
+const settingsResult = spawnSync(process.execPath, [
+	path.join(repoRoot, '.github/scripts/build-static-validation-settings.mjs'),
+	'--site', site,
+	'--manifest', manifestPath,
+	'--output', settingsPath,
+], { cwd: repoRoot, encoding: 'utf8' });
+assert.equal(settingsResult.status, 0, settingsResult.stderr || settingsResult.stdout);
+
+const previewResult = spawnSync(process.execPath, [
+	path.join(repoRoot, '.github/scripts/build-static-preview-blueprint.mjs'),
+	'--site', site,
+	'--branch', `static/${site}`,
+	'--manifest', manifestPath,
+	'--output', previewPath,
+], { cwd: repoRoot, encoding: 'utf8' });
+assert.equal(previewResult.status, 0, previewResult.stderr || previewResult.stdout);
+
+const settings = JSON.parse(await readFile(settingsPath, 'utf8'));
+const preview = JSON.parse(await readFile(previewPath, 'utf8'));
+
+assert.equal(settings.stack_manifest.repositories.static_site_importer.sha, 'dddddddddddddddddddddddddddddddddddddddd');
+assert.equal(preview.stack_manifest.repositories.block_artifact_compiler.sha, 'ffffffffffffffffffffffffffffffffffffffff');
+
+const settingsPluginRefs = gitDirectoryRefs(settings.settings.wp_codebox_blueprint.steps);
+const previewPluginRefs = gitDirectoryRefs(preview.blueprint.steps);
+for (const refs of [settingsPluginRefs, previewPluginRefs]) {
+	assert.deepEqual(refs, [
+		['https://github.com/chubes4/block-artifact-compiler', 'ffffffffffffffffffffffffffffffffffffffff', 'commit'],
+		['https://github.com/chubes4/block-format-bridge', 'eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee', 'commit'],
+		['https://github.com/chubes4/static-site-importer', 'dddddddddddddddddddddddddddddddddddddddd', 'commit'],
+	]);
+}
+
+console.log('SSI stack manifest generation passed');
+
+function gitDirectoryRefs(steps) {
+	return steps
+		.map((step) => step.pluginData)
+		.filter((pluginData) => pluginData?.resource === 'git:directory')
+		.map((pluginData) => [pluginData.url, pluginData.ref, pluginData.refType]);
+}
+
+function manifestEntry(id, label, url, sha) {
+	return {
+		id,
+		label,
+		url,
+		git_url: `${url}.git`,
+		ref: 'main',
+		ref_type: 'branch',
+		sha,
+	};
+}
+
+async function writeJson(filePath, value) {
+	await writeFile(filePath, `${JSON.stringify(value, null, 2)}\n`);
+}
