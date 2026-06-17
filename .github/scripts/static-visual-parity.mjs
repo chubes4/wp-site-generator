@@ -8,6 +8,8 @@ import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { spawn } from 'node:child_process';
 
+import { buildSsiImportAbilityPhp, buildSsiStackBlueprint } from './lib/ssi-stack-profile.mjs';
+
 const repoRoot = process.cwd();
 const site = process.env.SITE || process.argv[2];
 const outputRoot = process.env.VISUAL_PARITY_OUTPUT || 'visual-parity-artifacts';
@@ -30,43 +32,12 @@ const importReadyPath = path.join(outputDir, 'import-ready.json');
 const mountedImportReadyPath = toPosix(
 	path.join('/wordpress/wp-content/plugins/wp-site-generator', path.relative(repoRoot, importReadyPath))
 );
-const importViaAbilityPhp = [
-	'<?php',
-	"require_once '/wordpress/wp-load.php';",
-	'wp_set_current_user( 1 );',
-	"$ability = wp_get_ability( 'static-site-importer/import-theme' );",
-	'if ( ! $ability ) {',
-	"\tthrow new RuntimeException( 'Static Site Importer import ability is not registered.' );",
-	'}',
-	'$ability_result = $ability->execute( array(',
-	`\t'html_path' => ${phpString(`/wordpress/wp-content/plugins/wp-site-generator/static-sites/${site}/index.html`)},`,
-	`\t'slug' => ${phpString(site)},`,
-	"\t'activate' => true,",
-	"\t'overwrite' => true,",
-	"\t'keep_source' => true,",
-	') );',
-	'if ( is_wp_error( $ability_result ) ) {',
-	"\tthrow new RuntimeException( $ability_result->get_error_message() );",
-	'}',
-	"if ( empty( $ability_result['success'] ) ) {",
-	"\t$error = isset( $ability_result['error'] ) && is_array( $ability_result['error'] ) ? $ability_result['error'] : array();",
-	"\tthrow new RuntimeException( isset( $error['message'] ) ? (string) $error['message'] : 'Static site import failed.' );",
-	'}',
-	'$theme = wp_get_theme();',
-	`if ( $theme->get_stylesheet() !== ${phpString(site)} ) {`,
-	`\tthrow new RuntimeException( 'Expected active theme ${site}, got ' . $theme->get_stylesheet() );`,
-	'}',
-	'$payload = array(',
-	`\t'site' => ${phpString(site)},`,
-	"\t'theme' => $theme->get_stylesheet(),",
-	"\t'theme_name' => $theme->get( 'Name' ),",
-	"\t'active_plugins' => get_option( 'active_plugins' ),",
-	"\t'woocommerce_loaded' => class_exists( 'WooCommerce' ),",
-	"\t'import_result' => isset( $ability_result['result'] ) ? $ability_result['result'] : null,",
-	"\t'time' => time(),",
-	');',
-	`file_put_contents( ${phpString(mountedImportReadyPath)}, wp_json_encode( $payload ) );`,
-].join('\n');
+const importViaAbilityPhp = buildSsiImportAbilityPhp({
+	htmlPath: `/wordpress/wp-content/plugins/wp-site-generator/static-sites/${site}/index.html`,
+	siteSlug: site,
+	markerPath: mountedImportReadyPath,
+	assertActiveTheme: true,
+});
 const sourceUrl = `http://127.0.0.1:${sourcePort}/index.html`;
 const importedUrl = '/';
 
@@ -84,67 +55,15 @@ const sourceServer = createStaticServer(siteRoot);
 await listen(sourceServer, sourcePort);
 
 const recipePath = path.join(tmpdir(), `wp-static-visual-parity-${site}-${Date.now()}.json`);
-const blueprint = {
-	$schema: 'https://playground.wordpress.net/blueprint-schema.json',
+const blueprint = buildSsiStackBlueprint({
 	landingPage: '/',
-	preferredVersions: { php: '8.3', wp: 'latest' },
 	steps: [
-		{
-			step: 'installPlugin',
-			pluginData: {
-				resource: 'wordpress.org/plugins',
-				slug: 'woocommerce',
-			},
-			options: {
-				activate: true,
-				targetFolderName: 'woocommerce',
-			},
-		},
-		{
-			step: 'installPlugin',
-			pluginData: {
-				resource: 'git:directory',
-				url: 'https://github.com/chubes4/block-artifact-compiler',
-				ref: 'main',
-				refType: 'branch',
-			},
-			options: {
-				activate: true,
-				targetFolderName: 'block-artifact-compiler',
-			},
-		},
-		{
-			step: 'installPlugin',
-			pluginData: {
-				resource: 'git:directory',
-				url: 'https://github.com/chubes4/block-format-bridge',
-				ref: 'main',
-				refType: 'branch',
-			},
-			options: {
-				activate: true,
-				targetFolderName: 'block-format-bridge',
-			},
-		},
-		{
-			step: 'installPlugin',
-			pluginData: {
-				resource: 'git:directory',
-				url: 'https://github.com/chubes4/static-site-importer',
-				ref: 'main',
-				refType: 'branch',
-			},
-			options: {
-				activate: true,
-				targetFolderName: 'static-site-importer',
-			},
-		},
 		{
 			step: 'runPHP',
 			code: importViaAbilityPhp,
 		},
 	],
-};
+});
 const recipe = {
 	schema: 'wp-codebox/workspace-recipe/v1',
 	runtime: {
@@ -433,10 +352,6 @@ function escapeHtml(value) {
 		.replaceAll('<', '&lt;')
 		.replaceAll('>', '&gt;')
 		.replaceAll('"', '&quot;');
-}
-
-function phpString(value) {
-	return `'${String(value).replaceAll('\\', '\\\\').replaceAll("'", "\\'")}'`;
 }
 
 function toPosix(value) {
