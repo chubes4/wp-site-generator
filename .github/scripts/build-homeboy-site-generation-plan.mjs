@@ -157,6 +157,8 @@ const conceptPacketOutput = artifactOutput('wp-site-generator/ConceptPacket/v1',
 const designPacketOutput = artifactOutput('wp-site-generator/DesignPacket/v1', 'DesignPacket.json');
 const staticSiteCandidateOutput = artifactOutput('wp-site-generator/StaticSiteCandidate/v1', 'StaticSiteCandidate.json');
 const importValidationResultOutput = artifactOutput('wp-site-generator/ImportValidationResult/v1', 'ImportValidationResult.json');
+const visualParityArtifactOutput = artifactOutput('wp-site-generator/VisualParityArtifact/v1', 'VisualParityArtifact.json');
+const staticSitePublishGateOutput = artifactOutput('wp-site-generator/StaticSitePublishGate/v1', 'StaticSitePublishGate.json');
 
 const packetArtifactSpecs = {
 	concept_packet: {
@@ -178,6 +180,11 @@ const packetArtifactSpecs = {
 		type: 'ImportValidationResult',
 		schema: 'wp-site-generator/ImportValidationResult/v1',
 		file: 'ImportValidationResult.json',
+	},
+	static_site_publish_gate: {
+		type: 'StaticSitePublishGate',
+		schema: 'wp-site-generator/StaticSitePublishGate/v1',
+		file: 'StaticSitePublishGate.json',
 	},
 };
 
@@ -241,7 +248,7 @@ function packetDatamachineConfig({ packetKey, ...config }) {
 const conceptPacketPrompt = 'Generate one buildable ConceptPacket typed artifact using schema wp-site-generator/ConceptPacket/v1 with concept_packet as the output key. Include schema_version, concept kind, title, body sections, lane labels, target lane, and source provenance. Homeboy owns orchestration and GitHub publication happens after a validated StaticSiteCandidate exists.';
 const loopDesignPrompt = 'Consume ConceptPacket {{outputs.concept_packet}} and produce one DesignPacket typed artifact using schema wp-site-generator/DesignPacket/v1 with design_packet as the output key. Preserve the concept title, body sections, lane labels, and provenance. Include palette, typography, layout direction, mood, accessibility notes, and any implementation constraints needed by the static-site candidate generator.';
 const loopCandidatePrompt = 'Consume ConceptPacket {{outputs.concept_packet}} and DesignPacket {{outputs.design_packet}}, then produce one StaticSiteCandidate typed artifact using schema wp-site-generator/StaticSiteCandidate/v1 with static_site_candidate as the output key. Include generated files, metadata, branch/title proposal, and reproduction context. Validation runs before publication.';
-const loopPublishPrompt = 'Consume StaticSiteCandidate {{outputs.static_site_candidate}} and ImportValidationResult {{outputs.import_validation_result}}, then publish exactly one static-site PR. Use the candidate files and metadata as source of truth. Render the PR body with .github/scripts/render-static-site-pr-body.mjs so the initial PR body includes the import validation summary, fallback block count, conversion finding counts, and artifact references.';
+const loopPublishPrompt = 'Consume StaticSiteCandidate {{outputs.static_site_candidate}}, ImportValidationResult {{outputs.import_validation_result}}, and StaticSitePublishGate {{outputs.static_site_publish_gate}}. Publish exactly one static-site PR only when static_site_publish_gate.publish_allowed is true. Use the candidate files and metadata as source of truth. Render the PR body with .github/scripts/render-static-site-pr-body.mjs so the initial PR body includes the import validation summary, fallback block count, conversion finding counts, explicit publication gate results, and artifact references.';
 
 function storeIdeaTask({ id = 'store-idea-agent', flow = 'store-idea-artifact-flow', prompt = ' ', title = 'Generate store idea', lane = 'store concept lane' } = {}) {
 	const lanePolicyPrompt = policyPrompt(complexityDecision, lane);
@@ -355,13 +362,16 @@ function importValidationTask({ id, title, candidate = '{{outputs.static_site_ca
 			},
 			output_mappings: {
 				import_validation_result: 'result.import_validation_result',
+				visual_parity_artifact: 'result.visual_parity_artifact',
 				finding_packets: 'result.finding_packets',
 			},
 			artifact_outputs: {
 				import_validation_result: importValidationResultOutput,
+				visual_parity_artifact: visualParityArtifactOutput,
 			},
 			engine_data_outputs: {
 				import_validation_result: 'outputs.import_validation_result',
+				visual_parity_artifact: 'outputs.visual_parity_artifact',
 				finding_packets: 'outputs.finding_packets',
 			},
 			task_timeout_seconds: 1800,
@@ -369,29 +379,57 @@ function importValidationTask({ id, title, candidate = '{{outputs.static_site_ca
 	});
 }
 
-function staticSitePublishTask({ id, title, candidate = '{{outputs.static_site_candidate}}', validation = '{{outputs.import_validation_result}}' }) {
-	const prompt = `Publish StaticSiteCandidate ${candidate} after reading ImportValidationResult ${validation}. Create one static-site PR with candidate files, and render the initial PR body with validation metrics from .github/scripts/render-static-site-pr-body.mjs.`;
+function staticSitePublishGateTask({ id, title, validation = '{{outputs.import_validation_result}}', visualParity = '{{outputs.visual_parity_artifact}}' }) {
+	return task({
+		id,
+		title,
+		instructions: `Evaluate deterministic publication gates from ImportValidationResult ${validation} and VisualParityArtifact ${visualParity}. Emit StaticSitePublishGate with publish_allowed plus pass/fail fields for fallback_blocks, conversion_findings, and visual_parity.`,
+		expectedArtifacts: ['StaticSitePublishGate'],
+		config: {
+			execution_kind: 'node_script',
+			script: '.github/scripts/evaluate-static-site-publish-gate.mjs',
+			inputs: {
+				import_validation_result: validation,
+				visual_parity_artifact: visualParity,
+			},
+			artifact_outputs: {
+				static_site_publish_gate: staticSitePublishGateOutput,
+			},
+			engine_data_outputs: {
+				static_site_publish_gate: 'outputs.static_site_publish_gate',
+				publish_allowed: 'outputs.static_site_publish_gate.publish_allowed',
+			},
+		},
+	});
+}
+
+function staticSitePublishTask({ id, title, candidate = '{{outputs.static_site_candidate}}', validation = '{{outputs.import_validation_result}}', publishGate = '{{outputs.static_site_publish_gate}}' }) {
+	const prompt = `Publish StaticSiteCandidate ${candidate} after reading ImportValidationResult ${validation} and StaticSitePublishGate ${publishGate}. Continue only when the deterministic gate has publish_allowed=true. Create one static-site PR with candidate files, and render the initial PR body with validation metrics and gate results from .github/scripts/render-static-site-pr-body.mjs.`;
+	const config = datamachineConfig({
+		bundle: 'bundles/static-site-agent',
+		agent: 'static-site-agent',
+		pipeline: 'static-site-publish-pipeline',
+		flow: 'static-site-publish-flow',
+		prompt,
+		successRequiresPr: true,
+		successCompletionOutcomes: ['static_site_pr'],
+		toolRecorders: prRecorder,
+		engineDataOutputs: {
+			static_site_pr_url: 'metadata.engine_data.static_site_agent.pr_url',
+			static_site_branch: 'metadata.engine_data.static_site_agent.branch',
+			static_site_slug: 'metadata.engine_data.static_site_agent.slug',
+		},
+		transcriptArtifactName: `${id}-transcript-${runId}`,
+	});
+	config.runtime_task.input.publish_gate = publishGate;
+	config.runtime_task.input.publish_allowed_path = `${publishGate}.publish_allowed`;
+	config.runtime_task.input.required_publish_allowed = true;
 	return task({
 		id,
 		title,
 		instructions: prompt,
 		expectedArtifacts: ['datamachine-transcript', 'datamachine-pull-request'],
-		config: datamachineConfig({
-			bundle: 'bundles/static-site-agent',
-			agent: 'static-site-agent',
-			pipeline: 'static-site-publish-pipeline',
-			flow: 'static-site-publish-flow',
-			prompt,
-			successRequiresPr: true,
-			successCompletionOutcomes: ['static_site_pr'],
-			toolRecorders: prRecorder,
-			engineDataOutputs: {
-				static_site_pr_url: 'metadata.engine_data.static_site_agent.pr_url',
-				static_site_branch: 'metadata.engine_data.static_site_agent.branch',
-				static_site_slug: 'metadata.engine_data.static_site_agent.slug',
-			},
-			transcriptArtifactName: `${id}-transcript-${runId}`,
-		}),
+		config,
 	});
 }
 
@@ -401,13 +439,14 @@ function manualPlan() {
 	const designPacket = process.env.DESIGN_PACKET || '';
 	const staticSiteCandidate = process.env.STATIC_SITE_CANDIDATE || '';
 	const importValidationResult = process.env.IMPORT_VALIDATION_RESULT || '';
+	const staticSitePublishGate = process.env.STATIC_SITE_PUBLISH_GATE || '';
 	const websiteFlow = process.env.WEBSITE_FLOW_SLUG || 'website-idea-artifact-flow';
 	const taskByKind = {
 		store_idea: () => storeIdeaTask({ id: 'store-idea-agent', flow: 'store-idea-artifact-flow', prompt: conceptPrompt, title: 'Generate store idea' }),
 		website_idea: () => websiteIdeaTask({ id: 'website-idea-agent', flow: websiteFlow, prompt: conceptPrompt, title: 'Generate website idea' }),
 		design: () => designTask({ id: 'design-agent', conceptPacket, title: 'Generate design packet' }),
 		generate_candidate: () => staticSiteCandidateTask({ id: 'static-site-candidate-agent', conceptPacket, designPacket, title: 'Generate static site candidate' }),
-		publish_pr: () => staticSitePublishTask({ id: 'static-site-publish-agent', candidate: staticSiteCandidate, validation: importValidationResult, title: 'Publish static site PR' }),
+		publish_pr: () => staticSitePublishTask({ id: 'static-site-publish-agent', candidate: staticSiteCandidate, validation: importValidationResult, publishGate: staticSitePublishGate, title: 'Publish static site PR' }),
 	};
 
 	if (!taskByKind[manualTaskKind]) {
@@ -419,8 +458,8 @@ function manualPlan() {
 	if (manualTaskKind === 'generate_candidate' && (!conceptPacket || !designPacket)) {
 		throw new Error('CONCEPT_PACKET and DESIGN_PACKET are required for generate_candidate.');
 	}
-	if (manualTaskKind === 'publish_pr' && (!staticSiteCandidate || !importValidationResult)) {
-		throw new Error('STATIC_SITE_CANDIDATE and IMPORT_VALIDATION_RESULT are required for publish_pr.');
+	if (manualTaskKind === 'publish_pr' && (!staticSiteCandidate || !importValidationResult || !staticSitePublishGate)) {
+		throw new Error('STATIC_SITE_CANDIDATE, IMPORT_VALIDATION_RESULT, and STATIC_SITE_PUBLISH_GATE are required for publish_pr.');
 	}
 
   return {
@@ -507,6 +546,8 @@ const loopPlan = {
 		staticSiteCandidateTask({ id: 'generate-website-candidate', title: 'Generate website static-site candidate', lane: 'website candidate lane' }),
 		importValidationTask({ id: 'validate-store-candidate', title: 'Validate store static-site candidate' }),
 		importValidationTask({ id: 'validate-website-candidate', title: 'Validate website static-site candidate' }),
+		staticSitePublishGateTask({ id: 'gate-store-publication', title: 'Gate store static-site publication' }),
+		staticSitePublishGateTask({ id: 'gate-website-publication', title: 'Gate website static-site publication' }),
 		staticSitePublishTask({ id: 'publish-store-pr', title: 'Publish store static-site PR' }),
 		staticSitePublishTask({ id: 'publish-website-pr', title: 'Publish website static-site PR' }),
 	],
@@ -548,17 +589,33 @@ const loopPlan = {
 			},
 		},
 		'publish-store-pr': {
-			depends_on: ['generate-store-candidate', 'validate-store-candidate'],
+			depends_on: ['generate-store-candidate', 'validate-store-candidate', 'gate-store-publication'],
 			bindings: {
 				static_site_candidate: artifactBinding('generate-store-candidate', 'static_site_candidate'),
 				import_validation_result: artifactBinding('validate-store-candidate', 'import_validation_result'),
+				static_site_publish_gate: artifactBinding('gate-store-publication', 'static_site_publish_gate'),
 			},
 		},
 		'publish-website-pr': {
-			depends_on: ['generate-website-candidate', 'validate-website-candidate'],
+			depends_on: ['generate-website-candidate', 'validate-website-candidate', 'gate-website-publication'],
 			bindings: {
 				static_site_candidate: artifactBinding('generate-website-candidate', 'static_site_candidate'),
 				import_validation_result: artifactBinding('validate-website-candidate', 'import_validation_result'),
+				static_site_publish_gate: artifactBinding('gate-website-publication', 'static_site_publish_gate'),
+			},
+		},
+		'gate-store-publication': {
+			depends_on: ['validate-store-candidate'],
+			bindings: {
+				import_validation_result: artifactBinding('validate-store-candidate', 'import_validation_result'),
+				visual_parity_artifact: artifactBinding('validate-store-candidate', 'visual_parity_artifact'),
+			},
+		},
+		'gate-website-publication': {
+			depends_on: ['validate-website-candidate'],
+			bindings: {
+				import_validation_result: artifactBinding('validate-website-candidate', 'import_validation_result'),
+				visual_parity_artifact: artifactBinding('validate-website-candidate', 'visual_parity_artifact'),
 			},
 		},
 	},
@@ -575,7 +632,7 @@ const loopPlan = {
 	metadata: {
 		source: 'wp-site-generator site-generation-loop',
 		artifact_driven: true,
-		artifact_stages: ['ConceptPacket', 'DesignPacket', 'StaticSiteCandidate', 'ImportValidationResult', 'StaticSitePullRequest'],
+		artifact_stages: ['ConceptPacket', 'DesignPacket', 'StaticSiteCandidate', 'ImportValidationResult', 'StaticSitePublishGate', 'StaticSitePullRequest'],
 		controller_spec: controllerSpecPath,
 		controller_contract: controllerContract,
 		controller_authority: controllerAuthority,
