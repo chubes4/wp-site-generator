@@ -77,6 +77,7 @@ assert.equal(settingsPayload.workloads[0].id, 'ssi-import', 'native validation a
 assert.equal(settingsPayload.workloads[0].run[0].type, 'php', 'workload imports through PHP');
 assert.match(settingsPayload.workloads[0].run[0].code, /wp_get_ability\( 'static-site-importer\/import-theme' \)/, 'workload runs SSI import ability');
 assert.doesNotMatch(settingsPayload.workloads[0].run[0].code, /static-site-importer import-theme/, 'workload does not depend on the SSI WP-CLI command');
+assert.doesNotMatch(settingsPayload.workloads[0].run[0].code, /^<\?php/, 'inline PHP workload code omits an opening tag for eval execution');
 assert.deepEqual(
 	settingsPayload.settings.wp_codebox_blueprint.steps.map((step) => step.options.targetFolderName).slice(0, 3),
 	['block-artifact-compiler', 'block-format-bridge', 'static-site-importer'],

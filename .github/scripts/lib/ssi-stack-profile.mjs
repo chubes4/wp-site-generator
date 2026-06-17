@@ -73,6 +73,7 @@ export function buildSsiImportWorkload(siteSlug, { htmlPath = '' } = {}) {
 				code: buildSsiImportAbilityPhp({
 					htmlPath: sourceHtmlPath,
 					siteSlug,
+					includeOpeningTag: false,
 				}),
 			},
 			{
@@ -90,9 +91,8 @@ export function buildSsiImportWorkload(siteSlug, { htmlPath = '' } = {}) {
 	};
 }
 
-export function buildSsiImportAbilityPhp({ htmlPath, siteSlug, markerPath, assertActiveTheme = false, trailingNewline = false }) {
+export function buildSsiImportAbilityPhp({ htmlPath, siteSlug, markerPath, assertActiveTheme = false, trailingNewline = false, includeOpeningTag = true }) {
 	const lines = [
-		'<?php',
 		"require_once '/wordpress/wp-load.php';",
 		'wp_set_current_user( 1 );',
 		"if ( ! function_exists( 'wp_get_ability' ) ) {",
@@ -145,7 +145,8 @@ export function buildSsiImportAbilityPhp({ htmlPath, siteSlug, markerPath, asser
 		);
 	}
 
-	return `${lines.join('\n')}${trailingNewline ? '\n' : ''}`;
+	const php = includeOpeningTag ? ['<?php', ...lines] : lines;
+	return `${php.join('\n')}${trailingNewline ? '\n' : ''}`;
 }
 
 function buildPluginInstallStep(component, manifest = ssiStackProfile.manifest) {
