@@ -48,6 +48,8 @@ jobs:
       pr_number: ${{ steps.detect.outputs.pr_number }}
       head_sha: ${{ steps.detect.outputs.head_sha }}
       head_ref: ${{ steps.detect.outputs.head_ref }}
+      source_repo: ${{ steps.detect.outputs.source_repo }}
+      target_lane: ${{ steps.detect.outputs.target_lane }}
     steps:
       - uses: actions/checkout@v4
         with:
@@ -66,14 +68,18 @@ jobs:
             exit 1
           fi
 
-          pr_json="$(gh pr view "$PR_NUMBER" --repo "$GITHUB_REPOSITORY" --json headRefOid,headRefName)"
+          pr_json="$(gh pr view "$PR_NUMBER" --repo "$GITHUB_REPOSITORY" --json headRefOid,headRefName,headRepository,labels)"
           head="$(jq -r '.headRefOid' <<<"$pr_json")"
           head_ref="$(jq -r '.headRefName' <<<"$pr_json")"
+          source_repo="$(jq -r '.headRepository.nameWithOwner // env.GITHUB_REPOSITORY' <<<"$pr_json")"
+          target_lane="$(jq -r 'if any(.labels[].name; . == "target:woocommerce") then "woocommerce" else "wordpress" end' <<<"$pr_json")"
           mapfile -t sites < <(gh pr diff "$PR_NUMBER" --repo "$GITHUB_REPOSITORY" --name-only \
             | awk -F/ '/^static-sites\// && NF >= 2 { print $2 }' | sort -u)
           echo "pr_number=$PR_NUMBER" >> "$GITHUB_OUTPUT"
           echo "head_sha=$head" >> "$GITHUB_OUTPUT"
           echo "head_ref=$head_ref" >> "$GITHUB_OUTPUT"
+          echo "source_repo=$source_repo" >> "$GITHUB_OUTPUT"
+          echo "target_lane=$target_lane" >> "$GITHUB_OUTPUT"
           if [ "${#sites[@]}" -eq 0 ]; then
             echo "has_sites=false" >> "$GITHUB_OUTPUT"
             echo "sites=[]" >> "$GITHUB_OUTPUT"
@@ -127,6 +133,7 @@ jobs:
         shell: bash
         env:
           SITE: ${{ matrix.site }}
+          TARGET_LANE: ${{ needs.detect-changed-sites.outputs.target_lane }}
         run: |
           set -euo pipefail
           node .github/scripts/build-static-validation-settings.mjs --github-output "$GITHUB_OUTPUT"
@@ -177,6 +184,7 @@ jobs:
         shell: bash
         env:
           SITE: ${{ matrix.site }}
+          TARGET_LANE: ${{ needs.detect-changed-sites.outputs.target_lane }}
         run: |
           set -euo pipefail
           mkdir -p "visual-parity-artifacts/$SITE"
@@ -262,7 +270,10 @@ jobs:
         shell: bash
         env:
           SITE: ${{ matrix.site }}
+          TARGET_LANE: ${{ needs.detect-changed-sites.outputs.target_lane }}
           BRANCH: ${{ needs.detect-changed-sites.outputs.head_ref }}
+          SOURCE_REPO: ${{ needs.detect-changed-sites.outputs.source_repo }}
+          SOURCE_HEAD_SHA: ${{ needs.detect-changed-sites.outputs.head_sha }}
         run: |
           set -euo pipefail
           node .github/scripts/build-static-preview-blueprint.mjs --github-output "$GITHUB_OUTPUT"

@@ -181,7 +181,7 @@ Static-site PR validation is driven by `.github/homeboy/controllers/static-site-
 The validation workflow:
 
 1. Boots WordPress Playground inside GitHub Actions.
-2. Installs Static Site Importer and WooCommerce via `wp_codebox_blueprint`.
+2. Installs Static Site Importer plus the shared block conversion stack via `wp_codebox_blueprint`; WooCommerce is added only for the commerce/WooCommerce lane.
 3. Runs `wp static-site-importer import-theme` on the PR's `static-sites/<slug>/index.html`.
 4. Captures a Playwright visual parity comparison between the source static HTML and imported WordPress result.
 5. Reads the resulting `import-report.json` and emits importer metrics + the report itself as a Homeboy bench artifact.
@@ -191,7 +191,9 @@ The validation workflow:
 
 This whole loop runs **without a hosted WordPress site**. PHP runs as WebAssembly in CI; the database is SQLite. The Playground preview link the reviewer clicks does the same import in their browser.
 
-The PR target label gates validation. `target:wordpress` marks content-shaped WordPress imports; `target:woocommerce` marks commerce-shaped imports. The current validation harness installs WooCommerce in the Playground environment for both lanes, so the target label is selection and review metadata rather than the only place WooCommerce is introduced. The build agent still emits static source files; CI owns the WordPress import context.
+The PR target label gates validation. `target:wordpress` marks content-shaped WordPress imports; `target:woocommerce` marks commerce-shaped imports and enables the WooCommerce stack. The build agent still emits static source files; CI owns the WordPress import context.
+
+Playground preview links use the PR head SHA and source repository when that immutable provenance is available. If a SHA is unavailable, the generated preview payload records the branch fallback and why it was used.
 
 The Homeboy WordPress extension capability that makes this possible (`wp_codebox_workloads`) is generic. SSI is just one consumer; any WordPress plugin can be exercised the same way in CI. The validation workflow refreshes the reusable harness scripts from `origin/main` before running, so older generated-site branches get the current validation behavior without rebasing their source files.
 

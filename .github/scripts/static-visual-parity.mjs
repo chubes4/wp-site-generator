@@ -8,10 +8,11 @@ import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { spawn } from 'node:child_process';
 
-import { buildSsiImportAbilityPhp, buildSsiStackBlueprint } from './lib/ssi-stack-profile.mjs';
+import { buildSsiImportAbilityPhp, buildSsiStackBlueprint, requiresCommerceStack } from './lib/ssi-stack-profile.mjs';
 
 const repoRoot = process.cwd();
 const site = process.env.SITE || process.argv[2];
+const lane = process.env.TARGET_LANE || process.env.LANE || 'wordpress';
 const outputRoot = process.env.VISUAL_PARITY_OUTPUT || 'visual-parity-artifacts';
 const sourcePort = Number(process.env.SOURCE_PORT || 4173);
 const wpCodeboxCli = process.env.WP_CODEBOX_CLI || path.join(repoRoot, '.ci/wp-codebox/packages/cli/dist/index.js');
@@ -56,6 +57,7 @@ await listen(sourceServer, sourcePort);
 
 const recipePath = path.join(tmpdir(), `wp-static-visual-parity-${site}-${Date.now()}.json`);
 const blueprint = buildSsiStackBlueprint({
+	lane,
 	landingPage: '/',
 	steps: [
 		{
@@ -107,8 +109,8 @@ await writeFile(recipePath, `${JSON.stringify(recipe, null, 2)}\n`);
 try {
 	const codeboxResult = await runWpCodeboxRecipe(recipePath);
 	const importReadiness = await readImportMarker(importReadyPath);
-	if (!importReadiness.woocommerce_loaded) {
-		throw new Error('Visual parity import completed without WooCommerce loaded.');
+	if (requiresCommerceStack(lane) && !importReadiness.woocommerce_loaded) {
+		throw new Error('Visual parity import completed without WooCommerce loaded for commerce lane.');
 	}
 	const visualDiff = await normalizeCodeboxVisualCompare({ codeboxResult, outputDir });
 	await writeSummary({ site, sourceUrl, importedUrl, outputDir, codeboxResult, importReadiness, visualDiff });
