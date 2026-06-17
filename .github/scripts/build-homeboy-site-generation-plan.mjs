@@ -632,7 +632,8 @@ const loopPlan = {
 	metadata: {
 		source: 'wp-site-generator site-generation-loop',
 		artifact_driven: true,
-		artifact_stages: ['ConceptPacket', 'DesignPacket', 'StaticSiteCandidate', 'ImportValidationResult', 'StaticSitePublishGate', 'StaticSitePullRequest'],
+		artifact_stages: ['ConceptPacket', 'DesignPacket', 'StaticSiteCandidate', 'ImportValidationResult', 'StaticSitePublishGate'],
+		publication_evidence_outputs: ['StaticSitePullRequest'],
 		controller_spec: controllerSpecPath,
 		controller_contract: controllerContract,
 		controller_authority: controllerAuthority,

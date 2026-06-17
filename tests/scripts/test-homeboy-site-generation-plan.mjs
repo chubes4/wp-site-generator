@@ -54,7 +54,8 @@ try {
   }
 
 	assert.equal(plan.metadata.artifact_driven, true, 'normal loop is artifact-driven');
-	assert.deepEqual(plan.metadata.artifact_stages, ['ConceptPacket', 'DesignPacket', 'StaticSiteCandidate', 'ImportValidationResult', 'StaticSitePublishGate', 'StaticSitePullRequest']);
+	assert.deepEqual(plan.metadata.artifact_stages, ['ConceptPacket', 'DesignPacket', 'StaticSiteCandidate', 'ImportValidationResult', 'StaticSitePublishGate']);
+	assert.deepEqual(plan.metadata.publication_evidence_outputs, ['StaticSitePullRequest']);
 	assert.equal(plan.metadata.controller_spec, '.github/homeboy/controllers/static-site-generation-loop.controller.json');
 	assert.equal(plan.metadata.controller_contract, 'wp-site-generator/static-site-generation-loop');
 	assert.deepEqual(plan.metadata.controller_authority, {
@@ -85,12 +86,19 @@ try {
 			'validation-to-publication-gate:import_validation_result',
 			'visual-to-publication-gate:visual_parity_artifact',
 			'publication-gate-to-publication:static_site_publish_gate',
-			'publication-to-revalidation:static_site_pull_request',
-			'publication-to-reviewer:static_site_pull_request',
+			'candidate-to-revalidation:static_site_candidate',
+			'validation-to-revalidation:import_validation_result',
+			'visual-to-revalidation:visual_parity_artifact',
+			'findings-to-revalidation:finding_packet_set',
+			'candidate-to-reviewer:static_site_candidate',
+			'validation-to-reviewer:import_validation_result',
+			'static-run-to-reviewer:static_validation_run',
+			'visual-to-reviewer:visual_parity_artifact',
+			'findings-to-reviewer:finding_packet_set',
+			'publication-pr-evidence:static_site_pull_request',
 			'validation-to-findings:static_validation_run',
 			'visual-to-findings:visual_parity_artifact',
 			'findings-to-iterator-groups:finding_group',
-			'iterator-to-revalidation:iterator_upstream_pull_request',
 			'revalidation-to-reviewer:revalidation_attempt',
 			'iterator-issue-evidence-to-reviewer:iterator_upstream_issue',
 			'iterator-pr-evidence-to-reviewer:iterator_upstream_pull_request',
@@ -153,9 +161,12 @@ try {
 	assert.deepEqual(workflows['finding-packets'].consumes, ['import_validation_result', 'static_validation_run', 'visual_parity_artifact'], 'finding packets consume validation and visual evidence');
 	assert.deepEqual(workflows.iterator.consumes, ['finding_group'], 'iterator workflow consumes grouped findings');
 	assert.deepEqual(workflows.iterator.fan_out.group_by, ['owner_repo', 'root_cause', 'group_id'], 'iterator fan-out is grouped by owner/root cause/group id');
-	assert.deepEqual(workflows.revalidation.consumes, ['static_site_pull_request', 'iterator_upstream_pull_request'], 'revalidation waits for generated PR and iterator PR artifacts');
-	assert.deepEqual(workflows.reviewer.consumes, ['static_site_pull_request', 'static_validation_run', 'visual_parity_artifact', 'finding_packet_set', 'iterator_upstream_issue', 'iterator_upstream_pull_request', 'revalidation_attempt'], 'reviewer consumes issue-only and PR iterator evidence');
-	assert.equal(controllerSpec.artifact_flow.find((edge) => edge.edge_id === 'iterator-to-revalidation').required, false, 'issue-only iterator groups do not require PR-first revalidation');
+	assert.deepEqual(workflows.revalidation.consumes, ['static_site_candidate', 'import_validation_result', 'visual_parity_artifact', 'finding_packet_set'], 'revalidation consumes artifact evidence without PR transport');
+	assert.deepEqual(workflows.reviewer.consumes, ['static_site_candidate', 'import_validation_result', 'static_validation_run', 'visual_parity_artifact', 'finding_packet_set', 'revalidation_attempt'], 'reviewer consumes candidate, validation, visual, finding, and revalidation artifacts');
+	assert.equal(controllerSpec.artifact_flow.find((edge) => edge.edge_id === 'publication-pr-evidence').required, false, 'generated PR is optional publication evidence');
+	assert.equal(controllerSpec.artifact_flow.find((edge) => edge.edge_id === 'publication-pr-evidence').evidence_only, true, 'generated PR is marked evidence-only');
+	assert.equal(controllerSpec.artifacts.find((artifact) => artifact.artifact_id === 'static_site_pull_request').required, false, 'generated PR artifact is not required runtime transport');
+	assert.equal(controllerSpec.artifacts.find((artifact) => artifact.artifact_id === 'iterator_upstream_pull_request').evidence_only, true, 'upstream iterator PR is optional evidence only');
 	assert.deepEqual(workflows.reviewer.promotion_gate, {
 		requires: ['reviewer_gate_outcome.decision'],
 		passing_decisions: ['PASS'],
