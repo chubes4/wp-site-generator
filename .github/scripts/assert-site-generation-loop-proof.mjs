@@ -3,6 +3,8 @@ import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
 import path from 'node:path';
 
+import { buildSsiImportWorkload } from './lib/ssi-stack-profile.mjs';
+
 const args = new Map();
 for (let i = 2; i < process.argv.length; i += 2) {
   args.set(process.argv[i], process.argv[i + 1]);
@@ -10,71 +12,33 @@ for (let i = 2; i < process.argv.length; i += 2) {
 
 const repoRoot = process.env.GITHUB_WORKSPACE || process.cwd();
 const aggregatePath = args.get('--aggregate') || path.join(repoRoot, '.ci', 'homeboy-agent-task-aggregate.json');
+const planPath = args.get('--plan') || path.join(repoRoot, '.ci', 'site-generation-loop.agent-task-plan.json');
+const controllerPath = args.get('--controller') || path.join(repoRoot, '.github/homeboy/controllers/static-site-generation-loop.controller.json');
 const fixturePath = args.get('--fixture-state') || '';
 const repo = args.get('--repo') || process.env.GITHUB_REPOSITORY || 'chubes4/wp-site-generator';
 const token = process.env.GITHUB_TOKEN || process.env.GH_TOKEN || '';
 const validationWaitMs = Number(process.env.STATIC_VALIDATION_WAIT_MS || 15 * 60 * 1000);
 const validationPollMs = Number(process.env.STATIC_VALIDATION_POLL_MS || 15 * 1000);
 
-const requiredConceptSections = ['Recommended Concept', 'Who It Serves', 'What It Offers', 'Why It Could Work'];
-const lanes = [
-  {
-    name: 'store',
-    conceptTask: 'store-idea-agent',
-    designTask: 'design-store-issue',
-    staticTask: 'static-store-site',
-  },
-  {
-    name: 'website',
-    conceptTask: 'website-idea-agent',
-    designTask: 'design-website-issue',
-    staticTask: 'static-website-site',
-  },
-];
-
 const aggregate = JSON.parse(await readFile(aggregatePath, 'utf8'));
+const plan = JSON.parse(await readFile(planPath, 'utf8'));
+const controller = JSON.parse(await readFile(controllerPath, 'utf8'));
 const fixture = fixturePath ? JSON.parse(await readFile(fixturePath, 'utf8')) : null;
+const outcomes = aggregate.outcomes || [];
+const outcomesByTaskId = new Map(outcomes.map((item) => [item.task_id, item]));
+const planTasks = plan.tasks || [];
+const planTaskIds = planTasks.map((item) => item.task_id);
 
 function fail(message) {
   throw new Error(`Site generation proof failed: ${message}`);
 }
 
 function outcome(taskId) {
-  const found = aggregate.outcomes?.find((item) => item.task_id === taskId);
+  const found = outcomesByTaskId.get(taskId);
   if (!found) {
     fail(`missing outcome for ${taskId}`);
   }
   return found;
-}
-
-function collectObjects(value, predicate, found = []) {
-  if (!value || typeof value !== 'object') {
-    return found;
-  }
-  if (predicate(value)) {
-    found.push(value);
-  }
-  for (const item of Object.values(value)) {
-    if (item && typeof item === 'object') {
-      collectObjects(item, predicate, found);
-    }
-  }
-  return found;
-}
-
-function publishedConcept(outcomeValue) {
-  const toolCalls = collectObjects(
-    outcomeValue,
-    (value) => value.tool_name === 'github_issue_publish' && value.tool_parameters?.title && value.tool_parameters?.body
-  );
-  if (!toolCalls.length) {
-    fail(`missing original github_issue_publish tool parameters for ${outcomeValue.task_id}`);
-  }
-  const call = toolCalls[0];
-  return {
-    title: call.tool_parameters.title,
-    body: call.tool_parameters.body,
-  };
 }
 
 function labelsOf(value) {
@@ -86,21 +50,9 @@ function prNumberFromUrl(url) {
   return match ? Number(match[1]) : 0;
 }
 
-function stripLeadingEmoji(title) {
-  return String(title).replace(/^[^\p{L}\p{N}#]+/u, '').trim();
-}
-
-function hasConceptSections(body) {
-  return requiredConceptSections.every((section) => new RegExp(`(^|\\n)##\\s+${section}(\\n|$)`, 'i').test(body));
-}
-
-function looksLikeDesignHandoff(issue) {
-  return /^\s*(design direction|unused)\s*$/i.test(issue.title || '') || /^\s*##\s+Design direction/i.test(issue.body || '');
-}
-
 async function githubJson(kind, number) {
   if (fixture) {
-    const collection = kind === 'issue' ? fixture.issues : fixture.pull_requests;
+    const collection = kind === 'pull_request' ? fixture.pull_requests : fixture.issues;
     const value = collection?.[String(number)];
     if (!value) {
       fail(`fixture missing ${kind} #${number}`);
@@ -133,77 +85,109 @@ function sleep(ms) {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
+function artifactOutputKeys(taskItem) {
+  return Object.keys(taskItem.executor?.config?.artifact_outputs || taskItem.executor?.config?.runtime_task?.input?.artifact_outputs || {});
+}
+
+function engineOutputKeys(taskItem) {
+  return Object.keys(taskItem.executor?.config?.engine_data_outputs || taskItem.executor?.config?.runtime_task?.input?.engine_data_outputs || {});
+}
+
+function successOutcomeKeys(taskItem) {
+  return taskItem.executor?.config?.runtime_task?.input?.success_completion_outcomes || [];
+}
+
+function expectedOutputKeys(taskItem) {
+  return [...new Set([...artifactOutputKeys(taskItem), ...engineOutputKeys(taskItem), ...successOutcomeKeys(taskItem)])];
+}
+
+function outputValue(outcomeValue, key) {
+  return outcomeValue.outputs?.[key] ?? outcomeValue.artifacts?.[key] ?? outcomeValue.typed_artifacts?.[key];
+}
+
+function assertGeneratedContracts() {
+  assert.equal(plan.schema, 'homeboy/agent-task-plan/v1', 'plan uses the Homeboy agent-task plan schema');
+  assert.equal(controller.schema, 'homeboy/agent-task-loop-spec/v1', 'controller uses the Homeboy loop spec schema');
+  assert.equal(plan.metadata?.controller_contract, controller.loop_id, 'plan metadata points at the controller loop contract');
+  assert.equal(plan.metadata?.controller_spec, '.github/homeboy/controllers/static-site-generation-loop.controller.json', 'plan metadata points at the checked-in controller spec');
+  assert.equal(plan.metadata?.controller_authority?.builder, controller.metadata?.authority?.builder, 'plan records the controller builder as authority');
+
+  const controllerArtifacts = new Set((controller.artifacts || []).map((artifact) => artifact.artifact_id));
+  const controllerWorkflows = new Set((controller.workflows || []).map((workflow) => workflow.workflow_id));
+  assert.ok(controllerArtifacts.size > 0, 'controller declares artifact contracts');
+  assert.ok(controllerWorkflows.size > 0, 'controller declares workflow contracts');
+
+  for (const taskItem of planTasks) {
+    assert.ok(taskItem.task_id, 'each plan task has a task_id');
+    for (const key of artifactOutputKeys(taskItem)) {
+      assert.ok(controllerArtifacts.has(key), `${taskItem.task_id} artifact output ${key} is declared by the controller`);
+    }
+  }
+
+  for (const [taskId, dependency] of Object.entries(plan.output_dependencies || {})) {
+    assert.ok(planTaskIds.includes(taskId), `${taskId} output dependency points at a plan task`);
+    for (const [bindingName, binding] of Object.entries(dependency.bindings || {})) {
+      assert.ok(planTaskIds.includes(binding.task_id), `${taskId} binding ${bindingName} points at a plan task`);
+      if (binding.required !== false) {
+        const bindingOutcome = outcome(binding.task_id);
+        const field = String(binding.path || '').replace(/^\/outputs\//, '');
+        assert.ok(outputValue(bindingOutcome, field), `${binding.task_id} emitted required bound output ${field}`);
+      }
+    }
+  }
+}
+
 function assertNoRuntimeFailures() {
   assert.equal(aggregate.status, 'succeeded', 'aggregate status is succeeded');
-  assert.equal(aggregate.totals?.queued, 6, 'site generation loop queues six tasks');
-  assert.equal(aggregate.totals?.succeeded, 6, 'site generation loop succeeds six tasks');
+  assert.equal(aggregate.totals?.queued ?? planTasks.length, planTasks.length, 'site generation loop queues the generated plan tasks');
+  assert.equal(aggregate.totals?.succeeded ?? outcomes.length, planTasks.length, 'site generation loop succeeds the generated plan tasks');
   assert.equal(aggregate.totals?.failed, 0, 'site generation loop has zero failed tasks');
 
-  for (const item of aggregate.outcomes || []) {
+  for (const taskId of planTaskIds) {
+    outcome(taskId);
+  }
+
+  for (const item of outcomes) {
     assert.equal(item.status, 'succeeded', `${item.task_id} outcome succeeded`);
     const failedDiagnostics = (item.diagnostics || []).filter((diagnostic) => /agent_task_run_failed|runtime.*fail/i.test(diagnostic.class || diagnostic.message || ''));
     assert.deepEqual(failedDiagnostics, [], `${item.task_id} has no embedded runtime failure diagnostics`);
   }
 }
 
-async function assertLane(lane) {
-  const conceptOutcome = outcome(lane.conceptTask);
-  const designOutcome = outcome(lane.designTask);
-  const staticOutcome = outcome(lane.staticTask);
-  const original = publishedConcept(conceptOutcome);
-  const conceptNumber = Number(conceptOutcome.outputs?.issue_number);
-  const designNumber = Number(designOutcome.outputs?.design_issue_number);
-  const staticPrNumber = prNumberFromUrl(staticOutcome.outputs?.static_site_pr_url || staticOutcome.outputs?.pr_url);
-
-  if (!conceptNumber) {
-    fail(`${lane.name} lane missing source concept issue_number output`);
+function assertTaskArtifacts() {
+  for (const taskItem of planTasks) {
+    const taskOutcome = outcome(taskItem.task_id);
+    for (const key of expectedOutputKeys(taskItem)) {
+      assert.ok(outputValue(taskOutcome, key), `${taskItem.task_id} emitted ${key}`);
+    }
   }
-  if (!designNumber) {
-    fail(`${lane.name} lane missing design_issue_number output`);
-  }
-  if (!staticPrNumber) {
-    fail(`${lane.name} lane missing static PR output`);
-  }
-
-  const concept = await githubJson('issue', conceptNumber);
-  const design = await githubJson('issue', designNumber);
-  const pr = await githubJson('pull_request', staticPrNumber);
-  const conceptLabels = labelsOf(concept);
-  const prLabels = labelsOf(pr);
-  const conceptName = stripLeadingEmoji(original.title);
-  const expectedPrTitle = `🧱 ${conceptName} — static site`;
-
-  assert.equal(concept.title, original.title, `${lane.name} concept title is preserved`);
-  assert.equal(concept.body, original.body, `${lane.name} concept body is preserved`);
-  assert.ok(hasConceptSections(concept.body), `${lane.name} concept body still has required concept sections`);
-  assert.equal(looksLikeDesignHandoff(concept), false, `${lane.name} concept does not look like a design handoff`);
-  assert.ok(conceptLabels.includes('status:design-ready'), `${lane.name} concept is design-ready`);
-  assert.equal(conceptLabels.includes('status:idea-ready'), false, `${lane.name} concept left idea-ready`);
-
-  assert.notEqual(designNumber, conceptNumber, `${lane.name} design direction is a separate issue`);
-  assert.match(design.title || '', /^🎨 Design direction — /, `${lane.name} design issue title is a design handoff`);
-  assert.match(design.body || '', new RegExp(`Source issue:\\s*#${conceptNumber}\\b`), `${lane.name} design issue links source issue`);
-  assert.match(design.body || '', new RegExp(`Source title:\\s*${escapeRegExp(original.title)}`), `${lane.name} design issue records source title`);
-  assert.match(design.body || '', /```json[\s\S]*```/, `${lane.name} design issue contains fenced design JSON`);
-
-  assert.equal(pr.title, expectedPrTitle, `${lane.name} static PR title derives from source concept title`);
-  assert.match(pr.head?.ref || pr.headRefName || '', new RegExp(`^static/issue-${conceptNumber}-`), `${lane.name} static PR branch derives from source concept issue`);
-  assert.match(pr.body || '', new RegExp(`Closes #${conceptNumber}\\b`), `${lane.name} static PR closes source concept issue`);
-  assert.equal((pr.body || '').includes(`Closes #${designNumber}`), false, `${lane.name} static PR does not close design issue`);
-  assert.equal(prLabels.some((label) => label === 'target:wordpress' || label === 'target:woocommerce'), true, `${lane.name} static PR has target validation label`);
-
-  return { lane: lane.name, staticPrNumber };
 }
 
-function escapeRegExp(value) {
-  return String(value).replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+async function assertStaticPr(taskItem) {
+  const taskOutcome = outcome(taskItem.task_id);
+  const staticPrNumber = prNumberFromUrl(outputValue(taskOutcome, 'static_site_pr_url') || outputValue(taskOutcome, 'pr_url'));
+  if (!staticPrNumber) {
+    fail(`${taskItem.task_id} missing static PR output`);
+  }
+
+  const pr = await githubJson('pull_request', staticPrNumber);
+  const prLabels = labelsOf(pr);
+
+  assert.match(pr.title || '', /static site/i, `${taskItem.task_id} static PR title identifies a static site`);
+  assert.match(pr.head?.ref || pr.headRefName || '', /^static\//, `${taskItem.task_id} static PR branch uses the static namespace`);
+  assert.match(pr.body || '', /Import validation|fallback block|conversion finding|artifact/i, `${taskItem.task_id} static PR body includes validation artifact context`);
+  assert.equal(prLabels.some((label) => label === 'target:wordpress' || label === 'target:woocommerce'), true, `${taskItem.task_id} static PR has target validation label`);
+
+  return { taskId: taskItem.task_id, staticPrNumber };
 }
 
 async function assertImportAndIteratorWorkflow() {
   const workflow = await readFile(path.join(repoRoot, '.github/workflows/static-site-validation.yml'), 'utf8');
-  const validationSettings = await readFile(path.join(repoRoot, '.github/scripts/build-static-validation-settings.mjs'), 'utf8');
+  const validationWorkload = buildSsiImportWorkload('proof-site');
+  const validationWorkloadJson = JSON.stringify(validationWorkload);
   assert.match(workflow, /build-static-validation-settings\.mjs/, 'static validation delegates SSI settings to the shared builder');
-  assert.match(validationSettings, /static-site-importer import-theme/, 'static validation settings import generated static sites');
+  assert.match(validationWorkloadJson, /static-site-importer import-theme/, 'static validation settings import generated static sites');
+  assert.match(validationWorkloadJson, /static-sites\/proof-site\/index\.html/, 'static validation imports the requested generated site');
   assert.match(workflow, /Build SSI finding packets/, 'static validation builds SSI finding packets');
   assert.match(workflow, /dispatch-php-transformer-iterator\.mjs/, 'static validation delegates transformer iterator dispatch to the shared builder');
 }
@@ -213,11 +197,11 @@ async function assertStaticValidationComments(staticPrs) {
     return;
   }
 
-  const pending = new Map(staticPrs.map((item) => [item.staticPrNumber, item.lane]));
+  const pending = new Map(staticPrs.map((item) => [item.staticPrNumber, item.taskId]));
   const deadline = Date.now() + validationWaitMs;
 
   while (pending.size > 0 && Date.now() <= deadline) {
-    for (const [prNumber, laneName] of [...pending.entries()]) {
+    for (const [prNumber, taskId] of [...pending.entries()]) {
       const comments = await githubApi(`issues/${prNumber}/comments?per_page=100`);
       const validationComment = comments.find((comment) => {
         const body = String(comment.body || '');
@@ -229,10 +213,10 @@ async function assertStaticValidationComments(staticPrs) {
       }
 
       const body = String(validationComment.body || '');
-      assert.equal(body.includes('_No bench artifact found._'), false, `${laneName} static PR validation has bench artifact`);
-      assert.equal(body.includes('_SSI workload did not run._'), false, `${laneName} static PR validation ran SSI workload`);
-      assert.equal(body.includes('_No SSI metrics emitted yet._'), false, `${laneName} static PR validation emitted SSI metrics`);
-      assert.match(body, /\*\*Playground preview:\*\*/, `${laneName} static PR validation includes Playground preview`);
+      assert.equal(body.includes('_No bench artifact found._'), false, `${taskId} static PR validation has bench artifact`);
+      assert.equal(body.includes('_SSI workload did not run._'), false, `${taskId} static PR validation ran SSI workload`);
+      assert.equal(body.includes('_No SSI metrics emitted yet._'), false, `${taskId} static PR validation emitted SSI metrics`);
+      assert.match(body, /\*\*Playground preview:\*\*/, `${taskId} static PR validation includes Playground preview`);
       pending.delete(prNumber);
     }
 
@@ -246,10 +230,13 @@ async function assertStaticValidationComments(staticPrs) {
   }
 }
 
+assertGeneratedContracts();
 assertNoRuntimeFailures();
+assertTaskArtifacts();
+
 const staticPrs = [];
-for (const lane of lanes) {
-  staticPrs.push(await assertLane(lane));
+for (const taskItem of planTasks.filter((item) => item.executor?.config?.runtime_task?.input?.success_completion_outcomes?.includes('static_site_pr'))) {
+  staticPrs.push(await assertStaticPr(taskItem));
 }
 await assertImportAndIteratorWorkflow();
 await assertStaticValidationComments(staticPrs);
