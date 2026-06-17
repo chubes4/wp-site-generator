@@ -63,14 +63,18 @@ export function requiresCommerceStack(lane = '') {
 }
 
 export function buildSsiImportWorkload(siteSlug) {
+	const htmlPath = `/wordpress/wp-content/plugins/wp-site-generator/static-sites/${siteSlug}/index.html`;
+
 	return {
 		id: 'ssi-import',
 		label: `Static Site Importer: ${siteSlug}`,
 		run: [
 			{
-				type: 'wp-cli',
-				command: `static-site-importer import-theme /wordpress/wp-content/plugins/wp-site-generator/static-sites/${siteSlug}/index.html --slug=${siteSlug} --activate --overwrite --keep-source --format=json`,
-				parse: 'json',
+				type: 'php',
+				code: buildSsiImportAbilityPhp({
+					htmlPath,
+					siteSlug,
+				}),
 			},
 			{
 				type: 'php',
@@ -92,6 +96,9 @@ export function buildSsiImportAbilityPhp({ htmlPath, siteSlug, markerPath, asser
 		'<?php',
 		"require_once '/wordpress/wp-load.php';",
 		'wp_set_current_user( 1 );',
+		"if ( ! function_exists( 'wp_get_ability' ) ) {",
+		"\tthrow new RuntimeException( 'WordPress Abilities API is not available.' );",
+		'}',
 		"$ability = wp_get_ability( 'static-site-importer/import-theme' );",
 		'if ( ! $ability ) {',
 		"\tthrow new RuntimeException( 'Static Site Importer import ability is not registered.' );",
