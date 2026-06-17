@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 
-import { writeFile } from 'node:fs/promises';
+import { appendGithubOutput, parseArgs, writeJsonFile } from './lib/ci-runtime-utils.mjs';
 
 import { buildSsiImportAbilityPhp, buildSsiStackBlueprint } from './lib/ssi-stack-profile.mjs';
 
@@ -18,11 +18,11 @@ const blueprint = buildBlueprint(site, branch);
 const url = `https://playground.wordpress.net/#${encodeURIComponent(JSON.stringify(blueprint))}`;
 
 if (outputPath) {
-	await writeFile(outputPath, `${JSON.stringify({ site, branch, url, blueprint }, null, 2)}\n`);
+	await writeJsonFile(outputPath, { site, branch, url, blueprint });
 }
 
 if (githubOutput) {
-	await writeFile(githubOutput, `url=${url}\n`, { flag: 'a' });
+	await appendGithubOutput(githubOutput, { url }, { multiline: false });
 } else {
 	console.log(JSON.stringify({ site, branch, url, blueprint }, null, 2));
 }
@@ -53,20 +53,4 @@ function buildBlueprint(siteSlug, branchName) {
 			{ step: 'login', username: 'admin', password: 'password' },
 		],
 	});
-}
-
-function parseArgs(argv) {
-	const parsed = new Map();
-	for (let i = 0; i < argv.length; i += 1) {
-		const arg = argv[i];
-		if (!arg.startsWith('--')) {
-			continue;
-		}
-		const next = argv[i + 1];
-		parsed.set(arg, next && !next.startsWith('--') ? next : '1');
-		if (next && !next.startsWith('--')) {
-			i += 1;
-		}
-	}
-	return parsed;
 }

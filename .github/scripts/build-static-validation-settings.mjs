@@ -1,7 +1,6 @@
 #!/usr/bin/env node
 
-import { writeFile } from 'node:fs/promises';
-
+import { appendGithubOutput, parseArgs, writeJsonFile } from './lib/ci-runtime-utils.mjs';
 import { buildSsiImportWorkload, buildSsiStackBlueprint } from './lib/ssi-stack-profile.mjs';
 
 const args = parseArgs(process.argv.slice(2));
@@ -18,7 +17,7 @@ const settings = buildSettings(workloads);
 const payload = { site, settings, workloads };
 
 if (outputPath) {
-	await writeFile(outputPath, `${JSON.stringify(payload, null, 2)}\n`);
+	await writeJsonFile(outputPath, payload);
 }
 
 if (githubOutput) {
@@ -39,29 +38,4 @@ function buildSettings(workloads) {
 		wp_codebox_blueprint: buildSsiStackBlueprint(),
 		wp_codebox_workloads: workloads,
 	};
-}
-
-async function appendGithubOutput(filePath, values) {
-	const chunks = [];
-	for (const [key, value] of Object.entries(values)) {
-		const delimiter = `EOF_${Math.random().toString(16).slice(2)}`;
-		chunks.push(`${key}<<${delimiter}\n${value}\n${delimiter}`);
-	}
-	await writeFile(filePath, `${chunks.join('\n')}\n`, { flag: 'a' });
-}
-
-function parseArgs(argv) {
-	const parsed = new Map();
-	for (let i = 0; i < argv.length; i += 1) {
-		const arg = argv[i];
-		if (!arg.startsWith('--')) {
-			continue;
-		}
-		const next = argv[i + 1];
-		parsed.set(arg, next && !next.startsWith('--') ? next : '1');
-		if (next && !next.startsWith('--')) {
-			i += 1;
-		}
-	}
-	return parsed;
 }

@@ -1,12 +1,14 @@
 #!/usr/bin/env node
 
+import { parseArgs, requiredValue } from './lib/ci-runtime-utils.mjs';
+
 const args = parseArgs(process.argv.slice(2));
-const repo = required('SOURCE_REPO', args.get('--repo') || process.env.SOURCE_REPO || process.env.GITHUB_REPOSITORY);
-const sourcePr = required('SOURCE_PR', args.get('--source-pr') || process.env.SOURCE_PR);
+const repo = requiredValue('SOURCE_REPO', args.get('--repo') || process.env.SOURCE_REPO || process.env.GITHUB_REPOSITORY);
+const sourcePr = requiredValue('SOURCE_PR', args.get('--source-pr') || process.env.SOURCE_PR);
 const sourceHeadSha = args.get('--source-head-sha') || process.env.SOURCE_HEAD_SHA || '';
-const validationRunId = required('VALIDATION_RUN_ID', args.get('--validation-run-id') || process.env.VALIDATION_RUN_ID || process.env.GITHUB_RUN_ID);
-const artifactName = required('ARTIFACT_NAME', args.get('--artifact-name') || process.env.ARTIFACT_NAME);
-const visualArtifactName = required('VISUAL_ARTIFACT_NAME', args.get('--visual-artifact-name') || process.env.VISUAL_ARTIFACT_NAME);
+const validationRunId = requiredValue('VALIDATION_RUN_ID', args.get('--validation-run-id') || process.env.VALIDATION_RUN_ID || process.env.GITHUB_RUN_ID);
+const artifactName = requiredValue('ARTIFACT_NAME', args.get('--artifact-name') || process.env.ARTIFACT_NAME);
+const visualArtifactName = requiredValue('VISUAL_ARTIFACT_NAME', args.get('--visual-artifact-name') || process.env.VISUAL_ARTIFACT_NAME);
 const ref = args.get('--ref') || process.env.ITERATOR_REF || 'main';
 const openaiModel = args.get('--openai-model') || process.env.OPENAI_MODEL || 'gpt-5.5';
 const dataMachineRef = args.get('--data-machine-ref') || process.env.DATA_MACHINE_REF || 'main';
@@ -55,27 +57,4 @@ async function githubApi(repository, endpoint, init = {}) {
 	if (!response.ok) {
 		throw new Error(`GitHub API ${endpoint} failed: ${response.status} ${await response.text()}`);
 	}
-}
-
-function required(name, value) {
-	if (!value) {
-		throw new Error(`${name} is required.`);
-	}
-	return value;
-}
-
-function parseArgs(argv) {
-	const parsed = new Map();
-	for (let i = 0; i < argv.length; i += 1) {
-		const arg = argv[i];
-		if (!arg.startsWith('--')) {
-			continue;
-		}
-		const next = argv[i + 1];
-		parsed.set(arg, next && !next.startsWith('--') ? next : '1');
-		if (next && !next.startsWith('--')) {
-			i += 1;
-		}
-	}
-	return parsed;
 }

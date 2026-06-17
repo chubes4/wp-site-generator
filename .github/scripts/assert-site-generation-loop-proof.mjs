@@ -3,6 +3,8 @@ import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
 import path from 'node:path';
 
+import { buildSsiImportWorkload } from './lib/ssi-stack-profile.mjs';
+
 const args = new Map();
 for (let i = 2; i < process.argv.length; i += 2) {
   args.set(process.argv[i], process.argv[i + 1]);
@@ -181,9 +183,11 @@ async function assertStaticPr(taskItem) {
 
 async function assertImportAndIteratorWorkflow() {
   const workflow = await readFile(path.join(repoRoot, '.github/workflows/static-site-validation.yml'), 'utf8');
-  const validationSettings = await readFile(path.join(repoRoot, '.github/scripts/build-static-validation-settings.mjs'), 'utf8');
+  const validationWorkload = buildSsiImportWorkload('proof-site');
+  const validationWorkloadJson = JSON.stringify(validationWorkload);
   assert.match(workflow, /build-static-validation-settings\.mjs/, 'static validation delegates SSI settings to the shared builder');
-  assert.match(validationSettings, /static-site-importer import-theme/, 'static validation settings import generated static sites');
+  assert.match(validationWorkloadJson, /static-site-importer import-theme/, 'static validation settings import generated static sites');
+  assert.match(validationWorkloadJson, /static-sites\/proof-site\/index\.html/, 'static validation imports the requested generated site');
   assert.match(workflow, /Build SSI finding packets/, 'static validation builds SSI finding packets');
   assert.match(workflow, /dispatch-php-transformer-iterator\.mjs/, 'static validation delegates transformer iterator dispatch to the shared builder');
 }
