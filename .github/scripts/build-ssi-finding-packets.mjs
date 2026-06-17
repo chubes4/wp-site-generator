@@ -3,6 +3,7 @@
 import { mkdir, readFile, writeFile } from 'node:fs/promises';
 import path from 'node:path';
 import { candidateRepoFromDiagnostic } from './lib/finding-routing.mjs';
+import { resolveStaticSiteCandidateSource } from './lib/static-site-candidate.mjs';
 import { loadJsonOrNull, loadRecoveredSsiImportSummary } from './lib/ssi-import-summary.mjs';
 import { ssiAggregateQualityMetrics } from './lib/ssi-metrics.mjs';
 import {
@@ -25,7 +26,13 @@ import {
 	visualRegionSummary,
 } from './lib/visual-artifacts.mjs';
 
-const site = requiredEnv('SITE');
+const requestedSite = process.env.SITE || '';
+const candidatePath = process.env.STATIC_SITE_CANDIDATE_PATH || '';
+const sourceStaticSiteDir = process.env.SOURCE_STATIC_SITE_DIR || '';
+const candidateSource = candidatePath || sourceStaticSiteDir
+	? await resolveStaticSiteCandidateSource({ site: requestedSite, candidatePath, sourceStaticSiteDir })
+	: null;
+const site = candidateSource?.site || requiredEnv('SITE');
 const sourceRepo = requiredEnv('SOURCE_REPO');
 const sourcePr = process.env.SOURCE_PR || '';
 const sourceHeadSha = process.env.SOURCE_HEAD_SHA || '';
@@ -34,7 +41,7 @@ const validationRunId = process.env.VALIDATION_RUN_ID || '';
 const benchPath = process.env.BENCH_PATH || 'homeboy-ci-results/bench.json';
 const outputPath = process.env.FINDING_PACKETS_PATH || 'homeboy-ci-results/finding-packets.json';
 const candidateRepo = process.env.CANDIDATE_REPO || 'chubes4/static-site-importer';
-const designPath = process.env.DESIGN_JSON_PATH || `static-sites/${site}/design.json`;
+const designPath = process.env.DESIGN_JSON_PATH || (candidateSource ? path.join(candidateSource.sourceDirectory, 'design.json') : `static-sites/${site}/design.json`);
 const designDistributionPath = process.env.DESIGN_DISTRIBUTION_PATH || 'homeboy-ci-results/design-distribution.json';
 const visualDiffPath = process.env.VISUAL_DIFF_PATH || `visual-parity-artifacts/${site}/visual-diff.json`;
 const visualSummaryPath = process.env.VISUAL_SUMMARY_PATH || `visual-parity-artifacts/${site}/summary.json`;

@@ -62,14 +62,15 @@ export function requiresCommerceStack(lane = '') {
 	return normalized === 'woocommerce' || normalized === 'commerce' || normalized === 'store';
 }
 
-export function buildSsiImportWorkload(siteSlug) {
+export function buildSsiImportWorkload(siteSlug, { htmlPath = '' } = {}) {
+	const sourceHtmlPath = htmlPath || `/wordpress/wp-content/plugins/wp-site-generator/static-sites/${siteSlug}/index.html`;
 	return {
 		id: 'ssi-import',
 		label: `Static Site Importer: ${siteSlug}`,
 		run: [
 			{
 				type: 'wp-cli',
-				command: `static-site-importer import-theme /wordpress/wp-content/plugins/wp-site-generator/static-sites/${siteSlug}/index.html --slug=${siteSlug} --activate --overwrite --keep-source --format=json`,
+				command: `static-site-importer import-theme ${shellArg(sourceHtmlPath)} --slug=${shellArg(siteSlug)} --activate --overwrite --keep-source --format=json`,
 				parse: 'json',
 			},
 			{
@@ -85,6 +86,10 @@ export function buildSsiImportWorkload(siteSlug) {
 			},
 		},
 	};
+}
+
+function shellArg(value) {
+	return `'${String(value).replaceAll("'", "'\\''")}'`;
 }
 
 export function buildSsiImportAbilityPhp({ htmlPath, siteSlug, markerPath, assertActiveTheme = false, trailingNewline = false }) {
