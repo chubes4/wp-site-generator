@@ -4,6 +4,8 @@ import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { spawnSync } from 'node:child_process';
 
+import { assertIteratorPlanUsesReusableWorkflowRunner } from '../helpers/artifact-contracts.mjs';
+
 const repoRoot = path.resolve(new URL('../..', import.meta.url).pathname);
 const tempDir = await mkdtemp(path.join(tmpdir(), 'wpsg-ssi-native-loop-'));
 const settingsPath = path.join(tempDir, 'settings.json');
@@ -152,7 +154,7 @@ assert.equal(plan.tasks[0].executor.config.provider, undefined, 'iterator plan d
 assert.equal(plan.tasks[0].executor.config.model, undefined, 'iterator plan defers config model selection to the runner by default');
 assert.equal(plan.tasks[0].executor.config.provider_plugin_paths, undefined, 'iterator plan defers provider plugin selection to the runner by default');
 assert.equal(plan.tasks[0].executor.config.secret_env, undefined, 'iterator plan defers provider secret env selection to the runner by default');
-assert.equal(plan.tasks[0].executor.config.runtime_task.input.execute_workflow_path, workflowPath, 'iterator consumes prebuilt grouped finding workflow');
+assertIteratorPlanUsesReusableWorkflowRunner(plan, workflowPath);
 assert.equal(plan.tasks[0].executor.config.runtime_component_paths.agents_api, '.ci/agents-api', 'iterator uses a repo-relative Agents API component path');
 assert.equal(plan.tasks[0].executor.config.runtime_component_paths.agent_runtime, '.ci/data-machine', 'iterator uses a repo-relative Data Machine component path');
 assert.equal(plan.tasks[0].executor.config.runtime_component_paths.agent_runtime_tools, '.ci/data-machine-code', 'iterator uses a repo-relative Data Machine Code component path');
@@ -162,8 +164,6 @@ assert.equal(plan.tasks[0].executor.config.runtime_task.input.source, '/workspac
 assert.equal(plan.tasks[0].executor.config.runtime_task.input.wait_for_completion, true, 'iterator waits for typed bundle outputs');
 assert.match(plan.tasks[0].executor.config.runtime_task.input.artifacts, /^\.ci\/homeboy-agent-task-artifacts\//, 'iterator uses a repo-relative artifact directory');
 assert.equal(plan.tasks[0].executor.config.runtime_task.input.success_requires_pr, false, 'native iterator allows issue-only completion for weak evidence');
-assert.deepEqual(plan.tasks[0].executor.config.runtime_task.input.success_completion_outcomes, ['pull_request_path', 'issue_path'], 'native iterator accepts PR or issue completion outcomes');
-assert.deepEqual(plan.tasks[0].executor.config.runtime_task.input.tool_recorders, [{ tool: 'create_github_issue' }, { tool: 'create_github_pull_request' }], 'native iterator records issue and PR upstream actions');
 assert.equal(plan.tasks[0].inputs.source_pr, '456', 'source PR metadata flows into native plan');
 assert.equal(plan.metadata.runtime_input_contract, 'homeboy-agent-runtime-env', 'iterator plan records the Homeboy agent runtime env contract');
 

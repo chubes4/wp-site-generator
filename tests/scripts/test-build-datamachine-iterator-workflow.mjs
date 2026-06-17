@@ -1,8 +1,10 @@
 import assert from 'node:assert/strict';
-import { mkdir, mkdtemp, readFile, writeFile } from 'node:fs/promises';
+import { mkdtemp, readFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { spawnSync } from 'node:child_process';
+
+import { assertVisualArtifactContract, writeVisualParityArtifact } from '../helpers/artifact-contracts.mjs';
 
 const repoRoot = path.resolve(new URL('../..', import.meta.url).pathname);
 const tempDir = await mkdtemp(path.join(tmpdir(), 'wp-site-generator-dm-workflow-'));
@@ -10,59 +12,7 @@ const outputPath = path.join(tempDir, 'workflow.json');
 const groupedPath = path.join(tempDir, 'groups.json');
 const visualArtifactDir = path.join(tempDir, 'visual-parity');
 
-await mkdir(visualArtifactDir, { recursive: true });
-await Promise.all([
-	writeFile(path.join(visualArtifactDir, 'source.png'), ''),
-	writeFile(path.join(visualArtifactDir, 'imported.png'), ''),
-	writeFile(path.join(visualArtifactDir, 'diff.png'), ''),
-	writeFile(path.join(visualArtifactDir, 'summary.json'), '{}\n'),
-	writeFile(path.join(visualArtifactDir, 'comparison.html'), '<!doctype html>\n'),
-	writeFile(
-		path.join(visualArtifactDir, 'visual-diff.json'),
-		`${JSON.stringify(
-			{
-				pass: false,
-				threshold: 0.015,
-				mismatchPixels: 7200,
-				totalPixels: 400000,
-				mismatchRatio: 0.018,
-				dimensionMismatch: true,
-				source: { path: 'source.png', width: 1280, height: 5076 },
-				imported: { path: 'imported.png', width: 1280, height: 7450 },
-				diff: { path: 'diff.png', width: 1280, height: 7450 },
-				regions: [
-					{
-						rank: 1,
-						x: 0,
-						y: 640,
-						width: 1280,
-						height: 320,
-						mismatchPixels: 1200,
-						totalPixels: 409600,
-						mismatchRatio: 0.0029296875,
-						source_matches: [{ selector: 'section.hero', path: 'body > main > section.hero', text: 'Crown Alley Little Stage', child_summary: 'h1', rect: { x: 0, y: 600, width: 1280, height: 360 } }],
-						imported_matches: [{ selector: 'main.wp-block-group', path: 'body > main.wp-block-group', text: 'Crown Alley Little Stage', child_summary: 'h1', rect: { x: 0, y: 620, width: 1280, height: 380 } }],
-						layout_deltas: [
-							{
-								pair: 1,
-								source_selector: 'section.hero',
-								imported_selector: 'main.wp-block-group',
-								source_path: 'body > main > section.hero',
-								imported_path: 'body > main.wp-block-group',
-								source_child_summary: 'h1',
-								imported_child_summary: 'h1',
-								rect_delta: { x: 0, y: 20, width: 0, height: 20 },
-								style_diffs: [{ property: 'display', source: 'grid', imported: 'block' }],
-							},
-						],
-					},
-				],
-			},
-			null,
-			2
-		)}\n`
-	),
-]);
+await writeVisualParityArtifact(visualArtifactDir);
 
 const groupResult = spawnSync(
 	process.execPath,
@@ -109,6 +59,10 @@ assert.match(iteratorPrompt, /"repair_mode": "issue_only"/, 'issue-only routing 
 assert.match(iteratorPrompt, /Use issue_path for repair_mode=issue_only/, 'issue-only groups use issue completion unless patch evidence exists');
 assert.match(iteratorPrompt, /"source_screenshot_path": "/, 'visual artifact paths are embedded in the AI prompt');
 assert.match(iteratorPrompt, /"selector": "section\.hero"/, 'visual source selector evidence is embedded in the AI prompt');
+const promptGroups = JSON.parse(iteratorPrompt.slice(iteratorPrompt.indexOf('[\n')));
+const visualGroup = promptGroups.find((group) => group.visual_artifact);
+assert.ok(visualGroup, 'iterator prompt includes visual artifact evidence for visual findings');
+assertVisualArtifactContract(visualGroup.visual_artifact, path.relative(repoRoot, visualArtifactDir));
 const outcomeAssertions = aiStep.completion_assertions.complete_when_any;
 assert.ok(outcomeAssertions.some((outcome) => outcome.name === 'pull_request_path'), 'PR completion outcome is preserved');
 assert.ok(outcomeAssertions.some((outcome) => outcome.name === 'issue_path'), 'issue completion outcome is available for weak-evidence groups');
