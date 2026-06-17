@@ -52,9 +52,10 @@ const artifactFlow = [
 	{ edge_id: 'validation-to-findings', from: ['static-validation'], to: ['finding-packets'], artifact: 'static_validation_run', required: true },
 	{ edge_id: 'visual-to-findings', from: ['static-validation'], to: ['finding-packets'], artifact: 'visual_parity_artifact', required: true },
 	{ edge_id: 'findings-to-iterator-groups', from: ['finding-packets'], to: ['iterator'], artifact: 'finding_group', required: true, fan_out: 'per_finding_group' },
-	{ edge_id: 'iterator-to-revalidation', from: ['iterator'], to: ['revalidation'], artifact: 'iterator_upstream_pull_request', required: true },
+	{ edge_id: 'iterator-to-revalidation', from: ['iterator'], to: ['revalidation'], artifact: 'iterator_upstream_pull_request', required: false },
 	{ edge_id: 'revalidation-to-reviewer', from: ['revalidation'], to: ['reviewer'], artifact: 'revalidation_attempt', required: true },
-	{ edge_id: 'iterator-evidence-to-reviewer', from: ['iterator'], to: ['reviewer'], artifact: 'iterator_upstream_pull_request', required: true },
+	{ edge_id: 'iterator-issue-evidence-to-reviewer', from: ['iterator'], to: ['reviewer'], artifact: 'iterator_upstream_issue', required: false },
+	{ edge_id: 'iterator-pr-evidence-to-reviewer', from: ['iterator'], to: ['reviewer'], artifact: 'iterator_upstream_pull_request', required: false },
 ];
 
 function handoff({ consumes = [], emits = [] } = {}) {
@@ -199,7 +200,7 @@ const controller = {
 			agent_id: 'ssi_stack_reviewer',
 			prompt: 'Review the upstream iterator action with the static validation and visual parity evidence before promotion.',
 			abilities: ['datamachine/run-agent-bundle', 'comment_github_pull_request'],
-			...handoff({ consumes: ['static_site_pull_request', 'static_validation_run', 'visual_parity_artifact', 'finding_packet_set', 'iterator_upstream_pull_request', 'revalidation_attempt'], emits: ['reviewer_gate_outcome'] }),
+			...handoff({ consumes: ['static_site_pull_request', 'static_validation_run', 'visual_parity_artifact', 'finding_packet_set', 'iterator_upstream_issue', 'iterator_upstream_pull_request', 'revalidation_attempt'], emits: ['reviewer_gate_outcome'] }),
 			dependencies: ['wp-site-generator', 'static-site-importer', 'html-to-blocks-converter', 'block-format-bridge', 'block-artifact-compiler'],
 			gates: ['reviewer_evidence'],
 			promotion_gate: {

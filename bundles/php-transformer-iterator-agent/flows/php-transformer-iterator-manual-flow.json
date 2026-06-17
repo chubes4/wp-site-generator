@@ -42,6 +42,7 @@
                 "workspace_git_commit",
                 "workspace_git_push",
                 "get_github_issue",
+                "create_github_issue",
                 "create_github_pull_request",
                 "comment_github_pull_request"
             ],
@@ -52,6 +53,17 @@
                         "tools": [
                             {
                                 "name": "create_github_pull_request"
+                            },
+                            {
+                                "name": "comment_github_pull_request"
+                            }
+                        ]
+                    },
+                    {
+                        "name": "issue_path",
+                        "tools": [
+                            {
+                                "name": "create_github_issue"
                             },
                             {
                                 "name": "comment_github_pull_request"
@@ -101,6 +113,10 @@
                 {
                     "added_at": "2026-06-01T01:00:00+00:00",
                     "prompt": "Do not call list_github_issues in the iterator path. Do not create fallback issues for fetched findings in this PR-first workflow; source PR callback is complete after one comment_github_pull_request call succeeds following create_github_pull_request."
+                },
+                {
+                    "added_at": "2026-06-17T00:00:00+00:00",
+                    "prompt": "For finding packets or groups with repair_mode=issue_only, use the issue path: create a focused upstream issue with the packet evidence and then comment back to the source PR. Use the pull-request path only when the packet contains enough concrete patch evidence for a safe narrow code change. Treat a valid structured candidate_repo as the owner before applying broad routing heuristics."
                 }
             ],
             "queue_mode": "static",

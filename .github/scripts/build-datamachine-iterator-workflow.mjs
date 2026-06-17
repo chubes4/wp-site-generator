@@ -102,7 +102,7 @@ function formatFindingPrompt(packets) {
 	const omittedCount = Math.max(0, packets.length - visiblePackets.length);
 	return [
 		'Process these grouped static-site validation findings. They are embedded here so the iterator does not depend on DataPacket child-job hydration.',
-		'For each group: route owner, open or reuse the required upstream issue/PR, and comment back to the source generated-site PR. A run is incomplete until comment_github_pull_request is called.',
+		'For each group: route owner, open or reuse the required upstream issue or PR, and comment back to the source generated-site PR. Use issue_path for repair_mode=issue_only groups unless the packet has enough concrete patch evidence for a safe narrow PR. A run is incomplete until comment_github_pull_request is called.',
 		omittedCount > 0 ? `Only the first ${visiblePackets.length} of ${packets.length} finding groups are embedded. The omitted ${omittedCount} group(s) require a follow-up iterator run.` : '',
 		'Finding groups:',
 		JSON.stringify(summaries, null, 2),
@@ -186,7 +186,7 @@ function toDataMachinePacket(item, index) {
 		body = `${body}\nAsset map refs: ${packet.asset_map_refs.join(', ')}`;
 	}
 	if (text(packet.repair_mode) === 'issue_only' || text(item.repair_mode) === 'issue_only') {
-		body = `${body}\n\nRepair mode: issue_only. This packet is aggregate evidence only; open or reuse a focused upstream issue instead of creating a repair PR.`;
+		body = `${body}\n\nRepair mode: issue_only. This packet has weak or aggregate evidence; open or reuse a focused upstream issue unless additional concrete patch evidence is present.`;
 	}
 	const visualArtifact = visualArtifactForPacket(packet);
 	if (visualArtifact) {

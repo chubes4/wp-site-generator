@@ -26,6 +26,17 @@
                                     "name": "comment_github_pull_request"
                                 }
                             ]
+                        },
+                        {
+                            "name": "issue_path",
+                            "tools": [
+                                {
+                                    "name": "create_github_issue"
+                                },
+                                {
+                                    "name": "comment_github_pull_request"
+                                }
+                            ]
                         }
                     ]
                 },
