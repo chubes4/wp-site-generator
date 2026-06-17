@@ -8,8 +8,8 @@ The controller spec is the authority for the full self-improving loop:
 
 ```text
 concept -> design -> static candidate
-  -> static validation + visual parity -> publication PR + finding packets
-  -> iterator groups -> revalidation -> reviewer gate
+  -> static validation + visual parity -> finding packets
+  -> revalidation -> reviewer gate -> publication/evidence PRs and issues
 ```
 
 WPSG does not define a backend abstraction layer and does not encode WordPress or WP Codebox execution knowledge. WPSG declares domain ingredients only. Homeboy owns controller execution, fan-out, retries, state, lineage, gate decisions, and executor/provider contracts. WordPress runtime and Codebox mapping belongs to `homeboy-extensions/wordpress`, not to this repo-owned spec.
@@ -53,7 +53,7 @@ The native controller exposes these WPSG-owned gate metrics and pass conditions:
 - **Fallback blocks:** `fallback_blocks`, `fallback_block_count`, or `ssi_fallback_count` must be `0`.
 - **Conversion findings:** actionable conversion finding count must be `0`; fallback/core HTML/freeform finding kinds are identified for Homeboy-owned routing.
 - **Visual parity:** visual parity must report `status === "pass"`, `mismatch_count === 0`, and `max_delta_ratio === 0`.
-- **Reviewer evidence:** reviewer-facing evidence must link to GitHub artifacts, PRs, or issues and must not use local-only URLs or filesystem paths.
+- **Reviewer evidence:** reviewer-facing evidence must link to durable candidate, validation, visual, finding, and revalidation artifacts and must not use local-only URLs or filesystem paths. Generated-site PRs and upstream issue/PR URLs are optional publication evidence after the artifact gates.
 
 The gate declarations define metrics and pass conditions only. Homeboy owns fail/pass routing, bounded revalidation, escalation, and completion decisions.
 
@@ -65,11 +65,11 @@ The controller declares workflow artifact dependencies and emissions. Homeboy de
 2. `design-store` and `design-website` consume `concept_packet` and emit `design_packet`.
 3. `static-store` and `static-site` consume `design_packet` and emit `static_site_candidate` without publishing a pull request.
 4. `static-validation` consumes `static_site_candidate` and emits `static_validation_run`, `import_validation_result`, and `visual_parity_artifact`.
-5. `static-publication` consumes the validated candidate evidence and emits `static_site_pull_request` through deterministic publication.
+5. `static-publication` consumes the validated candidate evidence and emits optional `static_site_pull_request` publication evidence through deterministic publication.
 6. `finding-packets` consumes validation and visual artifacts, then emits `finding_packet_set` and grouped `finding_group` artifacts.
-7. `iterator` fans out per `finding_group`, grouped by `owner_repo`, `root_cause`, and `group_id`, then emits upstream issue and pull-request artifacts.
-8. `revalidation` consumes the generated-site PR and iterator PR, then emits a `revalidation_attempt` plus refreshed validation artifacts.
-9. `reviewer` consumes generated-site PR, validation, visual, finding, iterator, and revalidation evidence, then emits `reviewer_gate_outcome`. Promotion requires `reviewer_gate_outcome.decision === "PASS"` and blocks when evidence is missing.
+7. `iterator` fans out per `finding_group`, grouped by `owner_repo`, `root_cause`, and `group_id`, then emits optional upstream issue and pull-request evidence artifacts.
+8. `revalidation` consumes the candidate, validation, visual, and finding artifacts directly, then emits a `revalidation_attempt` plus refreshed validation artifacts.
+9. `reviewer` consumes candidate, validation, visual, finding, and revalidation artifacts, then emits `reviewer_gate_outcome`. Promotion requires `reviewer_gate_outcome.decision === "PASS"` and blocks when artifact evidence is missing.
 
 ## Complexity And Randomness Policy
 

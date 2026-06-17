@@ -154,9 +154,12 @@
         "bundle": "bundles/ssi-stack-reviewer-agent",
         "slug": "ssi-stack-reviewer-agent",
         "requires": [
-          "static_site_pull_request",
+          "static_site_candidate",
+          "import_validation_result",
           "static_validation_run",
-          "visual_parity_artifact"
+          "visual_parity_artifact",
+          "finding_packet_set",
+          "revalidation_attempt"
         ],
         "emits": [
           "reviewer_gate_outcome"
@@ -513,11 +516,13 @@
     {
       "workflow_id": "revalidation",
       "tasks": [
-        "Revalidate the generated-site pull request after an upstream iterator pull request is available."
+        "Revalidate the static-site candidate from candidate, validation, visual parity, and finding artifacts without requiring a generated-site or upstream pull request."
       ],
       "consumes": [
-        "static_site_pull_request",
-        "iterator_upstream_pull_request"
+        "static_site_candidate",
+        "import_validation_result",
+        "visual_parity_artifact",
+        "finding_packet_set"
       ],
       "emits": [
         "revalidation_attempt",
@@ -527,8 +532,10 @@
         "finding_packet_set"
       ],
       "artifacts": [
-        "static_site_pull_request",
-        "iterator_upstream_pull_request",
+        "static_site_candidate",
+        "import_validation_result",
+        "visual_parity_artifact",
+        "finding_packet_set",
         "revalidation_attempt",
         "static_validation_run",
         "import_validation_result",
@@ -556,30 +563,28 @@
     {
       "workflow_id": "reviewer",
       "agent_id": "ssi_stack_reviewer",
-      "prompt": "Review the upstream iterator action with the static validation and visual parity evidence before promotion.",
+      "prompt": "Review candidate, validation, visual parity, finding, and revalidation artifacts before promotion. Treat generated-site and upstream GitHub issue/PR URLs as optional publication evidence only.",
       "abilities": [
         "datamachine/run-agent-bundle",
         "comment_github_pull_request"
       ],
       "consumes": [
-        "static_site_pull_request",
+        "static_site_candidate",
+        "import_validation_result",
         "static_validation_run",
         "visual_parity_artifact",
         "finding_packet_set",
-        "iterator_upstream_issue",
-        "iterator_upstream_pull_request",
         "revalidation_attempt"
       ],
       "emits": [
         "reviewer_gate_outcome"
       ],
       "artifacts": [
-        "static_site_pull_request",
+        "static_site_candidate",
+        "import_validation_result",
         "static_validation_run",
         "visual_parity_artifact",
         "finding_packet_set",
-        "iterator_upstream_issue",
-        "iterator_upstream_pull_request",
         "revalidation_attempt",
         "reviewer_gate_outcome"
       ],
@@ -677,18 +682,108 @@
       "required": true
     },
     {
-      "edge_id": "publication-to-revalidation",
+      "edge_id": "candidate-to-revalidation",
       "from": [
-        "static-publication"
+        "static-store",
+        "static-site"
       ],
       "to": [
         "revalidation"
       ],
-      "artifact": "static_site_pull_request",
+      "artifact": "static_site_candidate",
       "required": true
     },
     {
-      "edge_id": "publication-to-reviewer",
+      "edge_id": "validation-to-revalidation",
+      "from": [
+        "static-validation"
+      ],
+      "to": [
+        "revalidation"
+      ],
+      "artifact": "import_validation_result",
+      "required": true
+    },
+    {
+      "edge_id": "visual-to-revalidation",
+      "from": [
+        "static-validation"
+      ],
+      "to": [
+        "revalidation"
+      ],
+      "artifact": "visual_parity_artifact",
+      "required": true
+    },
+    {
+      "edge_id": "findings-to-revalidation",
+      "from": [
+        "finding-packets"
+      ],
+      "to": [
+        "revalidation"
+      ],
+      "artifact": "finding_packet_set",
+      "required": true
+    },
+    {
+      "edge_id": "candidate-to-reviewer",
+      "from": [
+        "static-store",
+        "static-site"
+      ],
+      "to": [
+        "reviewer"
+      ],
+      "artifact": "static_site_candidate",
+      "required": true
+    },
+    {
+      "edge_id": "validation-to-reviewer",
+      "from": [
+        "static-validation"
+      ],
+      "to": [
+        "reviewer"
+      ],
+      "artifact": "import_validation_result",
+      "required": true
+    },
+    {
+      "edge_id": "static-run-to-reviewer",
+      "from": [
+        "static-validation"
+      ],
+      "to": [
+        "reviewer"
+      ],
+      "artifact": "static_validation_run",
+      "required": true
+    },
+    {
+      "edge_id": "visual-to-reviewer",
+      "from": [
+        "static-validation"
+      ],
+      "to": [
+        "reviewer"
+      ],
+      "artifact": "visual_parity_artifact",
+      "required": true
+    },
+    {
+      "edge_id": "findings-to-reviewer",
+      "from": [
+        "finding-packets"
+      ],
+      "to": [
+        "reviewer"
+      ],
+      "artifact": "finding_packet_set",
+      "required": true
+    },
+    {
+      "edge_id": "publication-pr-evidence",
       "from": [
         "static-publication"
       ],
@@ -696,7 +791,8 @@
         "reviewer"
       ],
       "artifact": "static_site_pull_request",
-      "required": true
+      "required": false,
+      "evidence_only": true
     },
     {
       "edge_id": "validation-to-findings",
@@ -733,17 +829,6 @@
       "fan_out": "per_finding_group"
     },
     {
-      "edge_id": "iterator-to-revalidation",
-      "from": [
-        "iterator"
-      ],
-      "to": [
-        "revalidation"
-      ],
-      "artifact": "iterator_upstream_pull_request",
-      "required": false
-    },
-    {
       "edge_id": "revalidation-to-reviewer",
       "from": [
         "revalidation"
@@ -763,7 +848,8 @@
         "reviewer"
       ],
       "artifact": "iterator_upstream_issue",
-      "required": false
+      "required": false,
+      "evidence_only": true
     },
     {
       "edge_id": "iterator-pr-evidence-to-reviewer",
@@ -774,7 +860,8 @@
         "reviewer"
       ],
       "artifact": "iterator_upstream_pull_request",
-      "required": false
+      "required": false,
+      "evidence_only": true
     }
   ],
   "iterator_groups": {
@@ -819,7 +906,8 @@
       "artifact_id": "static_site_pull_request",
       "kind": "github/PullRequest/v1",
       "description": "static_site_pull_request artifact using github/PullRequest/v1",
-      "required": true
+      "required": false,
+      "evidence_only": true
     },
     {
       "artifact_id": "static_validation_run",
@@ -855,13 +943,15 @@
       "artifact_id": "iterator_upstream_issue",
       "kind": "github/Issue/v1",
       "description": "iterator_upstream_issue artifact using github/Issue/v1",
-      "required": true
+      "required": false,
+      "evidence_only": true
     },
     {
       "artifact_id": "iterator_upstream_pull_request",
       "kind": "github/PullRequest/v1",
       "description": "iterator_upstream_pull_request artifact using github/PullRequest/v1",
-      "required": true
+      "required": false,
+      "evidence_only": true
     },
     {
       "artifact_id": "revalidation_attempt",
@@ -932,7 +1022,7 @@
     },
     {
       "gate_id": "reviewer_evidence",
-      "description": "Reviewer evidence must use durable public artifact references.",
+      "description": "Reviewer evidence must use durable candidate, validation, visual, finding, and revalidation artifact references; GitHub URLs are optional publication evidence.",
       "metrics": [
         "reviewer_evidence"
       ]
@@ -981,12 +1071,20 @@
     },
     {
       "metric_id": "reviewer_evidence",
-      "description": "Durable PR, validation, and visual parity evidence references for the reviewer gate.",
+      "description": "Durable candidate, validation, visual parity, finding, and revalidation evidence references for the reviewer gate.",
       "input": {
         "requires": [
-          "static_site_pull_request.url",
+          "static_site_candidate.artifact_url",
+          "import_validation_result.artifact_url",
           "static_validation_run.artifact_url",
-          "visual_parity_artifact.artifact_url"
+          "visual_parity_artifact.artifact_url",
+          "finding_packet_set.artifact_url",
+          "revalidation_attempt.artifact_url"
+        ],
+        "optional_publication_evidence": [
+          "static_site_pull_request.url",
+          "iterator_upstream_issue.url",
+          "iterator_upstream_pull_request.url"
         ],
         "forbids": [
           "localhost",

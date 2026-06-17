@@ -33,7 +33,7 @@ const agentBundles = {
 	static_store: { bundle: 'bundles/static-site-agent', slug: 'static-site-agent', flow: 'static-site-candidate-flow', requires: ['design_packet'], emits: ['static_site_candidate'] },
 	static_site: { bundle: 'bundles/static-site-agent', slug: 'static-site-agent', flow: 'static-site-candidate-flow', requires: ['design_packet'], emits: ['static_site_candidate'] },
 	php_transformer_iterator: { bundle: 'bundles/php-transformer-iterator-agent', slug: 'php-transformer-iterator-agent', requires: ['finding_group'], emits: ['iterator_upstream_issue', 'iterator_upstream_pull_request'] },
-	ssi_stack_reviewer: { bundle: 'bundles/ssi-stack-reviewer-agent', slug: 'ssi-stack-reviewer-agent', requires: ['static_site_pull_request', 'static_validation_run', 'visual_parity_artifact'], emits: ['reviewer_gate_outcome'] },
+	ssi_stack_reviewer: { bundle: 'bundles/ssi-stack-reviewer-agent', slug: 'ssi-stack-reviewer-agent', requires: ['static_site_candidate', 'import_validation_result', 'static_validation_run', 'visual_parity_artifact', 'finding_packet_set', 'revalidation_attempt'], emits: ['reviewer_gate_outcome'] },
 };
 
 const abilityIds = [
@@ -50,15 +50,22 @@ const artifactFlow = [
 	{ edge_id: 'validation-to-publication-gate', from: ['static-validation'], to: ['static-publication-gate'], artifact: 'import_validation_result', required: true },
 	{ edge_id: 'visual-to-publication-gate', from: ['static-validation'], to: ['static-publication-gate'], artifact: 'visual_parity_artifact', required: true },
 	{ edge_id: 'publication-gate-to-publication', from: ['static-publication-gate'], to: ['static-publication'], artifact: 'static_site_publish_gate', required: true },
-	{ edge_id: 'publication-to-revalidation', from: ['static-publication'], to: ['revalidation'], artifact: 'static_site_pull_request', required: true },
-	{ edge_id: 'publication-to-reviewer', from: ['static-publication'], to: ['reviewer'], artifact: 'static_site_pull_request', required: true },
+	{ edge_id: 'candidate-to-revalidation', from: ['static-store', 'static-site'], to: ['revalidation'], artifact: 'static_site_candidate', required: true },
+	{ edge_id: 'validation-to-revalidation', from: ['static-validation'], to: ['revalidation'], artifact: 'import_validation_result', required: true },
+	{ edge_id: 'visual-to-revalidation', from: ['static-validation'], to: ['revalidation'], artifact: 'visual_parity_artifact', required: true },
+	{ edge_id: 'findings-to-revalidation', from: ['finding-packets'], to: ['revalidation'], artifact: 'finding_packet_set', required: true },
+	{ edge_id: 'candidate-to-reviewer', from: ['static-store', 'static-site'], to: ['reviewer'], artifact: 'static_site_candidate', required: true },
+	{ edge_id: 'validation-to-reviewer', from: ['static-validation'], to: ['reviewer'], artifact: 'import_validation_result', required: true },
+	{ edge_id: 'static-run-to-reviewer', from: ['static-validation'], to: ['reviewer'], artifact: 'static_validation_run', required: true },
+	{ edge_id: 'visual-to-reviewer', from: ['static-validation'], to: ['reviewer'], artifact: 'visual_parity_artifact', required: true },
+	{ edge_id: 'findings-to-reviewer', from: ['finding-packets'], to: ['reviewer'], artifact: 'finding_packet_set', required: true },
+	{ edge_id: 'publication-pr-evidence', from: ['static-publication'], to: ['reviewer'], artifact: 'static_site_pull_request', required: false, evidence_only: true },
 	{ edge_id: 'validation-to-findings', from: ['static-validation'], to: ['finding-packets'], artifact: 'static_validation_run', required: true },
 	{ edge_id: 'visual-to-findings', from: ['static-validation'], to: ['finding-packets'], artifact: 'visual_parity_artifact', required: true },
 	{ edge_id: 'findings-to-iterator-groups', from: ['finding-packets'], to: ['iterator'], artifact: 'finding_group', required: true, fan_out: 'per_finding_group' },
-	{ edge_id: 'iterator-to-revalidation', from: ['iterator'], to: ['revalidation'], artifact: 'iterator_upstream_pull_request', required: false },
 	{ edge_id: 'revalidation-to-reviewer', from: ['revalidation'], to: ['reviewer'], artifact: 'revalidation_attempt', required: true },
-	{ edge_id: 'iterator-issue-evidence-to-reviewer', from: ['iterator'], to: ['reviewer'], artifact: 'iterator_upstream_issue', required: false },
-	{ edge_id: 'iterator-pr-evidence-to-reviewer', from: ['iterator'], to: ['reviewer'], artifact: 'iterator_upstream_pull_request', required: false },
+	{ edge_id: 'iterator-issue-evidence-to-reviewer', from: ['iterator'], to: ['reviewer'], artifact: 'iterator_upstream_issue', required: false, evidence_only: true },
+	{ edge_id: 'iterator-pr-evidence-to-reviewer', from: ['iterator'], to: ['reviewer'], artifact: 'iterator_upstream_pull_request', required: false, evidence_only: true },
 ];
 
 function handoff({ consumes = [], emits = [] } = {}) {
@@ -210,8 +217,8 @@ const controller = {
 		},
 		{
 			workflow_id: 'revalidation',
-			tasks: ['Revalidate the generated-site pull request after an upstream iterator pull request is available.'],
-			...handoff({ consumes: ['static_site_pull_request', 'iterator_upstream_pull_request'], emits: ['revalidation_attempt', 'static_validation_run', 'import_validation_result', 'visual_parity_artifact', 'finding_packet_set'] }),
+			tasks: ['Revalidate the static-site candidate from candidate, validation, visual parity, and finding artifacts without requiring a generated-site or upstream pull request.'],
+			...handoff({ consumes: ['static_site_candidate', 'import_validation_result', 'visual_parity_artifact', 'finding_packet_set'], emits: ['revalidation_attempt', 'static_validation_run', 'import_validation_result', 'visual_parity_artifact', 'finding_packet_set'] }),
 			dependencies: ['wp-site-generator', 'static-site-importer', 'html-to-blocks-converter', 'block-format-bridge', 'block-artifact-compiler'],
 			gates: ['fallback_blocks', 'conversion_findings', 'visual_parity'],
 			metrics: ['fallback_blocks', 'conversion_findings', 'visual_parity'],
@@ -219,9 +226,9 @@ const controller = {
 		{
 			workflow_id: 'reviewer',
 			agent_id: 'ssi_stack_reviewer',
-			prompt: 'Review the upstream iterator action with the static validation and visual parity evidence before promotion.',
+			prompt: 'Review candidate, validation, visual parity, finding, and revalidation artifacts before promotion. Treat generated-site and upstream GitHub issue/PR URLs as optional publication evidence only.',
 			abilities: ['datamachine/run-agent-bundle', 'comment_github_pull_request'],
-			...handoff({ consumes: ['static_site_pull_request', 'static_validation_run', 'visual_parity_artifact', 'finding_packet_set', 'iterator_upstream_issue', 'iterator_upstream_pull_request', 'revalidation_attempt'], emits: ['reviewer_gate_outcome'] }),
+			...handoff({ consumes: ['static_site_candidate', 'import_validation_result', 'static_validation_run', 'visual_parity_artifact', 'finding_packet_set', 'revalidation_attempt'], emits: ['reviewer_gate_outcome'] }),
 			dependencies: ['wp-site-generator', 'static-site-importer', 'html-to-blocks-converter', 'block-format-bridge', 'block-artifact-compiler'],
 			gates: ['reviewer_evidence'],
 			promotion_gate: {
@@ -242,7 +249,8 @@ const controller = {
 		artifact_id,
 		kind: schema,
 		description: `${artifact_id} artifact using ${schema}`,
-		required: true,
+		required: !['static_site_pull_request', 'iterator_upstream_issue', 'iterator_upstream_pull_request'].includes(artifact_id),
+		...(['static_site_pull_request', 'iterator_upstream_issue', 'iterator_upstream_pull_request'].includes(artifact_id) ? { evidence_only: true } : {}),
 	})),
 	dependencies: [
 		{ dependency_id: 'wp-site-generator', kind: 'repo', value: 'chubes4/wp-site-generator', required: true },
@@ -255,7 +263,7 @@ const controller = {
 		{ gate_id: 'fallback_blocks', description: 'SSI import must not emit fallback blocks.', metrics: ['fallback_blocks'] },
 		{ gate_id: 'conversion_findings', description: 'SSI/BFB diagnostics must not include actionable conversion findings.', metrics: ['conversion_findings'] },
 		{ gate_id: 'visual_parity', description: 'Visual parity artifact must report no mismatches or delta.', metrics: ['visual_parity'] },
-		{ gate_id: 'reviewer_evidence', description: 'Reviewer evidence must use durable public artifact references.', metrics: ['reviewer_evidence'] },
+		{ gate_id: 'reviewer_evidence', description: 'Reviewer evidence must use durable candidate, validation, visual, finding, and revalidation artifact references; GitHub URLs are optional publication evidence.', metrics: ['reviewer_evidence'] },
 	],
 	metrics: [
 		{
@@ -281,9 +289,10 @@ const controller = {
 		},
 		{
 			metric_id: 'reviewer_evidence',
-			description: 'Durable PR, validation, and visual parity evidence references for the reviewer gate.',
+			description: 'Durable candidate, validation, visual parity, finding, and revalidation evidence references for the reviewer gate.',
 			input: {
-				requires: ['static_site_pull_request.url', 'static_validation_run.artifact_url', 'visual_parity_artifact.artifact_url'],
+				requires: ['static_site_candidate.artifact_url', 'import_validation_result.artifact_url', 'static_validation_run.artifact_url', 'visual_parity_artifact.artifact_url', 'finding_packet_set.artifact_url', 'revalidation_attempt.artifact_url'],
+				optional_publication_evidence: ['static_site_pull_request.url', 'iterator_upstream_issue.url', 'iterator_upstream_pull_request.url'],
 				forbids: ['localhost', '127.0.0.1', '/Users/'],
 			},
 		},

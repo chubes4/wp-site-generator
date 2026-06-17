@@ -173,19 +173,9 @@ try {
   assert.notEqual(runtimeFailure.status, 0, 'embedded runtime failure fails proof');
   assert.match(runtimeFailure.stderr, /embedded runtime failure diagnostics/);
 
-  const weakPr = await runCase(
-    'weak-pr',
-    aggregate(plan),
-    fixture(plan, {
-      fixture: (value) => {
-        const firstPr = Object.keys(value.pull_requests)[0];
-        value.pull_requests[firstPr].body = 'No durable validation context yet.';
-        return value;
-      },
-    })
-  );
-  assert.notEqual(weakPr.status, 0, 'static PR without validation artifact context fails proof');
-  assert.match(weakPr.stderr, /static PR body includes validation artifact context/);
+  const noHydratedPr = await runCase('no-hydrated-pr', aggregate(plan), { pull_requests: {} });
+  assert.equal(noHydratedPr.status, 0, noHydratedPr.stderr || noHydratedPr.stdout);
+  assert.match(noHydratedPr.stdout, /semantic proof passed/, 'primary proof does not hydrate static PRs before accepting validation artifacts');
 
   const failedGate = await runCase(
     'failed-gate',

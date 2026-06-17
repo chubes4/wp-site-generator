@@ -2,8 +2,7 @@
 import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
 
-import { githubJson as fetchGithubJson, githubToken, prNumberFromUrl } from './lib/github-api.mjs';
-import { numberValue, parseArgs, readJsonFile, readJsonOrNull, repoPathResolver } from './lib/ci-runtime-utils.mjs';
+import { parseArgs, readJsonFile, repoPathResolver } from './lib/ci-runtime-utils.mjs';
 import { buildSsiImportWorkload } from './lib/ssi-stack-profile.mjs';
 
 const args = parseArgs(process.argv.slice(2));
@@ -13,16 +12,10 @@ const repoPath = repoPathResolver(repoRoot);
 const aggregatePath = args.get('--aggregate') || repoPath('.ci', 'homeboy-agent-task-aggregate.json');
 const planPath = args.get('--plan') || repoPath('.ci', 'site-generation-loop.agent-task-plan.json');
 const controllerPath = args.get('--controller') || repoPath('.github/homeboy/controllers/static-site-generation-loop.controller.json');
-const fixturePath = args.get('--fixture-state') || '';
-const repo = args.get('--repo') || process.env.GITHUB_REPOSITORY || 'chubes4/wp-site-generator';
-const token = githubToken(process.env, ['GITHUB_TOKEN', 'GH_TOKEN']);
-const validationWaitMs = numberValue(process.env.STATIC_VALIDATION_WAIT_MS, 15 * 60 * 1000);
-const validationPollMs = numberValue(process.env.STATIC_VALIDATION_POLL_MS, 15 * 1000);
 
 const aggregate = await readJsonFile(aggregatePath);
 const plan = await readJsonFile(planPath);
 const controller = await readJsonFile(controllerPath);
-const fixture = await readJsonOrNull(fixturePath);
 const outcomes = aggregate.outcomes || [];
 const outcomesByTaskId = new Map(outcomes.map((item) => [item.task_id, item]));
 const planTasks = plan.tasks || [];
@@ -38,40 +31,6 @@ function outcome(taskId) {
     fail(`missing outcome for ${taskId}`);
   }
   return found;
-}
-
-function labelsOf(value) {
-  return (value.labels || []).map((label) => (typeof label === 'string' ? label : label.name)).filter(Boolean);
-}
-
-async function githubJson(kind, number) {
-  if (fixture) {
-    const collection = kind === 'pull_request' ? fixture.pull_requests : fixture.issues;
-    const value = collection?.[String(number)];
-    if (!value) {
-      fail(`fixture missing ${kind} #${number}`);
-    }
-    return value;
-  }
-
-  return githubApi(kind === 'issue' ? `issues/${number}` : `pulls/${number}`);
-}
-
-async function githubApi(endpoint) {
-  if (!token) {
-    fail('GITHUB_TOKEN or GH_TOKEN is required for live proof assertions');
-  }
-
-  return fetchGithubJson({
-    repo,
-    endpoint,
-    token,
-    failMessage: (message) => `Site generation proof failed: ${message.replace(' failed:', ' fetch failed:')}`,
-  });
-}
-
-function sleep(ms) {
-  return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
 function artifactOutputKeys(taskItem) {
@@ -170,22 +129,12 @@ function assertPublishGates() {
   }
 }
 
-async function assertStaticPr(taskItem) {
-  const taskOutcome = outcome(taskItem.task_id);
-  const staticPrNumber = prNumberFromUrl(outputValue(taskOutcome, 'static_site_pr_url') || outputValue(taskOutcome, 'pr_url'));
-  if (!staticPrNumber) {
-    fail(`${taskItem.task_id} missing static PR output`);
-  }
-
-  const pr = await githubJson('pull_request', staticPrNumber);
-  const prLabels = labelsOf(pr);
-
-  assert.match(pr.title || '', /static site/i, `${taskItem.task_id} static PR title identifies a static site`);
-  assert.match(pr.head?.ref || pr.headRefName || '', /^static\//, `${taskItem.task_id} static PR branch uses the static namespace`);
-  assert.match(pr.body || '', /Import validation|fallback block|conversion finding|artifact/i, `${taskItem.task_id} static PR body includes validation artifact context`);
-  assert.equal(prLabels.some((label) => label === 'target:wordpress' || label === 'target:woocommerce'), true, `${taskItem.task_id} static PR has target validation label`);
-
-  return { taskId: taskItem.task_id, staticPrNumber };
+function assertPublicationEvidence(taskItem) {
+	const taskOutcome = outcome(taskItem.task_id);
+	const prUrl = outputValue(taskOutcome, 'static_site_pr_url') || outputValue(taskOutcome, 'pr_url') || outputValue(taskOutcome, 'static_site_pr')?.url;
+	if (prUrl) {
+		assert.match(String(prUrl), /^https:\/\/github\.com\//, `${taskItem.task_id} publication PR evidence is a durable GitHub URL`);
+	}
 }
 
 async function assertImportAndIteratorWorkflow() {
@@ -200,54 +149,14 @@ async function assertImportAndIteratorWorkflow() {
   assert.match(workflow, /dispatch-php-transformer-iterator\.mjs/, 'static validation delegates transformer iterator dispatch to the shared builder');
 }
 
-async function assertStaticValidationComments(staticPrs) {
-  if (fixture) {
-    return;
-  }
-
-  const pending = new Map(staticPrs.map((item) => [item.staticPrNumber, item.taskId]));
-  const deadline = Date.now() + validationWaitMs;
-
-  while (pending.size > 0 && Date.now() <= deadline) {
-    for (const [prNumber, taskId] of [...pending.entries()]) {
-      const comments = await githubApi(`issues/${prNumber}/comments?per_page=100`);
-      const validationComment = comments.find((comment) => {
-        const body = String(comment.body || '');
-        return body.includes('## Static site validation:') && body.includes('### SSI Signals');
-      });
-
-      if (!validationComment) {
-        continue;
-      }
-
-      const body = String(validationComment.body || '');
-      assert.equal(body.includes('_No bench artifact found._'), false, `${taskId} static PR validation has bench artifact`);
-      assert.equal(body.includes('_SSI workload did not run._'), false, `${taskId} static PR validation ran SSI workload`);
-      assert.equal(body.includes('_No SSI metrics emitted yet._'), false, `${taskId} static PR validation emitted SSI metrics`);
-      assert.match(body, /\*\*Playground preview:\*\*/, `${taskId} static PR validation includes Playground preview`);
-      pending.delete(prNumber);
-    }
-
-    if (pending.size > 0) {
-      await sleep(validationPollMs);
-    }
-  }
-
-  if (pending.size > 0) {
-    fail(`static validation metrics comments missing for PR(s): ${[...pending.keys()].map((number) => `#${number}`).join(', ')}`);
-  }
-}
-
 assertGeneratedContracts();
 assertNoRuntimeFailures();
 assertTaskArtifacts();
 assertPublishGates();
 
-const staticPrs = [];
 for (const taskItem of planTasks.filter((item) => item.executor?.config?.runtime_task?.input?.success_completion_outcomes?.includes('static_site_pr'))) {
-  staticPrs.push(await assertStaticPr(taskItem));
+	assertPublicationEvidence(taskItem);
 }
 await assertImportAndIteratorWorkflow();
-await assertStaticValidationComments(staticPrs);
 
 console.log('site generation loop semantic proof passed');
