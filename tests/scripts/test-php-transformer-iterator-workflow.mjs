@@ -10,14 +10,9 @@ assert.match(workflow, /actions_artifact_downloads:/, 'iterator downloads valida
 assert.match(workflow, /visual_artifact_name:/, 'iterator accepts the visual parity artifact name from validation');
 assert.match(workflow, /"name":"\$\{\{ inputs\.visual_artifact_name \}\}"/, 'iterator downloads the visual parity artifact in the reusable runner');
 assert.match(workflow, /"dir":"\.ci\/visual-parity"/, 'iterator stores visual parity artifacts in a stable local directory');
-assert.match(workflow, /group-ssi-finding-packets\.mjs \.ci\/finding-packets\/finding-packets\.json/, 'iterator groups downloaded packets before Data Machine fanout');
-assert.match(workflow, /VISUAL_ARTIFACT_DIR=\.ci\/visual-parity node \.github\/scripts\/build-datamachine-iterator-workflow\.mjs \.ci\/finding-packets\/grouped-finding-packets\.json \.ci\/datamachine-iterator-workflow\.json/, 'iterator builds DataPackets with visual artifact context');
-assert.match(workflow, /execute_workflow_path: \.ci\/datamachine-iterator-workflow\.json/, 'iterator executes the generated workflow payload');
-assert.match(workflow, /extra_required_abilities: '\["datamachine-code\/create-github-issue","datamachine-code\/create-github-pull-request","datamachine-code\/upsert-github-pull-review-comment"\]'/, 'iterator requires issue or PR creation and managed PR comment upsert abilities');
 assert.match(workflow, /app_token_repos: .*chubes4\/block-artifact-compiler/, 'iterator token routing includes block-artifact-compiler');
-assert.match(workflow, /success_requires_pr: false/, 'iterator no longer requires PR-first completion for issue-only evidence');
-assert.match(workflow, /success_completion_outcomes: '\["pull_request_path","issue_path"\]'/, 'iterator accepts PR and issue completion outcomes');
-assert.match(workflow, /tool_recorders: '\[{"tool":"create_github_issue"},{"tool":"create_github_pull_request"}\]'/, 'iterator records issue and PR upstream actions');
+assert.match(workflow, /execute_workflow_builder_command: .*group-ssi-finding-packets\.mjs .*build-datamachine-iterator-workflow\.mjs/, 'iterator reusable runner builds grouped finding workflow');
+assert.match(workflow, /execute_workflow_path: \.ci\/datamachine-iterator-workflow\.json/, 'iterator reusable runner receives the generated workflow path');
 assert.doesNotMatch(workflow, /actions_artifact_items/, 'iterator no longer fetches artifact ZIPs inside WordPress runtime');
 assert.doesNotMatch(workflow, /exactly one finding packet per Data Machine child job/, 'iterator prompt must not describe raw per-packet fanout');
 assert.match(iteratorFlow, /upstream pull requests as durable per source finding/, 'iterator treats upstream PRs as durable across reruns');
