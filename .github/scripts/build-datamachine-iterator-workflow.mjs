@@ -10,6 +10,7 @@ import { formatRatio, summarizeVisualDiff } from './lib/visual-artifacts.mjs';
 const repoRoot = new URL('../..', import.meta.url).pathname;
 const packetsPath = process.env.FINDING_PACKETS_PATH || process.argv[2] || 'homeboy-ci-results/finding-packets.json';
 const outputPath = process.env.DATAMACHINE_WORKFLOW_PATH || process.argv[3] || 'homeboy-ci-results/datamachine-iterator-workflow.json';
+const continuationPath = process.env.ITERATOR_CONTINUATION_PATH || path.join(path.dirname(outputPath), 'datamachine-iterator-continuation.json');
 const pipelinePath = process.env.ITERATOR_PIPELINE_PATH || 'bundles/php-transformer-iterator-agent/pipelines/php-transformer-iterator-pipeline.json';
 const flowPath = process.env.ITERATOR_FLOW_PATH || 'bundles/php-transformer-iterator-agent/flows/php-transformer-iterator-manual-flow.json';
 const visualArtifactDir = process.env.VISUAL_ARTIFACT_DIR || '';
@@ -20,11 +21,16 @@ const findingPackets = normalizeFindingInput(await readJson(resolveRepoPath(pack
 const pipeline = await readJson(resolveRepoPath(pipelinePath));
 const flow = await readJson(resolveRepoPath(flowPath));
 
-const workflow = buildWorkflow(findingPackets, pipeline, flow);
+const continuation = buildContinuation(findingPackets);
+const workflow = buildWorkflow(findingPackets, pipeline, flow, continuation);
 await mkdir(path.dirname(resolveRepoPath(outputPath)), { recursive: true });
 await writeFile(resolveRepoPath(outputPath), `${JSON.stringify(workflow, null, 2)}\n`);
+if (continuation.omitted_group_count > 0) {
+	await mkdir(path.dirname(resolveRepoPath(continuationPath)), { recursive: true });
+	await writeFile(resolveRepoPath(continuationPath), `${JSON.stringify(continuation, null, 2)}\n`);
+}
 
-function buildWorkflow(packets, pipelineConfig, flowConfig) {
+function buildWorkflow(packets, pipelineConfig, flowConfig, continuation) {
 	const iteratorPipelineStep = pipelineConfig.steps.find((step) => step?.step_type === 'ai' || step?.step_config?.step_type === 'ai');
 	const iteratorFlowStep = flowConfig.steps.find((step) => step?.step_type === 'ai');
 	if (!iteratorPipelineStep || !iteratorFlowStep) {
@@ -62,6 +68,7 @@ function buildWorkflow(packets, pipelineConfig, flowConfig) {
 	const initialData = {
 		job_source: 'system',
 		job_label: 'SSI finding iterator workflow',
+		finding_group_continuation: continuationMetadata(continuation),
 	};
 	if (packets.length === 0) {
 		initialData.completion_assertions_satisfied = {
@@ -96,10 +103,41 @@ function formatFindingPrompt(packets) {
 	return [
 		'Process these grouped static-site validation findings. They are embedded here so the iterator does not depend on DataPacket child-job hydration.',
 		'For each group: route owner, open or reuse the required upstream issue or PR, and comment back to the source generated-site PR. Use issue_path for repair_mode=issue_only groups unless the packet has enough concrete patch evidence for a safe narrow PR. A run is incomplete until comment_github_pull_request is called.',
-		omittedCount > 0 ? `Only the first ${visiblePackets.length} of ${packets.length} finding groups are embedded. The omitted ${omittedCount} group(s) require a follow-up iterator run.` : '',
+		omittedCount > 0 ? `Only the first ${visiblePackets.length} of ${packets.length} finding groups are embedded. The omitted ${omittedCount} group(s) are written to ${repoRelativePath(continuationPath)} and recorded in initial_data.finding_group_continuation.` : '',
 		'Finding groups:',
 		JSON.stringify(summaries, null, 2),
 	].filter(Boolean).join('\n\n');
+}
+
+function buildContinuation(packets) {
+	const embeddedGroups = packets.slice(0, maxPromptFindingGroups);
+	const omittedGroups = packets.slice(embeddedGroups.length);
+	const artifactPath = repoRelativePath(continuationPath);
+	return {
+		schema_version: 1,
+		status: omittedGroups.length > 0 ? 'truncated' : 'complete',
+		source_packets_path: repoRelativePath(packetsPath),
+		workflow_path: repoRelativePath(outputPath),
+		artifact_path: artifactPath,
+		total_group_count: packets.length,
+		embedded_group_count: embeddedGroups.length,
+		omitted_group_count: omittedGroups.length,
+		next_start_index: omittedGroups.length > 0 ? embeddedGroups.length : null,
+		groups: omittedGroups,
+		datamachine_packets: omittedGroups.map((item, index) => toDataMachinePacket(item, embeddedGroups.length + index)),
+	};
+}
+
+function continuationMetadata(continuation) {
+	return {
+		schema_version: continuation.schema_version,
+		status: continuation.status,
+		artifact_path: continuation.artifact_path,
+		total_group_count: continuation.total_group_count,
+		embedded_group_count: continuation.embedded_group_count,
+		omitted_group_count: continuation.omitted_group_count,
+		next_start_index: continuation.next_start_index,
+	};
 }
 
 function toDataMachinePacket(item, index) {
