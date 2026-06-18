@@ -9,6 +9,8 @@ import { assertVisualArtifactContract, writeVisualParityArtifact } from '../help
 const repoRoot = path.resolve(new URL('../..', import.meta.url).pathname);
 const tempDir = await mkdtemp(path.join(tmpdir(), 'wp-site-generator-dm-workflow-'));
 const outputPath = path.join(tempDir, 'workflow.json');
+const continuationPath = path.join(tempDir, 'continuation.json');
+const truncatedOutputPath = path.join(tempDir, 'workflow-truncated.json');
 const groupedPath = path.join(tempDir, 'groups.json');
 const visualArtifactDir = path.join(tempDir, 'visual-parity');
 
@@ -36,7 +38,14 @@ const result = spawnSync(
 		groupedPath,
 		outputPath,
 	],
-	{ cwd: repoRoot, env: { ...process.env, VISUAL_ARTIFACT_DIR: visualArtifactDir }, encoding: 'utf8' },
+	{
+		cwd: repoRoot,
+		env: {
+			...process.env,
+			VISUAL_ARTIFACT_DIR: visualArtifactDir,
+		},
+		encoding: 'utf8',
+	},
 );
 
 assert.equal(result.status, 0, result.stderr || result.stdout);
@@ -88,5 +97,48 @@ assert.ok(
 	'issue fallback blocks duplicate issue creation until source callback',
 );
 assert.ok(!aiStep.enabled_tools.includes('list_github_issues'), 'issue-list tool is disabled to avoid fallback search loops');
+
+const truncatedResult = spawnSync(
+	process.execPath,
+	[
+		path.join(repoRoot, '.github/scripts/build-datamachine-iterator-workflow.mjs'),
+		groupedPath,
+		truncatedOutputPath,
+	],
+	{
+		cwd: repoRoot,
+		env: {
+			...process.env,
+			ITERATOR_CONTINUATION_PATH: continuationPath,
+			ITERATOR_MAX_PROMPT_GROUPS: '1',
+			VISUAL_ARTIFACT_DIR: visualArtifactDir,
+		},
+		encoding: 'utf8',
+	},
+);
+assert.equal(truncatedResult.status, 0, truncatedResult.stderr || truncatedResult.stdout);
+const truncatedPayload = JSON.parse(await readFile(truncatedOutputPath, 'utf8'));
+assert.equal(truncatedPayload.initial_data.finding_group_continuation.status, 'truncated', 'workflow records prompt truncation explicitly');
+assert.equal(truncatedPayload.initial_data.finding_group_continuation.embedded_group_count, 1, 'workflow records embedded group count');
+assert.ok(truncatedPayload.initial_data.finding_group_continuation.omitted_group_count > 0, 'workflow records omitted group count');
+assert.equal(
+	truncatedPayload.initial_data.finding_group_continuation.artifact_path,
+	path.relative(repoRoot, continuationPath),
+	'workflow points to continuation artifact',
+);
+const truncatedPrompt = truncatedPayload.workflow.steps[0].prompt_queue[0].prompt;
+assert.ok(
+	truncatedPrompt.includes(truncatedPayload.initial_data.finding_group_continuation.artifact_path),
+	'iterator prompt names the continuation artifact for omitted groups',
+);
+const continuation = JSON.parse(await readFile(continuationPath, 'utf8'));
+assert.equal(continuation.status, 'truncated', 'continuation artifact records truncation');
+assert.equal(continuation.embedded_group_count, 1, 'continuation artifact records prompt-visible groups');
+assert.equal(continuation.groups.length, continuation.omitted_group_count, 'continuation artifact contains omitted groups');
+assert.equal(continuation.datamachine_packets.length, continuation.omitted_group_count, 'continuation artifact contains hydratable Data Machine packets');
+assert.ok(
+	continuation.datamachine_packets.every((packet) => packet.type === 'ssi_finding_group'),
+	'continuation artifact preserves grouped finding packet type',
+);
 
 console.log('build-datamachine-iterator-workflow smoke passed');
