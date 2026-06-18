@@ -158,6 +158,7 @@ const designPacketOutput = artifactOutput('wp-site-generator/DesignPacket/v1', '
 const staticSiteCandidateOutput = artifactOutput('wp-site-generator/StaticSiteCandidate/v1', 'StaticSiteCandidate.json');
 const importValidationResultOutput = artifactOutput('wp-site-generator/ImportValidationResult/v1', 'ImportValidationResult.json');
 const visualParityArtifactOutput = artifactOutput('wp-site-generator/VisualParityArtifact/v1', 'VisualParityArtifact.json');
+const findingPacketSetOutput = artifactOutput('wp-site-generator/FindingPacketSet/v1', 'FindingPacketSet.json');
 const staticSitePublishGateOutput = artifactOutput('wp-site-generator/StaticSitePublishGate/v1', 'StaticSitePublishGate.json');
 
 const packetArtifactSpecs = {
@@ -353,7 +354,7 @@ function importValidationTask({ id, title, candidate = '{{outputs.static_site_ca
 		id,
 		title,
 		instructions: `Import and validate StaticSiteCandidate ${candidate}. Emit one ImportValidationResult artifact with pass/fail summary, fallback block count, conversion finding counts, and artifact references.`,
-		expectedArtifacts: ['ImportValidationResult', 'FindingPacketSet'],
+		expectedArtifacts: ['ImportValidationResult', 'VisualParityArtifact', 'FindingPacketSet'],
 		config: {
 			execution_kind: 'wp_codebox_ability',
 			ability: 'static-site-importer/import-website-artifact',
@@ -363,16 +364,17 @@ function importValidationTask({ id, title, candidate = '{{outputs.static_site_ca
 			output_mappings: {
 				import_validation_result: 'result.import_validation_result',
 				visual_parity_artifact: 'result.visual_parity_artifact',
-				finding_packets: 'result.finding_packets',
+				finding_packet_set: 'result.finding_packets',
 			},
 			artifact_outputs: {
 				import_validation_result: importValidationResultOutput,
 				visual_parity_artifact: visualParityArtifactOutput,
+				finding_packet_set: findingPacketSetOutput,
 			},
 			engine_data_outputs: {
 				import_validation_result: 'outputs.import_validation_result',
 				visual_parity_artifact: 'outputs.visual_parity_artifact',
-				finding_packets: 'outputs.finding_packets',
+				finding_packet_set: 'outputs.finding_packet_set',
 			},
 			task_timeout_seconds: 1800,
 		},

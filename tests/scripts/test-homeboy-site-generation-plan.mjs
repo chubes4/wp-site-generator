@@ -274,17 +274,21 @@ try {
 
 	for (const taskId of ['validate-store-candidate', 'validate-website-candidate']) {
 		const config = plan.tasks.find((task) => task.task_id === taskId).executor.config;
+		const request = plan.tasks.find((task) => task.task_id === taskId);
+		assert.deepEqual(request.expected_artifacts, ['ImportValidationResult', 'VisualParityArtifact', 'FindingPacketSet'], `${taskId} requires each declared validation artifact`);
 		assert.equal(config.execution_kind, 'wp_codebox_ability', `${taskId} delegates validation to WP Codebox ability bridge`);
 		assert.equal(config.ability, 'static-site-importer/import-website-artifact', `${taskId} calls SSI artifact import ability`);
 		assert.equal(config.ability_input.artifact, '{{outputs.static_site_candidate}}', `${taskId} passes StaticSiteCandidate as ability input`);
 		assert.equal(config.output_mappings.import_validation_result, 'result.import_validation_result', `${taskId} maps SSI validation result`);
 		assert.equal(config.output_mappings.visual_parity_artifact, 'result.visual_parity_artifact', `${taskId} maps visual parity artifact`);
-		assert.equal(config.output_mappings.finding_packets, 'result.finding_packets', `${taskId} maps SSI finding packets`);
+		assert.equal(config.output_mappings.finding_packet_set, 'result.finding_packets', `${taskId} maps SSI finding packets to the FindingPacketSet artifact key`);
 		assert.equal(config.artifact_outputs.import_validation_result.schema, 'wp-site-generator/ImportValidationResult/v1');
 		assert.equal(config.artifact_outputs.visual_parity_artifact.schema, 'wp-site-generator/VisualParityArtifact/v1');
+		assert.equal(config.artifact_outputs.finding_packet_set.schema, 'wp-site-generator/FindingPacketSet/v1');
+		assert.equal(config.artifact_outputs.finding_packet_set.path, '/artifacts/FindingPacketSet.json');
 		assert.equal(config.engine_data_outputs.import_validation_result, 'outputs.import_validation_result', `${taskId} requires mapped validation output`);
 		assert.equal(config.engine_data_outputs.visual_parity_artifact, 'outputs.visual_parity_artifact', `${taskId} requires mapped visual parity output`);
-		assert.equal(config.engine_data_outputs.finding_packets, 'outputs.finding_packets', `${taskId} requires mapped finding packets`);
+		assert.equal(config.engine_data_outputs.finding_packet_set, 'outputs.finding_packet_set', `${taskId} requires mapped finding packet set`);
 	}
 
 	for (const taskId of ['gate-store-publication', 'gate-website-publication']) {
