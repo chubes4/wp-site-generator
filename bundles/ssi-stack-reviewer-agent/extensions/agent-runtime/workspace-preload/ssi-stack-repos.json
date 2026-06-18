@@ -1,17 +1,12 @@
 {
-    "artifact_id": "transformer-repos",
-    "artifact_type": "datamachine-code/workspace_preload",
+    "artifact_id": "ssi-stack-repos",
+    "artifact_type": "agent-runtime/workspace-preload/v1",
     "package_artifact": {
-        "meta": {
-            "compatibility_adapter": {
-                "type": "datamachine-code/workspace_preload"
-            }
-        },
         "requires": [
             "agent-runtime/workspace-preload"
         ],
-        "slug": "transformer-repos",
-        "source": "extensions/datamachine-code/workspace_preload/transformer-repos.json",
+        "slug": "ssi-stack-repos",
+        "source": "extensions/agent-runtime/workspace-preload/ssi-stack-repos.json",
         "type": "agent-runtime/workspace-preload"
     },
     "payload": {
@@ -31,6 +26,10 @@
             {
                 "name": "block-artifact-compiler",
                 "url": "https://github.com/chubes4/block-artifact-compiler.git"
+            },
+            {
+                "name": "wp-site-generator",
+                "url": "https://github.com/chubes4/wp-site-generator.git"
             }
         ]
     }

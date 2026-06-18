@@ -58,14 +58,6 @@
       "category": "domain_language_cleanup_required",
       "reason": "Top-level docs still describe the historical Data Machine implementation; should move to generic runtime vocabulary as upstream contracts land."
     },
-    "bundles/php-transformer-iterator-agent/extensions/datamachine-code/workspace_preload/transformer-repos.json": {
-      "category": "transitional_adapter_config",
-      "reason": "Bundle extension artifact keeps the Data Machine Code workspace preload adapter until a generic workspace preload materializer exists."
-    },
-    "bundles/php-transformer-iterator-agent/manifest.json": {
-      "category": "transitional_adapter_config",
-      "reason": "Generic package metadata declares workspace preload needs while compatibility metadata still points at the current adapter extension path."
-    },
     "bundles/php-transformer-iterator-agent/memory/agent/SOUL.md": {
       "category": "domain_language_cleanup_required",
       "reason": "Agent instructions still name Data Machine Code workspace tooling directly."
@@ -73,14 +65,6 @@
     "bundles/php-transformer-iterator-agent/pipelines/php-transformer-iterator-pipeline.json": {
       "category": "domain_language_cleanup_required",
       "reason": "Iterator prompt names Data Machine Code worktrees rather than generic workspace tooling."
-    },
-    "bundles/ssi-stack-reviewer-agent/extensions/datamachine-code/workspace_preload/ssi-stack-repos.json": {
-      "category": "transitional_adapter_config",
-      "reason": "Bundle extension artifact keeps the Data Machine Code workspace preload adapter until a generic workspace preload materializer exists."
-    },
-    "bundles/ssi-stack-reviewer-agent/manifest.json": {
-      "category": "transitional_adapter_config",
-      "reason": "Generic package metadata declares workspace preload needs while compatibility metadata still points at the current adapter extension path."
     },
     "bundles/static-site-agent/pipelines/static-site-pipeline.json": {
       "category": "domain_language_cleanup_required",

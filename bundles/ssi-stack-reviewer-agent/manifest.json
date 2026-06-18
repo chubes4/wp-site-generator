@@ -24,16 +24,11 @@
     "agent_package": {
         "artifacts": [
             {
-                "meta": {
-                    "compatibility_adapter": {
-                        "type": "datamachine-code/workspace_preload"
-                    }
-                },
                 "requires": [
                     "agent-runtime/workspace-preload"
                 ],
                 "slug": "ssi-stack-repos",
-                "source": "extensions/datamachine-code/workspace_preload/ssi-stack-repos.json",
+                "source": "extensions/agent-runtime/workspace-preload/ssi-stack-repos.json",
                 "type": "agent-runtime/workspace-preload"
             }
         ],
@@ -55,7 +50,7 @@
     "included": {
         "auth_refs": [],
         "extensions": [
-            "extensions/datamachine-code/workspace_preload/ssi-stack-repos.json"
+            "extensions/agent-runtime/workspace-preload/ssi-stack-repos.json"
         ],
         "flows": [
             "ssi-stack-reviewer-manual-flow"

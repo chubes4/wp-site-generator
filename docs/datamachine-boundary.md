@@ -10,7 +10,7 @@ The enforced quarantine lives in `.github/datamachine-boundary-quarantine.json`.
 
 - `transitional_adapter_surface`: controller or bootstrap code that currently invokes Data Machine/Data Machine Code because no generic execution contract exists yet.
 - `transitional_adapter_test`: tests that pin the current adapter payloads so changes are deliberate.
-- `transitional_adapter_config`: workflow or package config that uses a generic outer contract while quarantining current adapter-only ability names or artifact types.
+- `transitional_adapter_config`: workflow or package config that uses a generic outer contract while quarantining current adapter-only ability names.
 - `legacy_runtime_probe`: older Playground proof scripts/workloads for the historical runtime integration.
 - `domain_language_cleanup_required`: WPSG-owned docs, prompts, or test language that should move to generic runtime vocabulary as low-risk edits become available.
 - `boundary_enforcement`: the boundary test and negative assertions that necessarily name the prohibited terms.
@@ -19,6 +19,7 @@ The enforced quarantine lives in `.github/datamachine-boundary-quarantine.json`.
 
 - Homeboy/Homeboy Extensions need generic agent-runtime component defaults for controller execution so WPSG does not check out `Extra-Chill/data-machine` and `Extra-Chill/data-machine-code` directly.
 - Codebox provider contracts need generic workspace, GitHub issue/PR, review-comment, transcript, tool-recorder, bundle-execution, and workflow-execution ability names so WPSG does not pass `datamachine-code/*` or `datamachine/run-agent-bundle` identifiers.
-- A registered generic `agent-runtime/workspace-preload` package artifact type needs an importer/materializer. Until that exists, WPSG can declare neutral package metadata, but runtime compatibility still depends on the quarantined adapter artifact type.
+
+WP Codebox now materializes `agent-runtime/workspace-preload`, so WPSG declares workspace preload artifacts directly with `agent-runtime/workspace-preload/v1` extension payloads instead of adapter artifact metadata.
 
 This PR intentionally does not add shims around those gaps.
