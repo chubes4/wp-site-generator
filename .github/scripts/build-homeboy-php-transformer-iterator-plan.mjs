@@ -6,12 +6,13 @@ import {
 	applyHomeboyAgentRuntimeOverrides,
 	parseArgs,
 	readHomeboyAgentRuntimeOverrides,
+	resolveReplayRunId,
 	writeJsonFile,
 } from './lib/ci-runtime-utils.mjs';
 
 const args = parseArgs(process.argv.slice(2));
 const root = process.env.GITHUB_WORKSPACE || process.cwd();
-const runId = process.env.GITHUB_RUN_ID || String(Date.now());
+const runId = resolveReplayRunId(process.env);
 const repository = process.env.GITHUB_REPOSITORY || process.env.SOURCE_REPO || 'chubes4/wp-site-generator';
 const workflowPath = args.get('--workflow') || process.env.DATAMACHINE_WORKFLOW_PATH || '.ci/datamachine-iterator-workflow.json';
 const outputPath = args.get('--output') || process.env.HOMEBOY_ITERATOR_PLAN_PATH || path.join(root, '.ci', 'php-transformer-iterator.agent-task-plan.json');
