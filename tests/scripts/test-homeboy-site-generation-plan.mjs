@@ -226,7 +226,7 @@ try {
 		}
 
 		const dependency = plan.output_dependencies[taskItem.task_id] || { bindings: {} };
-		assert.deepEqual(Object.keys(dependency.bindings || {}), workflow.consumes, `${taskItem.task_id} consumes only artifacts declared by ${workflowId}`);
+		assert.deepEqual(Object.keys(dependency.bindings || {}).sort(), [...workflow.consumes].sort(), `${taskItem.task_id} consumes only artifacts declared by ${workflowId}`);
 		for (const [artifact, binding] of Object.entries(dependency.bindings || {})) {
 			const upstreamWorkflow = executableWorkflowByTaskId[binding.task_id];
 			const requiredEdge = controllerSpec.artifact_flow.find((edge) => (

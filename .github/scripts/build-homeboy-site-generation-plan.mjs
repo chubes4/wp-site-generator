@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 import fs from 'node:fs';
 import path from 'node:path';
+import { spawnSync } from 'node:child_process';
 import {
 	applyHomeboyAgentRuntimeOverrides,
 	readHomeboyAgentRuntimeOverrides,
@@ -57,62 +58,6 @@ function taskOutputPath(field) {
   return `/outputs/${field}`;
 }
 
-function compileLoopDefinition(definition) {
-  if (definition.schema !== 'homeboy/agent-task-loop-definition/v1') {
-    throw new Error(`Unsupported loop definition schema: ${definition.schema}`);
-  }
-  if (!definition.loop_id) {
-    throw new Error('Loop definition requires loop_id.');
-  }
-  if (!Array.isArray(definition.tasks) || definition.tasks.length === 0) {
-    throw new Error('Loop definition requires at least one task.');
-  }
-
-  const taskIds = new Set(definition.tasks.map((item) => item.task_id));
-  for (const item of definition.tasks) {
-    if (item.task_id !== item.request?.task_id) {
-      throw new Error(`Loop definition task ${item.task_id} must match request.task_id ${item.request?.task_id}.`);
-    }
-    for (const dependency of item.depends_on || []) {
-      if (!taskIds.has(dependency)) {
-        throw new Error(`Loop definition task ${item.task_id} depends on unknown task ${dependency}.`);
-      }
-    }
-    for (const binding of Object.values(item.bindings || {})) {
-      if (!taskIds.has(binding.task_id)) {
-        throw new Error(`Loop definition task ${item.task_id} binds output from unknown task ${binding.task_id}.`);
-      }
-    }
-  }
-
-  const outputDependencies = Object.fromEntries(
-    definition.tasks
-      .filter((item) => (item.depends_on || []).length > 0 || Object.keys(item.bindings || {}).length > 0)
-      .map((item) => [item.task_id, { ...(item.depends_on?.length ? { depends_on: item.depends_on } : {}), ...(Object.keys(item.bindings || {}).length ? { bindings: item.bindings } : {}) }])
-  );
-  const artifactOutputs = Object.fromEntries(
-    definition.tasks
-      .filter((item) => (item.artifact_outputs || []).length > 0)
-      .map((item) => [item.task_id, item.artifact_outputs])
-  );
-
-  return {
-    schema: 'homeboy/agent-task-plan/v1',
-    plan_id: definition.plan_id || definition.loop_id,
-    ...(definition.group_key ? { group_key: definition.group_key } : {}),
-    tasks: definition.tasks.map((item) => item.request),
-    ...(definition.component_contracts?.length ? { component_contracts: definition.component_contracts } : {}),
-    ...(Object.keys(outputDependencies).length ? { output_dependencies: outputDependencies } : {}),
-    ...(Object.keys(artifactOutputs).length ? { artifact_outputs: artifactOutputs } : {}),
-    options: definition.options || {},
-    metadata: {
-      ...(definition.metadata || {}),
-      source_schema: definition.schema,
-      loop_id: definition.loop_id,
-    },
-  };
-}
-
 function loopDefinitionTask(request, dependencies = {}) {
   const taskDefinition = {
     task_id: request.task_id,
@@ -125,6 +70,24 @@ function loopDefinitionTask(request, dependencies = {}) {
     taskDefinition.bindings = dependencies.bindings;
   }
   return taskDefinition;
+}
+
+function compileLoopDefinitionFile(definitionPath) {
+  const result = spawnSync('homeboy', ['agent-task', 'compile-loop', '--definition', `@${definitionPath}`], {
+    cwd: root,
+    encoding: 'utf8',
+  });
+  if (result.status !== 0) {
+    throw new Error(`homeboy agent-task compile-loop failed:\n${result.stderr || result.stdout}`);
+  }
+  const output = JSON.parse(result.stdout);
+  if (output?.data?.schema === 'homeboy/agent-task-plan/v1') {
+    return output.data;
+  }
+  if (output?.value?.schema === 'homeboy/agent-task-plan/v1') {
+    return output.value;
+  }
+  return output;
 }
 
 function loopDefinition({ tasks, outputDependencies = {}, options, metadata }) {
@@ -736,10 +699,10 @@ const normalLoopDefinition = loopDefinition({
 });
 
 const definition = manualTaskKind ? manualLoopDefinition() : normalLoopDefinition;
-const plan = compileLoopDefinition(definition);
 
 fs.mkdirSync(path.dirname(outputPath), { recursive: true });
 fs.mkdirSync(path.dirname(loopDefinitionOutputPath), { recursive: true });
 await writeJsonFile(loopDefinitionOutputPath, definition);
+const plan = compileLoopDefinitionFile(loopDefinitionOutputPath);
 await writeJsonFile(outputPath, plan);
 console.log(outputPath);
