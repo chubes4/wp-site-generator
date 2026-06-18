@@ -4,6 +4,8 @@ WPSG may know WP Codebox, but WPSG-owned generation, validation, and review doma
 
 WPSG uses Homeboy Extensions `.github/workflows/runtime-agent-ci.yml` for agent runtime CI config. The public workflow boundary is generic, and iterator workspace/PR publication tool config uses the WP Codebox `wp-codebox/provider-runtime-invocation-contract/v1` ability identifiers. Unavoidable current runtime ability names remain quarantined inside workflow task config and adapter tests until Codebox and Homeboy expose fully generic execution contracts for the remaining operations.
 
+The generic bundle/workflow execution primitive was checked against `Extra-Chill/homeboy-extensions@origin/main` for this adoption pass and is not merged yet. `docs/generic-bundle-workflow-execution-dependency.md` records the dependency shape; this repo intentionally keeps the current quarantine instead of adding a local shim.
+
 The enforced quarantine lives in `.github/datamachine-boundary-quarantine.json`. Run `node tests/scripts/test-datamachine-boundary.mjs` to print the current boundary report and fail on new unclassified references.
 
 ## Current Quarantine Classes
@@ -19,6 +21,7 @@ The older Playground proof scripts, workloads, and workflow for the historical r
 
 - Homeboy/Homeboy Extensions need generic agent-runtime component defaults for controller execution so WPSG does not check out `Extra-Chill/data-machine` and `Extra-Chill/data-machine-code` directly.
 - Homeboy Extensions `runtime-agent-ci` still requires a concrete runtime task ability for bundle execution. Owner/gap: Homeboy Extensions needs a generic agent-bundle or workflow execution primitive so WPSG does not pass `datamachine/run-agent-bundle`.
+- Generic bundle/workflow execution adoption in WPSG remains blocked until Homeboy Extensions/WP Codebox provide that descriptor on the runtime task boundary. The dependency is documented in `docs/generic-bundle-workflow-execution-dependency.md`; no WPSG shim should be introduced while the upstream primitive is absent.
 - WP Codebox/Homeboy still need generic GitHub issue creation and review-comment callback primitives, plus generic engine-data/tool-recorder projection. Owner/gap: the merged WP Codebox provider runtime invocation contract covers runner workspace command/publication and transcript/artifact handoff names, but it does not yet cover issue/comment callbacks or runtime engine-data recording.
 
 WP Codebox now materializes `agent-runtime/workspace-preload`, so WPSG declares workspace preload artifacts directly with `agent-runtime/workspace-preload/v1` extension payloads instead of adapter artifact metadata.

@@ -5,7 +5,9 @@ import path from 'node:path';
 
 const repoRoot = path.resolve(new URL('../..', import.meta.url).pathname);
 const configPath = path.join(repoRoot, '.github/datamachine-boundary-quarantine.json');
+const dependencyDocPath = path.join(repoRoot, 'docs/generic-bundle-workflow-execution-dependency.md');
 const config = JSON.parse(await readFile(configPath, 'utf8'));
+const dependencyDoc = await readFile(dependencyDocPath, 'utf8');
 const candidateFiles = execFileSync('git', ['ls-files', '--cached', '--others', '--exclude-standard'], { cwd: repoRoot, encoding: 'utf8' })
   .split('\n')
   .filter(Boolean)
@@ -28,6 +30,17 @@ const byCategory = matches.reduce((accumulator, file) => {
   accumulator[category] = (accumulator[category] || 0) + 1;
   return accumulator;
 }, {});
+
+assert.equal(
+  config.quarantine['docs/generic-bundle-workflow-execution-dependency.md']?.category,
+  'dependency_documentation',
+  'missing generic bundle/workflow primitive stays documented as a dependency, not a shim'
+);
+assert.match(
+  dependencyDoc,
+  /must not add a local compatibility shim/,
+  'dependency documentation records the no-shim policy while the upstream primitive is unavailable'
+);
 
 console.log('Data Machine boundary report');
 console.log(`- scanned files: ${candidateFiles.length}`);

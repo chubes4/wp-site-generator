@@ -140,3 +140,5 @@ Homeboy remains the controller, executor, and scheduler. It receives WPSG domain
 ## Upstream Contract
 
 Extra-Chill/homeboy#5152 is the upstream runtime dependency for the generic `agent-task controller from-spec`, `resume`, and `events` primitives. If a backend-specific WordPress or WP Codebox mapping is needed, it belongs behind generic Homeboy executor/provider contracts in `homeboy-extensions/wordpress`, not in this WPSG spec.
+
+Generic bundle/workflow execution is a separate upstream dependency. Until Homeboy Extensions and WP Codebox expose a generic descriptor for bundle paths, workflow payloads, agent/pipeline/flow selection, and runtime inputs, WPSG keeps the current runtime ability references quarantined and does not add a WPSG-owned shim.

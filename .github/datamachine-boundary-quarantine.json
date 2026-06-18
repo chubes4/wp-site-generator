@@ -54,6 +54,10 @@
       "category": "boundary_enforcement",
       "reason": "Boundary documentation necessarily names the prohibited terms and upstream gaps."
     },
+    "docs/generic-bundle-workflow-execution-dependency.md": {
+      "category": "dependency_documentation",
+      "reason": "Records the missing upstream generic bundle/workflow execution primitive so WPSG does not add a local shim."
+    },
     "tests/helpers/artifact-contracts.mjs": {
       "category": "transitional_adapter_test",
       "reason": "Assertions cover current reusable workflow runner payloads, generic WP Codebox identifiers, and remaining quarantined ability contracts."
