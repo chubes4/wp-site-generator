@@ -90,7 +90,11 @@ jobs:
       OPENAI_MODEL: ${{ inputs.openai_model }}
       GITHUB_TOKEN: ${{ github.token }}
       OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
-      HOMEBOY_PLAN_PATH: ${{ github.workspace }}/.ci/homeboy-agent-task.plan.json
+      HOMEBOY_CONTROLLER_RUN_SPEC_PATH: ${{ github.workspace }}/.ci/homeboy-agent-task.controller-run-spec.json
+      HOMEBOY_CONTROLLER_FROM_SPEC_RESULT_PATH: ${{ github.workspace }}/.ci/homeboy-agent-task.controller-from-spec.json
+      HOMEBOY_CONTROLLER_RESUME_RESULT_PATH: ${{ github.workspace }}/.ci/homeboy-agent-task.controller-resume.json
+      HOMEBOY_CONTROLLER_EVENT_RESULT_PATH: ${{ github.workspace }}/.ci/homeboy-agent-task.controller-event.json
+      HOMEBOY_CONTROLLER_SPEC_PATH: .github/homeboy/controllers/static-site-generation-loop.controller.json
       HOMEBOY_ARTIFACT_ROOT: ${{ github.workspace }}/.ci/homeboy-agent-task-artifacts
     steps:
       - name: Check out wp-site-generator
@@ -144,16 +148,33 @@ jobs:
       - name: Install WordPress extension
         run: homeboy extension install .ci/homeboy-extensions/wordpress --id wordpress
 
-      - name: Build Homeboy agent-task plan
-        id: plan
+      - name: Build Homeboy controller run spec
+        id: controller-spec
         run: |
           set -euo pipefail
-          plan_path="$(node .github/scripts/build-homeboy-site-generation-plan.mjs)"
-          echo "path=$plan_path" >> "$GITHUB_OUTPUT"
-          jq empty "$plan_path"
+          spec_path="$(node .github/scripts/build-homeboy-controller-run-spec.mjs)"
+          echo "path=$spec_path" >> "$GITHUB_OUTPUT"
+          jq empty "$spec_path"
 
-      - name: Run Homeboy agent-task plan
-        run: homeboy agent-task run-plan --plan "@${{ steps.plan.outputs.path }}" --record-run-id "homeboy-agent-task-${{ github.run_id }}" --artifact-root "$HOMEBOY_ARTIFACT_ROOT"
+      - name: Initialize Homeboy controller from spec
+        id: controller
+        run: |
+          set -euo pipefail
+          homeboy agent-task controller from-spec "@${{ steps.controller-spec.outputs.path }}" --output "$HOMEBOY_CONTROLLER_FROM_SPEC_RESULT_PATH" --artifact-root "$HOMEBOY_ARTIFACT_ROOT"
+          loop_id="$(node -e "const fs=require('fs'); const value=JSON.parse(fs.readFileSync(process.argv[1], 'utf8')); console.log(value.data?.loop_id || value.value?.loop_id || value.loop_id || value.data?.controller?.loop_id || value.value?.controller?.loop_id || value.controller?.loop_id);" "$HOMEBOY_CONTROLLER_FROM_SPEC_RESULT_PATH")"
+          test -n "$loop_id"
+          echo "loop_id=$loop_id" >> "$GITHUB_OUTPUT"
+
+      - name: Record manual task controller event
+        run: >-
+          homeboy agent-task controller events "${{ steps.controller.outputs.loop_id }}"
+          --event-type wpsg.manual_task.requested
+          --event-key "homeboy-agent-task-${{ github.run_id }}-${{ inputs.task_kind }}"
+          --payload '{"task_kind":"${{ inputs.task_kind }}","run_id":"${{ github.run_id }}","repository":"${{ github.repository }}"}'
+          --output "$HOMEBOY_CONTROLLER_EVENT_RESULT_PATH"
+
+      - name: Resume Homeboy controller
+        run: homeboy agent-task controller resume "${{ steps.controller.outputs.loop_id }}" --output "$HOMEBOY_CONTROLLER_RESUME_RESULT_PATH" --artifact-root "$HOMEBOY_ARTIFACT_ROOT"
 
       - name: Upload Homeboy artifacts
         if: always()
@@ -161,7 +182,9 @@ jobs:
         with:
           name: homeboy-agent-task-${{ inputs.task_kind }}-${{ github.run_id }}
           path: |
-            .ci/homeboy-agent-task.plan.json
+            .ci/homeboy-agent-task.controller-run-spec.json
+            .ci/homeboy-agent-task.controller-from-spec.json
+            .ci/homeboy-agent-task.controller-resume.json
+            .ci/homeboy-agent-task.controller-event.json
             .ci/homeboy-agent-task-artifacts/**
-            ~/.local/share/homeboy/agent-task-runs/homeboy-agent-task-${{ github.run_id }}/**
           if-no-files-found: ignore

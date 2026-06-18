@@ -259,7 +259,7 @@ That's the loop. Generate. Design. Build. Validate. Review. Decide. Repeat.
 
 ## Operating The Loop
 
-The primary loop runs in GitHub Actions through `homeboy agent-task run-plan`. The workflow builds a Homeboy plan with output-driven DAG phases, runs the Data Machine bundles through the WordPress Codebox agent-task provider, and writes GitHub issues or PRs back to this repo with the workflow `GITHUB_TOKEN`.
+The primary loop runs in GitHub Actions through Homeboy's durable controller primitives. The workflow stamps WPSG-owned run inputs onto `.github/homeboy/controllers/static-site-generation-loop.controller.json`, initializes Homeboy with `homeboy agent-task controller from-spec`, resumes execution with `homeboy agent-task controller resume`, and records GitHub Actions lineage through `homeboy agent-task controller events`. Homeboy owns controller state, action scheduling, event application, and runtime/provider selection.
 
 Required GitHub secrets:
 
@@ -271,7 +271,7 @@ Useful workflow entry points:
 2. **`website-idea-agent.yml`** — manually generate one content concept issue from a selected website flow.
 3. **`design-agent.yml`** — attach a design direction to one issue.
 4. **`static-site-agent.yml`** — build one design-ready issue into a static-site PR.
-5. **`site-generation-loop.yml`** — run the current two-lane end-to-end loop with Homeboy agent-task output dependencies: store idea, website idea, design both, build both.
+5. **`site-generation-loop.yml`** — run the end-to-end loop through the Homeboy controller contract: concept packets, design packets, static candidates, validation, publication gates, iterator/revalidation, and reviewer evidence.
 6. **`static-site-validation.yml`** — automatic PR validation for labeled target-lane static-site PRs.
 7. **`php-transformer-iterator.yml`** — automatic or manual upstream repair loop from validation finding packets.
 8. **`ssi-stack-reviewer.yml`** — manual review-only gate for upstream iterator PRs before merge or promotion.

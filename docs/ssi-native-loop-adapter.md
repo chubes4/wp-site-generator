@@ -42,9 +42,9 @@ Homeboy maps these declarations to durable controller policy/actions through `ag
 
 ## Runtime Input Migration
 
-WPSG keeps its controller and domain specs backend-agnostic. Reusable Homeboy Agent CI selects the WP Codebox runtime behind its own contract, so WPSG callers pass domain inputs only. Generated local plans use clean `HOMEBOY_AGENT_RUNTIME_*` environment variables that compile to `runtime_*` config fields. WPSG does not expose WP Codebox-specific agent runtime fields in its controller/domain specs.
+WPSG keeps its controller and domain specs backend-agnostic. Reusable Homeboy Agent CI selects the WP Codebox runtime behind its own contract, so WPSG callers pass domain inputs only. Controller run specs use clean `HOMEBOY_AGENT_RUNTIME_*` environment variables as a visible input contract. WPSG does not expose WP Codebox-specific agent runtime fields in its controller/domain specs.
 
-Generated plans record `metadata.runtime_input_contract: "homeboy-agent-runtime-env"` to make the seam visible. Keep runtime selection behind the Homeboy runtime contract; do not add backend-specific fields to `.github/homeboy/controllers/static-site-generation-loop.controller.json`.
+Controller run specs record `inputs.runtime_input_contract: "homeboy-agent-runtime-env"` to make the seam visible. Keep runtime selection behind the Homeboy runtime contract; do not add backend-specific fields to `.github/homeboy/controllers/static-site-generation-loop.controller.json`.
 
 ## Quality Gates
 
@@ -73,9 +73,9 @@ The controller declares workflow artifact dependencies and emissions. Homeboy de
 
 ## Complexity And Randomness Policy
 
-Prompt difficulty is owned by WP Site Generator, not Homeboy. The checked-in policy at `.github/site-generation-complexity-policy.json` is evaluated by `.github/scripts/build-homeboy-site-generation-plan.mjs` every time the generation plan is built.
+Prompt difficulty is owned by WP Site Generator, not Homeboy. The checked-in policy at `.github/site-generation-complexity-policy.json` is evaluated by `.github/scripts/build-homeboy-controller-run-spec.mjs` every time the controller run spec is built.
 
-The generated plan records the full decision at `metadata.complexity_policy`, including:
+The controller run spec records the full decision at `inputs.complexity_policy`, including:
 
 - selected and current complexity tier
 - ramp decision: `hold`, `raise`, `lower`, `hold_floor`, `hold_ceiling`, or `override`
@@ -84,7 +84,7 @@ The generated plan records the full decision at `metadata.complexity_policy`, in
 - tier layout/component families and criteria
 - quality-signal path and explicit overrides used for the run
 
-The same policy decision is also attached to generation task `inputs.complexity_policy`, copied into each Datamachine bundle config as `complexity_policy`, and injected into concept/design/candidate prompts. Candidate-producing prompts instruct the agent to record the tier, randomness seed/profile, site kind, layout family, component families, and policy decision in emitted artifact metadata.
+Homeboy receives the policy decision with the controller spec and owns how it is applied to generated actions. Candidate-producing workflows retain WPSG-owned prompts and artifact schemas so emitted artifact metadata can record tier, randomness seed/profile, site kind, layout family, component families, and policy decision.
 
 ### Quality Signals
 
@@ -118,7 +118,7 @@ The default policy has three tiers:
 - `composed`: richer section variety after foundation quality is stable
 - `stress`: higher-variance prompts after composed quality is stable
 
-Stable quality raises at most one tier for the next plan. Regressions lower at most one tier. The floor and ceiling hold when the policy cannot move farther. This keeps prompt complexity reproducible and prevents a single good or bad run from skipping the configured ladder.
+Stable quality raises at most one tier for the next run. Regressions lower at most one tier. The floor and ceiling hold when the policy cannot move farther. This keeps prompt complexity reproducible and prevents a single good or bad run from skipping the configured ladder.
 
 ### Overrides
 
@@ -129,7 +129,7 @@ GitHub Actions exposes these optional inputs, which map directly to environment 
 - `randomness_seed` -> `WPSG_RANDOMNESS_SEED`
 - `quality_signals_path` -> `WPSG_QUALITY_SIGNALS_PATH`
 
-Additional WPSG policy inputs are available for local plan generation:
+Additional WPSG policy inputs are available for local controller run-spec generation:
 
 - `WPSG_CURRENT_COMPLEXITY_TIER`: current tier when the signal file does not include one
 - `WPSG_SITE_KIND_MIX`: comma-separated site-kind override
@@ -139,4 +139,4 @@ Homeboy remains the controller, executor, and scheduler. It receives WPSG domain
 
 ## Upstream Contract
 
-Extra-Chill/homeboy#4658 is the upstream contract seam for compiling these repo declarations into controller execution. Extra-Chill/homeboy#4722 and Extra-Chill/homeboy#4723 are the from-spec ingestion alignment points this declaration shape follows. If a backend-specific WordPress or WP Codebox mapping is needed, it belongs behind generic Homeboy executor/provider contracts in `homeboy-extensions/wordpress`, not in this WPSG spec.
+Extra-Chill/homeboy#5152 is the upstream runtime dependency for the generic `agent-task controller from-spec`, `resume`, and `events` primitives. If a backend-specific WordPress or WP Codebox mapping is needed, it belongs behind generic Homeboy executor/provider contracts in `homeboy-extensions/wordpress`, not in this WPSG spec.
