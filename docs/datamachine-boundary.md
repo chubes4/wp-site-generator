@@ -12,7 +12,6 @@ The enforced quarantine lives in `.github/datamachine-boundary-quarantine.json`.
 - `transitional_adapter_test`: tests that pin the current adapter payloads so changes are deliberate.
 - `transitional_adapter_config`: workflow or package config that uses a generic outer contract while quarantining current adapter-only ability names.
 - `legacy_runtime_probe`: older Playground proof scripts/workloads for the historical runtime integration.
-- `domain_language_cleanup_required`: WPSG-owned docs, prompts, or test language that should move to generic runtime vocabulary as low-risk edits become available.
 - `boundary_enforcement`: the boundary test and negative assertions that necessarily name the prohibited terms.
 
 ## Upstream Gaps

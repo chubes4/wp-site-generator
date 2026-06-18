@@ -54,22 +54,6 @@
       "category": "transitional_adapter_config",
       "reason": "Calls generic runtime-agent-ci and quarantines the unavoidable current review-comment ability name in the task config."
     },
-    "README.md": {
-      "category": "domain_language_cleanup_required",
-      "reason": "Top-level docs still describe the historical Data Machine implementation; should move to generic runtime vocabulary as upstream contracts land."
-    },
-    "bundles/php-transformer-iterator-agent/memory/agent/SOUL.md": {
-      "category": "domain_language_cleanup_required",
-      "reason": "Agent instructions still name Data Machine Code workspace tooling directly."
-    },
-    "bundles/php-transformer-iterator-agent/pipelines/php-transformer-iterator-pipeline.json": {
-      "category": "domain_language_cleanup_required",
-      "reason": "Iterator prompt names Data Machine Code worktrees rather than generic workspace tooling."
-    },
-    "bundles/static-site-agent/pipelines/static-site-pipeline.json": {
-      "category": "domain_language_cleanup_required",
-      "reason": "Static-site prompt still includes historical Data Machine disclosure text."
-    },
     "docs/datamachine-boundary.md": {
       "category": "boundary_enforcement",
       "reason": "Boundary documentation necessarily names the prohibited terms and upstream gaps."

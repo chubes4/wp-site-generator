@@ -93,8 +93,6 @@ This repo is the only place all of them meet. The Homeboy controller spec is the
 This repository is the orchestration and generated-site source repo. The working system spans these repos:
 
 - [`chubes4/wp-site-generator`](https://github.com/chubes4/wp-site-generator) — concept issues, runtime bundles, generated static-site PRs, validation workflows, and iterator dispatch.
-- [`Extra-Chill/data-machine`](https://github.com/Extra-Chill/data-machine) — transitional agent runtime used by current CI while generic Homeboy runtime contracts land.
-- [`Extra-Chill/data-machine-code`](https://github.com/Extra-Chill/data-machine-code) — transitional workspace, worktree, GitHub, and PR tooling used by agents that edit code.
 - [`Extra-Chill/homeboy`](https://github.com/Extra-Chill/homeboy) — local and CI quality runner used to execute repo checks and WordPress benches.
 - [`Extra-Chill/homeboy-action`](https://github.com/Extra-Chill/homeboy-action) — GitHub Action wrapper that runs Homeboy in repository workflows.
 - [`Extra-Chill/homeboy-extensions`](https://github.com/Extra-Chill/homeboy-extensions) — reusable WordPress Playground workloads, current agent CI workflow, validation reporting, and iterator plumbing.
@@ -205,7 +203,7 @@ The Homeboy WordPress extension capability that makes this possible (`wp_codebox
 - Prompt-level variety keeps concepts specific without trying to enforce global uniqueness.
 - Adjacent but differentiated ideas are acceptable when the audience, offer, place, product angle, or site shape differs.
 
-Prompt-level variety keeps the generator moving. Stronger duplicate prevention should be deterministic, ideally through Data Machine processed-item/idempotency machinery, rather than asking the model to police the corpus.
+Prompt-level variety keeps the generator moving. Stronger duplicate prevention should be deterministic, ideally through runtime processed-item/idempotency machinery, rather than asking the model to police the corpus.
 
 ---
 
@@ -238,7 +236,7 @@ wp-site-generator/
   scripts/                           optional dev helpers
 ```
 
-The agents are portable runtime bundles. Six focused bundles are tracked here. The current Data Machine references are transitional and enforced by [`docs/datamachine-boundary.md`](docs/datamachine-boundary.md).
+The agents are portable runtime bundles. Six focused bundles are tracked here. Transitional runtime adapter references are enforced by the boundary test.
 
 ---
 
@@ -278,27 +276,12 @@ Useful workflow entry points:
 
 Local Studio remains useful for bundle development or manual runtime experiments. A local host needs:
 
-1. **Data Machine** + **Data Machine Code** plugins active.
-2. A **GitHub credential profile** in DMC scoped to this repo with `Contents`, `Issues`, and `Pull requests` write access.
-3. An **AI provider** configured (today: OpenAI, model `gpt-5.5`).
+1. A WordPress agent runtime capable of importing these bundles.
+2. A GitHub credential profile scoped to this repo with `Contents`, `Issues`, and `Pull requests` write access.
+3. An AI provider configured (today: OpenAI, model `gpt-5.5`).
 4. The bundles imported and pointed at `chubes4/wp-site-generator`.
 
-Install or refresh a bundle:
-
-```
-studio wp datamachine agent install bundles/store-idea-agent
-studio wp datamachine agent install bundles/website-idea-agent
-studio wp datamachine agent install bundles/design-agent
-studio wp datamachine agent install bundles/static-site-agent
-studio wp datamachine agent install bundles/php-transformer-iterator-agent
-studio wp datamachine agent install bundles/ssi-stack-reviewer-agent
-```
-
-Run a flow manually:
-
-```
-studio wp datamachine flow run <flow-id> --drain
-```
+Use the active runtime's bundle import and flow-run commands to install or refresh bundles and run a default manual flow.
 
 Each agent ships with a default manual flow. The store idea agent additionally ships industry-tuned commerce flows; the website idea agent ships focused content flows for local business, blog, portfolio, professional services, and nonprofit concepts. Add more by dropping new flow JSON into the relevant `bundles/<agent>/flows/` directory and reinstalling.
 
