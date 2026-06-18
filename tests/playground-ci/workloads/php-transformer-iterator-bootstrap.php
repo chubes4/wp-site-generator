@@ -13,67 +13,13 @@ if ( ! is_array( $finding_groups ) || empty( $finding_groups['groups'] ) ) {
 	throw new RuntimeException( 'ITERATOR_FINDING_GROUPS_JSON must provide grouped findings JSON.' );
 }
 
-if ( ! class_exists( 'WC_Site_Generator_PHP_Transformer_Iterator_Tool_Recorder' ) ) {
-	class WC_Site_Generator_PHP_Transformer_Iterator_Tool_Recorder {
-		private static array $tool_results = array();
-
-		public static function handle_ability_tool_call( array $parameters, array $tool_def = array() ): array {
-			$ability_name = (string) ( $tool_def['ability'] ?? '' );
-			$tool_name    = (string) ( $tool_def['tool_name'] ?? $ability_name );
-			if ( '' === $ability_name || ! function_exists( 'wp_get_ability' ) ) {
-				return self::error( $tool_name, 'Missing ability contract.' );
-			}
-
-			$ability = wp_get_ability( $ability_name );
-			if ( ! $ability ) {
-				return self::error( $tool_name, $ability_name . ' is not registered.' );
-			}
-
-			$result = $ability->execute( $parameters );
-			if ( function_exists( 'is_wp_error' ) && is_wp_error( $result ) ) {
-				$response = self::error( $tool_name, $result->get_error_message() );
-				self::record( $parameters, $tool_name, $response );
-				return $response;
-			}
-
-			$response              = is_array( $result ) ? $result : array( 'success' => true, 'data' => $result );
-			$response['tool_name'] = $tool_name;
-			self::record( $parameters, $tool_name, $response );
-			return $response;
-		}
-
-		public static function handle_pull_request_tool_call( array $parameters, array $tool_def = array() ): array {
-			$response = self::handle_ability_tool_call(
-				$parameters,
-				$tool_def + array(
-					'ability'   => 'datamachine-code/create-github-pull-request',
-					'tool_name' => 'create_github_pull_request',
-				)
-			);
-			if ( ! empty( $response['success'] ) ) {
-				self::record_iterator_event( $parameters, 'upstream_action', 'pull_request', self::first_url( $response ), $response );
-			}
-			return $response;
-		}
-
-		public static function handle_issue_tool_call( array $parameters, array $tool_def = array() ): array {
-			$response = self::handle_ability_tool_call(
-				$parameters,
-				$tool_def + array(
-					'ability'   => 'datamachine-code/create-github-issue',
-					'tool_name' => 'create_github_issue',
-				)
-			);
-			if ( ! empty( $response['success'] ) ) {
-				self::record_iterator_event( $parameters, 'upstream_action', 'issue', self::first_url( $response ), $response );
-			}
-			return $response;
-		}
+if ( ! class_exists( 'WC_Site_Generator_PHP_Transformer_Iterator_Callback_Tool' ) ) {
+	class WC_Site_Generator_PHP_Transformer_Iterator_Callback_Tool {
 
 		public static function handle_comment_tool_call( array $parameters, array $tool_def = array() ): array {
 			if ( self::is_source_pull_request( $parameters ) ) {
 				$parameters = self::prepare_source_callback_parameters( $parameters );
-				$response   = self::handle_ability_tool_call(
+				$response   = self::execute_ability_tool(
 					$parameters,
 					$tool_def + array(
 						'ability'   => 'datamachine-code/upsert-github-pull-review-comment',
@@ -86,7 +32,7 @@ if ( ! class_exists( 'WC_Site_Generator_PHP_Transformer_Iterator_Tool_Recorder' 
 				return $response;
 			}
 
-			$response = self::handle_ability_tool_call(
+			$response = self::execute_ability_tool(
 				$parameters,
 				$tool_def + array(
 					'ability'   => 'datamachine-code/comment-github-pull-request',
@@ -116,35 +62,34 @@ if ( ! class_exists( 'WC_Site_Generator_PHP_Transformer_Iterator_Tool_Recorder' 
 			return $parameters;
 		}
 
+		private static function execute_ability_tool( array $parameters, array $tool_def ): array {
+			$ability_name = (string) ( $tool_def['ability'] ?? '' );
+			$tool_name    = (string) ( $tool_def['tool_name'] ?? $ability_name );
+			if ( '' === $ability_name || ! function_exists( 'wp_get_ability' ) ) {
+				return self::error( $tool_name, 'Missing ability contract.' );
+			}
+
+			$ability = wp_get_ability( $ability_name );
+			if ( ! $ability ) {
+				return self::error( $tool_name, $ability_name . ' is not registered.' );
+			}
+
+			$result = $ability->execute( $parameters );
+			if ( function_exists( 'is_wp_error' ) && is_wp_error( $result ) ) {
+				return self::error( $tool_name, $result->get_error_message() );
+			}
+
+			$response              = is_array( $result ) ? $result : array( 'success' => true, 'data' => $result );
+			$response['tool_name'] = $tool_name;
+			return $response;
+		}
+
 		private static function error( string $tool_name, string $message ): array {
 			return array(
 				'success'   => false,
 				'error'     => $message,
 				'tool_name' => $tool_name,
 			);
-		}
-
-		private static function record( array $parameters, string $tool_name, array $response ): void {
-			self::$tool_results[] = array(
-				'tool_name' => $tool_name,
-				'success'   => ! empty( $response['success'] ),
-				'repo'       => (string) ( $parameters['repo'] ?? '' ),
-				'url'       => self::first_url( $response ),
-				'error'     => (string) ( $response['error'] ?? '' ),
-				'message'   => (string) ( $response['message'] ?? '' ),
-			);
-
-			$job_id = (int) ( $parameters['job_id'] ?? 0 );
-			if ( $job_id > 0 && function_exists( 'datamachine_merge_engine_data' ) ) {
-				datamachine_merge_engine_data(
-					$job_id,
-					array(
-						'php_transformer_iterator' => array(
-							'tool_results' => self::$tool_results,
-						),
-					)
-				);
-			}
 		}
 
 		private static function record_iterator_event( array $parameters, string $key, string $type, string $url, array $response ): void {
@@ -243,71 +188,19 @@ if ( ! class_exists( 'WC_Site_Generator_PHP_Transformer_Iterator_Tool_Recorder' 
 	}
 }
 
-if ( ! function_exists( 'wp_site_generator_iterator_ability_schema' ) ) {
-	function wp_site_generator_iterator_ability_schema( string $ability_name ): array {
-		$ability = function_exists( 'wp_get_ability' ) ? wp_get_ability( $ability_name ) : null;
-		if ( $ability && method_exists( $ability, 'get_input_schema' ) ) {
-			$schema = (array) $ability->get_input_schema();
-			if ( ! empty( $schema['properties'] ) && is_array( $schema['properties'] ) ) {
-				return $schema;
-			}
-		}
-
-		return array(
-			'type'       => 'object',
-			'properties' => array(),
-		);
-	}
-}
-
 add_filter(
 	'datamachine_resolved_tools',
 	static function ( array $tools ): array {
-		$workspace_tools = array(
-			'workspace_clone'        => 'datamachine-code/workspace-clone',
-			'workspace_worktree_add' => 'datamachine-code/workspace-worktree-add',
-			'workspace_read'         => 'datamachine-code/workspace-read',
-			'workspace_write'        => 'datamachine-code/workspace-write',
-			'workspace_edit'         => 'datamachine-code/workspace-edit',
-			'workspace_git_status'   => 'datamachine-code/workspace-git-status',
-			'workspace_git_commit'   => 'datamachine-code/workspace-git-commit',
-			'workspace_git_push'     => 'datamachine-code/workspace-git-push',
-		);
-
-		foreach ( $workspace_tools as $tool_name => $ability_name ) {
-			$tools[ $tool_name ] = array(
-				'class'       => 'WC_Site_Generator_PHP_Transformer_Iterator_Tool_Recorder',
-				'method'      => 'handle_ability_tool_call',
-				'ability'     => $ability_name,
-				'tool_name'   => $tool_name,
-				'description' => 'Execute ' . $ability_name . ' for the PR-first PHP transformer iterator.',
-				'parameters'  => wp_site_generator_iterator_ability_schema( $ability_name ),
-			);
-		}
-
-		$tools['create_github_pull_request'] = array(
-			'class'       => 'WC_Site_Generator_PHP_Transformer_Iterator_Tool_Recorder',
-			'method'      => 'handle_pull_request_tool_call',
-			'ability'     => 'datamachine-code/create-github-pull-request',
-			'tool_name'   => 'create_github_pull_request',
-			'description' => 'Open the focused upstream transformer repair pull request after pushing the worktree branch.',
-			'parameters'  => wp_site_generator_iterator_ability_schema( 'datamachine-code/create-github-pull-request' ),
-		);
-		$tools['create_github_issue']        = array(
-			'class'       => 'WC_Site_Generator_PHP_Transformer_Iterator_Tool_Recorder',
-			'method'      => 'handle_issue_tool_call',
-			'ability'     => 'datamachine-code/create-github-issue',
-			'tool_name'   => 'create_github_issue',
-			'description' => 'Fallback only: open a focused issue when no safe upstream patch path exists.',
-			'parameters'  => wp_site_generator_iterator_ability_schema( 'datamachine-code/create-github-issue' ),
-		);
 		$tools['comment_github_pull_request'] = array(
-			'class'       => 'WC_Site_Generator_PHP_Transformer_Iterator_Tool_Recorder',
+			'class'       => 'WC_Site_Generator_PHP_Transformer_Iterator_Callback_Tool',
 			'method'      => 'handle_comment_tool_call',
 			'ability'     => 'datamachine-code/comment-github-pull-request',
 			'tool_name'   => 'comment_github_pull_request',
 			'description' => 'Post the required callback comment on the source generated-site pull request.',
-			'parameters'  => wp_site_generator_iterator_ability_schema( 'datamachine-code/comment-github-pull-request' ),
+			'parameters'  => array(
+				'type'       => 'object',
+				'properties' => array(),
+			),
 		);
 
 		return $tools;

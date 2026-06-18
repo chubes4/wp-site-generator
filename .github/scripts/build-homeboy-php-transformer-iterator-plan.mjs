@@ -41,7 +41,38 @@ const runtimeTaskInput = {
 		upstream_action_url: 'metadata.engine_data.php_transformer_iterator.upstream_action_url',
 		source_callback_url: 'metadata.engine_data.php_transformer_iterator.source_callback_url',
 	},
-	tool_recorders: [{ tool: 'create_github_issue' }, { tool: 'create_github_pull_request' }],
+	ability_tools: [
+		{ name: 'workspace_clone', ability: 'datamachine-code/workspace-clone' },
+		{ name: 'workspace_worktree_add', ability: 'datamachine-code/workspace-worktree-add' },
+		{ name: 'workspace_read', ability: 'datamachine-code/workspace-read' },
+		{ name: 'workspace_write', ability: 'datamachine-code/workspace-write' },
+		{ name: 'workspace_edit', ability: 'datamachine-code/workspace-edit' },
+		{ name: 'workspace_git_status', ability: 'datamachine-code/workspace-git-status' },
+		{ name: 'workspace_git_commit', ability: 'datamachine-code/workspace-git-commit' },
+		{ name: 'workspace_git_push', ability: 'datamachine-code/workspace-git-push' },
+		{ name: 'create_github_pull_request', ability: 'datamachine-code/create-github-pull-request' },
+		{ name: 'create_github_issue', ability: 'datamachine-code/create-github-issue' },
+	],
+	tool_recorders: [
+		{
+			tool: 'create_github_issue',
+			record: {
+				engine_key: 'php_transformer_iterator',
+				fields: {
+					upstream_action_url: 'data.issue_url',
+				},
+			},
+		},
+		{
+			tool: 'create_github_pull_request',
+			record: {
+				engine_key: 'php_transformer_iterator',
+				fields: {
+					upstream_action_url: 'data.html_url',
+				},
+			},
+		},
+	],
 	extra_required_abilities: [
 		'datamachine-code/create-github-issue',
 		'datamachine-code/create-github-pull-request',
