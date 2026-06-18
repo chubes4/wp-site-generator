@@ -86,6 +86,8 @@ assert.equal(concrete.selector, 'a.nav-logo');
 assert.equal(concrete.converter, 'html-to-blocks-converter');
 assert.equal(concrete.stage, 'generated_theme_block_analysis');
 assert.equal(concrete.reason, 'generated_document_contains_core_freeform');
+assert.equal(concrete.artifact_names.finding_packet_set, 'finding-packets.json');
+assert.equal(concrete.artifact_names.finding_packets_file, undefined);
 assert.match(concrete.emitted_block_preview, /wp:freeform/);
 assert.equal(concrete.repair_mode, 'pr_or_issue');
 

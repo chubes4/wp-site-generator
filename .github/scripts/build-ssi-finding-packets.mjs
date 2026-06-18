@@ -55,7 +55,7 @@ const designFields = await loadDesignFields(designPath);
 const artifactNames = {
 	ssi_validation: `ssi-validation-${site}`,
 	visual_parity: `visual-parity-${site}`,
-	finding_packets_file: path.basename(outputPath),
+	finding_packet_set: path.basename(outputPath),
 	design_distribution_file: path.basename(designDistributionPath),
 };
 

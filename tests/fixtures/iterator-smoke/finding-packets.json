@@ -29,7 +29,7 @@
     "artifact_names": {
       "ssi_validation": "ssi-validation-iterator-smoke-fixture",
       "visual_parity": "visual-parity-iterator-smoke-fixture",
-      "finding_packets_file": "finding-packets.json",
+      "finding_packet_set": "finding-packets.json",
       "design_distribution_file": "design-distribution.json"
     },
     "bench_outcome": "success",
