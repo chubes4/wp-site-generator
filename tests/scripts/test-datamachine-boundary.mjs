@@ -53,6 +53,10 @@ if (stale.length > 0) {
 assert.deepEqual(unclassified, [], 'new Data Machine references must be removed or explicitly classified in .github/datamachine-boundary-quarantine.json');
 assert.deepEqual(stale, [], 'remove stale Data Machine quarantine entries when references are cleaned up');
 
+const boundaryDoc = await readFile(path.join(repoRoot, 'docs/datamachine-boundary.md'), 'utf8');
+assert.match(boundaryDoc, /Extra-Chill\/homeboy-extensions#1538/, 'boundary docs record the merged generic runtime-agent-ci upstream primitive');
+assert.match(boundaryDoc, /no upstream PR for that materializer was found/i, 'boundary docs record that generic workspace preload materialization is still blocked upstream');
+
 const manifestFiles = candidateFiles.filter((file) => file.startsWith('bundles/') && file.endsWith('/manifest.json'));
 for (const file of manifestFiles) {
   const manifest = JSON.parse(await readFile(path.join(repoRoot, file), 'utf8'));
@@ -71,6 +75,7 @@ for (const file of manifestFiles.filter((file) => file.includes('php-transformer
   assert.equal(artifacts[0].type, 'agent-runtime/workspace-preload', `${file} uses generic workspace preload package vocabulary`);
   assert.deepEqual(artifacts[0].requires, ['agent-runtime/workspace-preload'], `${file} declares workspace preload capability need`);
   assert.equal(artifacts[0].meta?.compatibility_adapter?.type, 'datamachine-code/workspace_preload', `${file} quarantines the current workspace preload adapter`);
+  assert.equal(quarantined[file]?.category, 'blocked_upstream_preload_dependency', `${file} is classified as blocked on the upstream generic preload materializer`);
 }
 
 function escapeRegExp(value) {

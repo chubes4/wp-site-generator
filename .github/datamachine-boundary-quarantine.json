@@ -59,12 +59,12 @@
       "reason": "Top-level docs still describe the historical Data Machine implementation; should move to generic runtime vocabulary as upstream contracts land."
     },
     "bundles/php-transformer-iterator-agent/extensions/datamachine-code/workspace_preload/transformer-repos.json": {
-      "category": "transitional_adapter_config",
-      "reason": "Bundle extension artifact keeps the Data Machine Code workspace preload adapter until a generic workspace preload materializer exists."
+      "category": "blocked_upstream_preload_dependency",
+      "reason": "Bundle preload metadata already declares the generic workspace preload package, but must retain the current adapter path until an upstream generic workspace preload materializer PR lands."
     },
     "bundles/php-transformer-iterator-agent/manifest.json": {
-      "category": "transitional_adapter_config",
-      "reason": "Generic package metadata declares workspace preload needs while compatibility metadata still points at the current adapter extension path."
+      "category": "blocked_upstream_preload_dependency",
+      "reason": "Generic package metadata declares workspace preload needs while compatibility metadata points at the current adapter extension path until the upstream generic materializer lands."
     },
     "bundles/php-transformer-iterator-agent/memory/agent/SOUL.md": {
       "category": "domain_language_cleanup_required",
@@ -75,12 +75,12 @@
       "reason": "Iterator prompt names Data Machine Code worktrees rather than generic workspace tooling."
     },
     "bundles/ssi-stack-reviewer-agent/extensions/datamachine-code/workspace_preload/ssi-stack-repos.json": {
-      "category": "transitional_adapter_config",
-      "reason": "Bundle extension artifact keeps the Data Machine Code workspace preload adapter until a generic workspace preload materializer exists."
+      "category": "blocked_upstream_preload_dependency",
+      "reason": "Bundle preload metadata already declares the generic workspace preload package, but must retain the current adapter path until an upstream generic workspace preload materializer PR lands."
     },
     "bundles/ssi-stack-reviewer-agent/manifest.json": {
-      "category": "transitional_adapter_config",
-      "reason": "Generic package metadata declares workspace preload needs while compatibility metadata still points at the current adapter extension path."
+      "category": "blocked_upstream_preload_dependency",
+      "reason": "Generic package metadata declares workspace preload needs while compatibility metadata points at the current adapter extension path until the upstream generic materializer lands."
     },
     "bundles/static-site-agent/pipelines/static-site-pipeline.json": {
       "category": "domain_language_cleanup_required",
