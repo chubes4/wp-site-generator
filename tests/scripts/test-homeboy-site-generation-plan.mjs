@@ -154,8 +154,8 @@ try {
 	], 'controller records the full static-site generation loop order');
 	assert.deepEqual(workflows['design-store'].consumes, ['concept_packet'], 'design-store consumes concept packets explicitly');
 	assert.deepEqual(workflows['static-site'].consumes, ['concept_packet', 'design_packet'], 'static generation consumes concept and design packets explicitly');
-	assert.equal(workflows['store-idea'].inputs.flow, 'store-idea-artifact-flow', 'store concept generation selects the artifact flow');
-	assert.equal(workflows['static-site'].inputs.flow, 'static-site-candidate-flow', 'static generation selects the candidate artifact flow');
+	assert.equal(workflows['store-idea'].runtime_execution.input.workflow.id, 'store-idea-artifact-flow', 'store concept generation selects the artifact workflow');
+	assert.equal(workflows['static-site'].runtime_execution.input.workflow.id, 'static-site-candidate-flow', 'static generation selects the candidate artifact workflow');
 	assert.equal(workflows['store-idea'].abilities.includes('github_issue_publish'), false, 'concept generation does not publish GitHub issues');
 	assert.equal(workflows['static-site'].abilities.includes('github_pull_request_publish'), false, 'candidate generation does not publish GitHub pull requests');
 	assert.deepEqual(workflows['static-publication-gate'].publish_gate.requires, ['publish_allowed', 'gates.fallback_blocks.passed', 'gates.conversion_findings.passed', 'gates.visual_parity.passed'], 'publication gate requires explicit pass/fail fields');

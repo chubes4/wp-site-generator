@@ -1,32 +1,26 @@
 # Data Machine Boundary
 
-WPSG may know WP Codebox, but WPSG-owned generation, validation, and review domain code should not know Data Machine or Data Machine Code. Runtime coupling must stay in explicit transitional adapter surfaces until generic Homeboy/Homeboy Extensions and Codebox provider contracts replace it.
+WPSG may know WP Codebox, but WPSG-owned generation, validation, and review domain code should not know Data Machine or Data Machine Code.
 
-WPSG uses Homeboy Extensions `.github/workflows/runtime-agent-ci.yml` for agent runtime CI config. The public workflow boundary is generic, and iterator workspace/PR publication tool config uses the WP Codebox `wp-codebox/provider-runtime-invocation-contract/v1` ability identifiers. Unavoidable current runtime ability names remain quarantined inside workflow task config and adapter tests until Codebox and Homeboy expose fully generic execution contracts for the remaining operations.
+WPSG uses Homeboy Extensions `.github/workflows/runtime-agent-ci.yml` for agent runtime CI config. Bundle execution is described with HBE `runtime_execution` descriptors and dispatched through the Agents API `agents/run-runtime-package` ability. Iterator workspace, issue, PR, and comment publication tool config uses WP Codebox provider runtime identifiers such as `wp-codebox/runner-workspace-command` and `wp-codebox/runner-workspace-publish`.
 
 The enforced quarantine lives in `.github/datamachine-boundary-quarantine.json`. Run `node tests/scripts/test-datamachine-boundary.mjs` to print the current boundary report and fail on new unclassified references.
 
 ## Current Quarantine Classes
 
-- `transitional_adapter_surface`: controller or bootstrap code that currently invokes Data Machine/Data Machine Code because no generic execution contract exists yet.
-- `transitional_adapter_test`: tests that pin the current adapter payloads so changes are deliberate.
-- `transitional_adapter_config`: workflow or package config that uses a generic outer contract while quarantining current adapter-only ability names.
+- `transitional_adapter_surface`: legacy reference surfaces retained only when tests or historical fixture names still contain boundary vocabulary.
+- `transitional_adapter_test`: tests that pin generic runtime package payloads and negative boundary assertions.
+- `transitional_adapter_config`: workflow or package config using generic runtime execution descriptors and WP Codebox runtime tool identifiers.
 - `boundary_enforcement`: the boundary test and negative assertions that necessarily name the prohibited terms.
 
 The older Playground proof scripts, workloads, and workflow for the historical runtime integration have been removed. Current behavior coverage lives in the generic `runtime-agent-ci` workflow wiring, workspace-preload package contracts, and transitional adapter tests above.
 
-## Upstream Gaps
+## Generic Runtime Execution
 
-- Homeboy/Homeboy Extensions need generic agent-runtime component defaults for controller execution so WPSG does not check out `Extra-Chill/data-machine` and `Extra-Chill/data-machine-code` directly.
-- Homeboy Extensions `runtime-agent-ci` still requires a concrete runtime task ability for bundle execution. Owner/gap: Homeboy Extensions needs a generic agent-bundle or workflow execution primitive so WPSG does not pass `datamachine/run-agent-bundle`.
-- WP Codebox/Homeboy still need generic GitHub issue creation and review-comment callback primitives. Owner/gap: the merged WP Codebox provider runtime invocation contract covers runner workspace command/publication, transcript/artifact handoff names, runtime output projections, and evidence projections, but it does not yet cover issue/comment callbacks.
-
-## Remaining PHP Bootstrap Quarantine
-
-- `tests/playground-ci/workloads/php-transformer-iterator-bootstrap.php` still calls `datamachine_merge_engine_data()` and `datamachine_get_engine_data()` for source PR callback URL recording and fallback iterator marker derivation. Owner/gap: Homeboy Extensions still needs a generic runtime callback data API/filter for PHP bootstrap code loaded inside the current agent bundle runner.
+- Controller specs and workflow callers use `runtime_execution.kind = "bundle"` with a runtime-package `package`, `workflow`, `input`, and `options` envelope.
+- Runtime profiles set `runtime_task_ability`, `runtime_bundle_ability`, and `runtime_workflow_ability` to `agents/run-runtime-package`.
+- WPSG workflows check out Agents API and Homeboy Extensions, and no longer check out concrete runtime implementation repositories.
 
 WP Codebox now materializes `agent-runtime/workspace-preload`, so WPSG declares workspace preload artifacts directly with `agent-runtime/workspace-preload/v1` extension payloads instead of adapter artifact metadata.
 
-WP Codebox also exports `wp-codebox/runner-workspace-command` and `wp-codebox/runner-workspace-publish`; WPSG uses those generic identifiers for iterator workspace tools and upstream pull-request publication instead of Data Machine Code workspace/PR ability names.
-
-This PR intentionally does not add shims around those gaps.
+WPSG does not add local shims around runtime execution. Provider-specific behavior belongs in the WP Codebox runtime package or Homeboy Extensions runtime execution support.
