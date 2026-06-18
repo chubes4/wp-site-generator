@@ -82,9 +82,12 @@ try {
 		[
 			'concept-to-design:concept_packet',
 			'design-to-static:design_packet',
+			'concept-to-static:concept_packet',
 			'static-to-validation:static_site_candidate',
 			'validation-to-publication-gate:import_validation_result',
 			'visual-to-publication-gate:visual_parity_artifact',
+			'static-to-publication:static_site_candidate',
+			'validation-to-publication:import_validation_result',
 			'publication-gate-to-publication:static_site_publish_gate',
 			'candidate-to-revalidation:static_site_candidate',
 			'validation-to-revalidation:import_validation_result',
@@ -142,7 +145,7 @@ try {
 	const workflows = Object.fromEntries(controllerSpec.workflows.map((workflow) => [workflow.workflow_id, workflow]));
 	assert.deepEqual(workflows['design-store'].consumes, ['concept_packet'], 'design-store consumes concept packets explicitly');
 	assert.deepEqual(workflows['design-store'].emits, ['design_packet'], 'design-store emits design packets explicitly');
-	assert.deepEqual(workflows['static-site'].consumes, ['design_packet'], 'static generation consumes design packets explicitly');
+	assert.deepEqual(workflows['static-site'].consumes, ['concept_packet', 'design_packet'], 'static generation consumes concept and design packets explicitly');
 	assert.equal(workflows['store-idea'].inputs.flow, 'store-idea-artifact-flow', 'store concept generation selects the artifact flow');
 	assert.equal(workflows['static-site'].inputs.flow, 'static-site-candidate-flow', 'static generation selects the candidate artifact flow');
 	assert.equal(workflows['store-idea'].abilities.includes('github_issue_publish'), false, 'concept generation does not publish GitHub issues');
@@ -181,6 +184,56 @@ try {
 	assert.equal(controllerSpec.abilities.some((ability) => ability.ability_id === 'wpsg_materialize_packet'), false, 'controller no longer exposes the WPSG model-facing packet materializer ability');
 	assert.doesNotMatch(serialized, /wpsg_materialize_packet|wp-site-generator\/materialize-packet|wpsg_packets/, 'plan no longer uses the custom WPSG packet materializer transport');
 	assert.doesNotMatch(serialized, /artifact_refs|artifactReferences|siteSlug|currentTier|validations/, 'plan omits removed compatibility field spellings');
+
+	const executableWorkflowByTaskId = {
+		'store-idea-agent': 'store-idea',
+		'website-idea-agent': 'website-idea',
+		'design-store-packet': 'design-store',
+		'design-website-packet': 'design-website',
+		'generate-store-candidate': 'static-store',
+		'generate-website-candidate': 'static-site',
+		'validate-store-candidate': 'static-validation',
+		'validate-website-candidate': 'static-validation',
+		'gate-store-publication': 'static-publication-gate',
+		'gate-website-publication': 'static-publication-gate',
+		'publish-store-pr': 'static-publication',
+		'publish-website-pr': 'static-publication',
+	};
+	assert.deepEqual(
+		Object.keys(executableWorkflowByTaskId),
+		plan.tasks.map((taskItem) => taskItem.task_id),
+		'executable plan tasks are all mapped to declared controller workflows'
+	);
+
+	for (const taskItem of plan.tasks) {
+		const workflowId = executableWorkflowByTaskId[taskItem.task_id];
+		const workflow = workflows[workflowId];
+		assert.ok(workflow, `${taskItem.task_id} maps to declared controller workflow ${workflowId}`);
+
+		const artifactOutputs = Object.keys(taskItem.executor.config.artifact_outputs || taskItem.executor.config.runtime_task?.input?.artifact_outputs || {});
+		for (const artifact of artifactOutputs) {
+			assert.ok(workflow.emits.includes(artifact), `${taskItem.task_id} output ${artifact} is declared by ${workflowId}`);
+		}
+
+		const dependency = plan.output_dependencies[taskItem.task_id] || { bindings: {} };
+		assert.deepEqual(Object.keys(dependency.bindings || {}), workflow.consumes, `${taskItem.task_id} consumes only artifacts declared by ${workflowId}`);
+		for (const [artifact, binding] of Object.entries(dependency.bindings || {})) {
+			const upstreamWorkflow = executableWorkflowByTaskId[binding.task_id];
+			const requiredEdge = controllerSpec.artifact_flow.find((edge) => (
+				edge.artifact === artifact
+				&& edge.required !== false
+				&& edge.from.includes(upstreamWorkflow)
+				&& edge.to.includes(workflowId)
+			));
+			assert.ok(requiredEdge, `${taskItem.task_id} ${artifact} binding follows a declared required controller edge`);
+		}
+	}
+
+	for (const taskItem of plan.tasks.filter((item) => executableWorkflowByTaskId[item.task_id] === 'static-publication')) {
+		const dependency = plan.output_dependencies[taskItem.task_id];
+		assert.ok(dependency.depends_on.includes(dependency.bindings.static_site_publish_gate.task_id), `${taskItem.task_id} finalization waits for the declared StaticSitePublishGate task`);
+		assert.equal(taskItem.executor.config.runtime_task.input.required_publish_allowed, true, `${taskItem.task_id} enforces the declared publication finalization gate`);
+	}
 
 	for (const taskId of ['design-store-packet', 'design-website-packet']) {
 		assert.equal(
