@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 import fs from 'node:fs';
 import path from 'node:path';
+import { spawnSync } from 'node:child_process';
 import {
 	applyHomeboyAgentRuntimeOverrides,
 	readHomeboyAgentRuntimeOverrides,
@@ -18,6 +19,7 @@ const root = process.env.GITHUB_WORKSPACE || process.cwd();
 const runId = process.env.GITHUB_RUN_ID || String(Date.now());
 const repository = process.env.GITHUB_REPOSITORY || 'chubes4/wp-site-generator';
 const outputPath = process.env.HOMEBOY_PLAN_PATH || path.join(root, '.ci', 'site-generation-loop.agent-task-plan.json');
+const loopDefinitionOutputPath = process.env.HOMEBOY_LOOP_DEFINITION_PATH || defaultLoopDefinitionPath(outputPath);
 const controllerSpecPath = process.env.HOMEBOY_CONTROLLER_SPEC_PATH || '.github/homeboy/controllers/static-site-generation-loop.controller.json';
 const controllerContract = 'wp-site-generator/static-site-generation-loop';
 const controllerAuthority = {
@@ -45,8 +47,59 @@ const complexityTaskInput = {
 	complexity_policy: complexityDecision,
 };
 
+function defaultLoopDefinitionPath(planPath) {
+  if (/\.agent-task-plan\.json$/.test(planPath)) {
+    return planPath.replace(/\.agent-task-plan\.json$/, '.loop-definition.json');
+  }
+  return `${planPath}.loop-definition.json`;
+}
+
 function taskOutputPath(field) {
   return `/outputs/${field}`;
+}
+
+function loopDefinitionTask(request, dependencies = {}) {
+  const taskDefinition = {
+    task_id: request.task_id,
+    request,
+  };
+  if ((dependencies.depends_on || []).length > 0) {
+    taskDefinition.depends_on = dependencies.depends_on;
+  }
+  if (Object.keys(dependencies.bindings || {}).length > 0) {
+    taskDefinition.bindings = dependencies.bindings;
+  }
+  return taskDefinition;
+}
+
+function compileLoopDefinitionFile(definitionPath) {
+  const result = spawnSync('homeboy', ['agent-task', 'compile-loop', '--definition', `@${definitionPath}`], {
+    cwd: root,
+    encoding: 'utf8',
+  });
+  if (result.status !== 0) {
+    throw new Error(`homeboy agent-task compile-loop failed:\n${result.stderr || result.stdout}`);
+  }
+  const output = JSON.parse(result.stdout);
+  if (output?.data?.schema === 'homeboy/agent-task-plan/v1') {
+    return output.data;
+  }
+  if (output?.value?.schema === 'homeboy/agent-task-plan/v1') {
+    return output.value;
+  }
+  return output;
+}
+
+function loopDefinition({ tasks, outputDependencies = {}, options, metadata }) {
+  return {
+    schema: 'homeboy/agent-task-loop-definition/v1',
+    loop_id: controllerContract,
+    plan_id: planId,
+    group_key: groupKey,
+    tasks: tasks.map((request) => loopDefinitionTask(request, outputDependencies[request.task_id])),
+    options,
+    metadata,
+  };
 }
 
 function datamachineConfig({
@@ -435,7 +488,7 @@ function staticSitePublishTask({ id, title, candidate = '{{outputs.static_site_c
 	});
 }
 
-function manualPlan() {
+function manualLoopDefinition() {
 	const conceptPrompt = process.env.CONCEPT_PROMPT || '';
 	const conceptPacket = process.env.CONCEPT_PACKET || '';
 	const designPacket = process.env.DESIGN_PACKET || '';
@@ -464,9 +517,7 @@ function manualPlan() {
 		throw new Error('STATIC_SITE_CANDIDATE, IMPORT_VALIDATION_RESULT, and STATIC_SITE_PUBLISH_GATE are required for publish_pr.');
 	}
 
-  return {
-    schema: 'homeboy/agent-task-plan/v1',
-    plan_id: planId,
+  return loopDefinition({
     tasks: [taskByKind[manualTaskKind]()],
     options: {
       max_concurrency: 1,
@@ -489,7 +540,7 @@ function manualPlan() {
 			complexity_policy: complexityDecision,
 			generated_by: '.github/scripts/build-homeboy-site-generation-plan.mjs',
 		},
-	};
+	});
 }
 
 const boundedMaxConcurrency = Math.max(
@@ -500,10 +551,7 @@ const boundedMaxConcurrency = Math.max(
 	)
 );
 
-const loopPlan = {
-  schema: 'homeboy/agent-task-plan/v1',
-  plan_id: planId,
-	tasks: [
+const loopTasks = [
 		storeIdeaTask({ prompt: ' ', title: 'Generate store idea', lane: 'store concept lane' }),
 		websiteIdeaTask({ prompt: ' ', title: 'Generate website idea', lane: 'website concept lane' }),
 		task({
@@ -552,8 +600,9 @@ const loopPlan = {
 		staticSitePublishGateTask({ id: 'gate-website-publication', title: 'Gate website static-site publication' }),
 		staticSitePublishTask({ id: 'publish-store-pr', title: 'Publish store static-site PR' }),
 		staticSitePublishTask({ id: 'publish-website-pr', title: 'Publish website static-site PR' }),
-	],
-	output_dependencies: {
+];
+
+const loopOutputDependencies = {
 		'design-store-packet': {
 			bindings: {
 				concept_packet: artifactBinding('store-idea-agent', 'concept_packet'),
@@ -620,7 +669,11 @@ const loopPlan = {
 				visual_parity_artifact: artifactBinding('validate-website-candidate', 'visual_parity_artifact'),
 			},
 		},
-	},
+};
+
+const normalLoopDefinition = loopDefinition({
+  tasks: loopTasks,
+  outputDependencies: loopOutputDependencies,
   options: {
     max_concurrency: boundedMaxConcurrency,
     resource_budget: {
@@ -643,10 +696,13 @@ const loopPlan = {
 		complexity_policy: complexityDecision,
 		generated_by: '.github/scripts/build-homeboy-site-generation-plan.mjs',
 	},
-};
+});
 
-const plan = manualTaskKind ? manualPlan() : loopPlan;
+const definition = manualTaskKind ? manualLoopDefinition() : normalLoopDefinition;
 
 fs.mkdirSync(path.dirname(outputPath), { recursive: true });
+fs.mkdirSync(path.dirname(loopDefinitionOutputPath), { recursive: true });
+await writeJsonFile(loopDefinitionOutputPath, definition);
+const plan = compileLoopDefinitionFile(loopDefinitionOutputPath);
 await writeJsonFile(outputPath, plan);
 console.log(outputPath);

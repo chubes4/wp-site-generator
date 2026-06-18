@@ -8,6 +8,7 @@ import { evaluateComplexityPolicy, loadPolicy } from '../../.github/scripts/site
 const repoRoot = path.resolve(new URL('../..', import.meta.url).pathname);
 const tempDir = await mkdtemp(path.join(tmpdir(), 'wpsg-homeboy-plan-'));
 const planPath = path.join(tempDir, 'plan.json');
+const loopDefinitionPath = path.join(tempDir, 'loop-definition.json');
 const qualitySignalsPath = path.join(tempDir, 'quality-signals.json');
 
 try {
@@ -18,15 +19,24 @@ try {
       ...process.env,
       GITHUB_RUN_ID: '409',
       HOMEBOY_PLAN_PATH: planPath,
+      HOMEBOY_LOOP_DEFINITION_PATH: loopDefinitionPath,
     },
   });
 
   assert.equal(result.status, 0, result.stderr || result.stdout);
 
   const plan = JSON.parse(await readFile(planPath, 'utf8'));
+  const loopDefinition = JSON.parse(await readFile(loopDefinitionPath, 'utf8'));
   const serialized = JSON.stringify(plan);
 
   assert.equal(plan.schema, 'homeboy/agent-task-plan/v1');
+  assert.equal(loopDefinition.schema, 'homeboy/agent-task-loop-definition/v1', 'plan builder emits a declarative Homeboy loop definition');
+  assert.equal(loopDefinition.loop_id, 'wp-site-generator/static-site-generation-loop', 'loop definition records the WPSG loop id');
+  assert.equal(loopDefinition.plan_id, 'site-generation-loop-409', 'loop definition records the concrete plan id');
+  assert.equal(loopDefinition.tasks.length, plan.tasks.length, 'loop definition carries the executable task graph');
+  assert.equal(loopDefinition.tasks.find((task) => task.task_id === 'design-store-packet').bindings.concept_packet.task_id, 'store-idea-agent', 'loop definition declares artifact bindings before plan compilation');
+  assert.equal(plan.metadata.source_schema, 'homeboy/agent-task-loop-definition/v1', 'compiled plan records its source loop-definition schema');
+  assert.equal(plan.metadata.loop_id, 'wp-site-generator/static-site-generation-loop', 'compiled plan records its source loop id');
   assert.doesNotMatch(serialized, /metadata\/codebox\/datamachine/);
   assert.doesNotMatch(serialized, /scenarios\/0/);
   assert.doesNotMatch(serialized, /\.ci\/wp-codebox/, 'Lab plans do not bake a controller-local WP Codebox path by default');
@@ -216,7 +226,7 @@ try {
 		}
 
 		const dependency = plan.output_dependencies[taskItem.task_id] || { bindings: {} };
-		assert.deepEqual(Object.keys(dependency.bindings || {}), workflow.consumes, `${taskItem.task_id} consumes only artifacts declared by ${workflowId}`);
+		assert.deepEqual(Object.keys(dependency.bindings || {}).sort(), [...workflow.consumes].sort(), `${taskItem.task_id} consumes only artifacts declared by ${workflowId}`);
 		for (const [artifact, binding] of Object.entries(dependency.bindings || {})) {
 			const upstreamWorkflow = executableWorkflowByTaskId[binding.task_id];
 			const requiredEdge = controllerSpec.artifact_flow.find((edge) => (
