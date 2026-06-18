@@ -42,10 +42,6 @@
       "category": "transitional_adapter_config",
       "reason": "Calls generic runtime-agent-ci and quarantines unavoidable current runtime ability/tool names in the task config."
     },
-    ".github/workflows/playground-stage-5.yml": {
-      "category": "legacy_runtime_probe",
-      "reason": "Stage proof for the previous Playground/Data Machine integration path."
-    },
     ".github/workflows/site-generation-loop.yml": {
       "category": "transitional_adapter_surface",
       "reason": "Checks out current runtime components until Homeboy/Homeboy Extensions provide generic controller runtime component defaults."
@@ -78,54 +74,6 @@
       "category": "transitional_adapter_test",
       "reason": "Assertions cover current reusable workflow runner payloads and Data Machine Code ability contracts."
     },
-    "tests/playground-ci/component/wp-site-generator-ci-driver.php": {
-      "category": "legacy_runtime_probe",
-      "reason": "Playground CI driver supports historical runtime probes."
-    },
-    "tests/playground-ci/scripts/run-stage-1.sh": {
-      "category": "legacy_runtime_probe",
-      "reason": "Stage proof for historical Data Machine/Data Machine Code cold boot."
-    },
-    "tests/playground-ci/scripts/run-stage-2.sh": {
-      "category": "legacy_runtime_probe",
-      "reason": "Stage proof for historical Data Machine bundle import."
-    },
-    "tests/playground-ci/scripts/run-stage-3.sh": {
-      "category": "legacy_runtime_probe",
-      "reason": "Stage proof for historical Data Machine flow execution."
-    },
-    "tests/playground-ci/scripts/run-stage-4.sh": {
-      "category": "legacy_runtime_probe",
-      "reason": "Stage proof for historical Data Machine GitHub issue publishing."
-    },
-    "tests/playground-ci/scripts/run-stage-5.sh": {
-      "category": "legacy_runtime_probe",
-      "reason": "Stage proof for historical Data Machine idea-agent execution."
-    },
-    "tests/playground-ci/workloads/dm-boot-probe.php": {
-      "category": "legacy_runtime_probe",
-      "reason": "Historical runtime boot workload."
-    },
-    "tests/playground-ci/workloads/dm-github-issue-publish-probe.php": {
-      "category": "legacy_runtime_probe",
-      "reason": "Historical runtime GitHub publishing workload."
-    },
-    "tests/playground-ci/workloads/dm-import-agent-probe.php": {
-      "category": "legacy_runtime_probe",
-      "reason": "Historical runtime bundle import workload."
-    },
-    "tests/playground-ci/workloads/dm-openai-issue-flow-probe.php": {
-      "category": "legacy_runtime_probe",
-      "reason": "Historical runtime OpenAI flow workload."
-    },
-    "tests/playground-ci/workloads/dm-run-flow-probe.php": {
-      "category": "legacy_runtime_probe",
-      "reason": "Historical runtime flow workload."
-    },
-    "tests/playground-ci/workloads/dm-static-site-agent-probe.php": {
-      "category": "legacy_runtime_probe",
-      "reason": "Historical runtime static-site agent workload."
-    },
     "tests/playground-ci/workloads/php-transformer-iterator-bootstrap.php": {
       "category": "transitional_adapter_surface",
       "reason": "Bootstrap maps current Data Machine Code ability projections and Data Machine engine-data recorders."
@@ -157,10 +105,6 @@
     "tests/scripts/test-ssi-native-loop-adapter.mjs": {
       "category": "transitional_adapter_test",
       "reason": "Covers current controller and iterator runtime component paths."
-    },
-    "tests/scripts/test-static-site-agent-probe-runner-contract.mjs": {
-      "category": "transitional_adapter_test",
-      "reason": "Covers current static-site agent runtime probe."
     },
     "tests/scripts/test-static-validation-iterator-replay.mjs": {
       "category": "transitional_adapter_test",
