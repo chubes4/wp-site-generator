@@ -94,7 +94,19 @@ export function assertIteratorPlanUsesReusableWorkflowRunner(plan, workflowPath)
 		'workspace_git_push',
 		'create_github_pull_request',
 		'create_github_issue',
-	], 'iterator exposes routine tools through Data Machine ability_tools');
+	], 'iterator exposes routine tools through runtime ability_tools');
+	assert.deepEqual(input.ability_tools?.map((tool) => tool.ability), [
+		'wp-codebox/runner-workspace-command',
+		'wp-codebox/runner-workspace-command',
+		'wp-codebox/runner-workspace-command',
+		'wp-codebox/runner-workspace-command',
+		'wp-codebox/runner-workspace-command',
+		'wp-codebox/runner-workspace-command',
+		'wp-codebox/runner-workspace-command',
+		'wp-codebox/runner-workspace-command',
+		'wp-codebox/runner-workspace-publish',
+		'datamachine-code/create-github-issue',
+	], 'iterator uses WP Codebox provider runtime identifiers for workspace and PR publication tools');
 	assert.deepEqual(input.tool_recorders, [
 		{
 			tool: 'create_github_issue',
@@ -110,10 +122,11 @@ export function assertIteratorPlanUsesReusableWorkflowRunner(plan, workflowPath)
 				fields: { upstream_action_url: 'data.html_url' },
 			},
 		},
-	], 'iterator records durable upstream actions through Data Machine tool_recorders');
+	], 'iterator records durable upstream actions through runtime tool_recorders');
 	assert.deepEqual(input.extra_required_abilities, [
 		'datamachine-code/create-github-issue',
-		'datamachine-code/create-github-pull-request',
+		'wp-codebox/runner-workspace-command',
+		'wp-codebox/runner-workspace-publish',
 		'datamachine-code/upsert-github-pull-review-comment',
-	], 'iterator declares the required GitHub callback abilities');
+	], 'iterator declares the remaining callback and generic provider runtime abilities');
 }

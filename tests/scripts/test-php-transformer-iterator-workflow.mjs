@@ -15,7 +15,8 @@ assert.match(workflow, /"dir":"\.ci\/visual-parity"/, 'iterator stores visual pa
 assert.match(workflow, /app_token_repos.*chubes4\/block-artifact-compiler/, 'iterator token routing includes block-artifact-compiler');
 assert.match(workflow, /execute_workflow_builder_command.*group-ssi-finding-packets\.mjs .*build-datamachine-iterator-workflow\.mjs/, 'iterator runtime task builds grouped finding workflow');
 assert.match(workflow, /execute_workflow_path":"\.ci\/datamachine-iterator-workflow\.json"/, 'iterator runtime task receives the generated workflow path');
-assert.match(workflow, /ability_tools: .*datamachine-code\/workspace-worktree-add.*datamachine-code\/create-github-pull-request/, 'iterator exposes routine tools through Data Machine ability_tools');
+assert.match(workflow, /ability_tools: .*wp-codebox\/runner-workspace-command.*wp-codebox\/runner-workspace-publish/, 'iterator exposes workspace and PR publication tools through WP Codebox provider runtime identifiers');
+assert.doesNotMatch(workflow, /datamachine-code\/workspace-|datamachine-code\/create-github-pull-request/, 'iterator workflow no longer passes Data Machine Code workspace or PR publication ability names');
 assert.match(workflow, /tool_recorders.*engine_key.*php_transformer_iterator.*upstream_action_url/, 'iterator records upstream action evidence through quarantined runtime task config');
 assert.doesNotMatch(workflow, /actions_artifact_items/, 'iterator no longer fetches artifact ZIPs inside WordPress runtime');
 assert.doesNotMatch(workflow, /exactly one finding packet per Data Machine child job/, 'iterator prompt must not describe raw per-packet fanout');

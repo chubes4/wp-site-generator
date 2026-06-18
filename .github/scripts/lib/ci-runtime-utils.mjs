@@ -1,6 +1,14 @@
 import { readFile, writeFile } from 'node:fs/promises';
 import path from 'node:path';
 
+export const providerRuntimeAbilityNames = Object.freeze({
+	workspaceCapture: 'wp-codebox/runner-workspace-capture',
+	workspaceCommand: 'wp-codebox/runner-workspace-command',
+	workspacePublish: 'wp-codebox/runner-workspace-publish',
+	toolCallTranscriptRecord: 'wp-codebox/record-tool-call-transcript',
+	artifactHandoff: 'wp-codebox/handoff-artifacts',
+});
+
 export function parseArgs(argv) {
 	const parsed = new Map();
 	for (let i = 0; i < argv.length; i += 1) {
