@@ -30,13 +30,9 @@
       "category": "transitional_adapter_surface",
       "reason": "Generates the controller spec with the current Data Machine agent ability."
     },
-    ".github/scripts/dispatch-php-transformer-iterator.mjs": {
-      "category": "transitional_adapter_surface",
-      "reason": "Dispatches the current iterator workflow inputs for Data Machine and Data Machine Code refs."
-    },
     ".github/workflows/homeboy-agent-task.yml": {
       "category": "transitional_adapter_surface",
-      "reason": "Checks out current runtime components until Homeboy/Homeboy Extensions provide generic agent-runtime CI inputs."
+      "reason": "Checks out current runtime components until Homeboy/Homeboy Extensions provide generic controller runtime component defaults."
     },
     ".github/workflows/php-transformer-iterator-smoke.yml": {
       "category": "transitional_adapter_surface",
@@ -44,7 +40,7 @@
     },
     ".github/workflows/php-transformer-iterator.yml": {
       "category": "transitional_adapter_surface",
-      "reason": "Calls the current datamachine-agent-ci reusable workflow and passes Data Machine Code tool abilities."
+      "reason": "Calls the current datamachine-agent-ci reusable workflow and passes unavoidable current runtime tool ability names."
     },
     ".github/workflows/playground-stage-5.yml": {
       "category": "legacy_runtime_probe",
@@ -52,11 +48,11 @@
     },
     ".github/workflows/site-generation-loop.yml": {
       "category": "transitional_adapter_surface",
-      "reason": "Checks out current runtime components for Homeboy controller execution."
+      "reason": "Checks out current runtime components until Homeboy/Homeboy Extensions provide generic controller runtime component defaults."
     },
     ".github/workflows/ssi-stack-reviewer.yml": {
       "category": "transitional_adapter_surface",
-      "reason": "Calls the current datamachine-agent-ci reusable workflow and Data Machine Code review-comment ability."
+      "reason": "Calls the current datamachine-agent-ci reusable workflow and passes the unavoidable current review-comment ability name."
     },
     "README.md": {
       "category": "domain_language_cleanup_required",

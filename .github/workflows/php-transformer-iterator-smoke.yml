@@ -3,7 +3,7 @@ name: PHP transformer iterator (smoke)
 # Synthetic-packet smoke test for the php-transformer-iterator-agent.
 # This workflow stages a committed finding-packet fixture, builds the iterator
 # prompt locally, then delegates the agent run to the Homeboy Extensions
-# reusable Data Machine agent workflow.
+# reusable agent workflow.
 
 on:
   workflow_dispatch:
@@ -22,14 +22,6 @@ on:
         description: OpenAI model to use for the imported agent flow.
         required: true
         default: gpt-5.5
-      data_machine_ref:
-        description: Data Machine ref.
-        required: true
-        default: main
-      data_machine_code_ref:
-        description: Data Machine Code ref.
-        required: true
-        default: main
 
 permissions:
   actions: read
@@ -118,8 +110,6 @@ jobs:
       run_agent: ${{ needs.prepare.outputs.should_run_iterator == 'true' }}
       model: ${{ inputs.openai_model }}
       app_token_repos: chubes4/wp-site-generator,chubes4/static-site-importer,chubes4/html-to-blocks-converter,chubes4/block-format-bridge
-      data_machine_ref: ${{ inputs.data_machine_ref }}
-      data_machine_code_ref: ${{ inputs.data_machine_code_ref }}
       extra_required_abilities: |
         [
           "datamachine-code/create-github-issue",
