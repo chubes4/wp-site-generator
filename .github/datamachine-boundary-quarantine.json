@@ -24,7 +24,7 @@
     },
     ".github/scripts/build-homeboy-php-transformer-iterator-plan.mjs": {
       "category": "transitional_adapter_surface",
-      "reason": "Assembles a Homeboy plan against the current bundle-run runtime ability while using generic WP Codebox provider runtime identifiers where available."
+      "reason": "Assembles a Homeboy plan against the current bundle-run runtime ability while using generic WP Codebox provider runtime identifiers where available; legacy projection keys remain until WP Codebox/Homeboy Extensions expose generic evidence/output projection config."
     },
     ".github/scripts/build-homeboy-ssi-loop-controller.mjs": {
       "category": "transitional_adapter_surface",
@@ -60,7 +60,7 @@
     },
     "tests/playground-ci/workloads/php-transformer-iterator-bootstrap.php": {
       "category": "transitional_adapter_surface",
-      "reason": "Bootstrap maps current Data Machine Code ability projections and Data Machine engine-data recorders."
+      "reason": "Bootstrap maps current Data Machine Code ability projections and legacy runtime evidence/output recorders."
     },
     "tests/scripts/test-build-datamachine-iterator-workflow.mjs": {
       "category": "transitional_adapter_test",

@@ -6,6 +6,7 @@ import path from 'node:path';
 const repoRoot = path.resolve(new URL('../..', import.meta.url).pathname);
 const configPath = path.join(repoRoot, '.github/datamachine-boundary-quarantine.json');
 const config = JSON.parse(await readFile(configPath, 'utf8'));
+const boundaryDoc = await readFile(path.join(repoRoot, 'docs/datamachine-boundary.md'), 'utf8');
 const candidateFiles = execFileSync('git', ['ls-files', '--cached', '--others', '--exclude-standard'], { cwd: repoRoot, encoding: 'utf8' })
   .split('\n')
   .filter(Boolean)
@@ -52,6 +53,9 @@ if (stale.length > 0) {
 
 assert.deepEqual(unclassified, [], 'new Data Machine references must be removed or explicitly classified in .github/datamachine-boundary-quarantine.json');
 assert.deepEqual(stale, [], 'remove stale Data Machine quarantine entries when references are cleaned up');
+assert.match(boundaryDoc, /generic evidence\/output projection inputs for agent-task runs/, 'boundary docs name the unmerged generic projection dependency');
+assert.match(boundaryDoc, /agent_bundle\.engine_data_outputs.*agent_bundle\.tool_recorders/s, 'boundary docs identify the exact upstream legacy projection keys blocking adoption');
+assert.match(boundaryDoc, /does not yet cover issue\/comment callbacks or generic agent-task projection config/, 'boundary docs distinguish available WP Codebox runtime primitives from the missing projection contract');
 
 const manifestFiles = candidateFiles.filter((file) => file.startsWith('bundles/') && file.endsWith('/manifest.json'));
 for (const file of manifestFiles) {

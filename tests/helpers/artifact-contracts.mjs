@@ -122,7 +122,7 @@ export function assertIteratorPlanUsesReusableWorkflowRunner(plan, workflowPath)
 				fields: { upstream_action_url: 'data.html_url' },
 			},
 		},
-	], 'iterator records durable upstream actions through runtime tool_recorders');
+	], 'iterator keeps durable upstream action projection on legacy runtime keys until the generic upstream projection contract is available');
 	assert.deepEqual(input.extra_required_abilities, [
 		'datamachine-code/create-github-issue',
 		'wp-codebox/runner-workspace-command',
