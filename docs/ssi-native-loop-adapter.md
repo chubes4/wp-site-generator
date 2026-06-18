@@ -30,7 +30,7 @@ Homeboy should derive execution behavior from the declaration and its own contro
 
 The generated spec declares these groups directly:
 
-- `agents`: WPSG Data Machine bundles participating in generation, iterator, and reviewer flows.
+- `agents`: WPSG runtime bundles participating in generation, iterator, and reviewer flows.
 - `abilities`: required ability contracts such as bundle execution, packet materialization, deterministic publication, and GitHub commenting.
 - `workflows`: Homeboy-ingestible repo-domain prompts/tasks, explicit `consumes`/`emits` artifact handoffs, participating agents, fan-out rules, reviewer gates, and required abilities.
 - `artifact_flow`: the enforceable handoff graph from concept packets through reviewer gate evidence.
