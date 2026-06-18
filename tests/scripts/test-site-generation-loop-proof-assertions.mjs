@@ -3,11 +3,13 @@ import { mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { spawnSync } from 'node:child_process';
+import { createHomeboyCompileLoopFixture } from '../helpers/homeboy-fixtures.mjs';
 
 const repoRoot = path.resolve(new URL('../..', import.meta.url).pathname);
 const tempDir = await mkdtemp(path.join(tmpdir(), 'wpsg-proof-'));
 const planPath = path.join(tempDir, 'site-generation-loop.agent-task-plan.json');
 const controllerPath = path.join(repoRoot, '.github/homeboy/controllers/static-site-generation-loop.controller.json');
+const homeboyFixturePath = await createHomeboyCompileLoopFixture(tempDir);
 
 function artifactOutputKeys(taskItem) {
   return Object.keys(taskItem.executor?.config?.artifact_outputs || taskItem.executor?.config?.runtime_task?.input?.artifact_outputs || {});
@@ -120,7 +122,10 @@ try {
     cwd: repoRoot,
     env: {
       ...process.env,
+      HOMEBOY_BIN: homeboyFixturePath,
       HOMEBOY_PLAN_PATH: planPath,
+      WPSG_REPLAY_ID: 'proof-replay',
+      WPSG_RANDOMNESS_SEED: 'proof-seed',
     },
     encoding: 'utf8',
   });

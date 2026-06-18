@@ -11,9 +11,12 @@ const tempDir = await mkdtemp(path.join(tmpdir(), 'wp-site-generator-ssi-stack-m
 const manifestPath = path.join(tempDir, 'ssi-stack-manifest.json');
 const settingsPath = path.join(tempDir, 'settings.json');
 const previewPath = path.join(tempDir, 'preview.json');
+const sourceStaticSiteDir = path.join(tempDir, 'static-site');
 const site = 'issue-test-ref-manifest';
 
 await mkdir(tempDir, { recursive: true });
+await mkdir(sourceStaticSiteDir, { recursive: true });
+await writeFile(path.join(sourceStaticSiteDir, 'index.html'), '<!doctype html><html><body>Manifest fixture</body></html>');
 await writeJson(manifestPath, {
 	schema_version: 1,
 	harness: manifestEntry('wp_site_generator_validation_harness', 'WP Site Generator validation harness scripts', 'https://github.com/chubes4/wp-site-generator', 'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa'),
@@ -30,6 +33,7 @@ await writeJson(manifestPath, {
 const settingsResult = spawnSync(process.execPath, [
 	path.join(repoRoot, '.github/scripts/build-static-validation-settings.mjs'),
 	'--site', site,
+	'--source-static-site-dir', sourceStaticSiteDir,
 	'--manifest', manifestPath,
 	'--output', settingsPath,
 ], { cwd: repoRoot, encoding: 'utf8' });

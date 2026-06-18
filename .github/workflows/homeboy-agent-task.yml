@@ -63,10 +63,6 @@ on:
         description: Homeboy Extensions ref with Data Machine bundle agent-task support.
         required: true
         default: main
-      wp_codebox_ref:
-        description: WP Codebox ref.
-        required: true
-        default: main
 
 permissions:
   contents: write
@@ -142,24 +138,11 @@ jobs:
           ref: trunk
           path: .ci/ai-provider-for-openai
 
-      - name: Check out WP Codebox
-        uses: actions/checkout@v4
-        with:
-          repository: Automattic/wp-codebox
-          ref: ${{ inputs.wp_codebox_ref }}
-          path: .ci/wp-codebox
-
       - name: Build Homeboy
         run: cargo install --path .ci/homeboy --locked
 
       - name: Install WordPress extension
         run: homeboy extension install .ci/homeboy-extensions/wordpress --id wordpress
-
-      - name: Build WP Codebox CLI
-        working-directory: .ci/wp-codebox
-        run: |
-          npm ci
-          npm run build
 
       - name: Build Homeboy agent-task plan
         id: plan
