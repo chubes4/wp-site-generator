@@ -21,10 +21,21 @@
         "label": "Website Idea Agent",
         "slug": "website-idea-agent"
     },
+    "agent_package": {
+        "artifacts": [],
+        "capabilities": [],
+        "meta": {
+            "exported_by": "wp-site-generator",
+            "source_package": "wp-site-generator",
+            "source_type": "runtime-agent-package"
+        },
+        "slug": "website-idea-agent",
+        "version": "1"
+    },
     "bundle_slug": "website-idea-agent",
     "bundle_version": "1",
     "exported_at": "2026-05-09T22:00:00+00:00",
-    "exported_by": "data-machine/0.104.0",
+    "exported_by": "wp-site-generator",
     "included": {
         "auth_refs": [],
         "extensions": [],

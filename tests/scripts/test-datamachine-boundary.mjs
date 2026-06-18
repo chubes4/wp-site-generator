@@ -53,6 +53,26 @@ if (stale.length > 0) {
 assert.deepEqual(unclassified, [], 'new Data Machine references must be removed or explicitly classified in .github/datamachine-boundary-quarantine.json');
 assert.deepEqual(stale, [], 'remove stale Data Machine quarantine entries when references are cleaned up');
 
+const manifestFiles = candidateFiles.filter((file) => file.startsWith('bundles/') && file.endsWith('/manifest.json'));
+for (const file of manifestFiles) {
+  const manifest = JSON.parse(await readFile(path.join(repoRoot, file), 'utf8'));
+  assert.equal(manifest.exported_by, 'wp-site-generator', `${file} uses neutral exporter metadata`);
+  assert.equal(manifest.agent_package?.slug, manifest.bundle_slug, `${file} declares a matching generic package slug`);
+  assert.equal(manifest.agent_package?.version, manifest.bundle_version, `${file} declares a matching generic package version`);
+  assert.equal(manifest.agent_package?.meta?.source_type, 'runtime-agent-package', `${file} declares generic package source type`);
+  assert.equal(manifest.agent_package?.meta?.exported_by, 'wp-site-generator', `${file} declares neutral package exporter metadata`);
+  assert.doesNotMatch(manifest.exported_by, /data-machine|datamachine/i, `${file} exporter metadata does not name Data Machine`);
+}
+
+for (const file of manifestFiles.filter((file) => file.includes('php-transformer-iterator-agent') || file.includes('ssi-stack-reviewer-agent'))) {
+  const manifest = JSON.parse(await readFile(path.join(repoRoot, file), 'utf8'));
+  const artifacts = manifest.agent_package?.artifacts || [];
+  assert.equal(artifacts.length, 1, `${file} declares its workspace preload as a package artifact`);
+  assert.equal(artifacts[0].type, 'agent-runtime/workspace-preload', `${file} uses generic workspace preload package vocabulary`);
+  assert.deepEqual(artifacts[0].requires, ['agent-runtime/workspace-preload'], `${file} declares workspace preload capability need`);
+  assert.equal(artifacts[0].meta?.compatibility_adapter?.type, 'datamachine-code/workspace_preload', `${file} quarantines the current workspace preload adapter`);
+}
+
 function escapeRegExp(value) {
   return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 }
