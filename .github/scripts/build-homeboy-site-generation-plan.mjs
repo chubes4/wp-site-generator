@@ -18,6 +18,7 @@ const root = process.env.GITHUB_WORKSPACE || process.cwd();
 const runId = process.env.GITHUB_RUN_ID || String(Date.now());
 const repository = process.env.GITHUB_REPOSITORY || 'chubes4/wp-site-generator';
 const outputPath = process.env.HOMEBOY_PLAN_PATH || path.join(root, '.ci', 'site-generation-loop.agent-task-plan.json');
+const loopDefinitionOutputPath = process.env.HOMEBOY_LOOP_DEFINITION_PATH || defaultLoopDefinitionPath(outputPath);
 const controllerSpecPath = process.env.HOMEBOY_CONTROLLER_SPEC_PATH || '.github/homeboy/controllers/static-site-generation-loop.controller.json';
 const controllerContract = 'wp-site-generator/static-site-generation-loop';
 const controllerAuthority = {
@@ -45,8 +46,97 @@ const complexityTaskInput = {
 	complexity_policy: complexityDecision,
 };
 
+function defaultLoopDefinitionPath(planPath) {
+  if (/\.agent-task-plan\.json$/.test(planPath)) {
+    return planPath.replace(/\.agent-task-plan\.json$/, '.loop-definition.json');
+  }
+  return `${planPath}.loop-definition.json`;
+}
+
 function taskOutputPath(field) {
   return `/outputs/${field}`;
+}
+
+function compileLoopDefinition(definition) {
+  if (definition.schema !== 'homeboy/agent-task-loop-definition/v1') {
+    throw new Error(`Unsupported loop definition schema: ${definition.schema}`);
+  }
+  if (!definition.loop_id) {
+    throw new Error('Loop definition requires loop_id.');
+  }
+  if (!Array.isArray(definition.tasks) || definition.tasks.length === 0) {
+    throw new Error('Loop definition requires at least one task.');
+  }
+
+  const taskIds = new Set(definition.tasks.map((item) => item.task_id));
+  for (const item of definition.tasks) {
+    if (item.task_id !== item.request?.task_id) {
+      throw new Error(`Loop definition task ${item.task_id} must match request.task_id ${item.request?.task_id}.`);
+    }
+    for (const dependency of item.depends_on || []) {
+      if (!taskIds.has(dependency)) {
+        throw new Error(`Loop definition task ${item.task_id} depends on unknown task ${dependency}.`);
+      }
+    }
+    for (const binding of Object.values(item.bindings || {})) {
+      if (!taskIds.has(binding.task_id)) {
+        throw new Error(`Loop definition task ${item.task_id} binds output from unknown task ${binding.task_id}.`);
+      }
+    }
+  }
+
+  const outputDependencies = Object.fromEntries(
+    definition.tasks
+      .filter((item) => (item.depends_on || []).length > 0 || Object.keys(item.bindings || {}).length > 0)
+      .map((item) => [item.task_id, { ...(item.depends_on?.length ? { depends_on: item.depends_on } : {}), ...(Object.keys(item.bindings || {}).length ? { bindings: item.bindings } : {}) }])
+  );
+  const artifactOutputs = Object.fromEntries(
+    definition.tasks
+      .filter((item) => (item.artifact_outputs || []).length > 0)
+      .map((item) => [item.task_id, item.artifact_outputs])
+  );
+
+  return {
+    schema: 'homeboy/agent-task-plan/v1',
+    plan_id: definition.plan_id || definition.loop_id,
+    ...(definition.group_key ? { group_key: definition.group_key } : {}),
+    tasks: definition.tasks.map((item) => item.request),
+    ...(definition.component_contracts?.length ? { component_contracts: definition.component_contracts } : {}),
+    ...(Object.keys(outputDependencies).length ? { output_dependencies: outputDependencies } : {}),
+    ...(Object.keys(artifactOutputs).length ? { artifact_outputs: artifactOutputs } : {}),
+    options: definition.options || {},
+    metadata: {
+      ...(definition.metadata || {}),
+      source_schema: definition.schema,
+      loop_id: definition.loop_id,
+    },
+  };
+}
+
+function loopDefinitionTask(request, dependencies = {}) {
+  const taskDefinition = {
+    task_id: request.task_id,
+    request,
+  };
+  if ((dependencies.depends_on || []).length > 0) {
+    taskDefinition.depends_on = dependencies.depends_on;
+  }
+  if (Object.keys(dependencies.bindings || {}).length > 0) {
+    taskDefinition.bindings = dependencies.bindings;
+  }
+  return taskDefinition;
+}
+
+function loopDefinition({ tasks, outputDependencies = {}, options, metadata }) {
+  return {
+    schema: 'homeboy/agent-task-loop-definition/v1',
+    loop_id: controllerContract,
+    plan_id: planId,
+    group_key: groupKey,
+    tasks: tasks.map((request) => loopDefinitionTask(request, outputDependencies[request.task_id])),
+    options,
+    metadata,
+  };
 }
 
 function datamachineConfig({
@@ -435,7 +525,7 @@ function staticSitePublishTask({ id, title, candidate = '{{outputs.static_site_c
 	});
 }
 
-function manualPlan() {
+function manualLoopDefinition() {
 	const conceptPrompt = process.env.CONCEPT_PROMPT || '';
 	const conceptPacket = process.env.CONCEPT_PACKET || '';
 	const designPacket = process.env.DESIGN_PACKET || '';
@@ -464,9 +554,7 @@ function manualPlan() {
 		throw new Error('STATIC_SITE_CANDIDATE, IMPORT_VALIDATION_RESULT, and STATIC_SITE_PUBLISH_GATE are required for publish_pr.');
 	}
 
-  return {
-    schema: 'homeboy/agent-task-plan/v1',
-    plan_id: planId,
+  return loopDefinition({
     tasks: [taskByKind[manualTaskKind]()],
     options: {
       max_concurrency: 1,
@@ -489,7 +577,7 @@ function manualPlan() {
 			complexity_policy: complexityDecision,
 			generated_by: '.github/scripts/build-homeboy-site-generation-plan.mjs',
 		},
-	};
+	});
 }
 
 const boundedMaxConcurrency = Math.max(
@@ -500,10 +588,7 @@ const boundedMaxConcurrency = Math.max(
 	)
 );
 
-const loopPlan = {
-  schema: 'homeboy/agent-task-plan/v1',
-  plan_id: planId,
-	tasks: [
+const loopTasks = [
 		storeIdeaTask({ prompt: ' ', title: 'Generate store idea', lane: 'store concept lane' }),
 		websiteIdeaTask({ prompt: ' ', title: 'Generate website idea', lane: 'website concept lane' }),
 		task({
@@ -552,8 +637,9 @@ const loopPlan = {
 		staticSitePublishGateTask({ id: 'gate-website-publication', title: 'Gate website static-site publication' }),
 		staticSitePublishTask({ id: 'publish-store-pr', title: 'Publish store static-site PR' }),
 		staticSitePublishTask({ id: 'publish-website-pr', title: 'Publish website static-site PR' }),
-	],
-	output_dependencies: {
+];
+
+const loopOutputDependencies = {
 		'design-store-packet': {
 			bindings: {
 				concept_packet: artifactBinding('store-idea-agent', 'concept_packet'),
@@ -620,7 +706,11 @@ const loopPlan = {
 				visual_parity_artifact: artifactBinding('validate-website-candidate', 'visual_parity_artifact'),
 			},
 		},
-	},
+};
+
+const normalLoopDefinition = loopDefinition({
+  tasks: loopTasks,
+  outputDependencies: loopOutputDependencies,
   options: {
     max_concurrency: boundedMaxConcurrency,
     resource_budget: {
@@ -643,10 +733,13 @@ const loopPlan = {
 		complexity_policy: complexityDecision,
 		generated_by: '.github/scripts/build-homeboy-site-generation-plan.mjs',
 	},
-};
+});
 
-const plan = manualTaskKind ? manualPlan() : loopPlan;
+const definition = manualTaskKind ? manualLoopDefinition() : normalLoopDefinition;
+const plan = compileLoopDefinition(definition);
 
 fs.mkdirSync(path.dirname(outputPath), { recursive: true });
+fs.mkdirSync(path.dirname(loopDefinitionOutputPath), { recursive: true });
+await writeJsonFile(loopDefinitionOutputPath, definition);
 await writeJsonFile(outputPath, plan);
 console.log(outputPath);

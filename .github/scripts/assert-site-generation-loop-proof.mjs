@@ -139,12 +139,22 @@ function assertPublicationEvidence(taskItem) {
 
 async function assertImportAndIteratorWorkflow() {
   const workflow = await readFile(repoPath('.github/workflows/static-site-validation.yml'), 'utf8');
-  const validationWorkload = buildSsiImportWorkload('proof-site');
+  const validationWorkload = buildSsiImportWorkload('proof-site', {
+    websiteArtifact: {
+      schema: 'block-artifact-compiler/website-artifact/v1',
+      files: [
+        {
+          path: 'website/index.html',
+          content: '<!doctype html><html><body>Proof site</body></html>',
+        },
+      ],
+    },
+  });
   const validationWorkloadJson = JSON.stringify(validationWorkload);
   assert.match(workflow, /build-static-validation-settings\.mjs/, 'static validation delegates SSI settings to the shared builder');
-  assert.match(validationWorkloadJson, /wp_get_ability\( 'static-site-importer\/import-theme' \)/, 'static validation settings import generated static sites through the SSI ability');
+  assert.match(validationWorkloadJson, /wp_get_ability\( 'static-site-importer\/import-website-artifact' \)/, 'static validation settings import generated static sites through the SSI website artifact ability');
   assert.doesNotMatch(validationWorkloadJson, /static-site-importer import-theme/, 'static validation settings do not depend on the SSI WP-CLI command');
-  assert.match(validationWorkloadJson, /static-sites\/proof-site\/index\.html/, 'static validation imports the requested generated site');
+  assert.match(validationWorkloadJson, /base64_decode/, 'static validation embeds a BAC website artifact payload for the ability bridge');
   assert.match(workflow, /Build SSI finding packets/, 'static validation builds SSI finding packets');
   assert.match(workflow, /dispatch-php-transformer-iterator\.mjs/, 'static validation delegates transformer iterator dispatch to the shared builder');
 }
