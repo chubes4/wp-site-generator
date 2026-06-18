@@ -13,6 +13,8 @@ assert.match(workflow, /"dir":"\.ci\/visual-parity"/, 'iterator stores visual pa
 assert.match(workflow, /app_token_repos: .*chubes4\/block-artifact-compiler/, 'iterator token routing includes block-artifact-compiler');
 assert.match(workflow, /execute_workflow_builder_command: .*group-ssi-finding-packets\.mjs .*build-datamachine-iterator-workflow\.mjs/, 'iterator reusable runner builds grouped finding workflow');
 assert.match(workflow, /execute_workflow_path: \.ci\/datamachine-iterator-workflow\.json/, 'iterator reusable runner receives the generated workflow path');
+assert.match(workflow, /ability_tools: .*datamachine-code\/workspace-worktree-add.*datamachine-code\/create-github-pull-request/, 'iterator exposes routine tools through Data Machine ability_tools');
+assert.match(workflow, /tool_recorders: .*engine_key.*php_transformer_iterator.*upstream_action_url/, 'iterator records upstream action evidence through Data Machine tool_recorders');
 assert.doesNotMatch(workflow, /actions_artifact_items/, 'iterator no longer fetches artifact ZIPs inside WordPress runtime');
 assert.doesNotMatch(workflow, /exactly one finding packet per Data Machine child job/, 'iterator prompt must not describe raw per-packet fanout');
 assert.match(iteratorFlow, /upstream pull requests as durable per source finding/, 'iterator treats upstream PRs as durable across reruns');

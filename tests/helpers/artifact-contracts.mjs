@@ -83,7 +83,34 @@ export function assertIteratorPlanUsesReusableWorkflowRunner(plan, workflowPath)
 	assert.equal(input.execute_workflow_path, workflowPath, 'iterator consumes the prebuilt Data Machine workflow path');
 	assert.equal(input.source, '/workspace/wp-site-generator/bundles/php-transformer-iterator-agent', 'iterator runs the sandbox-local agent bundle');
 	assert.deepEqual(input.success_completion_outcomes, ['pull_request_path', 'issue_path'], 'iterator accepts PR or issue completion outcomes');
-	assert.deepEqual(input.tool_recorders, [{ tool: 'create_github_issue' }, { tool: 'create_github_pull_request' }], 'iterator records durable upstream actions');
+	assert.deepEqual(input.ability_tools?.map((tool) => tool.name), [
+		'workspace_clone',
+		'workspace_worktree_add',
+		'workspace_read',
+		'workspace_write',
+		'workspace_edit',
+		'workspace_git_status',
+		'workspace_git_commit',
+		'workspace_git_push',
+		'create_github_pull_request',
+		'create_github_issue',
+	], 'iterator exposes routine tools through Data Machine ability_tools');
+	assert.deepEqual(input.tool_recorders, [
+		{
+			tool: 'create_github_issue',
+			record: {
+				engine_key: 'php_transformer_iterator',
+				fields: { upstream_action_url: 'data.issue_url' },
+			},
+		},
+		{
+			tool: 'create_github_pull_request',
+			record: {
+				engine_key: 'php_transformer_iterator',
+				fields: { upstream_action_url: 'data.html_url' },
+			},
+		},
+	], 'iterator records durable upstream actions through Data Machine tool_recorders');
 	assert.deepEqual(input.extra_required_abilities, [
 		'datamachine-code/create-github-issue',
 		'datamachine-code/create-github-pull-request',
