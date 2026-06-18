@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import { mkdir, mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';
+import { mkdir, mkdtemp, readFile, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { spawnSync } from 'node:child_process';
@@ -9,10 +9,12 @@ import { assertIteratorPlanUsesReusableWorkflowRunner } from '../helpers/artifac
 const repoRoot = path.resolve(new URL('../..', import.meta.url).pathname);
 const tempDir = await mkdtemp(path.join(tmpdir(), 'wpsg-ssi-native-loop-'));
 const settingsPath = path.join(tempDir, 'settings.json');
+const sourceStaticSiteDir = path.join(tempDir, 'issue-123-native-loop');
+const materializedRoot = path.join(tempDir, 'materialized-static-site-candidates');
 
-await mkdir(path.join(repoRoot, 'static-sites/issue-123-native-loop/assets'), { recursive: true });
-await writeFile(path.join(repoRoot, 'static-sites/issue-123-native-loop/index.html'), '<!doctype html><html><body>Native loop</body></html>');
-await writeFile(path.join(repoRoot, 'static-sites/issue-123-native-loop/assets/styles.css'), 'body { color: #111; }');
+await mkdir(path.join(sourceStaticSiteDir, 'assets'), { recursive: true });
+await writeFile(path.join(sourceStaticSiteDir, 'index.html'), '<!doctype html><html><body>Native loop</body></html>');
+await writeFile(path.join(sourceStaticSiteDir, 'assets/styles.css'), 'body { color: #111; }');
 const workflowPath = path.join(tempDir, 'workflow.json');
 const planPath = path.join(tempDir, 'iterator-plan.json');
 const dispatchPath = path.join(tempDir, 'dispatch.json');
@@ -70,7 +72,7 @@ assert.equal(controller.metrics.find((metric) => metric.metric_id === 'conversio
 assert.equal(controller.metrics.find((metric) => metric.metric_id === 'visual_parity').target, 'status === "pass" && mismatch_count === 0 && max_delta_ratio === 0', 'visual parity metric gate is explicit');
 assert.equal(controller.gates.find((gate) => gate.gate_id === 'fallback_blocks').on_fail, undefined, 'gates do not encode Homeboy routing decisions');
 
-const settingsResult = spawnSync(process.execPath, ['.github/scripts/build-static-validation-settings.mjs', '--site', 'issue-123-native-loop', '--output', settingsPath], {
+const settingsResult = spawnSync(process.execPath, ['.github/scripts/build-static-validation-settings.mjs', '--site', 'issue-123-native-loop', '--source-static-site-dir', sourceStaticSiteDir, '--materialized-root', materializedRoot, '--output', settingsPath], {
 	cwd: repoRoot,
 	encoding: 'utf8',
 });
@@ -92,7 +94,7 @@ assert.deepEqual(
 );
 
 const commerceSettingsPath = path.join(tempDir, 'commerce-settings.json');
-const commerceSettingsResult = spawnSync(process.execPath, ['.github/scripts/build-static-validation-settings.mjs', '--site', 'issue-123-native-loop', '--lane', 'woocommerce', '--output', commerceSettingsPath], {
+const commerceSettingsResult = spawnSync(process.execPath, ['.github/scripts/build-static-validation-settings.mjs', '--site', 'issue-123-native-loop', '--source-static-site-dir', sourceStaticSiteDir, '--materialized-root', materializedRoot, '--lane', 'woocommerce', '--output', commerceSettingsPath], {
 	cwd: repoRoot,
 	encoding: 'utf8',
 });
@@ -198,6 +200,41 @@ assert.equal(explicitIteratorResult.status, 0, explicitIteratorResult.stderr || 
 const explicitIteratorPlan = JSON.parse(await readFile(explicitIteratorPlanPath, 'utf8'));
 assert.equal(explicitIteratorPlan.tasks[0].executor.config.runtime_bin, '/runner/wp-codebox/packages/cli/dist/index.js', 'iterator plan preserves explicit runtime path');
 
+const localIteratorPlanPath = path.join(tempDir, 'iterator-plan-local.json');
+const localIteratorResult = spawnSync(
+	process.execPath,
+	['.github/scripts/build-homeboy-php-transformer-iterator-plan.mjs', '--workflow', workflowPath, '--output', localIteratorPlanPath],
+	{
+		cwd: repoRoot,
+		encoding: 'utf8',
+		env: {
+			...process.env,
+			GITHUB_RUN_ID: '',
+			WPSG_REPLAY_ID: 'local-iterator-515',
+		},
+	},
+);
+assert.equal(localIteratorResult.status, 0, localIteratorResult.stderr || localIteratorResult.stdout);
+const localIteratorPlan = JSON.parse(await readFile(localIteratorPlanPath, 'utf8'));
+assert.equal(localIteratorPlan.plan_id, 'php-transformer-iterator-local-iterator-515', 'iterator local replay identity replaces timestamp fallback');
+
+const localIteratorMissingIdentityResult = spawnSync(
+	process.execPath,
+	['.github/scripts/build-homeboy-php-transformer-iterator-plan.mjs', '--workflow', workflowPath, '--output', path.join(tempDir, 'iterator-plan-missing-local-identity.json')],
+	{
+		cwd: repoRoot,
+		encoding: 'utf8',
+		env: {
+			...process.env,
+			GITHUB_RUN_ID: '',
+			WPSG_REPLAY_ID: '',
+			HOMEBOY_REPLAY_ID: '',
+		},
+	},
+);
+assert.notEqual(localIteratorMissingIdentityResult.status, 0, 'local iterator plan generation requires an explicit replay identity');
+assert.match(localIteratorMissingIdentityResult.stderr, /WPSG_REPLAY_ID or HOMEBOY_REPLAY_ID/, 'iterator local replay identity error explains the required input');
+
 const explicitProviderIteratorPlanPath = path.join(tempDir, 'iterator-plan-provider.json');
 const explicitProviderIteratorResult = spawnSync(
 	process.execPath,
@@ -266,7 +303,5 @@ for (const workflowPath of ['.github/workflows/php-transformer-iterator.yml', '.
 	const workflow = await readFile(path.join(repoRoot, workflowPath), 'utf8');
 	assert.doesNotMatch(workflow, /agent_runtime:/, `${workflowPath} leaves runtime selection to reusable Agent CI`);
 }
-
-await rm(path.join(repoRoot, 'static-sites/issue-123-native-loop'), { recursive: true, force: true });
 
 console.log('SSI native loop adapter contract passed');

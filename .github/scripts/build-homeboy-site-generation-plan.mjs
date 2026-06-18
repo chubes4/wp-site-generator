@@ -4,7 +4,9 @@ import path from 'node:path';
 import { spawnSync } from 'node:child_process';
 import {
 	applyHomeboyAgentRuntimeOverrides,
+	requireLocalReplaySeed,
 	readHomeboyAgentRuntimeOverrides,
+	resolveReplayRunId,
 	writeJsonFile,
 } from './lib/ci-runtime-utils.mjs';
 import {
@@ -16,7 +18,8 @@ import {
 } from './site-generation-complexity-policy.mjs';
 
 const root = process.env.GITHUB_WORKSPACE || process.cwd();
-const runId = process.env.GITHUB_RUN_ID || String(Date.now());
+requireLocalReplaySeed(process.env);
+const runId = resolveReplayRunId(process.env);
 const repository = process.env.GITHUB_REPOSITORY || 'chubes4/wp-site-generator';
 const outputPath = process.env.HOMEBOY_PLAN_PATH || path.join(root, '.ci', 'site-generation-loop.agent-task-plan.json');
 const loopDefinitionOutputPath = process.env.HOMEBOY_LOOP_DEFINITION_PATH || defaultLoopDefinitionPath(outputPath);

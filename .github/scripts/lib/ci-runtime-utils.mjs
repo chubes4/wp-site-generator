@@ -28,6 +28,26 @@ export function requiredEnv(env, name) {
 	return requiredValue(name, env[name]);
 }
 
+export function resolveReplayRunId(env = process.env) {
+	if (env.GITHUB_RUN_ID) {
+		return String(env.GITHUB_RUN_ID);
+	}
+	if (env.WPSG_REPLAY_ID) {
+		return String(env.WPSG_REPLAY_ID);
+	}
+	if (env.HOMEBOY_REPLAY_ID) {
+		return String(env.HOMEBOY_REPLAY_ID);
+	}
+	throw new Error('GITHUB_RUN_ID is required in GitHub Actions. For local replay plan generation, set WPSG_REPLAY_ID or HOMEBOY_REPLAY_ID explicitly.');
+}
+
+export function requireLocalReplaySeed(env = process.env) {
+	if (env.GITHUB_RUN_ID || env.WPSG_RANDOMNESS_SEED) {
+		return;
+	}
+	throw new Error('WPSG_RANDOMNESS_SEED is required for local site generation replay plans. GitHub Actions may omit it and derive the seed from GITHUB_RUN_ID.');
+}
+
 export function envOrArg(args, argName, env, envName, fallback = '') {
 	return args.get(argName) || env[envName] || fallback;
 }

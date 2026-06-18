@@ -83,6 +83,53 @@ try {
 	assert.deepEqual(plan.metadata.complexity_policy.site_kind_mix, ['store', 'website']);
 	assert.equal(plan.options.max_concurrency, 1, 'foundation tier keeps one active candidate by default');
 
+	const localMissingIdentityResult = spawnSync(process.execPath, ['.github/scripts/build-homeboy-site-generation-plan.mjs'], {
+		cwd: repoRoot,
+		encoding: 'utf8',
+		env: {
+			...process.env,
+			GITHUB_RUN_ID: '',
+			WPSG_REPLAY_ID: '',
+			HOMEBOY_REPLAY_ID: '',
+			WPSG_RANDOMNESS_SEED: 'local-seed',
+			HOMEBOY_PLAN_PATH: path.join(tempDir, 'plan-missing-local-identity.json'),
+		},
+	});
+	assert.notEqual(localMissingIdentityResult.status, 0, 'local plan generation requires an explicit replay identity');
+	assert.match(localMissingIdentityResult.stderr, /WPSG_REPLAY_ID or HOMEBOY_REPLAY_ID/, 'local replay identity error explains the required input');
+
+	const localMissingSeedResult = spawnSync(process.execPath, ['.github/scripts/build-homeboy-site-generation-plan.mjs'], {
+		cwd: repoRoot,
+		encoding: 'utf8',
+		env: {
+			...process.env,
+			GITHUB_RUN_ID: '',
+			WPSG_REPLAY_ID: 'local-replay-409',
+			WPSG_RANDOMNESS_SEED: '',
+			HOMEBOY_PLAN_PATH: path.join(tempDir, 'plan-missing-local-seed.json'),
+		},
+	});
+	assert.notEqual(localMissingSeedResult.status, 0, 'local site generation plans require an explicit randomness seed');
+	assert.match(localMissingSeedResult.stderr, /WPSG_RANDOMNESS_SEED is required/, 'local replay seed error explains the required input');
+
+	const localReplayPlanPath = path.join(tempDir, 'plan-local-replay.json');
+	const localReplayResult = spawnSync(process.execPath, ['.github/scripts/build-homeboy-site-generation-plan.mjs'], {
+		cwd: repoRoot,
+		encoding: 'utf8',
+		env: {
+			...process.env,
+			GITHUB_RUN_ID: '',
+			WPSG_REPLAY_ID: 'local-replay-409',
+			WPSG_RANDOMNESS_SEED: 'local-seed',
+			HOMEBOY_PLAN_PATH: localReplayPlanPath,
+			HOMEBOY_LOOP_DEFINITION_PATH: path.join(tempDir, 'loop-definition-local-replay.json'),
+		},
+	});
+	assert.equal(localReplayResult.status, 0, localReplayResult.stderr || localReplayResult.stdout);
+	const localReplayPlan = JSON.parse(await readFile(localReplayPlanPath, 'utf8'));
+	assert.equal(localReplayPlan.plan_id, 'site-generation-loop-local-replay-409', 'local replay identity replaces timestamp fallback');
+	assert.equal(localReplayPlan.metadata.complexity_policy.randomness_seed, 'local-seed', 'local replay seed is explicit');
+
 	const controllerSpec = JSON.parse(await readFile(path.join(repoRoot, '.github/homeboy/controllers/static-site-generation-loop.controller.json'), 'utf8'));
 	assert.equal(controllerSpec.schema, 'homeboy/agent-task-loop-spec/v1');
 	assert.equal(controllerSpec.loop_id, 'wp-site-generator/static-site-generation-loop');
