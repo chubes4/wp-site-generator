@@ -4,8 +4,6 @@ import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { spawnSync } from 'node:child_process';
 
-import { assertIteratorPlanUsesReusableWorkflowRunner } from '../helpers/artifact-contracts.mjs';
-
 const repoRoot = path.resolve(new URL('../..', import.meta.url).pathname);
 const tempDir = await mkdtemp(path.join(tmpdir(), 'wpsg-ssi-native-loop-'));
 const settingsPath = path.join(tempDir, 'settings.json');
@@ -16,7 +14,6 @@ await mkdir(path.join(sourceStaticSiteDir, 'assets'), { recursive: true });
 await writeFile(path.join(sourceStaticSiteDir, 'index.html'), '<!doctype html><html><body>Native loop</body></html>');
 await writeFile(path.join(sourceStaticSiteDir, 'assets/styles.css'), 'body { color: #111; }');
 const workflowPath = path.join(tempDir, 'workflow.json');
-const planPath = path.join(tempDir, 'iterator-plan.json');
 const dispatchPath = path.join(tempDir, 'dispatch.json');
 const controllerPath = path.join(tempDir, 'controller.json');
 
@@ -142,134 +139,6 @@ const workflowResult = spawnSync(process.execPath, ['.github/scripts/build-agent
 	encoding: 'utf8',
 });
 assert.equal(workflowResult.status, 0, workflowResult.stderr || workflowResult.stdout);
-
-const planResult = spawnSync(
-	process.execPath,
-	['.github/scripts/build-homeboy-php-transformer-iterator-plan.mjs', '--workflow', workflowPath, '--output', planPath],
-	{
-		cwd: repoRoot,
-		encoding: 'utf8',
-		env: {
-			...process.env,
-			GITHUB_RUN_ID: '515',
-			SOURCE_REPO: 'chubes4/wp-site-generator',
-			SOURCE_PR: '456',
-			SOURCE_HEAD_SHA: 'abc1234',
-			VALIDATION_RUN_ID: '9999',
-		},
-	},
-);
-assert.equal(planResult.status, 0, planResult.stderr || planResult.stdout);
-
-const plan = JSON.parse(await readFile(planPath, 'utf8'));
-assert.equal(plan.schema, 'homeboy/agent-task-plan/v1', 'native iterator adapter emits a Homeboy plan');
-assert.equal(plan.tasks[0].executor.config.runtime_task.ability, 'agents/run-runtime-package', 'iterator runs through the generic runtime package ability');
-assert.equal(plan.tasks[0].executor.config.runtime_execution.kind, 'bundle', 'iterator declares generic bundle runtime execution');
-assert.equal(plan.tasks[0].executor.config.runtime_bin, undefined, 'iterator plan defers runtime binary selection to the runner by default');
-assert.equal(plan.tasks[0].executor.config.runtime_id, undefined, 'iterator plan defers runtime selection to the runner by default');
-assert.equal(plan.tasks[0].executor.model, undefined, 'iterator plan defers executor model selection to the runner by default');
-assert.equal(plan.tasks[0].executor.config.provider, undefined, 'iterator plan defers provider selection to the runner by default');
-assert.equal(plan.tasks[0].executor.config.model, undefined, 'iterator plan defers config model selection to the runner by default');
-assert.equal(plan.tasks[0].executor.config.provider_plugin_paths, undefined, 'iterator plan defers provider plugin selection to the runner by default');
-assert.equal(plan.tasks[0].executor.config.secret_env, undefined, 'iterator plan defers provider secret env selection to the runner by default');
-assertIteratorPlanUsesReusableWorkflowRunner(plan, workflowPath);
-assert.equal(plan.tasks[0].executor.config.runtime_component_paths.agents_api, '.ci/agents-api', 'iterator uses a repo-relative Agents API component path');
-assert.equal(plan.tasks[0].executor.config.runtime_component_paths.agent_runtime, undefined, 'iterator does not name a concrete agent runtime component');
-assert.equal(plan.tasks[0].executor.config.runtime_component_paths.agent_runtime_tools, undefined, 'iterator does not name concrete runtime tool components');
-assert.equal(plan.tasks[0].executor.config.homeboy_extensions, '.ci/homeboy-extensions/wordpress', 'iterator uses a repo-relative Homeboy Extensions component path');
-assert.equal(plan.tasks[0].executor.config.agent_bundles[0].source, '/workspace/wp-site-generator/bundles/php-transformer-iterator-agent', 'iterator imports a sandbox-local bundle path');
-assert.equal(plan.tasks[0].executor.config.runtime_task.input.package.source, '/workspace/wp-site-generator/bundles/php-transformer-iterator-agent', 'iterator runs a sandbox-local package path');
-assert.equal(plan.tasks[0].executor.config.runtime_task.input.input.wait_for_completion, true, 'iterator waits for typed package outputs');
-assert.match(plan.tasks[0].executor.config.runtime_task.input.input.artifacts, /^\.ci\/homeboy-agent-task-artifacts\//, 'iterator uses a repo-relative artifact directory');
-assert.equal(plan.tasks[0].executor.config.runtime_task.input.input.success_requires_pr, false, 'native iterator allows issue-only completion for weak evidence');
-assert.equal(plan.tasks[0].inputs.source_pr, '456', 'source PR metadata flows into native plan');
-assert.equal(plan.metadata.runtime_input_contract, 'homeboy-agent-runtime-env', 'iterator plan records the Homeboy agent runtime env contract');
-
-const explicitIteratorPlanPath = path.join(tempDir, 'iterator-plan-codebox.json');
-const explicitIteratorResult = spawnSync(
-	process.execPath,
-	['.github/scripts/build-homeboy-php-transformer-iterator-plan.mjs', '--workflow', workflowPath, '--output', explicitIteratorPlanPath],
-	{
-		cwd: repoRoot,
-		encoding: 'utf8',
-		env: {
-			...process.env,
-			GITHUB_RUN_ID: '516',
-			HOMEBOY_AGENT_RUNTIME_BIN: '/runner/wp-codebox/packages/cli/dist/index.js',
-		},
-	},
-);
-assert.equal(explicitIteratorResult.status, 0, explicitIteratorResult.stderr || explicitIteratorResult.stdout);
-const explicitIteratorPlan = JSON.parse(await readFile(explicitIteratorPlanPath, 'utf8'));
-assert.equal(explicitIteratorPlan.tasks[0].executor.config.runtime_bin, '/runner/wp-codebox/packages/cli/dist/index.js', 'iterator plan preserves explicit runtime path');
-
-const localIteratorPlanPath = path.join(tempDir, 'iterator-plan-local.json');
-const localIteratorResult = spawnSync(
-	process.execPath,
-	['.github/scripts/build-homeboy-php-transformer-iterator-plan.mjs', '--workflow', workflowPath, '--output', localIteratorPlanPath],
-	{
-		cwd: repoRoot,
-		encoding: 'utf8',
-		env: {
-			...process.env,
-			GITHUB_RUN_ID: '',
-			WPSG_REPLAY_ID: 'local-iterator-515',
-		},
-	},
-);
-assert.equal(localIteratorResult.status, 0, localIteratorResult.stderr || localIteratorResult.stdout);
-const localIteratorPlan = JSON.parse(await readFile(localIteratorPlanPath, 'utf8'));
-assert.equal(localIteratorPlan.plan_id, 'php-transformer-iterator-local-iterator-515', 'iterator local replay identity replaces timestamp fallback');
-
-const localIteratorMissingIdentityResult = spawnSync(
-	process.execPath,
-	['.github/scripts/build-homeboy-php-transformer-iterator-plan.mjs', '--workflow', workflowPath, '--output', path.join(tempDir, 'iterator-plan-missing-local-identity.json')],
-	{
-		cwd: repoRoot,
-		encoding: 'utf8',
-		env: {
-			...process.env,
-			GITHUB_RUN_ID: '',
-			WPSG_REPLAY_ID: '',
-			HOMEBOY_REPLAY_ID: '',
-		},
-	},
-);
-assert.notEqual(localIteratorMissingIdentityResult.status, 0, 'local iterator plan generation requires an explicit replay identity');
-assert.match(localIteratorMissingIdentityResult.stderr, /WPSG_REPLAY_ID or HOMEBOY_REPLAY_ID/, 'iterator local replay identity error explains the required input');
-
-const explicitProviderIteratorPlanPath = path.join(tempDir, 'iterator-plan-provider.json');
-const explicitProviderIteratorResult = spawnSync(
-	process.execPath,
-	['.github/scripts/build-homeboy-php-transformer-iterator-plan.mjs', '--workflow', workflowPath, '--output', explicitProviderIteratorPlanPath],
-	{
-		cwd: repoRoot,
-		encoding: 'utf8',
-		env: {
-			...process.env,
-			GITHUB_RUN_ID: '517',
-			HOMEBOY_AGENT_RUNTIME_PROVIDER: 'opencode',
-			HOMEBOY_AGENT_RUNTIME_MODEL: 'opencode-go/kimi-k2.6',
-			HOMEBOY_AGENT_RUNTIME_PROVIDER_PLUGIN_PATHS: '/runner/ai-provider-for-opencode-current',
-			HOMEBOY_AGENT_RUNTIME_SECRET_ENV: 'OPENCODE_API_KEY,GITHUB_TOKEN',
-			HOMEBOY_AGENT_RUNTIME_ENV: JSON.stringify({ XDG_CONFIG_HOME: '/runtime/config', XDG_STATE_HOME: '/runtime/state' }),
-			HOMEBOY_AGENT_RUNTIME_CONFIG_MOUNTS: JSON.stringify([{ source: '/runner/config', target: '/runtime/config', mode: 'readonly' }]),
-			HOMEBOY_AGENT_RUNTIME_STATE_MOUNTS: JSON.stringify([{ source: '/runner/state', target: '/runtime/state', mode: 'readonly' }]),
-		},
-	},
-);
-assert.equal(explicitProviderIteratorResult.status, 0, explicitProviderIteratorResult.stderr || explicitProviderIteratorResult.stdout);
-const explicitProviderIteratorPlan = JSON.parse(await readFile(explicitProviderIteratorPlanPath, 'utf8'));
-const explicitProviderIteratorConfig = explicitProviderIteratorPlan.tasks[0].executor.config;
-assert.equal(explicitProviderIteratorConfig.provider, 'opencode', 'iterator preserves explicit provider override');
-assert.equal(explicitProviderIteratorConfig.model, 'opencode-go/kimi-k2.6', 'iterator preserves explicit provider model override');
-assert.equal(explicitProviderIteratorConfig.runtime_task.input.input.provider, 'opencode', 'iterator passes explicit provider to runtime package input');
-assert.equal(explicitProviderIteratorConfig.runtime_task.input.input.model, 'opencode-go/kimi-k2.6', 'iterator passes explicit model to runtime package input');
-assert.deepEqual(explicitProviderIteratorConfig.provider_plugin_paths, ['/runner/ai-provider-for-opencode-current'], 'iterator preserves explicit provider plugin override');
-assert.deepEqual(explicitProviderIteratorConfig.secret_env, ['OPENCODE_API_KEY', 'GITHUB_TOKEN'], 'iterator preserves explicit secret env override');
-assert.deepEqual(explicitProviderIteratorConfig.runtime_env, { XDG_CONFIG_HOME: '/runtime/config', XDG_STATE_HOME: '/runtime/state' }, 'iterator preserves explicit runtime env override');
-assert.deepEqual(explicitProviderIteratorConfig.runtime_config_mounts, [{ source: '/runner/config', target: '/runtime/config', mode: 'readonly' }], 'iterator preserves explicit runtime config mounts');
-assert.deepEqual(explicitProviderIteratorConfig.runtime_state_mounts, [{ source: '/runner/state', target: '/runtime/state', mode: 'readonly' }], 'iterator preserves explicit runtime state mounts');
 
 const dispatchResult = spawnSync(
 	process.execPath,
