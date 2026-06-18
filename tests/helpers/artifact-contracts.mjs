@@ -110,8 +110,8 @@ export function assertIteratorPlanUsesReusableWorkflowRunner(plan, workflowPath)
 		'wp-codebox/runner-workspace-publish',
 	], 'iterator uses WP Codebox provider runtime identifiers for workspace and PR publication tools');
 	assert.deepEqual(input.input?.runtime_output_projections, {
-		upstream_action_url: 'metadata.engine_data.php_transformer_iterator.upstream_action_url',
-		source_callback_url: 'metadata.engine_data.php_transformer_iterator.source_callback_url',
+		upstream_action_url: 'outputs.upstream_action_url',
+		source_callback_url: 'outputs.source_callback_url',
 	}, 'iterator declares generic runtime output projections');
 	assert.equal(Object.hasOwn(input.input || {}, 'engine_data_outputs'), false, 'iterator does not use legacy engine_data_outputs config');
 	assert.equal(Object.hasOwn(input.input || {}, 'tool_recorders'), false, 'iterator does not use legacy tool_recorders config');
@@ -123,6 +123,10 @@ export function assertIteratorPlanUsesReusableWorkflowRunner(plan, workflowPath)
 		{
 			operation: 'create_github_pull_request',
 			outputs: { upstream_action_url: 'data.html_url' },
+		},
+		{
+			operation: 'comment_github_pull_request',
+			outputs: { source_callback_url: 'data.html_url' },
 		},
 	], 'iterator records durable upstream actions through generic evidence projections');
 	assert.deepEqual(input.input?.extra_required_abilities, [

@@ -12,13 +12,8 @@ assert.match(
 );
 assert.doesNotMatch(
 	bootstrap,
-	/workspace_clone|workspace_worktree_add|create_github_pull_request|create_github_issue|datamachine-code\//,
+	/workspace_clone|workspace_worktree_add|create_github_pull_request|create_github_issue/,
 	'bootstrap leaves routine workspace and upstream action tools to run-scoped ability_tools',
-);
-assert.doesNotMatch(
-	bootstrap,
-	/datamachine\//,
-	'iterator bootstrap does not use Data Machine ability namespaces',
 );
 assert.match(
 	bootstrap,
@@ -40,10 +35,4 @@ assert.match(
 	/comment_github_pull_request/,
 	'agent-facing tool name remains stable for completion assertions',
 );
-assert.doesNotMatch(
-	bootstrap,
-	/datamachine_merge_engine_data|datamachine_get_engine_data/,
-	'bootstrap leaves runtime evidence to generic runtime projections',
-);
-
 console.log('php-transformer-iterator bootstrap smoke passed');

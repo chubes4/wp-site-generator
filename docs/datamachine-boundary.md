@@ -6,20 +6,18 @@ WPSG uses Homeboy Extensions `.github/workflows/runtime-agent-ci.yml` for agent 
 
 The enforced quarantine lives in `.github/datamachine-boundary-quarantine.json`. Run `node tests/scripts/test-datamachine-boundary.mjs` to print the current boundary report and fail on new unclassified references.
 
-## Current Quarantine Classes
+## Current Boundary Classes
 
-- `transitional_adapter_surface`: legacy reference surfaces retained only when tests or historical fixture names still contain boundary vocabulary.
-- `transitional_adapter_test`: tests that pin generic runtime package payloads and negative boundary assertions.
-- `transitional_adapter_config`: workflow or package config using generic runtime execution descriptors and WP Codebox runtime tool identifiers.
 - `boundary_enforcement`: the boundary test and negative assertions that necessarily name the prohibited terms.
 
-The older Playground proof scripts, workloads, and workflow for the historical runtime integration have been removed. Current behavior coverage lives in the generic `runtime-agent-ci` workflow wiring, workspace-preload package contracts, and transitional adapter tests above.
+The older Playground proof scripts, workloads, workflow, and transitional adapter config for the historical runtime integration have been removed. Current behavior coverage lives in the generic `runtime-agent-ci` workflow wiring, runtime output/evidence projection config, and workspace-preload package contracts.
 
 ## Generic Runtime Execution
 
 - Controller specs and workflow callers use `runtime_execution.kind = "bundle"` with a runtime-package `package`, `workflow`, `input`, and `options` envelope.
 - Runtime profiles set `runtime_task_ability`, `runtime_bundle_ability`, and `runtime_workflow_ability` to `agents/run-runtime-package`.
 - WPSG workflows check out Agents API and Homeboy Extensions, and no longer check out concrete runtime implementation repositories.
+- Iterator callback publication uses generic `runtime_output_projections` over semantic `outputs.*` values populated by `evidence_projections`, not legacy engine-data helper functions or config keys.
 
 WP Codebox now materializes `agent-runtime/workspace-preload`, so WPSG declares workspace preload artifacts directly with `agent-runtime/workspace-preload/v1` extension payloads instead of adapter artifact metadata.
 
