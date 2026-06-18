@@ -7,7 +7,7 @@ import { spawnSync } from 'node:child_process';
 import { assertVisualArtifactContract, writeVisualParityArtifact } from '../helpers/artifact-contracts.mjs';
 
 const repoRoot = path.resolve(new URL('../..', import.meta.url).pathname);
-const tempDir = await mkdtemp(path.join(tmpdir(), 'wp-site-generator-dm-workflow-'));
+const tempDir = await mkdtemp(path.join(tmpdir(), 'wp-site-generator-agent-workflow-'));
 const outputPath = path.join(tempDir, 'workflow.json');
 const continuationPath = path.join(tempDir, 'continuation.json');
 const truncatedOutputPath = path.join(tempDir, 'workflow-truncated.json');
@@ -34,7 +34,7 @@ assert.equal(groupResult.status, 0, groupResult.stderr || groupResult.stdout);
 const result = spawnSync(
 	process.execPath,
 	[
-		path.join(repoRoot, '.github/scripts/build-datamachine-iterator-workflow.mjs'),
+		path.join(repoRoot, '.github/scripts/build-agent-iterator-workflow.mjs'),
 		groupedPath,
 		outputPath,
 	],
@@ -101,7 +101,7 @@ assert.ok(!aiStep.enabled_tools.includes('list_github_issues'), 'issue-list tool
 const truncatedResult = spawnSync(
 	process.execPath,
 	[
-		path.join(repoRoot, '.github/scripts/build-datamachine-iterator-workflow.mjs'),
+		path.join(repoRoot, '.github/scripts/build-agent-iterator-workflow.mjs'),
 		groupedPath,
 		truncatedOutputPath,
 	],
@@ -135,10 +135,10 @@ const continuation = JSON.parse(await readFile(continuationPath, 'utf8'));
 assert.equal(continuation.status, 'truncated', 'continuation artifact records truncation');
 assert.equal(continuation.embedded_group_count, 1, 'continuation artifact records prompt-visible groups');
 assert.equal(continuation.groups.length, continuation.omitted_group_count, 'continuation artifact contains omitted groups');
-assert.equal(continuation.datamachine_packets.length, continuation.omitted_group_count, 'continuation artifact contains hydratable Data Machine packets');
+assert.equal(continuation.runtime_packets.length, continuation.omitted_group_count, 'continuation artifact contains hydratable runtime packets');
 assert.ok(
-	continuation.datamachine_packets.every((packet) => packet.type === 'ssi_finding_group'),
+	continuation.runtime_packets.every((packet) => packet.type === 'ssi_finding_group'),
 	'continuation artifact preserves grouped finding packet type',
 );
 
-console.log('build-datamachine-iterator-workflow smoke passed');
+console.log('build-agent-iterator-workflow smoke passed');

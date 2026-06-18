@@ -15,7 +15,7 @@ const args = parseArgs(process.argv.slice(2));
 const root = process.env.GITHUB_WORKSPACE || process.cwd();
 const runId = resolveReplayRunId(process.env);
 const repository = process.env.GITHUB_REPOSITORY || process.env.SOURCE_REPO || 'chubes4/wp-site-generator';
-const workflowPath = args.get('--workflow') || process.env.DATAMACHINE_WORKFLOW_PATH || '.ci/datamachine-iterator-workflow.json';
+const workflowPath = args.get('--workflow') || process.env.AGENT_WORKFLOW_PATH || '.ci/agent-iterator-workflow.json';
 const outputPath = args.get('--output') || process.env.HOMEBOY_ITERATOR_PLAN_PATH || path.join(root, '.ci', 'php-transformer-iterator.agent-task-plan.json');
 const artifactsRoot = process.env.HOMEBOY_ARTIFACT_ROOT || '.ci/homeboy-agent-task-artifacts';
 const sourcePr = process.env.SOURCE_PR || args.get('--source-pr') || '';
@@ -24,12 +24,9 @@ const validationRunId = process.env.VALIDATION_RUN_ID || args.get('--validation-
 const runtimeOverrides = readHomeboyAgentRuntimeOverrides(process.env);
 
 const ci = (name) => `.ci/${name}`;
+const runtimePackageAbility = 'agents/run-runtime-package';
 const runtimeBundlePath = '/workspace/wp-site-generator/bundles/php-transformer-iterator-agent';
 const runtimeTaskInput = {
-	source: runtimeBundlePath,
-	agent_slug: 'php-transformer-iterator-agent',
-	pipeline_slug: 'php-transformer-iterator-pipeline',
-	flow_slug: 'php-transformer-iterator-manual-flow',
 	target_repo: repository,
 	prompt: 'Run the static-site validation iterator now. The prebuilt workflow embeds grouped finding context; process it as the source of truth.',
 	wait_for_completion: true,
@@ -52,7 +49,7 @@ const runtimeTaskInput = {
 		{ name: 'workspace_git_commit', ability: providerRuntimeAbilityNames.workspaceCommand },
 		{ name: 'workspace_git_push', ability: providerRuntimeAbilityNames.workspaceCommand },
 		{ name: 'create_github_pull_request', ability: providerRuntimeAbilityNames.workspacePublish },
-		{ name: 'create_github_issue', ability: 'datamachine-code/create-github-issue' },
+		{ name: 'create_github_issue', ability: providerRuntimeAbilityNames.workspacePublish },
 	],
 	evidence_projections: [
 		{
@@ -69,26 +66,50 @@ const runtimeTaskInput = {
 		},
 	],
 	extra_required_abilities: [
-		'datamachine-code/create-github-issue',
 		providerRuntimeAbilityNames.workspaceCommand,
 		providerRuntimeAbilityNames.workspacePublish,
-		'datamachine-code/upsert-github-pull-review-comment',
 	],
 	execute_workflow_path: workflowPath,
 	transcript_artifact_name: `php-transformer-iterator-transcript-${runId}`,
 	artifacts: path.join(artifactsRoot, 'php-transformer-iterator-agent', `php-transformer-iterator-transcript-${runId}`),
 };
+const runtimeExecution = {
+	kind: 'bundle',
+	ability: runtimePackageAbility,
+	input: {
+		package: {
+			source: runtimeBundlePath,
+			slug: 'php-transformer-iterator-agent',
+		},
+		workflow: {
+			id: 'php-transformer-iterator-manual-flow',
+		},
+		input: runtimeTaskInput,
+		options: {
+			pipeline_slug: 'php-transformer-iterator-pipeline',
+		},
+	},
+};
 const executorConfig = {
+	runtime_profile: 'wpsg-codebox-runtime-package',
+	runtime_profiles: {
+		'wpsg-codebox-runtime-package': {
+			id: 'wpsg-codebox-runtime-package',
+			runtime_task_ability: runtimePackageAbility,
+			runtime_bundle_ability: runtimePackageAbility,
+			runtime_workflow_ability: runtimePackageAbility,
+			ability_requirements: [runtimePackageAbility],
+		},
+	},
 	runtime_component_paths: {
 		agents_api: ci('agents-api'),
-		agent_runtime: ci('data-machine'),
-		agent_runtime_tools: ci('data-machine-code'),
 	},
 	homeboy_extensions: `${ci('homeboy-extensions')}/wordpress`,
 	agent_bundles: [{ source: runtimeBundlePath, slug: 'php-transformer-iterator-agent' }],
+	runtime_execution: runtimeExecution,
 	runtime_task: {
-		ability: 'datamachine/run-agent-bundle',
-		input: runtimeTaskInput,
+		ability: runtimePackageAbility,
+		input: runtimeExecution.input,
 	},
 	task_timeout_seconds: 900,
 };
@@ -117,7 +138,7 @@ const plan = {
 				validation_run_id: validationRunId,
 			},
 			limits: { task_timeout_seconds: 900 },
-			expected_artifacts: ['datamachine-transcript'],
+			expected_artifacts: ['runtime-transcript'],
 		},
 	],
 	options: {

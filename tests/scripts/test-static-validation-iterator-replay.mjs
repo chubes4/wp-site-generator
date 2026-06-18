@@ -10,7 +10,7 @@ const site = 'issue-355-hearthline-board-cafe';
 const benchPath = path.join(tempDir, 'homeboy-ci-results/bench.json');
 const packetsPath = path.join(tempDir, 'homeboy-ci-results/finding-packets.json');
 const groupsPath = path.join(tempDir, 'homeboy-ci-results/grouped-finding-packets.json');
-const workflowPath = path.join(tempDir, 'datamachine-iterator-workflow.json');
+const workflowPath = path.join(tempDir, 'agent-iterator-workflow.json');
 const visualDir = path.join(tempDir, 'visual-parity-artifacts', site);
 
 await mkdir(path.dirname(benchPath), { recursive: true });
@@ -153,7 +153,7 @@ const groupResult = spawnSync(process.execPath, [path.join(repoRoot, '.github/sc
 });
 assert.equal(groupResult.status, 0, groupResult.stderr || groupResult.stdout);
 
-const workflowResult = spawnSync(process.execPath, [path.join(repoRoot, '.github/scripts/build-datamachine-iterator-workflow.mjs'), groupsPath, workflowPath], {
+const workflowResult = spawnSync(process.execPath, [path.join(repoRoot, '.github/scripts/build-agent-iterator-workflow.mjs'), groupsPath, workflowPath], {
 	cwd: repoRoot,
 	env: { ...process.env, VISUAL_ARTIFACT_DIR: visualDir },
 	encoding: 'utf8',

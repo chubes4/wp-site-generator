@@ -36,8 +36,10 @@ const agentBundles = {
 	ssi_stack_reviewer: { bundle: 'bundles/ssi-stack-reviewer-agent', slug: 'ssi-stack-reviewer-agent', requires: ['static_site_candidate', 'import_validation_result', 'static_validation_run', 'visual_parity_artifact', 'finding_packet_set', 'revalidation_attempt'], emits: ['reviewer_gate_outcome'] },
 };
 
+const runtimePackageAbility = 'agents/run-runtime-package';
+
 const abilityIds = [
-	'datamachine/run-agent-bundle',
+	runtimePackageAbility,
 	'github_issue_publish',
 	'github_pull_request_publish',
 	'comment_github_pull_request',
@@ -78,11 +80,22 @@ function handoff({ consumes = [], emits = [] } = {}) {
 function bundleInputs(agent_id, extra = {}) {
 	const bundle = agentBundles[agent_id];
 	return {
-		inputs: {
-			source: bundle.bundle,
-			flow: bundle.flow,
-			wait_for_completion: true,
-			...extra,
+		runtime_execution: {
+			kind: 'bundle',
+			ability: runtimePackageAbility,
+			input: {
+				package: {
+					source: bundle.bundle,
+					slug: bundle.slug,
+				},
+				workflow: {
+					id: bundle.flow,
+				},
+				input: {
+					wait_for_completion: true,
+					...extra,
+				},
+			},
 		},
 	};
 }
@@ -109,7 +122,7 @@ const controller = {
 		agent_id,
 		role: metadata.slug,
 		instructions: `Run the ${metadata.slug} bundle for the WPSG SSI loop when Homeboy selects this workflow.`,
-		abilities: ['datamachine/run-agent-bundle'],
+		abilities: [runtimePackageAbility],
 		metadata,
 	})),
 	abilities: abilityIds.map((ability_id) => ({ ability_id })),
@@ -118,7 +131,7 @@ const controller = {
 			workflow_id: 'store-idea',
 			agent_id: 'store_idea',
 			prompt: 'Produce a commerce concept packet for the WPSG static-site generation loop.',
-			abilities: ['datamachine/run-agent-bundle'],
+			abilities: [runtimePackageAbility],
 			...bundleInputs('store_idea'),
 			...handoff({ emits: ['concept_packet'] }),
 		},
@@ -126,7 +139,7 @@ const controller = {
 			workflow_id: 'website-idea',
 			agent_id: 'website_idea',
 			prompt: 'Produce a content-site concept packet for the WPSG static-site generation loop.',
-			abilities: ['datamachine/run-agent-bundle'],
+			abilities: [runtimePackageAbility],
 			...bundleInputs('website_idea'),
 			...handoff({ emits: ['concept_packet'] }),
 		},
@@ -134,7 +147,7 @@ const controller = {
 			workflow_id: 'design-store',
 			agent_id: 'design_store',
 			prompt: 'Produce a design packet from a commerce concept packet for the WPSG static-site generation loop.',
-			abilities: ['datamachine/run-agent-bundle'],
+			abilities: [runtimePackageAbility],
 			...bundleInputs('design_store', { site_kind: 'store' }),
 			...handoff({ consumes: ['concept_packet'], emits: ['design_packet'] }),
 		},
@@ -142,7 +155,7 @@ const controller = {
 			workflow_id: 'design-website',
 			agent_id: 'design_website',
 			prompt: 'Produce a design packet from a content-site concept packet for the WPSG static-site generation loop.',
-			abilities: ['datamachine/run-agent-bundle'],
+			abilities: [runtimePackageAbility],
 			...bundleInputs('design_website', { site_kind: 'website' }),
 			...handoff({ consumes: ['concept_packet'], emits: ['design_packet'] }),
 		},
@@ -150,7 +163,7 @@ const controller = {
 			workflow_id: 'static-store',
 			agent_id: 'static_store',
 			prompt: 'Produce a commerce static-site candidate artifact from a WPSG design packet.',
-			abilities: ['datamachine/run-agent-bundle'],
+			abilities: [runtimePackageAbility],
 			...bundleInputs('static_store', { site_kind: 'store' }),
 			...handoff({ consumes: ['concept_packet', 'design_packet'], emits: ['static_site_candidate'] }),
 			dependencies: ['wp-site-generator'],
@@ -159,7 +172,7 @@ const controller = {
 			workflow_id: 'static-site',
 			agent_id: 'static_site',
 			prompt: 'Produce a content static-site candidate artifact from a WPSG design packet.',
-			abilities: ['datamachine/run-agent-bundle'],
+			abilities: [runtimePackageAbility],
 			...bundleInputs('static_site', { site_kind: 'website' }),
 			...handoff({ consumes: ['concept_packet', 'design_packet'], emits: ['static_site_candidate'] }),
 			dependencies: ['wp-site-generator'],
@@ -209,7 +222,7 @@ const controller = {
 			workflow_id: 'iterator',
 			agent_id: 'php_transformer_iterator',
 			prompt: 'Route each finding group to the owning SSI stack repository and open the focused upstream issue or pull request described by the packet evidence.',
-			abilities: ['datamachine/run-agent-bundle', 'github_issue_publish', 'github_pull_request_publish', 'comment_github_pull_request'],
+			abilities: [runtimePackageAbility, 'github_issue_publish', 'github_pull_request_publish', 'comment_github_pull_request'],
 			...handoff({ consumes: ['finding_group'], emits: ['iterator_upstream_issue', 'iterator_upstream_pull_request'] }),
 			fan_out: {
 				mode: 'per_artifact',
@@ -231,7 +244,7 @@ const controller = {
 			workflow_id: 'reviewer',
 			agent_id: 'ssi_stack_reviewer',
 			prompt: 'Review candidate, validation, visual parity, finding, and revalidation artifacts before promotion. Treat generated-site and upstream GitHub issue/PR URLs as optional publication evidence only.',
-			abilities: ['datamachine/run-agent-bundle', 'comment_github_pull_request'],
+			abilities: [runtimePackageAbility, 'comment_github_pull_request'],
 			...handoff({ consumes: ['static_site_candidate', 'import_validation_result', 'static_validation_run', 'visual_parity_artifact', 'finding_packet_set', 'revalidation_attempt'], emits: ['reviewer_gate_outcome'] }),
 			dependencies: ['wp-site-generator', 'static-site-importer', 'html-to-blocks-converter', 'block-format-bridge', 'block-artifact-compiler'],
 			gates: ['reviewer_evidence'],
