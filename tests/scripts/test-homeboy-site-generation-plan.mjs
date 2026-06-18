@@ -4,23 +4,30 @@ import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { spawnSync } from 'node:child_process';
 import { evaluateComplexityPolicy, loadPolicy } from '../../.github/scripts/site-generation-complexity-policy.mjs';
+import { createHomeboyCompileLoopFixture } from '../helpers/homeboy-fixtures.mjs';
 
 const repoRoot = path.resolve(new URL('../..', import.meta.url).pathname);
 const tempDir = await mkdtemp(path.join(tmpdir(), 'wpsg-homeboy-plan-'));
 const planPath = path.join(tempDir, 'plan.json');
 const loopDefinitionPath = path.join(tempDir, 'loop-definition.json');
 const qualitySignalsPath = path.join(tempDir, 'quality-signals.json');
+const homeboyFixturePath = await createHomeboyCompileLoopFixture(tempDir);
+
+const planBuilderEnv = (overrides = {}) => ({
+	...process.env,
+	HOMEBOY_BIN: homeboyFixturePath,
+	...overrides,
+});
 
 try {
   const result = spawnSync(process.execPath, ['.github/scripts/build-homeboy-site-generation-plan.mjs'], {
     cwd: repoRoot,
     encoding: 'utf8',
-    env: {
-      ...process.env,
+    env: planBuilderEnv({
       GITHUB_RUN_ID: '409',
       HOMEBOY_PLAN_PATH: planPath,
       HOMEBOY_LOOP_DEFINITION_PATH: loopDefinitionPath,
-    },
+    }),
   });
 
   assert.equal(result.status, 0, result.stderr || result.stdout);
@@ -48,6 +55,7 @@ try {
     assert.equal(request.executor.model, undefined, `${request.task_id} defers executor model selection to runner settings by default`);
     assert.equal(request.executor.config.provider, undefined, `${request.task_id} defers provider selection to runner settings by default`);
     assert.equal(request.executor.config.model, undefined, `${request.task_id} defers config model selection to runner settings by default`);
+    assert.equal(request.executor.config.runtime_id, undefined, `${request.task_id} defers runtime selection to runner settings by default`);
     assert.equal(request.executor.config.provider_plugin_paths, undefined, `${request.task_id} defers provider plugin selection to runner settings by default`);
     assert.equal(request.executor.config.secret_env, undefined, `${request.task_id} defers provider secret env selection to runner settings by default`);
     if (request.executor.config.runtime_task?.ability === 'datamachine/run-agent-bundle') {
@@ -86,14 +94,13 @@ try {
 	const localMissingIdentityResult = spawnSync(process.execPath, ['.github/scripts/build-homeboy-site-generation-plan.mjs'], {
 		cwd: repoRoot,
 		encoding: 'utf8',
-		env: {
-			...process.env,
-			GITHUB_RUN_ID: '',
-			WPSG_REPLAY_ID: '',
-			HOMEBOY_REPLAY_ID: '',
-			WPSG_RANDOMNESS_SEED: 'local-seed',
-			HOMEBOY_PLAN_PATH: path.join(tempDir, 'plan-missing-local-identity.json'),
-		},
+    env: planBuilderEnv({
+      GITHUB_RUN_ID: '',
+      WPSG_REPLAY_ID: '',
+      HOMEBOY_REPLAY_ID: '',
+      WPSG_RANDOMNESS_SEED: 'local-seed',
+      HOMEBOY_PLAN_PATH: path.join(tempDir, 'plan-missing-local-identity.json'),
+    }),
 	});
 	assert.notEqual(localMissingIdentityResult.status, 0, 'local plan generation requires an explicit replay identity');
 	assert.match(localMissingIdentityResult.stderr, /WPSG_REPLAY_ID or HOMEBOY_REPLAY_ID/, 'local replay identity error explains the required input');
@@ -101,13 +108,12 @@ try {
 	const localMissingSeedResult = spawnSync(process.execPath, ['.github/scripts/build-homeboy-site-generation-plan.mjs'], {
 		cwd: repoRoot,
 		encoding: 'utf8',
-		env: {
-			...process.env,
-			GITHUB_RUN_ID: '',
-			WPSG_REPLAY_ID: 'local-replay-409',
-			WPSG_RANDOMNESS_SEED: '',
-			HOMEBOY_PLAN_PATH: path.join(tempDir, 'plan-missing-local-seed.json'),
-		},
+    env: planBuilderEnv({
+      GITHUB_RUN_ID: '',
+      WPSG_REPLAY_ID: 'local-replay-409',
+      WPSG_RANDOMNESS_SEED: '',
+      HOMEBOY_PLAN_PATH: path.join(tempDir, 'plan-missing-local-seed.json'),
+    }),
 	});
 	assert.notEqual(localMissingSeedResult.status, 0, 'local site generation plans require an explicit randomness seed');
 	assert.match(localMissingSeedResult.stderr, /WPSG_RANDOMNESS_SEED is required/, 'local replay seed error explains the required input');
@@ -116,14 +122,13 @@ try {
 	const localReplayResult = spawnSync(process.execPath, ['.github/scripts/build-homeboy-site-generation-plan.mjs'], {
 		cwd: repoRoot,
 		encoding: 'utf8',
-		env: {
-			...process.env,
-			GITHUB_RUN_ID: '',
-			WPSG_REPLAY_ID: 'local-replay-409',
-			WPSG_RANDOMNESS_SEED: 'local-seed',
-			HOMEBOY_PLAN_PATH: localReplayPlanPath,
-			HOMEBOY_LOOP_DEFINITION_PATH: path.join(tempDir, 'loop-definition-local-replay.json'),
-		},
+    env: planBuilderEnv({
+      GITHUB_RUN_ID: '',
+      WPSG_REPLAY_ID: 'local-replay-409',
+      WPSG_RANDOMNESS_SEED: 'local-seed',
+      HOMEBOY_PLAN_PATH: localReplayPlanPath,
+      HOMEBOY_LOOP_DEFINITION_PATH: path.join(tempDir, 'loop-definition-local-replay.json'),
+    }),
 	});
 	assert.equal(localReplayResult.status, 0, localReplayResult.stderr || localReplayResult.stdout);
 	const localReplayPlan = JSON.parse(await readFile(localReplayPlanPath, 'utf8'));
@@ -504,12 +509,11 @@ try {
 	const qualityResult = spawnSync(process.execPath, ['.github/scripts/build-homeboy-site-generation-plan.mjs'], {
 		cwd: repoRoot,
 		encoding: 'utf8',
-		env: {
-			...process.env,
-			GITHUB_RUN_ID: '410',
-			HOMEBOY_PLAN_PATH: path.join(tempDir, 'plan-stable.json'),
-			WPSG_QUALITY_SIGNALS_PATH: qualitySignalsPath,
-		},
+    env: planBuilderEnv({
+      GITHUB_RUN_ID: '410',
+      HOMEBOY_PLAN_PATH: path.join(tempDir, 'plan-stable.json'),
+      WPSG_QUALITY_SIGNALS_PATH: qualitySignalsPath,
+    }),
 	});
 	assert.equal(qualityResult.status, 0, qualityResult.stderr || qualityResult.stdout);
 	const stablePlan = JSON.parse(await readFile(path.join(tempDir, 'plan-stable.json'), 'utf8'));
@@ -521,12 +525,11 @@ try {
 	const explicitCodeboxResult = spawnSync(process.execPath, ['.github/scripts/build-homeboy-site-generation-plan.mjs'], {
 		cwd: repoRoot,
 		encoding: 'utf8',
-		env: {
-			...process.env,
+		env: planBuilderEnv({
 			GITHUB_RUN_ID: '411',
 			HOMEBOY_PLAN_PATH: explicitCodeboxPlanPath,
 			HOMEBOY_AGENT_RUNTIME_BIN: explicitCodeboxPath,
-		},
+		}),
 	});
 	assert.equal(explicitCodeboxResult.status, 0, explicitCodeboxResult.stderr || explicitCodeboxResult.stdout);
   const explicitCodeboxPlan = JSON.parse(await readFile(explicitCodeboxPlanPath, 'utf8'));
@@ -536,8 +539,7 @@ try {
   const explicitProviderResult = spawnSync(process.execPath, ['.github/scripts/build-homeboy-site-generation-plan.mjs'], {
     cwd: repoRoot,
     encoding: 'utf8',
-    env: {
-      ...process.env,
+    env: planBuilderEnv({
       GITHUB_RUN_ID: '412',
       HOMEBOY_PLAN_PATH: explicitProviderPlanPath,
       HOMEBOY_AGENT_RUNTIME_PROVIDER: 'opencode',
@@ -547,7 +549,7 @@ try {
       HOMEBOY_AGENT_RUNTIME_ENV: JSON.stringify({ XDG_CONFIG_HOME: '/runtime/config', XDG_STATE_HOME: '/runtime/state' }),
       HOMEBOY_AGENT_RUNTIME_CONFIG_MOUNTS: JSON.stringify([{ source: '/runner/config', target: '/runtime/config', mode: 'readonly' }]),
       HOMEBOY_AGENT_RUNTIME_STATE_MOUNTS: JSON.stringify([{ source: '/runner/state', target: '/runtime/state', mode: 'readonly' }]),
-    },
+    }),
   });
   assert.equal(explicitProviderResult.status, 0, explicitProviderResult.stderr || explicitProviderResult.stdout);
   const explicitProviderPlan = JSON.parse(await readFile(explicitProviderPlanPath, 'utf8'));

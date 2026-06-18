@@ -33,6 +33,7 @@ const controllerAuthority = {
 const manualTaskKind = process.env.HOMEBOY_TASK_KIND || '';
 const planId = manualTaskKind ? `site-generator-${manualTaskKind}-${runId}` : `site-generation-loop-${runId}`;
 const groupKey = manualTaskKind ? `site-generator-${manualTaskKind}` : 'site-generation-loop';
+const homeboyBin = process.env.HOMEBOY_BIN || 'homeboy';
 
 const ci = (name) => `.ci/${name}`;
 const artifactsRoot = process.env.HOMEBOY_ARTIFACT_ROOT || '.ci/homeboy-agent-task-artifacts';
@@ -76,7 +77,8 @@ function loopDefinitionTask(request, dependencies = {}) {
 }
 
 function compileLoopDefinitionFile(definitionPath) {
-  const result = spawnSync('homeboy', ['agent-task', 'compile-loop', '--definition', `@${definitionPath}`], {
+  assertCompileLoopAvailable();
+  const result = spawnSync(homeboyBin, ['agent-task', 'compile-loop', '--definition', `@${definitionPath}`], {
     cwd: root,
     encoding: 'utf8',
   });
@@ -91,6 +93,21 @@ function compileLoopDefinitionFile(definitionPath) {
     return output.value;
   }
   return output;
+}
+
+function assertCompileLoopAvailable() {
+	const result = spawnSync(homeboyBin, ['agent-task', 'compile-loop', '--help'], {
+		cwd: root,
+		encoding: 'utf8',
+	});
+	if (result.status !== 0) {
+		throw new Error([
+			'Homeboy agent-task compile-loop is required to build the WPSG site-generation plan.',
+			'This branch intentionally does not fall back to repo-local loop compilation shims.',
+			'Install/use a Homeboy build from Extra-Chill/homeboy main that includes `agent-task compile-loop`, then rerun.',
+			(result.stderr || result.stdout || '').trim(),
+		].filter(Boolean).join('\n'));
+	}
 }
 
 function loopDefinition({ tasks, outputDependencies = {}, options, metadata }) {

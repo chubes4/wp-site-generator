@@ -106,7 +106,7 @@ export async function appendGithubOutput(filePath, values, { multiline = true } 
 export function readHomeboyAgentRuntimeOverrides(env) {
 	return {
 		source: 'homeboy-agent-runtime-env',
-		runtimeId: env.HOMEBOY_AGENT_RUNTIME || 'wp-codebox',
+		runtimeId: env.HOMEBOY_AGENT_RUNTIME || '',
 		runtimeBin: env.HOMEBOY_AGENT_RUNTIME_BIN || '',
 		provider: env.HOMEBOY_AGENT_RUNTIME_PROVIDER || '',
 		model: env.HOMEBOY_AGENT_RUNTIME_MODEL || '',
@@ -142,7 +142,9 @@ export function applyHomeboyAgentRuntimeOverrides(config, runtimeTaskInput, runt
 	if (runtimeOverrides.runtimeStateMounts) {
 		config.runtime_state_mounts = runtimeOverrides.runtimeStateMounts;
 	}
-	config.runtime_id = runtimeOverrides.runtimeId;
+	if (runtimeOverrides.runtimeId) {
+		config.runtime_id = runtimeOverrides.runtimeId;
+	}
 	if (runtimeOverrides.runtimeBin) {
 		config.runtime_bin = runtimeOverrides.runtimeBin;
 	}

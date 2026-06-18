@@ -164,6 +164,7 @@ const plan = JSON.parse(await readFile(planPath, 'utf8'));
 assert.equal(plan.schema, 'homeboy/agent-task-plan/v1', 'native iterator adapter emits a Homeboy plan');
 assert.equal(plan.tasks[0].executor.config.runtime_task.ability, 'datamachine/run-agent-bundle', 'iterator runs through a WP Codebox runtime task');
 assert.equal(plan.tasks[0].executor.config.runtime_bin, undefined, 'iterator plan defers runtime binary selection to the runner by default');
+assert.equal(plan.tasks[0].executor.config.runtime_id, undefined, 'iterator plan defers runtime selection to the runner by default');
 assert.equal(plan.tasks[0].executor.model, undefined, 'iterator plan defers executor model selection to the runner by default');
 assert.equal(plan.tasks[0].executor.config.provider, undefined, 'iterator plan defers provider selection to the runner by default');
 assert.equal(plan.tasks[0].executor.config.model, undefined, 'iterator plan defers config model selection to the runner by default');
