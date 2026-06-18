@@ -35,7 +35,7 @@ Files live under `static-sites/issue-<issue_number>-<base-slug>/`. Derive `<base
 - PR body sections, in order:
   1. **Generated Files** — list every committed file path.
   2. **Design Intent** — short notes on how the implementation realizes the design direction (palette, typography, layout, mood).
-  3. **AI Assistance** — disclose `Tool(s): Data Machine (OpenAI gpt-5.5)` and what was AI-authored.
+  3. **AI Assistance** — disclose the runtime/tool and model used, plus what was AI-authored.
   4. `Closes #<issue_number>` — the source idea.
 
 ## Capabilities
