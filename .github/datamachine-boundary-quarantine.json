@@ -14,57 +14,9 @@
       "category": "boundary_enforcement",
       "reason": "The quarantine manifest necessarily names the prohibited boundary terms and classified references."
     },
-    ".github/homeboy/controllers/static-site-generation-loop.controller.json": {
-      "category": "transitional_adapter_surface",
-      "reason": "Homeboy controller currently invokes the Data Machine run-agent-bundle ability until Homeboy Extensions exposes a generic agent-runtime provider contract."
-    },
-    ".github/scripts/build-datamachine-iterator-workflow.mjs": {
-      "category": "transitional_adapter_surface",
-      "reason": "Builds the current Data Machine workflow payload consumed by the reusable runner."
-    },
-    ".github/scripts/build-homeboy-php-transformer-iterator-plan.mjs": {
-      "category": "transitional_adapter_surface",
-      "reason": "Assembles a Homeboy plan against the current bundle-run runtime ability while using generic WP Codebox provider runtime identifiers where available."
-    },
-    ".github/scripts/build-homeboy-ssi-loop-controller.mjs": {
-      "category": "transitional_adapter_surface",
-      "reason": "Generates the controller spec with the current Data Machine agent ability."
-    },
-    ".github/workflows/homeboy-agent-task.yml": {
-      "category": "transitional_adapter_surface",
-      "reason": "Checks out current runtime components until Homeboy/Homeboy Extensions provide generic controller runtime component defaults."
-    },
-    ".github/workflows/php-transformer-iterator-smoke.yml": {
-      "category": "transitional_adapter_config",
-      "reason": "Smoke coverage uses the generic runtime-agent-ci caller, with remaining current bundle-run and GitHub issue ability names quarantined in the task config."
-    },
-    ".github/workflows/php-transformer-iterator.yml": {
-      "category": "transitional_adapter_config",
-      "reason": "Calls generic runtime-agent-ci with WP Codebox workspace/PR publication identifiers and quarantines the remaining current runtime ability names in task config."
-    },
-    ".github/workflows/site-generation-loop.yml": {
-      "category": "transitional_adapter_surface",
-      "reason": "Checks out current runtime components until Homeboy/Homeboy Extensions provide generic controller runtime component defaults."
-    },
-    ".github/workflows/ssi-stack-reviewer.yml": {
-      "category": "transitional_adapter_config",
-      "reason": "Calls generic runtime-agent-ci and quarantines the unavoidable current review-comment ability name in the task config."
-    },
     "docs/datamachine-boundary.md": {
       "category": "boundary_enforcement",
-      "reason": "Boundary documentation necessarily names the prohibited terms and upstream gaps."
-    },
-    "tests/helpers/artifact-contracts.mjs": {
-      "category": "transitional_adapter_test",
-      "reason": "Assertions cover current reusable workflow runner payloads, generic WP Codebox identifiers, and remaining quarantined ability contracts."
-    },
-    "tests/playground-ci/workloads/php-transformer-iterator-bootstrap.php": {
-      "category": "transitional_adapter_surface",
-      "reason": "Bootstrap maps current Data Machine Code ability projections and Data Machine engine-data recorders."
-    },
-    "tests/scripts/test-build-datamachine-iterator-workflow.mjs": {
-      "category": "transitional_adapter_test",
-      "reason": "Covers current Data Machine workflow payload generation."
+      "reason": "Boundary documentation necessarily names the prohibited terms."
     },
     "tests/scripts/test-datamachine-boundary.mjs": {
       "category": "boundary_enforcement",
@@ -76,23 +28,11 @@
     },
     "tests/scripts/test-php-transformer-iterator-bootstrap.mjs": {
       "category": "transitional_adapter_test",
-      "reason": "Covers current Data Machine Code bootstrap ability projection behavior."
+      "reason": "Negative assertions cover removed runtime-engine and concrete ability references."
     },
     "tests/scripts/test-php-transformer-iterator-workflow.mjs": {
       "category": "transitional_adapter_test",
-      "reason": "Covers current generic runtime-agent-ci workflow wiring and quarantined runtime task config."
-    },
-    "tests/scripts/test-shared-script-libs.mjs": {
-      "category": "transitional_adapter_test",
-      "reason": "Covers current Data Machine workflow helper import."
-    },
-    "tests/scripts/test-ssi-native-loop-adapter.mjs": {
-      "category": "transitional_adapter_test",
-      "reason": "Covers current controller and iterator runtime component paths."
-    },
-    "tests/scripts/test-static-validation-iterator-replay.mjs": {
-      "category": "transitional_adapter_test",
-      "reason": "Covers current Data Machine iterator workflow builder path."
+      "reason": "Negative assertions cover removed reusable workflow and concrete ability references."
     }
   }
 }

@@ -80,10 +80,12 @@ export function assertVisualArtifactContract(artifact, expectedDir) {
 
 export function assertIteratorPlanUsesReusableWorkflowRunner(plan, workflowPath) {
 	const input = plan.tasks?.[0]?.executor?.config?.runtime_task?.input || {};
-	assert.equal(input.execute_workflow_path, workflowPath, 'iterator consumes the prebuilt Data Machine workflow path');
-	assert.equal(input.source, '/workspace/wp-site-generator/bundles/php-transformer-iterator-agent', 'iterator runs the sandbox-local agent bundle');
-	assert.deepEqual(input.success_completion_outcomes, ['pull_request_path', 'issue_path'], 'iterator accepts PR or issue completion outcomes');
-	assert.deepEqual(input.ability_tools?.map((tool) => tool.name), [
+	assert.equal(input.package?.source, '/workspace/wp-site-generator/bundles/php-transformer-iterator-agent', 'iterator runs the sandbox-local agent package');
+	assert.equal(input.package?.slug, 'php-transformer-iterator-agent', 'iterator identifies the runtime package slug');
+	assert.equal(input.workflow?.id, 'php-transformer-iterator-manual-flow', 'iterator selects the package workflow');
+	assert.equal(input.input?.execute_workflow_path, workflowPath, 'iterator consumes the prebuilt workflow path');
+	assert.deepEqual(input.input?.success_completion_outcomes, ['pull_request_path', 'issue_path'], 'iterator accepts PR or issue completion outcomes');
+	assert.deepEqual(input.input?.ability_tools?.map((tool) => tool.name), [
 		'workspace_clone',
 		'workspace_worktree_add',
 		'workspace_read',
@@ -95,7 +97,7 @@ export function assertIteratorPlanUsesReusableWorkflowRunner(plan, workflowPath)
 		'create_github_pull_request',
 		'create_github_issue',
 	], 'iterator exposes routine tools through runtime ability_tools');
-	assert.deepEqual(input.ability_tools?.map((tool) => tool.ability), [
+	assert.deepEqual(input.input?.ability_tools?.map((tool) => tool.ability), [
 		'wp-codebox/runner-workspace-command',
 		'wp-codebox/runner-workspace-command',
 		'wp-codebox/runner-workspace-command',
@@ -105,9 +107,9 @@ export function assertIteratorPlanUsesReusableWorkflowRunner(plan, workflowPath)
 		'wp-codebox/runner-workspace-command',
 		'wp-codebox/runner-workspace-command',
 		'wp-codebox/runner-workspace-publish',
-		'datamachine-code/create-github-issue',
+		'wp-codebox/runner-workspace-publish',
 	], 'iterator uses WP Codebox provider runtime identifiers for workspace and PR publication tools');
-	assert.deepEqual(input.tool_recorders, [
+	assert.deepEqual(input.input?.tool_recorders, [
 		{
 			tool: 'create_github_issue',
 			record: {
@@ -123,10 +125,8 @@ export function assertIteratorPlanUsesReusableWorkflowRunner(plan, workflowPath)
 			},
 		},
 	], 'iterator records durable upstream actions through runtime tool_recorders');
-	assert.deepEqual(input.extra_required_abilities, [
-		'datamachine-code/create-github-issue',
+	assert.deepEqual(input.input?.extra_required_abilities, [
 		'wp-codebox/runner-workspace-command',
 		'wp-codebox/runner-workspace-publish',
-		'datamachine-code/upsert-github-pull-review-comment',
 	], 'iterator declares the remaining callback and generic provider runtime abilities');
 }

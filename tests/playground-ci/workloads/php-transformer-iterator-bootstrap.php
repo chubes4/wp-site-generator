@@ -1,6 +1,6 @@
 <?php
 /**
- * Repo-specific bootstrap for the generic Data Machine agent runner.
+ * Repo-specific bootstrap for the generic agent runtime package runner.
  */
 
 if ( function_exists( 'wp_set_current_user' ) ) {
@@ -22,20 +22,17 @@ if ( ! class_exists( 'WC_Site_Generator_PHP_Transformer_Iterator_Callback_Tool' 
 				$response   = self::execute_ability_tool(
 					$parameters,
 					$tool_def + array(
-						'ability'   => 'datamachine-code/upsert-github-pull-review-comment',
+						'ability'   => 'wp-codebox/runner-workspace-publish',
 						'tool_name' => 'comment_github_pull_request',
 					)
 				);
-				if ( ! empty( $response['success'] ) ) {
-					self::record_iterator_event( $parameters, 'source_callback', 'pull_request_comment', self::first_url( $response ), $response );
-				}
 				return $response;
 			}
 
 			$response = self::execute_ability_tool(
 				$parameters,
 				$tool_def + array(
-					'ability'   => 'datamachine-code/comment-github-pull-request',
+					'ability'   => 'wp-codebox/runner-workspace-publish',
 					'tool_name' => 'comment_github_pull_request',
 				)
 			);
@@ -92,27 +89,6 @@ if ( ! class_exists( 'WC_Site_Generator_PHP_Transformer_Iterator_Callback_Tool' 
 			);
 		}
 
-		private static function record_iterator_event( array $parameters, string $key, string $type, string $url, array $response ): void {
-			$job_id = (int) ( $parameters['job_id'] ?? 0 );
-			if ( $job_id <= 0 || '' === $url || ! function_exists( 'datamachine_merge_engine_data' ) ) {
-				return;
-			}
-
-			datamachine_merge_engine_data(
-				$job_id,
-				array(
-					'php_transformer_iterator' => array(
-						$key => array(
-							'type'   => $type,
-							'url'    => $url,
-							'repo'   => (string) ( $parameters['repo'] ?? '' ),
-							'number' => (int) ( $response['pull_number'] ?? $response['issue_number'] ?? $parameters['pull_number'] ?? 0 ),
-						),
-					),
-				)
-			);
-		}
-
 		private static function is_source_pull_request( array $parameters ): bool {
 			$source_repo = trim( (string) getenv( 'ITERATOR_SOURCE_REPO' ) );
 			$source_pr   = (int) getenv( 'ITERATOR_SOURCE_PR' );
@@ -136,18 +112,6 @@ if ( ! class_exists( 'WC_Site_Generator_PHP_Transformer_Iterator_Callback_Tool' 
 				'php-transformer-iterator-agent',
 				'validation-' . trim( (string) getenv( 'ITERATOR_VALIDATION_RUN_ID' ) ),
 			);
-
-			$job_id = (int) ( $parameters['job_id'] ?? 0 );
-			if ( $job_id > 0 && function_exists( 'datamachine_get_engine_data' ) ) {
-				$engine_data = datamachine_get_engine_data( $job_id );
-				$packet      = is_array( $engine_data['finding_packet'] ?? null ) ? $engine_data['finding_packet'] : array();
-				foreach ( array( 'site', 'kind', 'path', 'selector' ) as $key ) {
-					$value = trim( (string) ( $packet[ $key ] ?? '' ) );
-					if ( '' !== $value ) {
-						$parts[] = $value;
-					}
-				}
-			}
 
 			return self::sanitize_marker( implode( ':', array_filter( $parts ) ) );
 		}
@@ -187,29 +151,6 @@ if ( ! class_exists( 'WC_Site_Generator_PHP_Transformer_Iterator_Callback_Tool' 
 		}
 	}
 }
-
-add_filter(
-	'datamachine_resolved_tools',
-	static function ( array $tools ): array {
-		$tools['comment_github_pull_request'] = array(
-			'class'       => 'WC_Site_Generator_PHP_Transformer_Iterator_Callback_Tool',
-			'method'      => 'handle_comment_tool_call',
-			'ability'     => 'datamachine-code/comment-github-pull-request',
-			'tool_name'   => 'comment_github_pull_request',
-			'description' => 'Post the required callback comment on the source generated-site pull request.',
-			'parameters'  => array(
-				'type'       => 'object',
-				'properties' => array(),
-			),
-		);
-
-		return $tools;
-	},
-	100,
-	1
-);
-
-update_option( 'datamachine_persist_pipeline_transcripts', true, false );
 
 return array(
 	'metrics'  => array(

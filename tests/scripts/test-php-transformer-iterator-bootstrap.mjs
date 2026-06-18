@@ -7,18 +7,18 @@ const bootstrap = await readFile(path.join(repoRoot, 'tests/playground-ci/worklo
 
 assert.match(
 	bootstrap,
-	/datamachine-code\/upsert-github-pull-review-comment/,
-	'source PR callbacks use the managed upsert comment ability',
+	/wp-codebox\/runner-workspace-publish/,
+	'source PR callbacks use the generic WP Codebox publish ability',
 );
 assert.doesNotMatch(
 	bootstrap,
-	/workspace_clone|workspace_worktree_add|create_github_pull_request|create_github_issue/,
+	/workspace_clone|workspace_worktree_add|create_github_pull_request|create_github_issue|datamachine-code\//,
 	'bootstrap leaves routine workspace and upstream action tools to run-scoped ability_tools',
 );
 assert.doesNotMatch(
 	bootstrap,
-	/datamachine\/(create-github|comment-github|upsert-github|workspace-)/,
-	'iterator uses Data Machine Code ability namespaces for GitHub and workspace tools',
+	/datamachine\//,
+	'iterator bootstrap does not use Data Machine ability namespaces',
 );
 assert.match(
 	bootstrap,
@@ -42,7 +42,7 @@ assert.match(
 );
 assert.doesNotMatch(
 	bootstrap,
-	/datamachine_merge_engine_data\([^]*upstream_action/,
+	/datamachine_merge_engine_data/,
 	'bootstrap leaves upstream action evidence to runtime tool_recorders',
 );
 

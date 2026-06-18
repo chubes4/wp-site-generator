@@ -49,14 +49,14 @@ assert.equal(controller.policy, undefined, 'controller spec does not encode Home
 assert.equal(controller.actions, undefined, 'controller spec does not enqueue Homeboy actions directly');
 assert.equal(controller.initial_event, undefined, 'controller spec does not seed Homeboy events');
 assert.equal(controller.agents.find((agent) => agent.agent_id === 'static_site').metadata.slug, 'static-site-agent', 'controller declares WPSG agents in repo-domain terms');
-assert.ok(controller.abilities.some((ability) => ability.ability_id === 'datamachine/run-agent-bundle'), 'controller declares required ability contracts');
+assert.ok(controller.abilities.some((ability) => ability.ability_id === 'agents/run-runtime-package'), 'controller declares required generic runtime package ability contracts');
 assert.ok(controller.workflows.every((workflow) => workflow.prompt || workflow.tasks?.length), 'each workflow is ingestible by Homeboy from-spec dispatch');
 assert.deepEqual(controller.workflows.filter((workflow) => workflow.agent_id).map((workflow) => workflow.agent_id), ['store_idea', 'website_idea', 'design_store', 'design_website', 'static_store', 'static_site', 'php_transformer_iterator', 'ssi_stack_reviewer'], 'agent-backed workflows declare agent participation');
 assert.equal(controller.agents.find((agent) => agent.agent_id === 'design_store').metadata.bundle, 'bundles/design-agent', 'design-store uses the checked-in design bundle');
-assert.equal(controller.workflows.find((workflow) => workflow.workflow_id === 'store-idea').inputs.flow, 'store-idea-artifact-flow', 'store idea selects the artifact flow');
-assert.equal(controller.workflows.find((workflow) => workflow.workflow_id === 'website-idea').inputs.flow, 'website-idea-artifact-flow', 'website idea selects the artifact flow');
-assert.equal(controller.workflows.find((workflow) => workflow.workflow_id === 'design-store').inputs.flow, 'design-artifact-flow', 'design workflow selects the artifact flow');
-assert.equal(controller.workflows.find((workflow) => workflow.workflow_id === 'static-site').inputs.flow, 'static-site-candidate-flow', 'static workflow selects the candidate artifact flow');
+assert.equal(controller.workflows.find((workflow) => workflow.workflow_id === 'store-idea').runtime_execution.input.workflow.id, 'store-idea-artifact-flow', 'store idea selects the artifact workflow');
+assert.equal(controller.workflows.find((workflow) => workflow.workflow_id === 'website-idea').runtime_execution.input.workflow.id, 'website-idea-artifact-flow', 'website idea selects the artifact workflow');
+assert.equal(controller.workflows.find((workflow) => workflow.workflow_id === 'design-store').runtime_execution.input.workflow.id, 'design-artifact-flow', 'design workflow selects the artifact workflow');
+assert.equal(controller.workflows.find((workflow) => workflow.workflow_id === 'static-site').runtime_execution.input.workflow.id, 'static-site-candidate-flow', 'static workflow selects the candidate artifact workflow');
 assert.equal(controller.workflows.find((workflow) => workflow.workflow_id === 'store-idea').abilities.includes('github_issue_publish'), false, 'concept artifact workflows do not publish GitHub issues');
 assert.equal(controller.workflows.find((workflow) => workflow.workflow_id === 'static-site').abilities.includes('github_pull_request_publish'), false, 'candidate artifact workflows do not publish GitHub pull requests');
 assert.deepEqual(controller.workflows.find((workflow) => workflow.workflow_id === 'static-validation').artifacts.slice(0, 1), ['static_site_candidate'], 'static validation declares candidate artifact dependencies');
@@ -137,7 +137,7 @@ const groupResult = spawnSync(process.execPath, ['.github/scripts/group-ssi-find
 });
 assert.equal(groupResult.status, 0, groupResult.stderr || groupResult.stdout);
 
-const workflowResult = spawnSync(process.execPath, ['.github/scripts/build-datamachine-iterator-workflow.mjs', path.join(tempDir, 'groups.json'), workflowPath], {
+const workflowResult = spawnSync(process.execPath, ['.github/scripts/build-agent-iterator-workflow.mjs', path.join(tempDir, 'groups.json'), workflowPath], {
 	cwd: repoRoot,
 	encoding: 'utf8',
 });
@@ -163,7 +163,8 @@ assert.equal(planResult.status, 0, planResult.stderr || planResult.stdout);
 
 const plan = JSON.parse(await readFile(planPath, 'utf8'));
 assert.equal(plan.schema, 'homeboy/agent-task-plan/v1', 'native iterator adapter emits a Homeboy plan');
-assert.equal(plan.tasks[0].executor.config.runtime_task.ability, 'datamachine/run-agent-bundle', 'iterator runs through a WP Codebox runtime task');
+assert.equal(plan.tasks[0].executor.config.runtime_task.ability, 'agents/run-runtime-package', 'iterator runs through the generic runtime package ability');
+assert.equal(plan.tasks[0].executor.config.runtime_execution.kind, 'bundle', 'iterator declares generic bundle runtime execution');
 assert.equal(plan.tasks[0].executor.config.runtime_bin, undefined, 'iterator plan defers runtime binary selection to the runner by default');
 assert.equal(plan.tasks[0].executor.config.runtime_id, undefined, 'iterator plan defers runtime selection to the runner by default');
 assert.equal(plan.tasks[0].executor.model, undefined, 'iterator plan defers executor model selection to the runner by default');
@@ -173,14 +174,14 @@ assert.equal(plan.tasks[0].executor.config.provider_plugin_paths, undefined, 'it
 assert.equal(plan.tasks[0].executor.config.secret_env, undefined, 'iterator plan defers provider secret env selection to the runner by default');
 assertIteratorPlanUsesReusableWorkflowRunner(plan, workflowPath);
 assert.equal(plan.tasks[0].executor.config.runtime_component_paths.agents_api, '.ci/agents-api', 'iterator uses a repo-relative Agents API component path');
-assert.equal(plan.tasks[0].executor.config.runtime_component_paths.agent_runtime, '.ci/data-machine', 'iterator uses a repo-relative Data Machine component path');
-assert.equal(plan.tasks[0].executor.config.runtime_component_paths.agent_runtime_tools, '.ci/data-machine-code', 'iterator uses a repo-relative Data Machine Code component path');
+assert.equal(plan.tasks[0].executor.config.runtime_component_paths.agent_runtime, undefined, 'iterator does not name a concrete agent runtime component');
+assert.equal(plan.tasks[0].executor.config.runtime_component_paths.agent_runtime_tools, undefined, 'iterator does not name concrete runtime tool components');
 assert.equal(plan.tasks[0].executor.config.homeboy_extensions, '.ci/homeboy-extensions/wordpress', 'iterator uses a repo-relative Homeboy Extensions component path');
 assert.equal(plan.tasks[0].executor.config.agent_bundles[0].source, '/workspace/wp-site-generator/bundles/php-transformer-iterator-agent', 'iterator imports a sandbox-local bundle path');
-assert.equal(plan.tasks[0].executor.config.runtime_task.input.source, '/workspace/wp-site-generator/bundles/php-transformer-iterator-agent', 'iterator runs a sandbox-local bundle path');
-assert.equal(plan.tasks[0].executor.config.runtime_task.input.wait_for_completion, true, 'iterator waits for typed bundle outputs');
-assert.match(plan.tasks[0].executor.config.runtime_task.input.artifacts, /^\.ci\/homeboy-agent-task-artifacts\//, 'iterator uses a repo-relative artifact directory');
-assert.equal(plan.tasks[0].executor.config.runtime_task.input.success_requires_pr, false, 'native iterator allows issue-only completion for weak evidence');
+assert.equal(plan.tasks[0].executor.config.runtime_task.input.package.source, '/workspace/wp-site-generator/bundles/php-transformer-iterator-agent', 'iterator runs a sandbox-local package path');
+assert.equal(plan.tasks[0].executor.config.runtime_task.input.input.wait_for_completion, true, 'iterator waits for typed package outputs');
+assert.match(plan.tasks[0].executor.config.runtime_task.input.input.artifacts, /^\.ci\/homeboy-agent-task-artifacts\//, 'iterator uses a repo-relative artifact directory');
+assert.equal(plan.tasks[0].executor.config.runtime_task.input.input.success_requires_pr, false, 'native iterator allows issue-only completion for weak evidence');
 assert.equal(plan.tasks[0].inputs.source_pr, '456', 'source PR metadata flows into native plan');
 assert.equal(plan.metadata.runtime_input_contract, 'homeboy-agent-runtime-env', 'iterator plan records the Homeboy agent runtime env contract');
 
@@ -262,8 +263,8 @@ const explicitProviderIteratorPlan = JSON.parse(await readFile(explicitProviderI
 const explicitProviderIteratorConfig = explicitProviderIteratorPlan.tasks[0].executor.config;
 assert.equal(explicitProviderIteratorConfig.provider, 'opencode', 'iterator preserves explicit provider override');
 assert.equal(explicitProviderIteratorConfig.model, 'opencode-go/kimi-k2.6', 'iterator preserves explicit provider model override');
-assert.equal(explicitProviderIteratorConfig.runtime_task.input.provider, 'opencode', 'iterator passes explicit provider to runtime task');
-assert.equal(explicitProviderIteratorConfig.runtime_task.input.model, 'opencode-go/kimi-k2.6', 'iterator passes explicit model to runtime task');
+assert.equal(explicitProviderIteratorConfig.runtime_task.input.input.provider, 'opencode', 'iterator passes explicit provider to runtime package input');
+assert.equal(explicitProviderIteratorConfig.runtime_task.input.input.model, 'opencode-go/kimi-k2.6', 'iterator passes explicit model to runtime package input');
 assert.deepEqual(explicitProviderIteratorConfig.provider_plugin_paths, ['/runner/ai-provider-for-opencode-current'], 'iterator preserves explicit provider plugin override');
 assert.deepEqual(explicitProviderIteratorConfig.secret_env, ['OPENCODE_API_KEY', 'GITHUB_TOKEN'], 'iterator preserves explicit secret env override');
 assert.deepEqual(explicitProviderIteratorConfig.runtime_env, { XDG_CONFIG_HOME: '/runtime/config', XDG_STATE_HOME: '/runtime/state' }, 'iterator preserves explicit runtime env override');

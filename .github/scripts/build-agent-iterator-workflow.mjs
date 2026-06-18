@@ -3,14 +3,14 @@
 import { existsSync, readdirSync, readFileSync } from 'node:fs';
 import { mkdir, readFile, writeFile } from 'node:fs/promises';
 import path from 'node:path';
-import { buildSingleAiWorkflow, buildSingleAiWorkflowStep } from './lib/datamachine-ai-workflow.mjs';
+import { buildSingleAiWorkflow, buildSingleAiWorkflowStep } from './lib/agent-ai-workflow.mjs';
 import { normalizeFindingInput, summarizeFindingForPrompt } from './lib/ssi-finding-packets.mjs';
 import { formatRatio, summarizeVisualDiff } from './lib/visual-artifacts.mjs';
 
 const repoRoot = new URL('../..', import.meta.url).pathname;
 const packetsPath = process.env.FINDING_PACKETS_PATH || process.argv[2] || 'homeboy-ci-results/finding-packets.json';
-const outputPath = process.env.DATAMACHINE_WORKFLOW_PATH || process.argv[3] || 'homeboy-ci-results/datamachine-iterator-workflow.json';
-const continuationPath = process.env.ITERATOR_CONTINUATION_PATH || path.join(path.dirname(outputPath), 'datamachine-iterator-continuation.json');
+const outputPath = process.env.AGENT_WORKFLOW_PATH || process.argv[3] || 'homeboy-ci-results/agent-iterator-workflow.json';
+const continuationPath = process.env.ITERATOR_CONTINUATION_PATH || path.join(path.dirname(outputPath), 'agent-iterator-continuation.json');
 const pipelinePath = process.env.ITERATOR_PIPELINE_PATH || 'bundles/php-transformer-iterator-agent/pipelines/php-transformer-iterator-pipeline.json';
 const flowPath = process.env.ITERATOR_FLOW_PATH || 'bundles/php-transformer-iterator-agent/flows/php-transformer-iterator-manual-flow.json';
 const visualArtifactDir = process.env.VISUAL_ARTIFACT_DIR || '';
@@ -124,7 +124,7 @@ function buildContinuation(packets) {
 		omitted_group_count: omittedGroups.length,
 		next_start_index: omittedGroups.length > 0 ? embeddedGroups.length : null,
 		groups: omittedGroups,
-		datamachine_packets: omittedGroups.map((item, index) => toDataMachinePacket(item, embeddedGroups.length + index)),
+		runtime_packets: omittedGroups.map((item, index) => toRuntimePacket(item, embeddedGroups.length + index)),
 	};
 }
 
@@ -140,7 +140,7 @@ function continuationMetadata(continuation) {
 	};
 }
 
-function toDataMachinePacket(item, index) {
+function toRuntimePacket(item, index) {
 	const packet = Array.isArray(item?.packets) ? item.packets[0] || {} : item;
 	const kind = text(item.kind) || text(packet.kind) || 'finding';
 	const pathLabel = text(packet.path) || text(packet.selector) || `finding-${index + 1}`;
