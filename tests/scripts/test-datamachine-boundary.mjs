@@ -70,7 +70,8 @@ for (const file of manifestFiles.filter((file) => file.includes('php-transformer
   assert.equal(artifacts.length, 1, `${file} declares its workspace preload as a package artifact`);
   assert.equal(artifacts[0].type, 'agent-runtime/workspace-preload', `${file} uses generic workspace preload package vocabulary`);
   assert.deepEqual(artifacts[0].requires, ['agent-runtime/workspace-preload'], `${file} declares workspace preload capability need`);
-  assert.equal(artifacts[0].meta?.compatibility_adapter?.type, 'datamachine-code/workspace_preload', `${file} quarantines the current workspace preload adapter`);
+  assert.equal(artifacts[0].source.startsWith('extensions/agent-runtime/workspace-preload/'), true, `${file} stores workspace preload artifacts under the generic extension path`);
+  assert.equal(artifacts[0].meta?.compatibility_adapter, undefined, `${file} does not declare a compatibility adapter for workspace preload artifacts`);
 }
 
 function escapeRegExp(value) {
