@@ -25,14 +25,6 @@
     "tests/scripts/test-homeboy-site-generation-plan.mjs": {
       "category": "boundary_enforcement",
       "reason": "Existing negative assertions ensure WPSG plugin shims do not know Data Machine projection internals."
-    },
-    "tests/scripts/test-php-transformer-iterator-bootstrap.mjs": {
-      "category": "transitional_adapter_test",
-      "reason": "Negative assertions cover removed runtime-engine and concrete ability references."
-    },
-    "tests/scripts/test-php-transformer-iterator-workflow.mjs": {
-      "category": "transitional_adapter_test",
-      "reason": "Negative assertions cover removed reusable workflow and concrete ability references."
     }
   }
 }

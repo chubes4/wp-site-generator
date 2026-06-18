@@ -36,8 +36,8 @@ const runtimeTaskInput = {
 	step_budget: 20,
 	time_budget_ms: 600000,
 	runtime_output_projections: {
-		upstream_action_url: 'metadata.engine_data.php_transformer_iterator.upstream_action_url',
-		source_callback_url: 'metadata.engine_data.php_transformer_iterator.source_callback_url',
+		upstream_action_url: 'outputs.upstream_action_url',
+		source_callback_url: 'outputs.source_callback_url',
 	},
 	ability_tools: [
 		{ name: 'workspace_clone', ability: providerRuntimeAbilityNames.workspaceCommand },
@@ -62,6 +62,12 @@ const runtimeTaskInput = {
 			operation: 'create_github_pull_request',
 			outputs: {
 				upstream_action_url: 'data.html_url',
+			},
+		},
+		{
+			operation: 'comment_github_pull_request',
+			outputs: {
+				source_callback_url: 'data.html_url',
 			},
 		},
 	],
