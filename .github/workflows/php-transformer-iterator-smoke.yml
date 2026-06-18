@@ -109,9 +109,9 @@ jobs:
       ability_requirements: |
         [
           "datamachine-code/create-github-issue",
-          "datamachine-code/create-github-pull-request",
-          "datamachine-code/workspace-worktree-add"
+          "wp-codebox/runner-workspace-command",
+          "wp-codebox/runner-workspace-publish"
         ]
-      ability_tools: '[{"name":"workspace_clone","ability":"datamachine-code/workspace-clone"},{"name":"workspace_worktree_add","ability":"datamachine-code/workspace-worktree-add"},{"name":"workspace_read","ability":"datamachine-code/workspace-read"},{"name":"workspace_write","ability":"datamachine-code/workspace-write"},{"name":"workspace_edit","ability":"datamachine-code/workspace-edit"},{"name":"workspace_git_status","ability":"datamachine-code/workspace-git-status"},{"name":"workspace_git_commit","ability":"datamachine-code/workspace-git-commit"},{"name":"workspace_git_push","ability":"datamachine-code/workspace-git-push"},{"name":"create_github_pull_request","ability":"datamachine-code/create-github-pull-request"},{"name":"create_github_issue","ability":"datamachine-code/create-github-issue"}]'
+      ability_tools: '[{"name":"workspace_clone","ability":"wp-codebox/runner-workspace-command"},{"name":"workspace_worktree_add","ability":"wp-codebox/runner-workspace-command"},{"name":"workspace_read","ability":"wp-codebox/runner-workspace-command"},{"name":"workspace_write","ability":"wp-codebox/runner-workspace-command"},{"name":"workspace_edit","ability":"wp-codebox/runner-workspace-command"},{"name":"workspace_git_status","ability":"wp-codebox/runner-workspace-command"},{"name":"workspace_git_commit","ability":"wp-codebox/runner-workspace-command"},{"name":"workspace_git_push","ability":"wp-codebox/runner-workspace-command"},{"name":"create_github_pull_request","ability":"wp-codebox/runner-workspace-publish"},{"name":"create_github_issue","ability":"datamachine-code/create-github-issue"}]'
       transcript_slots: '[{"name":"php-transformer-iterator-transcript","artifact_name":"php-transformer-iterator-transcript-${{ github.run_id }}"}]'
       task_timeout_seconds: 900

@@ -24,7 +24,7 @@
     },
     ".github/scripts/build-homeboy-php-transformer-iterator-plan.mjs": {
       "category": "transitional_adapter_surface",
-      "reason": "Assembles a Homeboy plan against the current Data Machine agent runtime and Data Machine Code tool ability contracts."
+      "reason": "Assembles a Homeboy plan against the current bundle-run runtime ability while using generic WP Codebox provider runtime identifiers where available."
     },
     ".github/scripts/build-homeboy-ssi-loop-controller.mjs": {
       "category": "transitional_adapter_surface",
@@ -36,11 +36,11 @@
     },
     ".github/workflows/php-transformer-iterator-smoke.yml": {
       "category": "transitional_adapter_config",
-      "reason": "Smoke coverage uses the generic runtime-agent-ci caller, with only current runtime ability defaults quarantined in the task config."
+      "reason": "Smoke coverage uses the generic runtime-agent-ci caller, with remaining current bundle-run and GitHub issue ability names quarantined in the task config."
     },
     ".github/workflows/php-transformer-iterator.yml": {
       "category": "transitional_adapter_config",
-      "reason": "Calls generic runtime-agent-ci and quarantines unavoidable current runtime ability/tool names in the task config."
+      "reason": "Calls generic runtime-agent-ci with WP Codebox workspace/PR publication identifiers and quarantines the remaining current runtime ability names in task config."
     },
     ".github/workflows/playground-stage-5.yml": {
       "category": "legacy_runtime_probe",
@@ -76,7 +76,7 @@
     },
     "tests/helpers/artifact-contracts.mjs": {
       "category": "transitional_adapter_test",
-      "reason": "Assertions cover current reusable workflow runner payloads and Data Machine Code ability contracts."
+      "reason": "Assertions cover current reusable workflow runner payloads, generic WP Codebox identifiers, and remaining quarantined ability contracts."
     },
     "tests/playground-ci/component/wp-site-generator-ci-driver.php": {
       "category": "legacy_runtime_probe",

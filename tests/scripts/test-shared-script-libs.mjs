@@ -4,7 +4,7 @@ import { tmpdir } from 'node:os';
 import path from 'node:path';
 
 import { buildSingleAiWorkflow, buildSingleAiWorkflowStep } from '../../.github/scripts/lib/datamachine-ai-workflow.mjs';
-import { envOrArg, numberValue, parseArgs, readJsonOrNull, repoPathResolver, textValue } from '../../.github/scripts/lib/ci-runtime-utils.mjs';
+import { envOrArg, numberValue, parseArgs, providerRuntimeAbilityNames, readJsonOrNull, repoPathResolver, textValue } from '../../.github/scripts/lib/ci-runtime-utils.mjs';
 import { githubToken, prNumberFromUrl } from '../../.github/scripts/lib/github-api.mjs';
 import { loadRecoveredSsiImportSummary, recoveredSsiScenarioFromImportSummary } from '../../.github/scripts/lib/ssi-import-summary.mjs';
 import { ssiPrBodyMetrics, validationMetricValue } from '../../.github/scripts/lib/ssi-metrics.mjs';
@@ -23,6 +23,8 @@ assert.equal(repoPathResolver('/tmp/repo')('.ci', 'artifact.json'), path.join('/
 assert.equal(textValue(' ok '), 'ok');
 assert.equal(numberValue('4'), 4);
 assert.equal(numberValue('bad', 9), 9);
+assert.equal(providerRuntimeAbilityNames.workspaceCommand, 'wp-codebox/runner-workspace-command');
+assert.equal(providerRuntimeAbilityNames.workspacePublish, 'wp-codebox/runner-workspace-publish');
 
 const workflow = buildSingleAiWorkflow({
 	step: buildSingleAiWorkflowStep({

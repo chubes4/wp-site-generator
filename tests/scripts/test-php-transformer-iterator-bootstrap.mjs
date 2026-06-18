@@ -43,7 +43,7 @@ assert.match(
 assert.doesNotMatch(
 	bootstrap,
 	/datamachine_merge_engine_data\([^]*upstream_action/,
-	'bootstrap leaves upstream action evidence to Data Machine tool_recorders',
+	'bootstrap leaves upstream action evidence to runtime tool_recorders',
 );
 
 console.log('php-transformer-iterator bootstrap smoke passed');
