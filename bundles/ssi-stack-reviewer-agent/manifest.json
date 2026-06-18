@@ -21,6 +21,33 @@
         "label": "SSI Stack Reviewer Agent",
         "slug": "ssi-stack-reviewer-agent"
     },
+    "agent_package": {
+        "artifacts": [
+            {
+                "meta": {
+                    "compatibility_adapter": {
+                        "type": "datamachine-code/workspace_preload"
+                    }
+                },
+                "requires": [
+                    "agent-runtime/workspace-preload"
+                ],
+                "slug": "ssi-stack-repos",
+                "source": "extensions/datamachine-code/workspace_preload/ssi-stack-repos.json",
+                "type": "agent-runtime/workspace-preload"
+            }
+        ],
+        "capabilities": [
+            "agent-runtime/workspace-preload"
+        ],
+        "meta": {
+            "exported_by": "wp-site-generator",
+            "source_package": "wp-site-generator",
+            "source_type": "runtime-agent-package"
+        },
+        "slug": "ssi-stack-reviewer-agent",
+        "version": "1"
+    },
     "bundle_slug": "ssi-stack-reviewer-agent",
     "bundle_version": "1",
     "exported_at": "2026-06-08T00:00:00+00:00",

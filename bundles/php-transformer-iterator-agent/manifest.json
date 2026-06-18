@@ -21,10 +21,37 @@
         "label": "Static Site Validation Iterator Agent",
         "slug": "php-transformer-iterator-agent"
     },
+    "agent_package": {
+        "artifacts": [
+            {
+                "meta": {
+                    "compatibility_adapter": {
+                        "type": "datamachine-code/workspace_preload"
+                    }
+                },
+                "requires": [
+                    "agent-runtime/workspace-preload"
+                ],
+                "slug": "transformer-repos",
+                "source": "extensions/datamachine-code/workspace_preload/transformer-repos.json",
+                "type": "agent-runtime/workspace-preload"
+            }
+        ],
+        "capabilities": [
+            "agent-runtime/workspace-preload"
+        ],
+        "meta": {
+            "exported_by": "wp-site-generator",
+            "source_package": "wp-site-generator",
+            "source_type": "runtime-agent-package"
+        },
+        "slug": "php-transformer-iterator-agent",
+        "version": "1"
+    },
     "bundle_slug": "php-transformer-iterator-agent",
     "bundle_version": "1",
     "exported_at": "2026-05-07T00:00:00+00:00",
-    "exported_by": "data-machine/0.104.0",
+    "exported_by": "wp-site-generator",
     "included": {
         "auth_refs": [],
         "extensions": [

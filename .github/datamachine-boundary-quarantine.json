@@ -58,17 +58,13 @@
       "category": "domain_language_cleanup_required",
       "reason": "Top-level docs still describe the historical Data Machine implementation; should move to generic runtime vocabulary as upstream contracts land."
     },
-    "bundles/design-agent/manifest.json": {
-      "category": "exported_bundle_metadata",
-      "reason": "Generated bundle metadata records its exporter."
-    },
     "bundles/php-transformer-iterator-agent/extensions/datamachine-code/workspace_preload/transformer-repos.json": {
-      "category": "transitional_adapter_surface",
-      "reason": "Bundle extension artifact targets Data Machine Code workspace preload until a generic workspace preload contract exists."
+      "category": "transitional_adapter_config",
+      "reason": "Bundle extension artifact keeps the Data Machine Code workspace preload adapter until a generic workspace preload materializer exists."
     },
     "bundles/php-transformer-iterator-agent/manifest.json": {
-      "category": "exported_bundle_metadata",
-      "reason": "Generated bundle metadata and extension path reference current exporter/tooling."
+      "category": "transitional_adapter_config",
+      "reason": "Generic package metadata declares workspace preload needs while compatibility metadata still points at the current adapter extension path."
     },
     "bundles/php-transformer-iterator-agent/memory/agent/SOUL.md": {
       "category": "domain_language_cleanup_required",
@@ -79,28 +75,16 @@
       "reason": "Iterator prompt names Data Machine Code worktrees rather than generic workspace tooling."
     },
     "bundles/ssi-stack-reviewer-agent/extensions/datamachine-code/workspace_preload/ssi-stack-repos.json": {
-      "category": "transitional_adapter_surface",
-      "reason": "Bundle extension artifact targets Data Machine Code workspace preload until a generic workspace preload contract exists."
+      "category": "transitional_adapter_config",
+      "reason": "Bundle extension artifact keeps the Data Machine Code workspace preload adapter until a generic workspace preload materializer exists."
     },
     "bundles/ssi-stack-reviewer-agent/manifest.json": {
-      "category": "exported_bundle_metadata",
-      "reason": "Generated bundle metadata and extension path reference current exporter/tooling."
-    },
-    "bundles/static-site-agent/manifest.json": {
-      "category": "exported_bundle_metadata",
-      "reason": "Generated bundle metadata records its exporter."
+      "category": "transitional_adapter_config",
+      "reason": "Generic package metadata declares workspace preload needs while compatibility metadata still points at the current adapter extension path."
     },
     "bundles/static-site-agent/pipelines/static-site-pipeline.json": {
       "category": "domain_language_cleanup_required",
       "reason": "Static-site prompt still includes historical Data Machine disclosure text."
-    },
-    "bundles/store-idea-agent/manifest.json": {
-      "category": "exported_bundle_metadata",
-      "reason": "Generated bundle metadata records its exporter."
-    },
-    "bundles/website-idea-agent/manifest.json": {
-      "category": "exported_bundle_metadata",
-      "reason": "Generated bundle metadata records its exporter."
     },
     "docs/datamachine-boundary.md": {
       "category": "boundary_enforcement",
