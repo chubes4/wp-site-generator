@@ -1,6 +1,6 @@
 <?php
 /**
- * Repo-specific bootstrap for the generic Data Machine agent runner.
+ * Repo-specific bootstrap for the generic runtime agent runner.
  */
 
 if ( function_exists( 'wp_set_current_user' ) ) {
@@ -139,8 +139,8 @@ if ( ! class_exists( 'WC_Site_Generator_PHP_Transformer_Iterator_Callback_Tool' 
 
 			$job_id = (int) ( $parameters['job_id'] ?? 0 );
 			if ( $job_id > 0 && function_exists( 'datamachine_get_engine_data' ) ) {
-				$engine_data = datamachine_get_engine_data( $job_id );
-				$packet      = is_array( $engine_data['finding_packet'] ?? null ) ? $engine_data['finding_packet'] : array();
+				$runtime_data = datamachine_get_engine_data( $job_id );
+				$packet       = is_array( $runtime_data['finding_packet'] ?? null ) ? $runtime_data['finding_packet'] : array();
 				foreach ( array( 'site', 'kind', 'path', 'selector' ) as $key ) {
 					$value = trim( (string) ( $packet[ $key ] ?? '' ) );
 					if ( '' !== $value ) {

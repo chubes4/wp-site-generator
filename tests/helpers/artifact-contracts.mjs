@@ -80,7 +80,7 @@ export function assertVisualArtifactContract(artifact, expectedDir) {
 
 export function assertIteratorPlanUsesReusableWorkflowRunner(plan, workflowPath) {
 	const input = plan.tasks?.[0]?.executor?.config?.runtime_task?.input || {};
-	assert.equal(input.execute_workflow_path, workflowPath, 'iterator consumes the prebuilt Data Machine workflow path');
+	assert.equal(input.execute_workflow_path, workflowPath, 'iterator consumes the prebuilt runtime workflow path');
 	assert.equal(input.source, '/workspace/wp-site-generator/bundles/php-transformer-iterator-agent', 'iterator runs the sandbox-local agent bundle');
 	assert.deepEqual(input.success_completion_outcomes, ['pull_request_path', 'issue_path'], 'iterator accepts PR or issue completion outcomes');
 	assert.deepEqual(input.ability_tools?.map((tool) => tool.name), [
@@ -107,22 +107,22 @@ export function assertIteratorPlanUsesReusableWorkflowRunner(plan, workflowPath)
 		'wp-codebox/runner-workspace-publish',
 		'datamachine-code/create-github-issue',
 	], 'iterator uses WP Codebox provider runtime identifiers for workspace and PR publication tools');
-	assert.deepEqual(input.tool_recorders, [
+	assert.deepEqual(input.runtime_output_projections, {
+		upstream_action_url: 'metadata.engine_data.php_transformer_iterator.upstream_action_url',
+		source_callback_url: 'metadata.engine_data.php_transformer_iterator.source_callback_url',
+	}, 'iterator declares generic runtime output projections');
+	assert.equal(Object.hasOwn(input, 'engine_data_outputs'), false, 'iterator does not use legacy engine_data_outputs config');
+	assert.equal(Object.hasOwn(input, 'tool_recorders'), false, 'iterator does not use legacy tool_recorders config');
+	assert.deepEqual(input.evidence_projections, [
 		{
-			tool: 'create_github_issue',
-			record: {
-				engine_key: 'php_transformer_iterator',
-				fields: { upstream_action_url: 'data.issue_url' },
-			},
+			operation: 'create_github_issue',
+			outputs: { upstream_action_url: 'data.issue_url' },
 		},
 		{
-			tool: 'create_github_pull_request',
-			record: {
-				engine_key: 'php_transformer_iterator',
-				fields: { upstream_action_url: 'data.html_url' },
-			},
+			operation: 'create_github_pull_request',
+			outputs: { upstream_action_url: 'data.html_url' },
 		},
-	], 'iterator records durable upstream actions through runtime tool_recorders');
+	], 'iterator records durable upstream actions through generic evidence projections');
 	assert.deepEqual(input.extra_required_abilities, [
 		'datamachine-code/create-github-issue',
 		'wp-codebox/runner-workspace-command',

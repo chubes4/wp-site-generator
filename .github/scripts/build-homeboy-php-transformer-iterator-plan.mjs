@@ -38,7 +38,7 @@ const runtimeTaskInput = {
 	max_turns: 24,
 	step_budget: 20,
 	time_budget_ms: 600000,
-	engine_data_outputs: {
+	runtime_output_projections: {
 		upstream_action_url: 'metadata.engine_data.php_transformer_iterator.upstream_action_url',
 		source_callback_url: 'metadata.engine_data.php_transformer_iterator.source_callback_url',
 	},
@@ -54,23 +54,17 @@ const runtimeTaskInput = {
 		{ name: 'create_github_pull_request', ability: providerRuntimeAbilityNames.workspacePublish },
 		{ name: 'create_github_issue', ability: 'datamachine-code/create-github-issue' },
 	],
-	tool_recorders: [
+	evidence_projections: [
 		{
-			tool: 'create_github_issue',
-			record: {
-				engine_key: 'php_transformer_iterator',
-				fields: {
-					upstream_action_url: 'data.issue_url',
-				},
+			operation: 'create_github_issue',
+			outputs: {
+				upstream_action_url: 'data.issue_url',
 			},
 		},
 		{
-			tool: 'create_github_pull_request',
-			record: {
-				engine_key: 'php_transformer_iterator',
-				fields: {
-					upstream_action_url: 'data.html_url',
-				},
+			operation: 'create_github_pull_request',
+			outputs: {
+				upstream_action_url: 'data.html_url',
 			},
 		},
 	],

@@ -55,8 +55,8 @@ function artifactOutputKeys(taskItem) {
   return Object.keys(taskItem.executor?.config?.artifact_outputs || taskItem.executor?.config?.runtime_task?.input?.artifact_outputs || {});
 }
 
-function engineOutputKeys(taskItem) {
-  return Object.keys(taskItem.executor?.config?.engine_data_outputs || taskItem.executor?.config?.runtime_task?.input?.engine_data_outputs || {});
+function runtimeOutputProjectionKeys(taskItem) {
+	return Object.keys(taskItem.executor?.config?.runtime_output_projections || taskItem.executor?.config?.runtime_task?.input?.runtime_output_projections || {});
 }
 
 function successOutcomeKeys(taskItem) {
@@ -64,7 +64,7 @@ function successOutcomeKeys(taskItem) {
 }
 
 function expectedOutputKeys(taskItem) {
-  return [...new Set([...artifactOutputKeys(taskItem), ...engineOutputKeys(taskItem), ...successOutcomeKeys(taskItem)])];
+	return [...new Set([...artifactOutputKeys(taskItem), ...runtimeOutputProjectionKeys(taskItem), ...successOutcomeKeys(taskItem)])];
 }
 
 function outputValue(outcomeValue, key) {
