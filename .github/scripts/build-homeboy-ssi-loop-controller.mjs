@@ -98,6 +98,7 @@ const controller = {
 		authority: {
 			builder: '.github/scripts/build-homeboy-ssi-loop-controller.mjs',
 			contract_issue: 'https://github.com/Extra-Chill/homeboy/issues/4658',
+			controller_primitives: 'https://github.com/Extra-Chill/homeboy/pull/5152',
 			homeboy_from_spec: [
 				'https://github.com/Extra-Chill/homeboy/issues/4722',
 				'https://github.com/Extra-Chill/homeboy/issues/4723',

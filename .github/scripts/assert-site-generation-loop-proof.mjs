@@ -12,6 +12,24 @@ const repoPath = repoPathResolver(repoRoot);
 const aggregatePath = args.get('--aggregate') || repoPath('.ci', 'homeboy-agent-task-aggregate.json');
 const planPath = args.get('--plan') || repoPath('.ci', 'site-generation-loop.agent-task-plan.json');
 const controllerPath = args.get('--controller') || repoPath('.github/homeboy/controllers/static-site-generation-loop.controller.json');
+const controllerResultPath = args.get('--controller-result') || '';
+const controllerRunSpecPath = args.get('--controller-run-spec') || '';
+
+if (controllerResultPath || controllerRunSpecPath) {
+	const controllerRunSpec = await readJsonFile(controllerRunSpecPath || controllerPath);
+	const controllerResult = await readJsonFile(controllerResultPath);
+	assert.equal(controllerRunSpec.schema, 'homeboy/agent-task-loop-spec/v1', 'controller run spec uses the Homeboy loop spec schema');
+	assert.equal(controllerRunSpec.loop_id, 'wp-site-generator/static-site-generation-loop', 'controller run spec keeps the WPSG loop id');
+	assert.equal(controllerRunSpec.metadata?.authority?.builder, '.github/scripts/build-homeboy-ssi-loop-controller.mjs', 'controller run spec records its repo-owned builder');
+	assert.ok(controllerRunSpec.inputs?.complexity_policy, 'controller run spec carries WPSG complexity inputs');
+	assert.ok(controllerRunSpec.metrics?.some((metric) => metric.metric_id === 'fallback_blocks'), 'controller run spec keeps fallback block metrics');
+	assert.ok(controllerRunSpec.metrics?.some((metric) => metric.metric_id === 'conversion_findings'), 'controller run spec keeps conversion finding metrics');
+	assert.ok(controllerRunSpec.metrics?.some((metric) => metric.metric_id === 'visual_parity'), 'controller run spec keeps visual parity metrics');
+	assert.match(controllerResult.schema || controllerResult.data?.schema || '', /controller-from-spec-result/, 'Homeboy result comes from controller from-spec');
+	assert.ok(controllerResult.loop_id || controllerResult.data?.loop_id || controllerResult.value?.loop_id, 'controller result returns a durable loop id');
+	console.log('site generation loop semantic proof passed');
+	process.exit(0);
+}
 
 const aggregate = await readJsonFile(aggregatePath);
 const plan = await readJsonFile(planPath);

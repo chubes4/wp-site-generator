@@ -32,6 +32,7 @@ assert.equal(controller.loop_id, 'wp-site-generator/static-site-generation-loop'
 assert.equal(controller.config_version, 'wpsg-ssi-loop-v1', 'controller records the WPSG declaration version');
 assert.equal(controller.metadata.authority.builder, '.github/scripts/build-homeboy-ssi-loop-controller.mjs', 'controller records its repo-owned builder');
 assert.equal(controller.metadata.authority.contract_issue, 'https://github.com/Extra-Chill/homeboy/issues/4658', 'controller records the upstream contract issue');
+assert.equal(controller.metadata.authority.controller_primitives, 'https://github.com/Extra-Chill/homeboy/pull/5152', 'controller records the Homeboy controller primitive dependency');
 assert.deepEqual(controller.metadata.authority.homeboy_from_spec, ['https://github.com/Extra-Chill/homeboy/issues/4722', 'https://github.com/Extra-Chill/homeboy/issues/4723'], 'controller records the Homeboy from-spec ingestion alignment issues');
 assert.equal(controller.metadata.authority.execution_surface, undefined, 'controller spec does not select a Homeboy execution surface');
 assert.equal(controller.execution, undefined, 'controller spec does not carry backend abstraction details');

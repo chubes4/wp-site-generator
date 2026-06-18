@@ -59,7 +59,10 @@ jobs:
       OPENAI_MODEL: ${{ inputs.openai_model }}
       GITHUB_TOKEN: ${{ github.token }}
       OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
-      HOMEBOY_PLAN_PATH: ${{ github.workspace }}/.ci/site-generation-loop.agent-task-plan.json
+      HOMEBOY_CONTROLLER_RUN_SPEC_PATH: ${{ github.workspace }}/.ci/site-generation-loop.controller-run-spec.json
+      HOMEBOY_CONTROLLER_FROM_SPEC_RESULT_PATH: ${{ github.workspace }}/.ci/site-generation-loop.controller-from-spec.json
+      HOMEBOY_CONTROLLER_RESUME_RESULT_PATH: ${{ github.workspace }}/.ci/site-generation-loop.controller-resume.json
+      HOMEBOY_CONTROLLER_EVENT_RESULT_PATH: ${{ github.workspace }}/.ci/site-generation-loop.controller-event.json
       HOMEBOY_CONTROLLER_SPEC_PATH: .github/homeboy/controllers/static-site-generation-loop.controller.json
       HOMEBOY_ARTIFACT_ROOT: ${{ github.workspace }}/.ci/homeboy-agent-task-artifacts
       WPSG_COMPLEXITY_TIER: ${{ inputs.complexity_tier }}
@@ -118,29 +121,39 @@ jobs:
       - name: Install WordPress extension
         run: homeboy extension install .ci/homeboy-extensions/wordpress --id wordpress
 
-      - name: Build Homeboy agent-task plan from controller contract
-        id: plan
+      - name: Build Homeboy controller run spec
+        id: controller-spec
         run: |
           set -euo pipefail
-          plan_path="$(node .github/scripts/build-homeboy-site-generation-plan.mjs)"
-          echo "path=$plan_path" >> "$GITHUB_OUTPUT"
-          jq empty "$plan_path"
+          spec_path="$(node .github/scripts/build-homeboy-controller-run-spec.mjs)"
+          echo "path=$spec_path" >> "$GITHUB_OUTPUT"
+          jq empty "$spec_path"
 
-      - name: Run Homeboy agent-task plan
-        run: homeboy agent-task run-plan --plan "@${{ steps.plan.outputs.path }}" --record-run-id "site-generation-loop-${{ github.run_id }}" --artifact-root "$HOMEBOY_ARTIFACT_ROOT"
+      - name: Initialize Homeboy controller from spec
+        id: controller
+        run: |
+          set -euo pipefail
+          homeboy agent-task controller from-spec "@${{ steps.controller-spec.outputs.path }}" --output "$HOMEBOY_CONTROLLER_FROM_SPEC_RESULT_PATH" --artifact-root "$HOMEBOY_ARTIFACT_ROOT"
+          loop_id="$(node -e "const fs=require('fs'); const value=JSON.parse(fs.readFileSync(process.argv[1], 'utf8')); console.log(value.data?.loop_id || value.value?.loop_id || value.loop_id || value.data?.controller?.loop_id || value.value?.controller?.loop_id || value.controller?.loop_id);" "$HOMEBOY_CONTROLLER_FROM_SPEC_RESULT_PATH")"
+          test -n "$loop_id"
+          echo "loop_id=$loop_id" >> "$GITHUB_OUTPUT"
 
-      - name: Dispatch static validation for generated PRs
+      - name: Resume Homeboy controller
+        run: homeboy agent-task controller resume "${{ steps.controller.outputs.loop_id }}" --output "$HOMEBOY_CONTROLLER_RESUME_RESULT_PATH" --artifact-root "$HOMEBOY_ARTIFACT_ROOT"
+
+      - name: Record GitHub Actions controller event
         run: >-
-          node .github/scripts/dispatch-static-validation.mjs
-          --aggregate "$HOME/.local/share/homeboy/agent-task-runs/site-generation-loop-${{ github.run_id }}/aggregate.json"
-          --repo "$GITHUB_REPOSITORY"
-          --ref main
+          homeboy agent-task controller events "${{ steps.controller.outputs.loop_id }}"
+          --event-type github.workflow.completed
+          --event-key "site-generation-loop-${{ github.run_id }}"
+          --payload '{"workflow":"site-generation-loop","run_id":"${{ github.run_id }}","repository":"${{ github.repository }}"}'
+          --output "$HOMEBOY_CONTROLLER_EVENT_RESULT_PATH"
 
       - name: Assert semantic proof state
         run: >-
           node .github/scripts/assert-site-generation-loop-proof.mjs
-          --aggregate "$HOME/.local/share/homeboy/agent-task-runs/site-generation-loop-${{ github.run_id }}/aggregate.json"
-          --repo "$GITHUB_REPOSITORY"
+          --controller-result "$HOMEBOY_CONTROLLER_FROM_SPEC_RESULT_PATH"
+          --controller-run-spec "$HOMEBOY_CONTROLLER_RUN_SPEC_PATH"
 
       - name: Upload Homeboy artifacts
         if: always()
@@ -148,9 +161,11 @@ jobs:
         with:
           name: site-generation-loop-homeboy-${{ github.run_id }}
           path: |
-            .ci/site-generation-loop.agent-task-plan.json
+            .ci/site-generation-loop.controller-run-spec.json
+            .ci/site-generation-loop.controller-from-spec.json
+            .ci/site-generation-loop.controller-resume.json
+            .ci/site-generation-loop.controller-event.json
             .github/site-generation-complexity-policy.json
             .github/homeboy/controllers/static-site-generation-loop.controller.json
             .ci/homeboy-agent-task-artifacts/**
-            ~/.local/share/homeboy/agent-task-runs/site-generation-loop-${{ github.run_id }}/**
           if-no-files-found: ignore

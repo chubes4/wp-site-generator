@@ -1,45 +1,78 @@
 import { chmod, writeFile } from 'node:fs/promises';
 import path from 'node:path';
 
-export async function createHomeboyCompileLoopFixture(tempDir) {
-	const homeboyFixturePath = path.join(tempDir, 'homeboy-compile-loop-fixture.mjs');
+export async function createHomeboyControllerFixture(tempDir) {
+	const homeboyFixturePath = path.join(tempDir, 'homeboy-controller-fixture.mjs');
 	await writeFile(homeboyFixturePath, `#!/usr/bin/env node
 import { readFileSync } from 'node:fs';
+import { writeFileSync } from 'node:fs';
 
 const args = process.argv.slice(2);
-if (args.join(' ') === 'agent-task compile-loop --help') {
-  console.log('Compile a declarative loop definition into an agent-task plan.');
+if (args.join(' ') === 'agent-task controller --help') {
+  console.log('Create, inspect, and resume durable multi-agent loop controller state');
   process.exit(0);
 }
-const definitionArgIndex = args.indexOf('--definition');
-if (args[0] !== 'agent-task' || args[1] !== 'compile-loop' || definitionArgIndex === -1) {
-  console.error('unsupported fixture command: ' + args.join(' '));
-  process.exit(64);
+if (args.join(' ') === 'agent-task controller from-spec --help') {
+  console.log('Initialize or resume a durable loop controller from a repo-authored JSON spec');
+  process.exit(0);
 }
-const definitionPath = args[definitionArgIndex + 1].replace(/^@/, '');
-const definition = JSON.parse(readFileSync(definitionPath, 'utf8'));
-const output_dependencies = {};
-for (const task of definition.tasks || []) {
-  if ((task.depends_on || []).length > 0 || Object.keys(task.bindings || {}).length > 0) {
-    output_dependencies[task.task_id] = {
-      depends_on: task.depends_on || [],
-      bindings: task.bindings || {},
-    };
+if (args.join(' ') === 'agent-task controller resume --help') {
+  console.log('Execute pending controller actions until no executable action remains');
+  process.exit(0);
+}
+if (args.join(' ') === 'agent-task controller events --help') {
+  console.log('Apply a generic external controller event');
+  process.exit(0);
+}
+if (args[0] === 'agent-task' && args[1] === 'controller' && args[2] === 'from-spec') {
+  const specPath = args[3].replace(/^@/, '');
+  const outputIndex = args.indexOf('--output');
+  const spec = JSON.parse(readFileSync(specPath, 'utf8'));
+  const loopId = String(spec.loop_id || 'wp-site-generator/static-site-generation-loop').replaceAll('/', '_');
+  const result = {
+    schema: 'homeboy/agent-task-loop-controller-from-spec-result/v1',
+    loop_id: loopId,
+    initialized: true,
+    controller: {
+      schema: 'homeboy/agent-task-loop-controller/v1',
+      loop_id: loopId,
+      source_loop_id: spec.loop_id,
+      state: 'running',
+      spec,
+      pending_actions: (spec.workflows || []).map((workflow, index) => ({
+        action_id: 'action-' + (index + 1),
+        dedupe_key: 'workflow:' + workflow.workflow_id,
+        status: 'pending',
+      })),
+    },
+  };
+  if (outputIndex !== -1) {
+    writeFileSync(args[outputIndex + 1], JSON.stringify(result, null, 2) + '\\n');
   }
+  console.log(JSON.stringify(result));
+  process.exit(0);
 }
-console.log(JSON.stringify({
-  schema: 'homeboy/agent-task-plan/v1',
-  plan_id: definition.plan_id || definition.loop_id,
-  group_key: definition.group_key,
-  tasks: (definition.tasks || []).map((task) => task.request),
-  output_dependencies,
-  options: definition.options || {},
-  metadata: {
-    ...(definition.metadata || {}),
-    source_schema: definition.schema,
-    loop_id: definition.loop_id,
-  },
-}));
+if (args[0] === 'agent-task' && args[1] === 'controller' && args[2] === 'resume') {
+  const outputIndex = args.indexOf('--output');
+  const result = { schema: 'homeboy/agent-task-loop-controller-resume-result/v1', loop_id: args[3], state: 'waiting', executed_actions: [] };
+  if (outputIndex !== -1) {
+    writeFileSync(args[outputIndex + 1], JSON.stringify(result, null, 2) + '\\n');
+  }
+  console.log(JSON.stringify(result));
+  process.exit(0);
+}
+if (args[0] === 'agent-task' && args[1] === 'controller' && args[2] === 'events') {
+  const outputIndex = args.indexOf('--output');
+  const eventTypeIndex = args.indexOf('--event-type');
+  const result = { schema: 'homeboy/agent-task-loop-controller-event-result/v1', loop_id: args[3], event_type: args[eventTypeIndex + 1], applied: true };
+  if (outputIndex !== -1) {
+    writeFileSync(args[outputIndex + 1], JSON.stringify(result, null, 2) + '\\n');
+  }
+  console.log(JSON.stringify(result));
+  process.exit(0);
+}
+console.error('unsupported fixture command: ' + args.join(' '));
+process.exit(64);
 `);
 	await chmod(homeboyFixturePath, 0o755);
 	return homeboyFixturePath;
