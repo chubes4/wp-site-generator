@@ -2,6 +2,8 @@
 
 WPSG may know WP Codebox, but WPSG-owned generation, validation, and review domain code should not know Data Machine or Data Machine Code. Runtime coupling must stay in explicit transitional adapter surfaces until generic Homeboy/Homeboy Extensions and Codebox provider contracts replace it.
 
+As of this update, Homeboy Extensions `main` does not expose `.github/workflows/runtime-agent-ci.yml`; the available reusable primitive is still `.github/workflows/datamachine-agent-ci.yml`, with generic runtime inputs inside that workflow. WPSG therefore relies on upstream defaults for runtime component refs and keeps only unavoidable ability/component names in quarantine instead of reimplementing the missing generic workflow.
+
 The enforced quarantine lives in `.github/datamachine-boundary-quarantine.json`. Run `node tests/scripts/test-datamachine-boundary.mjs` to print the current boundary report and fail on new unclassified references.
 
 ## Current Quarantine Classes
@@ -15,8 +17,8 @@ The enforced quarantine lives in `.github/datamachine-boundary-quarantine.json`.
 
 ## Upstream Gaps
 
-- Homeboy Extensions needs a generic reusable `agent-runtime-ci` workflow that replaces `datamachine-agent-ci.yml` for bundle execution.
-- Homeboy/Homeboy Extensions need generic agent-runtime component inputs instead of WPSG checking out `Extra-Chill/data-machine` and `Extra-Chill/data-machine-code` directly.
+- Homeboy Extensions needs a generic reusable `runtime-agent-ci` workflow that replaces `datamachine-agent-ci.yml` for bundle execution.
+- Homeboy/Homeboy Extensions need generic agent-runtime component defaults for controller execution so WPSG does not check out `Extra-Chill/data-machine` and `Extra-Chill/data-machine-code` directly.
 - Codebox provider contracts need generic workspace, GitHub issue/PR, review-comment, transcript, tool-recorder, and workflow-execution ability names so WPSG does not pass `datamachine-code/*` or `datamachine/run-agent-bundle` identifiers.
 - Bundle workspace preload metadata needs a generic artifact type/path instead of `datamachine-code/workspace_preload`.
 

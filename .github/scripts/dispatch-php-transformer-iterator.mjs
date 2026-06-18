@@ -12,8 +12,6 @@ const artifactName = requiredValue('ARTIFACT_NAME', envOrArg(args, '--artifact-n
 const visualArtifactName = requiredValue('VISUAL_ARTIFACT_NAME', envOrArg(args, '--visual-artifact-name', process.env, 'VISUAL_ARTIFACT_NAME'));
 const ref = envOrArg(args, '--ref', process.env, 'ITERATOR_REF', 'main');
 const openaiModel = envOrArg(args, '--openai-model', process.env, 'OPENAI_MODEL', 'gpt-5.5');
-const dataMachineRef = envOrArg(args, '--data-machine-ref', process.env, 'DATA_MACHINE_REF', 'main');
-const dataMachineCodeRef = envOrArg(args, '--data-machine-code-ref', process.env, 'DATA_MACHINE_CODE_REF', 'main');
 const dryRun = args.has('--dry-run') || process.env.DRY_RUN === '1';
 const token = githubToken();
 
@@ -27,8 +25,6 @@ const payload = {
 		artifact_name: artifactName,
 		visual_artifact_name: visualArtifactName,
 		openai_model: openaiModel,
-		data_machine_ref: dataMachineRef,
-		data_machine_code_ref: dataMachineCodeRef,
 	},
 };
 
