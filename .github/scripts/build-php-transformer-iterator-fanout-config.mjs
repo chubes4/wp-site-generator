@@ -36,7 +36,7 @@ const config = {
 	},
 	runtime_execution: {
 		kind: 'wpsg-php-transformer-iterator',
-		workflow_builder: '.github/scripts/build-agent-iterator-workflow.mjs',
+		workflow_builder: 'bundles/php-transformer-iterator-agent/scripts/build-agent-iterator-workflow.mjs',
 		visual_artifact_dir: '.ci/visual-parity',
 	},
 	summary: {

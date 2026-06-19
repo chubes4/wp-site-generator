@@ -4,10 +4,10 @@ import { existsSync, readdirSync, readFileSync } from 'node:fs';
 import { mkdir, readFile, writeFile } from 'node:fs/promises';
 import path from 'node:path';
 import { buildSingleAiWorkflow, buildSingleAiWorkflowStep } from './lib/agent-ai-workflow.mjs';
-import { normalizeFindingInput, summarizeFindingForPrompt } from './lib/ssi-finding-packets.mjs';
-import { formatRatio, summarizeVisualDiff } from './lib/visual-artifacts.mjs';
+import { normalizeFindingInput, summarizeFindingForPrompt } from '../../../.github/scripts/lib/ssi-finding-packets.mjs';
+import { formatRatio, summarizeVisualDiff } from '../../../.github/scripts/lib/visual-artifacts.mjs';
 
-const repoRoot = new URL('../..', import.meta.url).pathname;
+const repoRoot = new URL('../../..', import.meta.url).pathname;
 const packetsPath = process.env.FINDING_PACKETS_PATH || process.argv[2] || 'homeboy-ci-results/finding-packets.json';
 const outputPath = process.env.AGENT_WORKFLOW_PATH || process.argv[3] || 'homeboy-ci-results/agent-iterator-workflow.json';
 const continuationPath = process.env.ITERATOR_CONTINUATION_PATH || path.join(path.dirname(outputPath), 'agent-iterator-continuation.json');

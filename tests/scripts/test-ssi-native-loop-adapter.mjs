@@ -134,7 +134,7 @@ const groupResult = spawnSync(process.execPath, ['.github/scripts/group-ssi-find
 });
 assert.equal(groupResult.status, 0, groupResult.stderr || groupResult.stdout);
 
-const workflowResult = spawnSync(process.execPath, ['.github/scripts/build-agent-iterator-workflow.mjs', path.join(tempDir, 'groups.json'), workflowPath], {
+const workflowResult = spawnSync(process.execPath, ['bundles/php-transformer-iterator-agent/scripts/build-agent-iterator-workflow.mjs', path.join(tempDir, 'groups.json'), workflowPath], {
 	cwd: repoRoot,
 	encoding: 'utf8',
 });
