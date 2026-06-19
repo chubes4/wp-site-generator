@@ -57,8 +57,7 @@ assert.equal(settings.stack_manifest.repositories.static_site_importer.sha, 'ddd
 assert.equal(preview.stack_manifest.repositories.block_artifact_compiler.sha, 'ffffffffffffffffffffffffffffffffffffffff');
 
 assert.equal(settings.runtime_settings_descriptor.settings_fields.blueprint, 'wordpress_runtime_blueprint');
-assert.deepEqual(settings.settings.wordpress_runtime_blueprint, settings.settings.wp_codebox_blueprint);
-assert.deepEqual(settings.settings.wordpress_runtime_workloads, settings.settings.wp_codebox_workloads);
+assert.deepEqual(Object.keys(settings.settings).filter((key) => key.startsWith('wp' + '_codebox_')), []);
 
 const settingsPluginRefs = gitDirectoryRefs(settings.settings.wordpress_runtime_blueprint.steps);
 const previewPluginRefs = gitDirectoryRefs(preview.blueprint.steps);

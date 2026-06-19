@@ -11,10 +11,6 @@ const fallbackWordPressRuntimeSettingsDescriptor = Object.freeze({
 		blueprint: 'wordpress_runtime_blueprint',
 		workloads: 'wordpress_runtime_workloads',
 	},
-	compatibility_aliases: {
-		wp_codebox_blueprint: 'blueprint',
-		wp_codebox_workloads: 'workloads',
-	},
 });
 
 export async function loadSsiStackManifest(manifestPath = '') {
@@ -38,14 +34,6 @@ export function buildWordPressRuntimeSettings({ blueprint, workloads = [], descr
 		[descriptor.settings_fields.blueprint]: blueprint,
 		[descriptor.settings_fields.workloads]: workloads,
 	};
-
-	for (const [alias, target] of Object.entries(descriptor.compatibility_aliases || {})) {
-		if (target === 'blueprint') {
-			settings[alias] = blueprint;
-		} else if (target === 'workloads') {
-			settings[alias] = workloads;
-		}
-	}
 
 	return settings;
 }

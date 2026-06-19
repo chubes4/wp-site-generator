@@ -160,7 +160,7 @@ jobs:
           pr-comment: 'false'
           app-token: ${{ steps.app-token.outputs.token }}
           args: >-
-            --setting-json wp_codebox_workloads='${{ steps.settings.outputs.workloads }}'
+            --setting-json wordpress_runtime_workloads='${{ steps.settings.outputs.workloads }}'
         env:
           HOMEBOY_SETTINGS_JSON: ${{ steps.settings.outputs.settings }}
           HOMEBOY_BENCH_ITERATIONS: '1'
