@@ -4,7 +4,7 @@ import { tmpdir } from 'node:os';
 import path from 'node:path';
 
 import { buildSingleAiWorkflow, buildSingleAiWorkflowStep } from '../../bundles/php-transformer-iterator-agent/scripts/lib/agent-ai-workflow.mjs';
-import { envOrArg, numberValue, parseArgs, providerRuntimeAbilityNames, readJsonOrNull, repoPathResolver, textValue } from '../../.github/scripts/lib/ci-runtime-utils.mjs';
+import { envOrArg, numberValue, parseArgs, readJsonOrNull, repoPathResolver, runtimePackageProfile, runtimeToolProfiles, textValue } from '../../.github/scripts/lib/ci-runtime-utils.mjs';
 import { loadRecoveredSsiImportSummary, recoveredSsiScenarioFromImportSummary } from '../../.github/scripts/lib/ssi-import-summary.mjs';
 import { ssiPrBodyMetrics, validationMetricValue } from '../../.github/scripts/lib/ssi-metrics.mjs';
 
@@ -17,8 +17,23 @@ assert.equal(repoPathResolver('/tmp/repo')('.ci', 'artifact.json'), path.join('/
 assert.equal(textValue(' ok '), 'ok');
 assert.equal(numberValue('4'), 4);
 assert.equal(numberValue('bad', 9), 9);
-assert.equal(providerRuntimeAbilityNames.workspaceCommand, 'wp-codebox/runner-workspace-command');
-assert.equal(providerRuntimeAbilityNames.workspacePublish, 'wp-codebox/runner-workspace-publish');
+assert.equal(runtimePackageProfile.provider, 'codebox', 'Codebox remains the compatibility backend');
+assert.equal(runtimePackageProfile.id, 'wpsg-agent-runtime-package', 'consumer-facing runtime package profile is generic');
+assert.equal(runtimePackageProfile.compatibilityId, 'wpsg-codebox-runtime-package', 'legacy runtime package profile id remains mapped');
+assert.equal(runtimeToolProfiles.workspaceIteration.id, 'workspace-iteration');
+assert.deepEqual(runtimeToolProfiles.workspaceIteration.abilityTools.map((tool) => tool.name), [
+	'workspace_clone',
+	'workspace_worktree_add',
+	'workspace_read',
+	'workspace_write',
+	'workspace_edit',
+	'workspace_git_status',
+	'workspace_git_commit',
+	'workspace_git_push',
+	'create_github_pull_request',
+	'create_github_issue',
+]);
+assert.deepEqual(runtimeToolProfiles.workspacePublication.abilityTools, []);
 
 const workflow = buildSingleAiWorkflow({
 	step: buildSingleAiWorkflowStep({

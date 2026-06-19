@@ -17,12 +17,13 @@ if ( ! class_exists( 'WC_Site_Generator_PHP_Transformer_Iterator_Callback_Tool' 
 	class WC_Site_Generator_PHP_Transformer_Iterator_Callback_Tool {
 
 		public static function handle_comment_tool_call( array $parameters, array $tool_def = array() ): array {
+			$publish_ability = self::runtime_publish_ability();
 			if ( self::is_source_pull_request( $parameters ) ) {
 				$parameters = self::prepare_source_callback_parameters( $parameters );
 				$response   = self::execute_ability_tool(
 					$parameters,
 					$tool_def + array(
-						'ability'   => 'wp-codebox/runner-workspace-publish',
+						'ability'   => $publish_ability,
 						'tool_name' => 'comment_github_pull_request',
 					)
 				);
@@ -32,11 +33,16 @@ if ( ! class_exists( 'WC_Site_Generator_PHP_Transformer_Iterator_Callback_Tool' 
 			$response = self::execute_ability_tool(
 				$parameters,
 				$tool_def + array(
-					'ability'   => 'wp-codebox/runner-workspace-publish',
+					'ability'   => $publish_ability,
 					'tool_name' => 'comment_github_pull_request',
 				)
 			);
 			return $response;
+		}
+
+		private static function runtime_publish_ability(): string {
+			$ability = trim( (string) getenv( 'WPSG_RUNTIME_PUBLISH_ABILITY' ) );
+			return '' !== $ability ? $ability : 'wp-codebox/runner-workspace-publish';
 		}
 
 		private static function prepare_source_callback_parameters( array $parameters ): array {

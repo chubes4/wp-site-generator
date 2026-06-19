@@ -1,0 +1,73 @@
+name: WPSG runtime agent CI
+
+on:
+  workflow_call:
+    inputs:
+      model:
+        description: Model to use for the imported agent flow.
+        required: true
+        type: string
+      runtime_execution:
+        description: Generic runtime execution descriptor.
+        required: true
+        type: string
+      runtime_tool_profile:
+        description: WPSG generic runtime tool profile.
+        required: false
+        default: workspace-iteration
+        type: string
+      runtime_provider:
+        description: Compatibility runtime backend. Defaults to the existing Codebox backend.
+        required: false
+        default: codebox
+        type: string
+      runtime_profile:
+        description: Generic WPSG runtime package profile.
+        required: false
+        default: wpsg-agent-runtime-package
+        type: string
+      runtime_profiles:
+        description: Runtime package profiles, including the legacy Codebox profile alias.
+        required: false
+        default: '{"wpsg-agent-runtime-package":{"id":"wpsg-agent-runtime-package","runtime_task_ability":"agents/run-runtime-package","runtime_bundle_ability":"agents/run-runtime-package","runtime_workflow_ability":"agents/run-runtime-package","ability_requirements":["agents/run-runtime-package"]},"wpsg-codebox-runtime-package":{"id":"wpsg-codebox-runtime-package","runtime_task_ability":"agents/run-runtime-package","runtime_bundle_ability":"agents/run-runtime-package","runtime_workflow_ability":"agents/run-runtime-package","ability_requirements":["agents/run-runtime-package"]}}'
+        type: string
+      transcript_slots:
+        description: Transcript artifact slots for the runtime workflow.
+        required: false
+        default: '[]'
+        type: string
+      task_timeout_seconds:
+        description: Runtime task timeout in seconds.
+        required: false
+        default: 900
+        type: number
+
+jobs:
+  workspace-iteration:
+    if: inputs.runtime_tool_profile == 'workspace-iteration'
+    uses: Extra-Chill/homeboy-extensions/.github/workflows/runtime-agent-ci.yml@main
+    with:
+      runtime_provider: ${{ inputs.runtime_provider }}
+      model: ${{ inputs.model }}
+      runtime_profile: ${{ inputs.runtime_profile }}
+      runtime_profiles: ${{ inputs.runtime_profiles }}
+      runtime_execution: ${{ inputs.runtime_execution }}
+      ability_requirements: '["agents/run-runtime-package","wp-codebox/runner-workspace-command","wp-codebox/runner-workspace-publish"]'
+      ability_tools: '[{"name":"workspace_clone","ability":"wp-codebox/runner-workspace-command"},{"name":"workspace_worktree_add","ability":"wp-codebox/runner-workspace-command"},{"name":"workspace_read","ability":"wp-codebox/runner-workspace-command"},{"name":"workspace_write","ability":"wp-codebox/runner-workspace-command"},{"name":"workspace_edit","ability":"wp-codebox/runner-workspace-command"},{"name":"workspace_git_status","ability":"wp-codebox/runner-workspace-command"},{"name":"workspace_git_commit","ability":"wp-codebox/runner-workspace-command"},{"name":"workspace_git_push","ability":"wp-codebox/runner-workspace-command"},{"name":"create_github_pull_request","ability":"wp-codebox/runner-workspace-publish"},{"name":"create_github_issue","ability":"wp-codebox/runner-workspace-publish"}]'
+      transcript_slots: ${{ inputs.transcript_slots }}
+      task_timeout_seconds: ${{ inputs.task_timeout_seconds }}
+    secrets: inherit
+
+  workspace-publication:
+    if: inputs.runtime_tool_profile == 'workspace-publication'
+    uses: Extra-Chill/homeboy-extensions/.github/workflows/runtime-agent-ci.yml@main
+    with:
+      runtime_provider: ${{ inputs.runtime_provider }}
+      model: ${{ inputs.model }}
+      runtime_profile: ${{ inputs.runtime_profile }}
+      runtime_profiles: ${{ inputs.runtime_profiles }}
+      runtime_execution: ${{ inputs.runtime_execution }}
+      ability_requirements: '["agents/run-runtime-package","wp-codebox/runner-workspace-publish"]'
+      transcript_slots: ${{ inputs.transcript_slots }}
+      task_timeout_seconds: ${{ inputs.task_timeout_seconds }}
+    secrets: inherit
