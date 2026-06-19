@@ -2,7 +2,7 @@
 
 WPSG may know WP Codebox, but WPSG-owned generation, validation, and review domain code should not know Data Machine or Data Machine Code.
 
-WPSG uses Homeboy Extensions `.github/workflows/runtime-agent-ci.yml` for agent runtime CI config. Bundle execution is described with HBE `runtime_execution` descriptors and dispatched through the Agents API `agents/run-runtime-package` ability. Iterator workspace, issue, PR, and comment publication tool config uses WP Codebox provider runtime identifiers such as `wp-codebox/runner-workspace-command` and `wp-codebox/runner-workspace-publish`.
+WPSG workflows call the local `.github/workflows/wpsg-runtime-agent-ci.yml` seam. Bundle execution stays described with HBE `runtime_execution` descriptors and dispatches through the Agents API `agents/run-runtime-package` ability. Domain workflows select generic WPSG runtime tool profiles such as `workspace-iteration` and `workspace-publication`; the seam maps those profiles to the current Codebox-compatible provider defaults.
 
 The enforced quarantine lives in `.github/datamachine-boundary-quarantine.json`. Run `node tests/scripts/test-datamachine-boundary.mjs` to print the current boundary report and fail on new unclassified references.
 

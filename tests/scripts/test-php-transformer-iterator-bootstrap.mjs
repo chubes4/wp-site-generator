@@ -7,8 +7,8 @@ const bootstrap = await readFile(path.join(repoRoot, 'tests/playground-ci/worklo
 
 assert.match(
 	bootstrap,
-	/wp-codebox\/runner-workspace-publish/,
-	'source PR callbacks use the generic WP Codebox publish ability',
+	/WPSG_RUNTIME_PUBLISH_ABILITY/,
+	'source PR callbacks resolve publish ability through a generic runtime override',
 );
 assert.doesNotMatch(
 	bootstrap,

@@ -1,12 +1,52 @@
 import { readFile, writeFile } from 'node:fs/promises';
 import path from 'node:path';
 
-export const providerRuntimeAbilityNames = Object.freeze({
+export const runtimeAbilityNames = Object.freeze({
 	workspaceCapture: 'wp-codebox/runner-workspace-capture',
 	workspaceCommand: 'wp-codebox/runner-workspace-command',
 	workspacePublish: 'wp-codebox/runner-workspace-publish',
 	toolCallTranscriptRecord: 'wp-codebox/record-tool-call-transcript',
 	artifactHandoff: 'wp-codebox/handoff-artifacts',
+});
+
+export const runtimePackageProfile = Object.freeze({
+	id: 'wpsg-agent-runtime-package',
+	compatibilityId: 'wpsg-codebox-runtime-package',
+	provider: 'codebox',
+	runtimeTaskAbility: 'agents/run-runtime-package',
+	runtimeBundleAbility: 'agents/run-runtime-package',
+	runtimeWorkflowAbility: 'agents/run-runtime-package',
+});
+
+export const runtimeToolProfiles = Object.freeze({
+	workspaceIteration: Object.freeze({
+		id: 'workspace-iteration',
+		abilityRequirements: Object.freeze([
+			runtimePackageProfile.runtimeTaskAbility,
+			runtimeAbilityNames.workspaceCommand,
+			runtimeAbilityNames.workspacePublish,
+		]),
+		abilityTools: Object.freeze([
+			{ name: 'workspace_clone', ability: runtimeAbilityNames.workspaceCommand },
+			{ name: 'workspace_worktree_add', ability: runtimeAbilityNames.workspaceCommand },
+			{ name: 'workspace_read', ability: runtimeAbilityNames.workspaceCommand },
+			{ name: 'workspace_write', ability: runtimeAbilityNames.workspaceCommand },
+			{ name: 'workspace_edit', ability: runtimeAbilityNames.workspaceCommand },
+			{ name: 'workspace_git_status', ability: runtimeAbilityNames.workspaceCommand },
+			{ name: 'workspace_git_commit', ability: runtimeAbilityNames.workspaceCommand },
+			{ name: 'workspace_git_push', ability: runtimeAbilityNames.workspaceCommand },
+			{ name: 'create_github_pull_request', ability: runtimeAbilityNames.workspacePublish },
+			{ name: 'create_github_issue', ability: runtimeAbilityNames.workspacePublish },
+		]),
+	}),
+	workspacePublication: Object.freeze({
+		id: 'workspace-publication',
+		abilityRequirements: Object.freeze([
+			runtimePackageProfile.runtimeTaskAbility,
+			runtimeAbilityNames.workspacePublish,
+		]),
+		abilityTools: Object.freeze([]),
+	}),
 });
 
 export function parseArgs(argv) {
