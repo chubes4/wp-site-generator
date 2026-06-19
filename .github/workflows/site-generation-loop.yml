@@ -108,6 +108,7 @@ jobs:
           set -euo pipefail
           inputs_path="$(node .github/scripts/build-homeboy-controller-run-inputs.mjs)"
           homeboy agent-task controller materialize "@$HOMEBOY_CONTROLLER_SPEC_PATH" --inputs "@$inputs_path" --policy-result "@$HOMEBOY_POLICY_RESULT_PATH" --output "$HOMEBOY_CONTROLLER_MATERIALIZATION_RESULT_PATH"
+          homeboy agent-task controller validate-proof "@$HOMEBOY_CONTROLLER_MATERIALIZATION_RESULT_PATH"
           jq '.data.spec // .value.spec // .spec' "$HOMEBOY_CONTROLLER_MATERIALIZATION_RESULT_PATH" > "$HOMEBOY_CONTROLLER_RUN_SPEC_PATH"
           jq empty "$HOMEBOY_CONTROLLER_RUN_SPEC_PATH"
           echo "path=$HOMEBOY_CONTROLLER_RUN_SPEC_PATH" >> "$GITHUB_OUTPUT"

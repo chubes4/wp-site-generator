@@ -36,6 +36,12 @@ try {
     encoding: 'utf8',
   });
   assert.equal(materializeResult.status, 0, materializeResult.stderr || materializeResult.stdout);
+  const validateProofResult = spawnSync(homeboyFixturePath, ['agent-task', 'controller', 'validate-proof', `@${controllerMaterializationPath}`], {
+    cwd: repoRoot,
+    encoding: 'utf8',
+  });
+  assert.equal(validateProofResult.status, 0, validateProofResult.stderr || validateProofResult.stdout);
+  assert.equal(JSON.parse(validateProofResult.stdout).valid, true, 'Homeboy generic proof validation accepts materialized controller output');
   const materialization = JSON.parse(await readFile(controllerMaterializationPath, 'utf8'));
   await writeFile(controllerRunSpecPath, JSON.stringify(materialization.spec, null, 2) + '\n');
 
@@ -85,6 +91,7 @@ try {
 
   const workflow = await readFile(path.join(repoRoot, '.github/workflows/site-generation-loop.yml'), 'utf8');
   assert.match(workflow, /homeboy agent-task controller materialize/, 'site generation workflow materializes specs through Homeboy');
+  assert.match(workflow, /homeboy agent-task controller validate-proof/, 'site generation workflow validates materialized proof through Homeboy');
   assert.match(workflow, /homeboy agent-task controller from-spec/, 'site generation workflow initializes Homeboy controller from spec');
   assert.match(workflow, /homeboy agent-task controller resume/, 'site generation workflow resumes the Homeboy controller');
   assert.match(workflow, /homeboy agent-task controller events/, 'site generation workflow records controller events');
