@@ -17,7 +17,7 @@ const visualArtifactDir = process.env.VISUAL_ARTIFACT_DIR || '';
 const maxPromptFindingGroups = numberOrDefault(process.env.ITERATOR_MAX_PROMPT_GROUPS, 12);
 const maxPromptTextLength = numberOrDefault(process.env.ITERATOR_MAX_PROMPT_TEXT_LENGTH, 600);
 
-const findingPackets = normalizeFindingInput(await readJson(resolveRepoPath(packetsPath)));
+const findingPackets = normalizeIteratorFindingInput(await readJson(resolveRepoPath(packetsPath)));
 const pipeline = await readJson(resolveRepoPath(pipelinePath));
 const flow = await readJson(resolveRepoPath(flowPath));
 
@@ -90,6 +90,16 @@ function buildWorkflow(packets, pipelineConfig, flowConfig, continuation) {
 		}),
 		initialData,
 	});
+}
+
+function normalizeIteratorFindingInput(input) {
+	if (Array.isArray(input?.task_requests)) {
+		return input.task_requests
+			.map((request) => request?.finding_group || request?.inputs?.finding_group || null)
+			.filter(Boolean);
+	}
+
+	return normalizeFindingInput(input);
 }
 
 function formatFindingPrompt(packets) {

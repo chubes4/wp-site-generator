@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import { mkdtemp, readFile } from 'node:fs/promises';
+import { mkdtemp, readFile, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { spawnSync } from 'node:child_process';
@@ -12,6 +12,8 @@ const outputPath = path.join(tempDir, 'workflow.json');
 const continuationPath = path.join(tempDir, 'continuation.json');
 const truncatedOutputPath = path.join(tempDir, 'workflow-truncated.json');
 const groupedPath = path.join(tempDir, 'groups.json');
+const fanoutConfigPath = path.join(tempDir, 'fanout-config.json');
+const fanoutPlanPath = path.join(tempDir, 'fanout-plan.json');
 const visualArtifactDir = path.join(tempDir, 'visual-parity');
 
 await writeVisualParityArtifact(visualArtifactDir);
@@ -31,11 +33,49 @@ const groupResult = spawnSync(
 
 assert.equal(groupResult.status, 0, groupResult.stderr || groupResult.stdout);
 
+const configResult = spawnSync(
+	process.execPath,
+	[
+		path.join(repoRoot, '.github/scripts/build-php-transformer-iterator-fanout-config.mjs'),
+		groupedPath,
+		fanoutConfigPath,
+	],
+	{
+		cwd: repoRoot,
+		env: {
+			...process.env,
+			SOURCE_REPO: 'chubes4/wp-site-generator',
+			SOURCE_PR: '77',
+			VALIDATION_RUN_ID: '12345',
+			ARTIFACT_NAME: 'ssi-validation-demo-store',
+			VISUAL_ARTIFACT_NAME: 'visual-parity-demo-store',
+		},
+		encoding: 'utf8',
+	},
+);
+
+assert.equal(configResult.status, 0, configResult.stderr || configResult.stdout);
+const fanoutConfig = JSON.parse(await readFile(fanoutConfigPath, 'utf8'));
+assert.equal(fanoutConfig.schema, 'homeboy/generic-fanout-reconcile-config/v1', 'iterator emits HBE generic fanout config');
+assert.equal(fanoutConfig.groups.length, 8, 'iterator passes WPSG-owned grouped findings as caller-provided HBE groups');
+assert.equal(fanoutConfig.groups[0].items.length, 1, 'each HBE fanout group wraps one WPSG finding group');
+assert.equal(fanoutConfig.task_request_template.finding_group, '{{group.items.0}}', 'task template preserves the typed WPSG finding group');
+
+await writeFile(fanoutPlanPath, `${JSON.stringify({
+	schema: 'homeboy/fanout-reconcile-plan/v1',
+	task_requests: fanoutConfig.groups.map((group) => ({
+		id: `php-transformer-iterator-${group.key}`,
+		group_key: group.key,
+		finding_group: group.items[0],
+		inputs: { finding_group: group.items[0] },
+	})),
+}, null, 2)}\n`);
+
 const result = spawnSync(
 	process.execPath,
 	[
 		path.join(repoRoot, '.github/scripts/build-agent-iterator-workflow.mjs'),
-		groupedPath,
+		fanoutPlanPath,
 		outputPath,
 	],
 	{
