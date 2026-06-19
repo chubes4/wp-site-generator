@@ -20,6 +20,7 @@ const controllerBuilderEnv = (overrides = {}) => ({
 
 async function materializeControllerSpec({ outputPath, env }) {
 	const inputsPath = outputPath.replace(/\.json$/, '.inputs.json');
+	const policyResultPath = outputPath.replace(/\.json$/, '.complexity-policy-result.json');
 	const materializationPath = outputPath.replace(/\.json$/, '.materialization.json');
 	const inputsResult = spawnSync(process.execPath, ['.github/scripts/build-homeboy-controller-run-inputs.mjs'], {
 		cwd: repoRoot,
@@ -27,10 +28,11 @@ async function materializeControllerSpec({ outputPath, env }) {
 		env: controllerBuilderEnv({
 			...env,
 			HOMEBOY_CONTROLLER_RUN_INPUTS_PATH: inputsPath,
+			HOMEBOY_POLICY_RESULT_PATH: policyResultPath,
 		}),
 	});
 	assert.equal(inputsResult.status, 0, inputsResult.stderr || inputsResult.stdout);
-	const materializeResult = spawnSync(homeboyFixturePath, ['agent-task', 'controller', 'materialize', '@.github/homeboy/controllers/static-site-generation-loop.controller.json', '--inputs', `@${inputsPath}`, '--output', materializationPath], {
+	const materializeResult = spawnSync(homeboyFixturePath, ['agent-task', 'controller', 'materialize', '@.github/homeboy/controllers/static-site-generation-loop.controller.json', '--inputs', `@${inputsPath}`, '--policy-result', `@${policyResultPath}`, '--output', materializationPath], {
 		cwd: repoRoot,
 		encoding: 'utf8',
 	});
@@ -50,19 +52,21 @@ try {
 
 	const serialized = JSON.stringify(controllerRunSpec);
 	const storeIdeaInputs = controllerRunSpec.workflows.find((workflow) => workflow.workflow_id === 'store-idea').inputs;
+	const complexityPolicy = storeIdeaInputs.policy_results['wpsg-complexity-policy'];
 
 	assert.equal(controllerRunSpec.schema, 'homeboy/agent-task-loop-spec/v1');
 	assert.equal(controllerRunSpec.loop_id, 'wp-site-generator/static-site-generation-loop');
 	assert.equal(storeIdeaInputs.run_id, '409');
 	assert.equal(storeIdeaInputs.repository, 'chubes4/wp-site-generator');
 	assert.equal(storeIdeaInputs.runtime_input_contract, 'homeboy-agent-runtime-env');
-	assert.equal(storeIdeaInputs.complexity_policy.schema, 'wp-site-generator/site-generation-complexity-policy/v1');
-	assert.equal(storeIdeaInputs.complexity_policy.current_tier, 'foundation');
-	assert.equal(storeIdeaInputs.complexity_policy.selected_tier, 'foundation');
-	assert.equal(storeIdeaInputs.complexity_policy.decision, 'hold');
-	assert.equal(storeIdeaInputs.complexity_policy.randomness_profile.id, 'steady');
-	assert.equal(storeIdeaInputs.complexity_policy.randomness_seed.length, 12);
-	assert.deepEqual(storeIdeaInputs.complexity_policy.site_kind_mix, ['store', 'website']);
+	assert.equal(complexityPolicy.schema, 'wp-site-generator/site-generation-complexity-policy/v1');
+	assert.equal(complexityPolicy.current_tier, 'foundation');
+	assert.equal(complexityPolicy.selected_tier, 'foundation');
+	assert.equal(complexityPolicy.decision, 'hold');
+	assert.equal(complexityPolicy.randomness_profile.id, 'steady');
+	assert.equal(complexityPolicy.randomness_seed.length, 12);
+	assert.deepEqual(complexityPolicy.site_kind_mix, ['store', 'website']);
+	assert.equal(controllerRunSpec.metadata.policy_materialization['wpsg-complexity-policy'].provenance.run_id, '409');
 	assert.equal(controllerRunSpec.metadata.run.generated_by, '.github/scripts/build-homeboy-controller-run-inputs.mjs');
 	assert.equal(controllerRunSpec.metadata.run.materialized_by, 'homeboy agent-task controller materialize');
 	assert.equal(controllerRunSpec.metadata.run.controller_spec, '.github/homeboy/controllers/static-site-generation-loop.controller.json');
@@ -113,7 +117,7 @@ try {
 	});
 	const localReplayInputs = localReplaySpec.workflows.find((workflow) => workflow.workflow_id === 'store-idea').inputs;
 	assert.equal(localReplayInputs.run_id, 'local-replay-409', 'local replay identity replaces timestamp fallback');
-	assert.equal(localReplayInputs.complexity_policy.randomness_seed, 'local-seed', 'local replay seed is explicit');
+	assert.equal(localReplayInputs.policy_results['wpsg-complexity-policy'].randomness_seed, 'local-seed', 'local replay seed is explicit');
 
 	assert.ok(controllerRunSpec.workflows.find((workflow) => workflow.workflow_id === 'revalidation').artifacts.includes('revalidation_attempt'), 'controller checkpoints revalidation attempts');
 	assert.deepEqual(
@@ -276,8 +280,8 @@ try {
 		},
 	});
 	const stableInputs = stableSpec.workflows.find((workflow) => workflow.workflow_id === 'store-idea').inputs;
-	assert.equal(stableInputs.complexity_policy.selected_tier, 'composed', 'controller input builder consumes quality-signal file');
-	assert.equal(stableInputs.complexity_policy.target_parallel_candidates, 2, 'composed tier raises active candidate budget input');
+	assert.equal(stableInputs.policy_results['wpsg-complexity-policy'].selected_tier, 'composed', 'controller input builder consumes quality-signal file');
+	assert.equal(stableInputs.policy_results['wpsg-complexity-policy'].target_parallel_candidates, 2, 'composed tier raises active candidate budget input');
 } finally {
 	await rm(tempDir, { recursive: true, force: true });
 }

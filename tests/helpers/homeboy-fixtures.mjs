@@ -71,6 +71,31 @@ if (args[0] === 'agent-task' && args[1] === 'controller' && args[2] === 'materia
   if (runInputs.metadata && typeof runInputs.metadata === 'object') {
     spec.metadata = { ...(spec.metadata || {}), ...runInputs.metadata };
   }
+  for (let index = 0; index < args.length; index += 1) {
+    if (args[index] !== '--policy-result') {
+      continue;
+    }
+    const policyResult = JSON.parse(readFileSync(args[index + 1].replace(/^@/, ''), 'utf8'));
+    const policyId = policyResult.policy_id;
+    for (const workflow of spec.workflows || []) {
+      workflow.inputs = { ...(workflow.inputs || {}) };
+      if (policyResult.policy_inputs) {
+        workflow.inputs.policy_inputs = { ...(workflow.inputs.policy_inputs || {}), [policyId]: policyResult.policy_inputs };
+      }
+      if (policyResult.policy_results) {
+        workflow.inputs.policy_results = { ...(workflow.inputs.policy_results || {}), [policyId]: policyResult.policy_results };
+      }
+    }
+    spec.metadata = { ...(spec.metadata || {}) };
+    spec.metadata.policy_materialization = {
+      ...(spec.metadata.policy_materialization || {}),
+      [policyId]: {
+        policy_inputs: policyResult.policy_inputs || {},
+        policy_results: policyResult.policy_results || {},
+        provenance: policyResult.provenance || {},
+      },
+    };
+  }
   const result = {
     schema: 'homeboy/agent-task-loop-spec-materialization/v1',
     spec,
