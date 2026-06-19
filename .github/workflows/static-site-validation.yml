@@ -334,15 +334,17 @@ jobs:
         if: always() && needs.detect-changed-sites.outputs.pr_number != '' && steps.finding-packets.outputs.actionable_count != '' && steps.finding-packets.outputs.actionable_count != '0'
         env:
           GH_TOKEN: ${{ github.token }}
-          SOURCE_REPO: ${{ github.repository }}
-          SOURCE_PR: ${{ needs.detect-changed-sites.outputs.pr_number }}
-          SOURCE_HEAD_SHA: ${{ needs.detect-changed-sites.outputs.head_sha }}
-          VALIDATION_RUN_ID: ${{ github.run_id }}
-          ARTIFACT_NAME: ssi-validation-${{ matrix.site }}
-          VISUAL_ARTIFACT_NAME: visual-parity-${{ matrix.site }}
         run: |
           set -euo pipefail
-          node .github/scripts/dispatch-php-transformer-iterator.mjs --ref main
+          gh workflow run php-transformer-iterator.yml \
+            --repo "$GITHUB_REPOSITORY" \
+            --ref main \
+            -f source_repo="$GITHUB_REPOSITORY" \
+            -f source_pr="${{ needs.detect-changed-sites.outputs.pr_number }}" \
+            -f source_head_sha="${{ needs.detect-changed-sites.outputs.head_sha }}" \
+            -f validation_run_id="$GITHUB_RUN_ID" \
+            -f artifact_name="ssi-validation-${{ matrix.site }}" \
+            -f visual_artifact_name="visual-parity-${{ matrix.site }}"
 
   mark-validation-processed:
     name: Mark validation processed

@@ -5,14 +5,8 @@ import path from 'node:path';
 
 import { buildSingleAiWorkflow, buildSingleAiWorkflowStep } from '../../.github/scripts/lib/agent-ai-workflow.mjs';
 import { envOrArg, numberValue, parseArgs, providerRuntimeAbilityNames, readJsonOrNull, repoPathResolver, textValue } from '../../.github/scripts/lib/ci-runtime-utils.mjs';
-import { githubToken, prNumberFromUrl } from '../../.github/scripts/lib/github-api.mjs';
 import { loadRecoveredSsiImportSummary, recoveredSsiScenarioFromImportSummary } from '../../.github/scripts/lib/ssi-import-summary.mjs';
 import { ssiPrBodyMetrics, validationMetricValue } from '../../.github/scripts/lib/ssi-metrics.mjs';
-
-assert.equal(githubToken({ GH_TOKEN: 'gh', GITHUB_TOKEN: 'github' }), 'gh');
-assert.equal(githubToken({ GH_TOKEN: 'gh', GITHUB_TOKEN: 'github' }, ['GITHUB_TOKEN', 'GH_TOKEN']), 'github');
-assert.equal(prNumberFromUrl('https://github.com/chubes4/wp-site-generator/pull/123'), 123);
-assert.equal(prNumberFromUrl(''), 0);
 
 const args = parseArgs(['--repo', 'owner/repo', '--dry-run']);
 assert.equal(envOrArg(args, '--repo', { SOURCE_REPO: 'env/repo' }, 'SOURCE_REPO'), 'owner/repo');
