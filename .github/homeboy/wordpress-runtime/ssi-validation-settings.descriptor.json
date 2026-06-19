@@ -1,0 +1,13 @@
+{
+  "schema": "wpsg/wordpress-runtime-settings-descriptor/v1",
+  "id": "ssi-validation-wordpress-runtime",
+  "settings_fields": {
+    "blueprint": "wordpress_runtime_blueprint",
+    "workloads": "wordpress_runtime_workloads"
+  },
+  "compatibility_aliases": {
+    "wp_codebox_blueprint": "blueprint",
+    "wp_codebox_workloads": "workloads"
+  },
+  "compatibility_notes": "Current Homeboy WordPress extension releases consume wp_codebox_* settings. WPSG emits backend-neutral wordpress_runtime_* fields as the domain contract and guarded wp_codebox_* aliases for published runner compatibility."
+}

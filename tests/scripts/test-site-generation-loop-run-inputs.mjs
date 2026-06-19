@@ -1,0 +1,57 @@
+#!/usr/bin/env node
+
+import assert from 'node:assert/strict';
+import { spawnSync } from 'node:child_process';
+import { mkdtemp, readFile } from 'node:fs/promises';
+import { tmpdir } from 'node:os';
+import path from 'node:path';
+
+import { buildSiteGenerationLoopRunContext } from '../../.github/scripts/lib/site-generation-loop-run.mjs';
+
+const repoRoot = path.resolve(import.meta.dirname, '../..');
+const tempDir = await mkdtemp(path.join(tmpdir(), 'wp-site-generator-loop-run-inputs-'));
+const outputPath = path.join(tempDir, 'controller-run-inputs.json');
+const policyResultPath = path.join(tempDir, 'complexity-policy-result.json');
+
+assert.throws(
+	() => buildSiteGenerationLoopRunContext({ env: {}, root: repoRoot }),
+	/WPSG_RANDOMNESS_SEED is required/,
+	'local replay plans require an explicit seed'
+);
+
+const context = buildSiteGenerationLoopRunContext({
+	env: {
+		WPSG_REPLAY_ID: 'local-replay-123',
+		WPSG_RANDOMNESS_SEED: 'seed-123',
+		GITHUB_REPOSITORY: 'chubes4/wp-site-generator',
+		HOMEBOY_CONTROLLER_RUN_INPUTS_PATH: outputPath,
+		HOMEBOY_POLICY_RESULT_PATH: policyResultPath,
+	},
+	root: repoRoot,
+});
+assert.equal(context.runId, 'local-replay-123');
+assert.equal(context.outputPath, outputPath);
+assert.equal(context.policyResultPath, policyResultPath);
+
+const result = spawnSync(process.execPath, [path.join(repoRoot, '.github/scripts/build-homeboy-controller-run-inputs.mjs')], {
+	cwd: repoRoot,
+	encoding: 'utf8',
+	env: {
+		...process.env,
+		GITHUB_WORKSPACE: repoRoot,
+		GITHUB_REPOSITORY: 'chubes4/wp-site-generator',
+		WPSG_REPLAY_ID: 'local-replay-123',
+		WPSG_RANDOMNESS_SEED: 'seed-123',
+		HOMEBOY_CONTROLLER_RUN_INPUTS_PATH: outputPath,
+		HOMEBOY_POLICY_RESULT_PATH: policyResultPath,
+	},
+});
+assert.equal(result.status, 0, result.stderr || result.stdout);
+
+const runInputs = JSON.parse(await readFile(outputPath, 'utf8'));
+const policyResult = JSON.parse(await readFile(policyResultPath, 'utf8'));
+assert.equal(runInputs.inputs.run_id, 'local-replay-123');
+assert.equal(runInputs.metadata.run.generated_by, '.github/scripts/build-homeboy-controller-run-inputs.mjs');
+assert.equal(policyResult.provenance.run_id, 'local-replay-123');
+
+console.log('site generation loop run input tests passed');
