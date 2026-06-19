@@ -14,7 +14,6 @@ await mkdir(path.join(sourceStaticSiteDir, 'assets'), { recursive: true });
 await writeFile(path.join(sourceStaticSiteDir, 'index.html'), '<!doctype html><html><body>Native loop</body></html>');
 await writeFile(path.join(sourceStaticSiteDir, 'assets/styles.css'), 'body { color: #111; }');
 const workflowPath = path.join(tempDir, 'workflow.json');
-const dispatchPath = path.join(tempDir, 'dispatch.json');
 const controllerPath = path.join(tempDir, 'controller.json');
 
 const controllerResult = spawnSync(process.execPath, ['.github/scripts/build-homeboy-ssi-loop-controller.mjs', '--output', controllerPath], {
@@ -140,36 +139,11 @@ const workflowResult = spawnSync(process.execPath, ['.github/scripts/build-agent
 });
 assert.equal(workflowResult.status, 0, workflowResult.stderr || workflowResult.stdout);
 
-const dispatchResult = spawnSync(
-	process.execPath,
-	[
-		'.github/scripts/dispatch-php-transformer-iterator.mjs',
-		'--dry-run',
-		'--repo',
-		'chubes4/wp-site-generator',
-		'--source-pr',
-		'456',
-		'--source-head-sha',
-		'abc1234',
-		'--validation-run-id',
-		'9999',
-		'--artifact-name',
-		'ssi-validation-issue-123-native-loop',
-		'--visual-artifact-name',
-		'visual-parity-issue-123-native-loop',
-	],
-	{ cwd: repoRoot, encoding: 'utf8' },
-);
-assert.equal(dispatchResult.status, 0, dispatchResult.stderr || dispatchResult.stdout);
-await writeFile(dispatchPath, dispatchResult.stdout);
-const dispatch = JSON.parse(await readFile(dispatchPath, 'utf8'));
-assert.equal(dispatch.workflow, 'php-transformer-iterator.yml', 'dispatch adapter preserves Actions iterator workflow target');
-assert.equal(dispatch.payload.inputs.source_pr, '456', 'dispatch adapter preserves source PR input');
-assert.equal(dispatch.payload.inputs.openai_model, 'gpt-5.5', 'dispatch adapter preserves model default');
-
 const validationWorkflow = await readFile(path.join(repoRoot, '.github/workflows/static-site-validation.yml'), 'utf8');
 assert.match(validationWorkflow, /build-static-validation-settings\.mjs/, 'Actions validation uses shared Homeboy settings adapter');
 assert.match(validationWorkflow, /build-static-preview-blueprint\.mjs/, 'Actions validation uses shared preview adapter');
+assert.match(validationWorkflow, /gh workflow run php-transformer-iterator\.yml/, 'Actions validation dispatches iterator workflow with gh');
+assert.match(validationWorkflow, /-f source_pr=/, 'Actions validation passes source PR to iterator workflow');
 
 for (const workflowPath of ['.github/workflows/php-transformer-iterator.yml', '.github/workflows/php-transformer-iterator-smoke.yml', '.github/workflows/ssi-stack-reviewer.yml']) {
 	const workflow = await readFile(path.join(repoRoot, workflowPath), 'utf8');
