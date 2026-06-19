@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import { mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';
+import { mkdir, mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { spawnSync } from 'node:child_process';
@@ -14,7 +14,13 @@ const controllerEventPath = path.join(tempDir, 'site-generation-loop.controller-
 const controllerRunInputsPath = path.join(tempDir, 'site-generation-loop.controller-run-inputs.json');
 const controllerPolicyResultPath = path.join(tempDir, 'site-generation-loop.complexity-policy-result.json');
 const controllerMaterializationPath = path.join(tempDir, 'site-generation-loop.controller-materialization.json');
+const artifactRoot = path.join(tempDir, 'homeboy-agent-task-artifacts');
 const homeboyFixturePath = await createHomeboyControllerFixture(tempDir);
+
+async function writeArtifact(name, artifact) {
+  await mkdir(artifactRoot, { recursive: true });
+  await writeFile(path.join(artifactRoot, `${name}.json`), JSON.stringify({ artifact_id: name, ...artifact }, null, 2) + '\n');
+}
 
 try {
   const inputsResult = spawnSync(process.execPath, ['.github/scripts/build-homeboy-controller-run-inputs.mjs'], {
@@ -72,6 +78,75 @@ try {
   });
   assert.equal(resumeResult.status, 0, resumeResult.stderr || resumeResult.stdout);
 
+  const missingArtifactProof = spawnSync(
+    process.execPath,
+    [
+      '.github/scripts/assert-site-generation-loop-proof.mjs',
+      '--controller-result',
+      controllerResultPath,
+      '--controller-run-spec',
+      controllerRunSpecPath,
+      '--artifact-root',
+      artifactRoot,
+    ],
+    {
+      cwd: repoRoot,
+      encoding: 'utf8',
+    }
+  );
+  assert.notEqual(missingArtifactProof.status, 0, 'controller proof fails without real artifacts');
+  assert.match(missingArtifactProof.stderr || missingArtifactProof.stdout, /artifact root contains static_site_candidate/);
+
+  await writeArtifact('static_site_candidate', {
+    schema: 'wp-site-generator/StaticSiteCandidate/v1',
+    preview_url: 'https://preview.example.test/proof-site',
+    artifact_url: 'https://artifacts.example.test/static-site-candidate.json',
+  });
+  await writeArtifact('import_validation_result', {
+    schema: 'wp-site-generator/ImportValidationResult/v1',
+    artifact_url: 'https://artifacts.example.test/import-validation.json',
+    metrics: { fallback_blocks: 0, conversion_findings: 0 },
+  });
+  await writeArtifact('static_validation_run', {
+    schema: 'homeboy/Run/v1',
+    artifact_url: 'https://artifacts.example.test/static-validation-run.json',
+  });
+  await writeArtifact('visual_parity_artifact', {
+    schema: 'wp-site-generator/VisualParityArtifact/v1',
+    artifact_url: 'https://artifacts.example.test/visual-parity.json',
+    summary: { status: 'pass', mismatch_count: 0, max_delta_ratio: 0 },
+  });
+  await writeArtifact('finding_packet_set', {
+    schema: 'wp-site-generator/FindingPacketSet/v1',
+    artifact_url: 'https://artifacts.example.test/finding-packets.json',
+    packets: [],
+    actionable_conversion_count: 0,
+  });
+  await writeArtifact('revalidation_attempt', {
+    schema: 'wp-site-generator/RevalidationAttempt/v1',
+    artifact_url: 'https://artifacts.example.test/revalidation.json',
+    status: 'passed',
+  });
+  await writeArtifact('reviewer_gate_outcome', {
+    schema: 'wp-site-generator/SsiStackReviewerGate/v1',
+    artifact_url: 'https://artifacts.example.test/reviewer-gate.json',
+    decision: 'PASS',
+  });
+  await writeArtifact('static_site_publish_gate', {
+    schema: 'wp-site-generator/StaticSitePublishGate/v1',
+    artifact_url: 'https://artifacts.example.test/publish-gate.json',
+    publish_allowed: true,
+    gates: {
+      fallback_blocks: { passed: true },
+      conversion_findings: { passed: true },
+      visual_parity: { passed: true },
+    },
+  });
+  await writeArtifact('static_site_pull_request', {
+    schema: 'github/PullRequest/v1',
+    url: 'https://github.com/chubes4/wp-site-generator/pull/123',
+  });
+
   const controllerProof = spawnSync(
     process.execPath,
     [
@@ -80,6 +155,8 @@ try {
       controllerResultPath,
       '--controller-run-spec',
       controllerRunSpecPath,
+      '--artifact-root',
+      artifactRoot,
     ],
     {
       cwd: repoRoot,
