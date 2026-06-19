@@ -73,9 +73,9 @@ The controller declares workflow artifact dependencies and emissions. Homeboy de
 
 ## Complexity And Randomness Policy
 
-Prompt difficulty is owned by WP Site Generator, not Homeboy. The checked-in policy at `.github/site-generation-complexity-policy.json` is evaluated by `.github/scripts/build-homeboy-controller-run-spec.mjs` every time the controller run spec is built.
+Prompt difficulty is owned by WP Site Generator, not Homeboy. The checked-in policy at `.github/site-generation-complexity-policy.json` is evaluated by `.github/scripts/build-homeboy-controller-run-inputs.mjs` before Homeboy materializes the controller spec with `homeboy agent-task controller materialize`.
 
-The controller run spec records the full decision at `inputs.complexity_policy`, including:
+The materialized controller run spec records the full decision on each workflow at `workflows[].inputs.complexity_policy`, including:
 
 - selected and current complexity tier
 - ramp decision: `hold`, `raise`, `lower`, `hold_floor`, `hold_ceiling`, or `override`
@@ -129,14 +129,14 @@ GitHub Actions exposes these optional inputs, which map directly to environment 
 - `randomness_seed` -> `WPSG_RANDOMNESS_SEED`
 - `quality_signals_path` -> `WPSG_QUALITY_SIGNALS_PATH`
 
-Additional WPSG policy inputs are available for local controller run-spec generation:
+Additional WPSG policy inputs are available for local controller run-input generation:
 
 - `WPSG_CURRENT_COMPLEXITY_TIER`: current tier when the signal file does not include one
 - `WPSG_SITE_KIND_MIX`: comma-separated site-kind override
 - `WPSG_TARGET_PARALLEL_CANDIDATES`: candidate budget override, bounded by the selected tier
 
-Homeboy remains the controller, executor, and scheduler. It receives WPSG domain declarations, artifact contracts, task inputs, workload settings, and metadata that WPSG has computed.
+Homeboy remains the controller, executor, scheduler, and loop-spec materializer. It receives WPSG domain declarations, artifact contracts, task inputs, workload settings, and metadata that WPSG has computed.
 
 ## Upstream Contract
 
-Extra-Chill/homeboy#5152 is the upstream runtime dependency for the generic `agent-task controller from-spec`, `resume`, and `events` primitives. If a backend-specific WordPress or WP Codebox mapping is needed, it belongs behind generic Homeboy executor/provider contracts in `homeboy-extensions/wordpress`, not in this WPSG spec.
+Extra-Chill/homeboy#5152 is the upstream runtime dependency for the generic `agent-task controller from-spec`, `resume`, and `events` primitives. Extra-Chill/homeboy#5186 is the upstream dependency for `agent-task controller materialize`, which expands WPSG's run-input payload into workflow inputs without WPSG assembling the full controller run spec locally. If a backend-specific WordPress or WP Codebox mapping is needed, it belongs behind generic Homeboy executor/provider contracts in `homeboy-extensions/wordpress`, not in this WPSG spec.

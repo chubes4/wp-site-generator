@@ -16,6 +16,10 @@ if (args.join(' ') === 'agent-task controller from-spec --help') {
   console.log('Initialize or resume a durable loop controller from a repo-authored JSON spec');
   process.exit(0);
 }
+if (args.join(' ') === 'agent-task controller materialize --help') {
+  console.log('Materialize a repo-authored loop spec with explicit run inputs');
+  process.exit(0);
+}
 if (args.join(' ') === 'agent-task controller resume --help') {
   console.log('Execute pending controller actions until no executable action remains');
   process.exit(0);
@@ -45,6 +49,31 @@ if (args[0] === 'agent-task' && args[1] === 'controller' && args[2] === 'from-sp
         status: 'pending',
       })),
     },
+  };
+  if (outputIndex !== -1) {
+    writeFileSync(args[outputIndex + 1], JSON.stringify(result, null, 2) + '\\n');
+  }
+  console.log(JSON.stringify(result));
+  process.exit(0);
+}
+if (args[0] === 'agent-task' && args[1] === 'controller' && args[2] === 'materialize') {
+  const specPath = args[3].replace(/^@/, '');
+  const inputsIndex = args.indexOf('--inputs');
+  const outputIndex = args.indexOf('--output');
+  const spec = JSON.parse(readFileSync(specPath, 'utf8'));
+  const runInputs = inputsIndex === -1 ? {} : JSON.parse(readFileSync(args[inputsIndex + 1].replace(/^@/, ''), 'utf8'));
+  const explicitInputs = runInputs.inputs || (runInputs.metadata ? null : runInputs);
+  if (explicitInputs && typeof explicitInputs === 'object') {
+    for (const workflow of spec.workflows || []) {
+      workflow.inputs = { ...(workflow.inputs || {}), ...explicitInputs };
+    }
+  }
+  if (runInputs.metadata && typeof runInputs.metadata === 'object') {
+    spec.metadata = { ...(spec.metadata || {}), ...runInputs.metadata };
+  }
+  const result = {
+    schema: 'homeboy/agent-task-loop-spec-materialization/v1',
+    spec,
   };
   if (outputIndex !== -1) {
     writeFileSync(args[outputIndex + 1], JSON.stringify(result, null, 2) + '\\n');

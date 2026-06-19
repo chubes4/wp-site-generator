@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import { mkdtemp, readFile, rm } from 'node:fs/promises';
+import { mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { spawnSync } from 'node:child_process';
@@ -11,26 +11,37 @@ const controllerRunSpecPath = path.join(tempDir, 'site-generation-loop.controlle
 const controllerResultPath = path.join(tempDir, 'site-generation-loop.controller-from-spec.json');
 const controllerResumePath = path.join(tempDir, 'site-generation-loop.controller-resume.json');
 const controllerEventPath = path.join(tempDir, 'site-generation-loop.controller-event.json');
+const controllerRunInputsPath = path.join(tempDir, 'site-generation-loop.controller-run-inputs.json');
+const controllerMaterializationPath = path.join(tempDir, 'site-generation-loop.controller-materialization.json');
 const homeboyFixturePath = await createHomeboyControllerFixture(tempDir);
 
 try {
-  const specResult = spawnSync(process.execPath, ['.github/scripts/build-homeboy-controller-run-spec.mjs'], {
+  const inputsResult = spawnSync(process.execPath, ['.github/scripts/build-homeboy-controller-run-inputs.mjs'], {
     cwd: repoRoot,
     env: {
       ...process.env,
       HOMEBOY_BIN: homeboyFixturePath,
-      HOMEBOY_CONTROLLER_RUN_SPEC_PATH: controllerRunSpecPath,
+      HOMEBOY_CONTROLLER_RUN_INPUTS_PATH: controllerRunInputsPath,
       WPSG_REPLAY_ID: 'proof-replay',
       WPSG_RANDOMNESS_SEED: 'proof-seed',
     },
     encoding: 'utf8',
   });
-  assert.equal(specResult.status, 0, specResult.stderr || specResult.stdout);
+  assert.equal(inputsResult.status, 0, inputsResult.stderr || inputsResult.stdout);
+
+  const materializeResult = spawnSync(homeboyFixturePath, ['agent-task', 'controller', 'materialize', '@.github/homeboy/controllers/static-site-generation-loop.controller.json', '--inputs', `@${controllerRunInputsPath}`, '--output', controllerMaterializationPath], {
+    cwd: repoRoot,
+    encoding: 'utf8',
+  });
+  assert.equal(materializeResult.status, 0, materializeResult.stderr || materializeResult.stdout);
+  const materialization = JSON.parse(await readFile(controllerMaterializationPath, 'utf8'));
+  await writeFile(controllerRunSpecPath, JSON.stringify(materialization.spec, null, 2) + '\n');
 
   const controllerRunSpec = JSON.parse(await readFile(controllerRunSpecPath, 'utf8'));
   assert.equal(controllerRunSpec.metadata.authority.builder, '.github/scripts/build-homeboy-ssi-loop-controller.mjs');
-  assert.equal(controllerRunSpec.metadata.run.generated_by, '.github/scripts/build-homeboy-controller-run-spec.mjs');
-  assert.ok(controllerRunSpec.inputs.complexity_policy, 'controller run spec includes complexity inputs');
+  assert.equal(controllerRunSpec.metadata.run.generated_by, '.github/scripts/build-homeboy-controller-run-inputs.mjs');
+  assert.equal(controllerRunSpec.metadata.run.materialized_by, 'homeboy agent-task controller materialize');
+  assert.ok(controllerRunSpec.workflows.every((workflow) => workflow.inputs?.complexity_policy), 'materialized workflows include WPSG complexity inputs');
 
   const fromSpecResult = spawnSync(homeboyFixturePath, ['agent-task', 'controller', 'from-spec', `@${controllerRunSpecPath}`, '--output', controllerResultPath], {
     cwd: repoRoot,
@@ -71,6 +82,7 @@ try {
   assert.match(controllerProof.stdout, /semantic proof passed/);
 
   const workflow = await readFile(path.join(repoRoot, '.github/workflows/site-generation-loop.yml'), 'utf8');
+  assert.match(workflow, /homeboy agent-task controller materialize/, 'site generation workflow materializes specs through Homeboy');
   assert.match(workflow, /homeboy agent-task controller from-spec/, 'site generation workflow initializes Homeboy controller from spec');
   assert.match(workflow, /homeboy agent-task controller resume/, 'site generation workflow resumes the Homeboy controller');
   assert.match(workflow, /homeboy agent-task controller events/, 'site generation workflow records controller events');
