@@ -21,7 +21,7 @@ if (controllerResultPath || controllerRunSpecPath) {
 	assert.equal(controllerRunSpec.schema, 'homeboy/agent-task-loop-spec/v1', 'controller run spec uses the Homeboy loop spec schema');
 	assert.equal(controllerRunSpec.loop_id, 'wp-site-generator/static-site-generation-loop', 'controller run spec keeps the WPSG loop id');
 	assert.equal(controllerRunSpec.metadata?.authority?.builder, '.github/scripts/build-homeboy-ssi-loop-controller.mjs', 'controller run spec records its repo-owned builder');
-	assert.ok(controllerRunSpec.inputs?.complexity_policy, 'controller run spec carries WPSG complexity inputs');
+	assert.ok(controllerRunSpec.workflows?.every((workflow) => workflow.inputs?.complexity_policy), 'controller run spec carries WPSG complexity inputs on materialized workflows');
 	assert.ok(controllerRunSpec.metrics?.some((metric) => metric.metric_id === 'fallback_blocks'), 'controller run spec keeps fallback block metrics');
 	assert.ok(controllerRunSpec.metrics?.some((metric) => metric.metric_id === 'conversion_findings'), 'controller run spec keeps conversion finding metrics');
 	assert.ok(controllerRunSpec.metrics?.some((metric) => metric.metric_id === 'visual_parity'), 'controller run spec keeps visual parity metrics');

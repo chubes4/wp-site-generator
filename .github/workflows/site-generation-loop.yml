@@ -51,7 +51,9 @@ jobs:
       OPENAI_MODEL: ${{ inputs.openai_model }}
       GITHUB_TOKEN: ${{ github.token }}
       OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+      HOMEBOY_CONTROLLER_RUN_INPUTS_PATH: ${{ github.workspace }}/.ci/site-generation-loop.controller-run-inputs.json
       HOMEBOY_CONTROLLER_RUN_SPEC_PATH: ${{ github.workspace }}/.ci/site-generation-loop.controller-run-spec.json
+      HOMEBOY_CONTROLLER_MATERIALIZATION_RESULT_PATH: ${{ github.workspace }}/.ci/site-generation-loop.controller-materialization.json
       HOMEBOY_CONTROLLER_FROM_SPEC_RESULT_PATH: ${{ github.workspace }}/.ci/site-generation-loop.controller-from-spec.json
       HOMEBOY_CONTROLLER_RESUME_RESULT_PATH: ${{ github.workspace }}/.ci/site-generation-loop.controller-resume.json
       HOMEBOY_CONTROLLER_EVENT_RESULT_PATH: ${{ github.workspace }}/.ci/site-generation-loop.controller-event.json
@@ -99,13 +101,15 @@ jobs:
       - name: Install WordPress extension
         run: homeboy extension install .ci/homeboy-extensions/wordpress --id wordpress
 
-      - name: Build Homeboy controller run spec
+      - name: Materialize Homeboy controller run spec
         id: controller-spec
         run: |
           set -euo pipefail
-          spec_path="$(node .github/scripts/build-homeboy-controller-run-spec.mjs)"
-          echo "path=$spec_path" >> "$GITHUB_OUTPUT"
-          jq empty "$spec_path"
+          inputs_path="$(node .github/scripts/build-homeboy-controller-run-inputs.mjs)"
+          homeboy agent-task controller materialize "@$HOMEBOY_CONTROLLER_SPEC_PATH" --inputs "@$inputs_path" --output "$HOMEBOY_CONTROLLER_MATERIALIZATION_RESULT_PATH"
+          jq '.data.spec // .value.spec // .spec' "$HOMEBOY_CONTROLLER_MATERIALIZATION_RESULT_PATH" > "$HOMEBOY_CONTROLLER_RUN_SPEC_PATH"
+          jq empty "$HOMEBOY_CONTROLLER_RUN_SPEC_PATH"
+          echo "path=$HOMEBOY_CONTROLLER_RUN_SPEC_PATH" >> "$GITHUB_OUTPUT"
 
       - name: Initialize Homeboy controller from spec
         id: controller
@@ -140,6 +144,8 @@ jobs:
           name: site-generation-loop-homeboy-${{ github.run_id }}
           path: |
             .ci/site-generation-loop.controller-run-spec.json
+            .ci/site-generation-loop.controller-run-inputs.json
+            .ci/site-generation-loop.controller-materialization.json
             .ci/site-generation-loop.controller-from-spec.json
             .ci/site-generation-loop.controller-resume.json
             .ci/site-generation-loop.controller-event.json

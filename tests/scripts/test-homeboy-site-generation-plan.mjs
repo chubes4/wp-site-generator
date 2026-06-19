@@ -5,44 +5,66 @@ import path from 'node:path';
 import { spawnSync } from 'node:child_process';
 
 import { evaluateComplexityPolicy, loadPolicy } from '../../.github/scripts/site-generation-complexity-policy.mjs';
+import { createHomeboyControllerFixture } from '../helpers/homeboy-fixtures.mjs';
 
 const repoRoot = path.resolve(new URL('../..', import.meta.url).pathname);
 const tempDir = await mkdtemp(path.join(tmpdir(), 'wpsg-homeboy-controller-'));
 const controllerRunSpecPath = path.join(tempDir, 'controller-run-spec.json');
 const qualitySignalsPath = path.join(tempDir, 'quality-signals.json');
+const homeboyFixturePath = await createHomeboyControllerFixture(tempDir);
 
 const controllerBuilderEnv = (overrides = {}) => ({
 	...process.env,
 	...overrides,
 });
 
-try {
-	const result = spawnSync(process.execPath, ['.github/scripts/build-homeboy-controller-run-spec.mjs'], {
+async function materializeControllerSpec({ outputPath, env }) {
+	const inputsPath = outputPath.replace(/\.json$/, '.inputs.json');
+	const materializationPath = outputPath.replace(/\.json$/, '.materialization.json');
+	const inputsResult = spawnSync(process.execPath, ['.github/scripts/build-homeboy-controller-run-inputs.mjs'], {
 		cwd: repoRoot,
 		encoding: 'utf8',
 		env: controllerBuilderEnv({
-			GITHUB_RUN_ID: '409',
-			HOMEBOY_CONTROLLER_RUN_SPEC_PATH: controllerRunSpecPath,
+			...env,
+			HOMEBOY_CONTROLLER_RUN_INPUTS_PATH: inputsPath,
 		}),
 	});
-	assert.equal(result.status, 0, result.stderr || result.stdout);
+	assert.equal(inputsResult.status, 0, inputsResult.stderr || inputsResult.stdout);
+	const materializeResult = spawnSync(homeboyFixturePath, ['agent-task', 'controller', 'materialize', '@.github/homeboy/controllers/static-site-generation-loop.controller.json', '--inputs', `@${inputsPath}`, '--output', materializationPath], {
+		cwd: repoRoot,
+		encoding: 'utf8',
+	});
+	assert.equal(materializeResult.status, 0, materializeResult.stderr || materializeResult.stdout);
+	const materialization = JSON.parse(await readFile(materializationPath, 'utf8'));
+	await writeFile(outputPath, JSON.stringify(materialization.spec, null, 2) + '\n');
+	return materialization.spec;
+}
 
-	const controllerRunSpec = JSON.parse(await readFile(controllerRunSpecPath, 'utf8'));
+try {
+	const controllerRunSpec = await materializeControllerSpec({
+		outputPath: controllerRunSpecPath,
+		env: {
+			GITHUB_RUN_ID: '409',
+		},
+	});
+
 	const serialized = JSON.stringify(controllerRunSpec);
+	const storeIdeaInputs = controllerRunSpec.workflows.find((workflow) => workflow.workflow_id === 'store-idea').inputs;
 
 	assert.equal(controllerRunSpec.schema, 'homeboy/agent-task-loop-spec/v1');
 	assert.equal(controllerRunSpec.loop_id, 'wp-site-generator/static-site-generation-loop');
-	assert.equal(controllerRunSpec.inputs.run_id, '409');
-	assert.equal(controllerRunSpec.inputs.repository, 'chubes4/wp-site-generator');
-	assert.equal(controllerRunSpec.inputs.runtime_input_contract, 'homeboy-agent-runtime-env');
-	assert.equal(controllerRunSpec.inputs.complexity_policy.schema, 'wp-site-generator/site-generation-complexity-policy/v1');
-	assert.equal(controllerRunSpec.inputs.complexity_policy.current_tier, 'foundation');
-	assert.equal(controllerRunSpec.inputs.complexity_policy.selected_tier, 'foundation');
-	assert.equal(controllerRunSpec.inputs.complexity_policy.decision, 'hold');
-	assert.equal(controllerRunSpec.inputs.complexity_policy.randomness_profile.id, 'steady');
-	assert.equal(controllerRunSpec.inputs.complexity_policy.randomness_seed.length, 12);
-	assert.deepEqual(controllerRunSpec.inputs.complexity_policy.site_kind_mix, ['store', 'website']);
-	assert.equal(controllerRunSpec.metadata.run.generated_by, '.github/scripts/build-homeboy-controller-run-spec.mjs');
+	assert.equal(storeIdeaInputs.run_id, '409');
+	assert.equal(storeIdeaInputs.repository, 'chubes4/wp-site-generator');
+	assert.equal(storeIdeaInputs.runtime_input_contract, 'homeboy-agent-runtime-env');
+	assert.equal(storeIdeaInputs.complexity_policy.schema, 'wp-site-generator/site-generation-complexity-policy/v1');
+	assert.equal(storeIdeaInputs.complexity_policy.current_tier, 'foundation');
+	assert.equal(storeIdeaInputs.complexity_policy.selected_tier, 'foundation');
+	assert.equal(storeIdeaInputs.complexity_policy.decision, 'hold');
+	assert.equal(storeIdeaInputs.complexity_policy.randomness_profile.id, 'steady');
+	assert.equal(storeIdeaInputs.complexity_policy.randomness_seed.length, 12);
+	assert.deepEqual(storeIdeaInputs.complexity_policy.site_kind_mix, ['store', 'website']);
+	assert.equal(controllerRunSpec.metadata.run.generated_by, '.github/scripts/build-homeboy-controller-run-inputs.mjs');
+	assert.equal(controllerRunSpec.metadata.run.materialized_by, 'homeboy agent-task controller materialize');
 	assert.equal(controllerRunSpec.metadata.run.controller_spec, '.github/homeboy/controllers/static-site-generation-loop.controller.json');
 	assert.equal(controllerRunSpec.metadata.authority.builder, '.github/scripts/build-homeboy-ssi-loop-controller.mjs');
 
@@ -53,7 +75,7 @@ try {
 	assert.doesNotMatch(serialized, /OPENAI_API_KEY/, 'controller spec defers provider auth selection to Homeboy/runtime policy');
 	assert.equal(serialized.includes(repoRoot), false, 'controller spec does not bake the local checkout path');
 
-	const localMissingIdentityResult = spawnSync(process.execPath, ['.github/scripts/build-homeboy-controller-run-spec.mjs'], {
+	const localMissingIdentityResult = spawnSync(process.execPath, ['.github/scripts/build-homeboy-controller-run-inputs.mjs'], {
 		cwd: repoRoot,
 		encoding: 'utf8',
 		env: controllerBuilderEnv({
@@ -61,40 +83,37 @@ try {
 			WPSG_REPLAY_ID: '',
 			HOMEBOY_REPLAY_ID: '',
 			WPSG_RANDOMNESS_SEED: 'local-seed',
-			HOMEBOY_CONTROLLER_RUN_SPEC_PATH: path.join(tempDir, 'missing-local-identity.json'),
+			HOMEBOY_CONTROLLER_RUN_INPUTS_PATH: path.join(tempDir, 'missing-local-identity.json'),
 		}),
 	});
-	assert.notEqual(localMissingIdentityResult.status, 0, 'local controller run spec generation requires an explicit replay identity');
+	assert.notEqual(localMissingIdentityResult.status, 0, 'local controller run input generation requires an explicit replay identity');
 	assert.match(localMissingIdentityResult.stderr, /WPSG_REPLAY_ID or HOMEBOY_REPLAY_ID/, 'local replay identity error explains the required input');
 
-	const localMissingSeedResult = spawnSync(process.execPath, ['.github/scripts/build-homeboy-controller-run-spec.mjs'], {
+	const localMissingSeedResult = spawnSync(process.execPath, ['.github/scripts/build-homeboy-controller-run-inputs.mjs'], {
 		cwd: repoRoot,
 		encoding: 'utf8',
 		env: controllerBuilderEnv({
 			GITHUB_RUN_ID: '',
 			WPSG_REPLAY_ID: 'local-replay-409',
 			WPSG_RANDOMNESS_SEED: '',
-			HOMEBOY_CONTROLLER_RUN_SPEC_PATH: path.join(tempDir, 'missing-local-seed.json'),
+			HOMEBOY_CONTROLLER_RUN_INPUTS_PATH: path.join(tempDir, 'missing-local-seed.json'),
 		}),
 	});
-	assert.notEqual(localMissingSeedResult.status, 0, 'local site generation controller specs require an explicit randomness seed');
+	assert.notEqual(localMissingSeedResult.status, 0, 'local site generation controller inputs require an explicit randomness seed');
 	assert.match(localMissingSeedResult.stderr, /WPSG_RANDOMNESS_SEED is required/, 'local replay seed error explains the required input');
 
 	const localReplaySpecPath = path.join(tempDir, 'local-replay-controller.json');
-	const localReplayResult = spawnSync(process.execPath, ['.github/scripts/build-homeboy-controller-run-spec.mjs'], {
-		cwd: repoRoot,
-		encoding: 'utf8',
-		env: controllerBuilderEnv({
+	const localReplaySpec = await materializeControllerSpec({
+		outputPath: localReplaySpecPath,
+		env: {
 			GITHUB_RUN_ID: '',
 			WPSG_REPLAY_ID: 'local-replay-409',
 			WPSG_RANDOMNESS_SEED: 'local-seed',
-			HOMEBOY_CONTROLLER_RUN_SPEC_PATH: localReplaySpecPath,
-		}),
+		},
 	});
-	assert.equal(localReplayResult.status, 0, localReplayResult.stderr || localReplayResult.stdout);
-	const localReplaySpec = JSON.parse(await readFile(localReplaySpecPath, 'utf8'));
-	assert.equal(localReplaySpec.inputs.run_id, 'local-replay-409', 'local replay identity replaces timestamp fallback');
-	assert.equal(localReplaySpec.inputs.complexity_policy.randomness_seed, 'local-seed', 'local replay seed is explicit');
+	const localReplayInputs = localReplaySpec.workflows.find((workflow) => workflow.workflow_id === 'store-idea').inputs;
+	assert.equal(localReplayInputs.run_id, 'local-replay-409', 'local replay identity replaces timestamp fallback');
+	assert.equal(localReplayInputs.complexity_policy.randomness_seed, 'local-seed', 'local replay seed is explicit');
 
 	assert.ok(controllerRunSpec.workflows.find((workflow) => workflow.workflow_id === 'revalidation').artifacts.includes('revalidation_attempt'), 'controller checkpoints revalidation attempts');
 	assert.deepEqual(
@@ -249,19 +268,16 @@ try {
 		recent_results: Array.from({ length: 4 }, () => ({ status: 'passed', fallback_block_count: 0, visual_mismatch_ratio: 0.01, actionable_findings: 0 })),
 	}));
 	const qualitySpecPath = path.join(tempDir, 'controller-stable.json');
-	const qualityResult = spawnSync(process.execPath, ['.github/scripts/build-homeboy-controller-run-spec.mjs'], {
-		cwd: repoRoot,
-		encoding: 'utf8',
-		env: controllerBuilderEnv({
+	const stableSpec = await materializeControllerSpec({
+		outputPath: qualitySpecPath,
+		env: {
 			GITHUB_RUN_ID: '410',
-			HOMEBOY_CONTROLLER_RUN_SPEC_PATH: qualitySpecPath,
 			WPSG_QUALITY_SIGNALS_PATH: qualitySignalsPath,
-		}),
+		},
 	});
-	assert.equal(qualityResult.status, 0, qualityResult.stderr || qualityResult.stdout);
-	const stableSpec = JSON.parse(await readFile(qualitySpecPath, 'utf8'));
-	assert.equal(stableSpec.inputs.complexity_policy.selected_tier, 'composed', 'controller spec builder consumes quality-signal file');
-	assert.equal(stableSpec.inputs.complexity_policy.target_parallel_candidates, 2, 'composed tier raises active candidate budget input');
+	const stableInputs = stableSpec.workflows.find((workflow) => workflow.workflow_id === 'store-idea').inputs;
+	assert.equal(stableInputs.complexity_policy.selected_tier, 'composed', 'controller input builder consumes quality-signal file');
+	assert.equal(stableInputs.complexity_policy.target_parallel_candidates, 2, 'composed tier raises active candidate budget input');
 } finally {
 	await rm(tempDir, { recursive: true, force: true });
 }
