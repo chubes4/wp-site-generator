@@ -1,73 +1,23 @@
-export const ssiStackRepositories = {
-	homeboyExtensions: {
-		id: 'homeboy_extensions',
-		label: 'Homeboy Extensions',
-		url: 'https://github.com/Extra-Chill/homeboy-extensions',
-		gitUrl: 'https://github.com/Extra-Chill/homeboy-extensions.git',
-		ref: 'main',
-		refType: 'branch',
-	},
-	wpCodebox: {
-		id: 'wp_codebox',
-		label: 'WP Codebox',
-		url: 'https://github.com/Automattic/wp-codebox',
-		gitUrl: 'https://github.com/Automattic/wp-codebox.git',
-		ref: 'main',
-		refType: 'branch',
-	},
-	staticSiteImporter: {
-		id: 'static_site_importer',
-		label: 'Static Site Importer',
-		url: 'https://github.com/chubes4/static-site-importer',
-		gitUrl: 'https://github.com/chubes4/static-site-importer.git',
-		ref: 'main',
-		refType: 'branch',
-		targetFolderName: 'static-site-importer',
-	},
-	blockFormatBridge: {
-		id: 'block_format_bridge',
-		label: 'Block Format Bridge',
-		url: 'https://github.com/chubes4/block-format-bridge',
-		gitUrl: 'https://github.com/chubes4/block-format-bridge.git',
-		ref: 'main',
-		refType: 'branch',
-		targetFolderName: 'block-format-bridge',
-	},
-	blockArtifactCompiler: {
-		id: 'block_artifact_compiler',
-		label: 'Block Artifact Compiler',
-		url: 'https://github.com/chubes4/block-artifact-compiler',
-		gitUrl: 'https://github.com/chubes4/block-artifact-compiler.git',
-		ref: 'main',
-		refType: 'branch',
-		targetFolderName: 'block-artifact-compiler',
-	},
-	htmlToBlocksConverter: {
-		id: 'html_to_blocks_converter',
-		label: 'HTML to Blocks Converter',
-		url: 'https://github.com/chubes4/html-to-blocks-converter',
-		gitUrl: 'https://github.com/chubes4/html-to-blocks-converter.git',
-		ref: 'main',
-		refType: 'branch',
-		targetFolderName: 'html-to-blocks-converter',
-	},
-};
+import { readFileSync } from 'node:fs';
 
-export const ssiStackHarness = {
-	id: 'wp_site_generator_validation_harness',
-	label: 'WP Site Generator validation harness scripts',
-	url: 'https://github.com/chubes4/wp-site-generator',
-	gitUrl: 'https://github.com/chubes4/wp-site-generator.git',
-	ref: 'main',
-	refType: 'branch',
-};
+const defaultConfigUrl = new URL('./ssi-stack-manifest.config.json', import.meta.url);
+const defaultSsiStackConfig = readSsiStackConfig(defaultConfigUrl);
 
-export function buildSsiStackManifest({ harnessSha = '', resolved = {} } = {}) {
+export const ssiStackRepositories = repositoriesByExportName(defaultSsiStackConfig.repositories);
+export const ssiStackHarness = defaultSsiStackConfig.harness;
+
+export function loadSsiStackConfig({ configPath = process.env.SSI_STACK_CONFIG_PATH || '', env = process.env } = {}) {
+	const fileConfig = configPath ? readSsiStackConfig(configPath) : defaultSsiStackConfig;
+	const overrideConfig = env.SSI_STACK_CONFIG_JSON ? parseConfigJson(env.SSI_STACK_CONFIG_JSON, 'SSI_STACK_CONFIG_JSON') : null;
+	return validateSsiStackConfig(mergeSsiStackConfig(fileConfig, overrideConfig));
+}
+
+export function buildSsiStackManifest({ harnessSha = '', resolved = {}, config = loadSsiStackConfig() } = {}) {
 	return {
 		schema_version: 1,
-		harness: normalizeEntry({ ...ssiStackHarness, sha: harnessSha || resolved[ssiStackHarness.id] || '' }),
+		harness: normalizeEntry({ ...config.harness, sha: harnessSha || resolved[config.harness.id] || '' }),
 		repositories: Object.fromEntries(
-			Object.values(ssiStackRepositories).map((repository) => [
+			Object.values(config.repositories).map((repository) => [
 				repository.id,
 				normalizeEntry({ ...repository, sha: resolved[repository.id] || '' }),
 			])
@@ -117,5 +67,95 @@ function normalizeEntry(entry) {
 		ref_type: entry.refType || entry.ref_type,
 		sha: entry.sha || '',
 		...(entry.targetFolderName ? { target_folder_name: entry.targetFolderName } : {}),
+		...(entry.target_folder_name ? { target_folder_name: entry.target_folder_name } : {}),
+	};
+}
+
+function readSsiStackConfig(configPath) {
+	const parsed = JSON.parse(readFileSync(configPath, 'utf8'));
+	return validateSsiStackConfig(parsed);
+}
+
+function parseConfigJson(value, source) {
+	try {
+		return JSON.parse(value);
+	} catch (error) {
+		throw new Error(`${source} must be valid JSON: ${error.message}`);
+	}
+}
+
+function mergeSsiStackConfig(base, override) {
+	if (!override) {
+		return base;
+	}
+
+	return {
+		...base,
+		...override,
+		harness: { ...base.harness, ...(override.harness || {}) },
+		repositories: Object.fromEntries(
+			Object.entries(base.repositories).map(([id, repository]) => [
+				id,
+				{ ...repository, ...(override.repositories?.[id] || {}) },
+			])
+		),
+	};
+}
+
+function validateSsiStackConfig(config) {
+	if (!config || typeof config !== 'object' || Array.isArray(config)) {
+		throw new Error('SSI stack config must be a JSON object.');
+	}
+	if (config.schema_version !== 1) {
+		throw new Error('SSI stack config schema_version must be 1.');
+	}
+
+	const harness = validateConfigEntry(config.harness, 'harness');
+	const repositories = config.repositories;
+	if (!repositories || typeof repositories !== 'object' || Array.isArray(repositories)) {
+		throw new Error('SSI stack config repositories must be a JSON object.');
+	}
+
+	return {
+		schema_version: 1,
+		harness,
+		repositories: Object.fromEntries(
+			Object.entries(repositories).map(([id, repository]) => {
+				const entry = validateConfigEntry(repository, `repositories.${id}`);
+				if (entry.id !== id) {
+					throw new Error(`SSI stack config repositories.${id}.id must match its repository key.`);
+				}
+				return [id, entry];
+			})
+		),
+	};
+}
+
+function validateConfigEntry(entry, path) {
+	if (!entry || typeof entry !== 'object' || Array.isArray(entry)) {
+		throw new Error(`SSI stack config ${path} must be a JSON object.`);
+	}
+
+	const normalized = normalizeEntry(entry);
+	for (const field of ['id', 'label', 'url', 'git_url', 'ref', 'ref_type']) {
+		if (!normalized[field] || typeof normalized[field] !== 'string') {
+			throw new Error(`SSI stack config ${path}.${field} must be a non-empty string.`);
+		}
+	}
+	if (!['branch', 'tag', 'commit'].includes(normalized.ref_type)) {
+		throw new Error(`SSI stack config ${path}.ref_type must be branch, tag, or commit.`);
+	}
+
+	return normalized;
+}
+
+function repositoriesByExportName(repositories) {
+	return {
+		homeboyExtensions: repositories.homeboy_extensions,
+		wpCodebox: repositories.wp_codebox,
+		staticSiteImporter: repositories.static_site_importer,
+		blockFormatBridge: repositories.block_format_bridge,
+		blockArtifactCompiler: repositories.block_artifact_compiler,
+		htmlToBlocksConverter: repositories.html_to_blocks_converter,
 	};
 }
