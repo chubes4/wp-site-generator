@@ -185,3 +185,61 @@ const explicitGrouped = JSON.parse(await readFile(explicitOutputPath, 'utf8'));
 assert.equal(explicitGrouped.groups.length, 1);
 assert.equal(explicitGrouped.groups[0].owner_repo, 'chubes4/block-artifact-compiler', 'Valid explicit candidate_repo wins before broad visual routing');
 assert.equal(explicitGrouped.groups[0].candidate_repo, 'chubes4/block-artifact-compiler');
+
+const structuredOutputPath = path.join(tmp, 'structured-owner-groups.json');
+const structuredFixturePath = path.join(tmp, 'structured-owner-packets.json');
+await writeFile(structuredFixturePath, `${JSON.stringify([
+	{
+		schema_version: 3,
+		diagnostic_id: 'diag-structured-owner-precedence',
+		kind: 'visual_parity_mismatch',
+		category: 'visual_parity',
+		reason_code: 'visual_mismatch',
+		suggested_repair_class: 'inspect_visual_parity_policy',
+		owner_repo: 'chubes4/block-format-bridge',
+		candidate_repo: 'chubes4/wp-site-generator',
+		converter: 'visual-parity',
+		stage: 'screenshots',
+		source_path: 'visual-diff.json',
+		selector: '.hero',
+		reason: 'Legacy haystack looks visual, but structured owner_repo identifies the serializer boundary.',
+		repair_mode: 'issue_only',
+		route_reason: 'structured owner_repo from diagnostic packet',
+	},
+	{
+		schema_version: 3,
+		diagnostic_id: 'diag-invalid-structured-owner-fallback',
+		kind: 'asset_map',
+		category: 'unresolved_asset',
+		reason_code: 'asset_missing',
+		suggested_repair_class: 'materialize_or_rewrite_asset',
+		owner_repo: 'not-a-known-owner',
+		candidate_repo: '',
+		converter: 'static-site-importer',
+		stage: 'asset_map',
+		source_path: 'static-sites/demo/index.html',
+		selector: 'img.logo',
+		reason: 'Invalid structured owner should fall back to policy routing for asset_map.',
+	},
+], null, 2)}\n`);
+
+const structuredResult = spawnSync(process.execPath, [
+	path.join(repoRoot, '.github/scripts/group-ssi-finding-packets.mjs'),
+	structuredFixturePath,
+], {
+	cwd: repoRoot,
+	env: { ...process.env, FINDING_GROUPS_PATH: structuredOutputPath },
+	encoding: 'utf8',
+});
+
+assert.equal(structuredResult.status, 0, structuredResult.stderr || structuredResult.stdout);
+const structuredGrouped = JSON.parse(await readFile(structuredOutputPath, 'utf8'));
+const structuredOwnerGroup = structuredGrouped.groups.find((group) => group.diagnostic_id === 'diag-structured-owner-precedence' || group.route_reason === 'structured owner_repo from diagnostic packet');
+assert.equal(structuredOwnerGroup.owner_repo, 'chubes4/block-format-bridge', 'Structured owner_repo wins before candidate_repo and broad visual routing');
+assert.equal(structuredOwnerGroup.candidate_repo, 'chubes4/block-format-bridge');
+assert.equal(structuredOwnerGroup.repair_mode, 'issue_only', 'Structured repair_mode remains authoritative');
+assert.equal(structuredOwnerGroup.route_reason, 'structured owner_repo from diagnostic packet', 'Structured route_reason is preserved');
+
+const fallbackGroup = structuredGrouped.groups.find((group) => group.kind === 'asset_map');
+assert.equal(fallbackGroup.owner_repo, 'chubes4/static-site-importer', 'Invalid structured owner_repo falls back to existing policy routing');
+assert.match(fallbackGroup.route_reason, /SSI import/);

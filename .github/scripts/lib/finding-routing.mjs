@@ -4,8 +4,13 @@ import { text } from './ssi-finding-packets.mjs';
 const policy = JSON.parse(readFileSync(new URL('./finding-routing-policy.json', import.meta.url), 'utf8'));
 
 export function candidateRepoFromDiagnostic(diagnostic, type, category, suggestedRepairClass) {
+	const ownerRepo = text(diagnostic?.owner_repo);
+	if (isCandidateRepo(ownerRepo)) {
+		return ownerRepo;
+	}
+
 	const explicit = text(diagnostic?.candidate_repo);
-	if (explicit) {
+	if (isCandidateRepo(explicit)) {
 		return explicit;
 	}
 
@@ -28,6 +33,11 @@ export function candidateRepoFromDiagnostic(diagnostic, type, category, suggeste
 }
 
 export function routeCandidateRepo(packet) {
+	const ownerRepo = text(packet.owner_repo);
+	if (isCandidateRepo(ownerRepo)) {
+		return ownerRepo;
+	}
+
 	const explicit = text(packet.candidate_repo);
 	if (isCandidateRepo(explicit)) {
 		return explicit;
@@ -67,6 +77,11 @@ export function routeRepairMode(packet, candidateRepo) {
 }
 
 export function routeReason(packet, candidateRepo, repairMode) {
+	const configured = text(packet.route_reason);
+	if (configured) {
+		return configured;
+	}
+
 	if (repairMode === 'issue_only') {
 		return 'insufficient evidence for a safe automated PR path; group remains issue-only';
 	}
