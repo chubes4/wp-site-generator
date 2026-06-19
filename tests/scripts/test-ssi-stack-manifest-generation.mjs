@@ -6,6 +6,8 @@ import { mkdir, mkdtemp, readFile, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 
+import { buildSsiStackManifest, loadSsiStackConfig } from '../../.github/scripts/lib/ssi-stack-manifest.mjs';
+
 const repoRoot = path.resolve(import.meta.dirname, '../..');
 const tempDir = await mkdtemp(path.join(tmpdir(), 'wp-site-generator-ssi-stack-manifest-'));
 const manifestPath = path.join(tempDir, 'ssi-stack-manifest.json');
@@ -63,6 +65,51 @@ for (const refs of [settingsPluginRefs, previewPluginRefs]) {
 		['https://github.com/chubes4/static-site-importer', 'dddddddddddddddddddddddddddddddddddddddd', 'commit'],
 	]);
 }
+
+const defaultManifest = buildSsiStackManifest();
+assert.equal(defaultManifest.repositories.static_site_importer.url, 'https://github.com/chubes4/static-site-importer');
+assert.equal(defaultManifest.repositories.static_site_importer.ref, 'main');
+
+const configPath = path.join(tempDir, 'ssi-stack-config.json');
+await writeJson(configPath, {
+	schema_version: 1,
+	harness: manifestEntry('wp_site_generator_validation_harness', 'WP Site Generator validation harness scripts', 'https://github.com/example/wp-site-generator', 'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa'),
+	repositories: {
+		homeboy_extensions: manifestEntry('homeboy_extensions', 'Homeboy Extensions', 'https://github.com/Extra-Chill/homeboy-extensions', 'bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb'),
+		wp_codebox: manifestEntry('wp_codebox', 'WP Codebox', 'https://github.com/Automattic/wp-codebox', 'cccccccccccccccccccccccccccccccccccccccc'),
+		static_site_importer: manifestEntry('static_site_importer', 'Static Site Importer', 'https://github.com/example/static-site-importer', 'dddddddddddddddddddddddddddddddddddddddd'),
+		block_format_bridge: manifestEntry('block_format_bridge', 'Block Format Bridge', 'https://github.com/chubes4/block-format-bridge', 'eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee'),
+		block_artifact_compiler: manifestEntry('block_artifact_compiler', 'Block Artifact Compiler', 'https://github.com/chubes4/block-artifact-compiler', 'ffffffffffffffffffffffffffffffffffffffff'),
+		html_to_blocks_converter: manifestEntry('html_to_blocks_converter', 'HTML to Blocks Converter', 'https://github.com/chubes4/html-to-blocks-converter', '1111111111111111111111111111111111111111'),
+	},
+});
+const fileConfigManifest = buildSsiStackManifest({ config: loadSsiStackConfig({ configPath }) });
+assert.equal(fileConfigManifest.harness.url, 'https://github.com/example/wp-site-generator');
+assert.equal(fileConfigManifest.repositories.static_site_importer.url, 'https://github.com/example/static-site-importer');
+
+const envConfigManifest = buildSsiStackManifest({
+	config: loadSsiStackConfig({
+		env: {
+			SSI_STACK_CONFIG_JSON: JSON.stringify({
+				schema_version: 1,
+				repositories: {
+					block_artifact_compiler: {
+						ref: 'release/v1',
+						ref_type: 'tag',
+					},
+				},
+			}),
+		},
+	}),
+});
+assert.equal(envConfigManifest.repositories.block_artifact_compiler.ref, 'release/v1');
+assert.equal(envConfigManifest.repositories.block_artifact_compiler.ref_type, 'tag');
+assert.equal(envConfigManifest.repositories.block_format_bridge.ref, 'main');
+
+assert.throws(
+	() => loadSsiStackConfig({ env: { SSI_STACK_CONFIG_JSON: JSON.stringify({ schema_version: 1, repositories: { static_site_importer: { ref_type: 'floating' } } }) } }),
+	/SSI stack config repositories\.static_site_importer\.ref_type must be branch, tag, or commit\./
+);
 
 console.log('SSI stack manifest generation passed');
 
