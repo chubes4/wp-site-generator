@@ -12,6 +12,7 @@ const controllerResultPath = path.join(tempDir, 'site-generation-loop.controller
 const controllerResumePath = path.join(tempDir, 'site-generation-loop.controller-resume.json');
 const controllerEventPath = path.join(tempDir, 'site-generation-loop.controller-event.json');
 const controllerRunInputsPath = path.join(tempDir, 'site-generation-loop.controller-run-inputs.json');
+const controllerPolicyResultPath = path.join(tempDir, 'site-generation-loop.complexity-policy-result.json');
 const controllerMaterializationPath = path.join(tempDir, 'site-generation-loop.controller-materialization.json');
 const homeboyFixturePath = await createHomeboyControllerFixture(tempDir);
 
@@ -22,6 +23,7 @@ try {
       ...process.env,
       HOMEBOY_BIN: homeboyFixturePath,
       HOMEBOY_CONTROLLER_RUN_INPUTS_PATH: controllerRunInputsPath,
+      HOMEBOY_POLICY_RESULT_PATH: controllerPolicyResultPath,
       WPSG_REPLAY_ID: 'proof-replay',
       WPSG_RANDOMNESS_SEED: 'proof-seed',
     },
@@ -29,7 +31,7 @@ try {
   });
   assert.equal(inputsResult.status, 0, inputsResult.stderr || inputsResult.stdout);
 
-  const materializeResult = spawnSync(homeboyFixturePath, ['agent-task', 'controller', 'materialize', '@.github/homeboy/controllers/static-site-generation-loop.controller.json', '--inputs', `@${controllerRunInputsPath}`, '--output', controllerMaterializationPath], {
+  const materializeResult = spawnSync(homeboyFixturePath, ['agent-task', 'controller', 'materialize', '@.github/homeboy/controllers/static-site-generation-loop.controller.json', '--inputs', `@${controllerRunInputsPath}`, '--policy-result', `@${controllerPolicyResultPath}`, '--output', controllerMaterializationPath], {
     cwd: repoRoot,
     encoding: 'utf8',
   });
@@ -41,7 +43,7 @@ try {
   assert.equal(controllerRunSpec.metadata.authority.builder, '.github/scripts/build-homeboy-ssi-loop-controller.mjs');
   assert.equal(controllerRunSpec.metadata.run.generated_by, '.github/scripts/build-homeboy-controller-run-inputs.mjs');
   assert.equal(controllerRunSpec.metadata.run.materialized_by, 'homeboy agent-task controller materialize');
-  assert.ok(controllerRunSpec.workflows.every((workflow) => workflow.inputs?.complexity_policy), 'materialized workflows include WPSG complexity inputs');
+  assert.ok(controllerRunSpec.workflows.every((workflow) => workflow.inputs?.policy_results?.['wpsg-complexity-policy']), 'materialized workflows include WPSG complexity policy results');
 
   const fromSpecResult = spawnSync(homeboyFixturePath, ['agent-task', 'controller', 'from-spec', `@${controllerRunSpecPath}`, '--output', controllerResultPath], {
     cwd: repoRoot,

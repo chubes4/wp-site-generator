@@ -73,9 +73,9 @@ The controller declares workflow artifact dependencies and emissions. Homeboy de
 
 ## Complexity And Randomness Policy
 
-Prompt difficulty is owned by WP Site Generator, not Homeboy. The checked-in policy at `.github/site-generation-complexity-policy.json` is evaluated by `.github/scripts/build-homeboy-controller-run-inputs.mjs` before Homeboy materializes the controller spec with `homeboy agent-task controller materialize`.
+Prompt difficulty is owned by WP Site Generator, not Homeboy. The checked-in policy at `.github/site-generation-complexity-policy.json` is evaluated by `.github/scripts/build-homeboy-controller-run-inputs.mjs` before Homeboy materializes the controller spec with `homeboy agent-task controller materialize --policy-result @<policy-result.json>`.
 
-The materialized controller run spec records the full decision on each workflow at `workflows[].inputs.complexity_policy`, including:
+The materialized controller run spec records the full decision on each workflow at `workflows[].inputs.policy_results["wpsg-complexity-policy"]`, including:
 
 - selected and current complexity tier
 - ramp decision: `hold`, `raise`, `lower`, `hold_floor`, `hold_ceiling`, or `override`
@@ -84,7 +84,7 @@ The materialized controller run spec records the full decision on each workflow 
 - tier layout/component families and criteria
 - quality-signal path and explicit overrides used for the run
 
-Homeboy receives the policy decision with the controller spec and owns how it is applied to generated actions. Candidate-producing workflows retain WPSG-owned prompts and artifact schemas so emitted artifact metadata can record tier, randomness seed/profile, site kind, layout family, component families, and policy decision.
+Homeboy receives the policy decision through its generic policy-result materialization contract and records provenance under `metadata.policy_materialization["wpsg-complexity-policy"]`. Candidate-producing workflows retain WPSG-owned prompts and artifact schemas so emitted artifact metadata can record tier, randomness seed/profile, site kind, layout family, component families, and policy decision.
 
 ### Quality Signals
 

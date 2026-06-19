@@ -21,6 +21,7 @@ const runId = resolveReplayRunId(process.env);
 const repository = process.env.GITHUB_REPOSITORY || 'chubes4/wp-site-generator';
 const controllerSpecPath = process.env.HOMEBOY_CONTROLLER_SPEC_PATH || '.github/homeboy/controllers/static-site-generation-loop.controller.json';
 const outputPath = process.env.HOMEBOY_CONTROLLER_RUN_INPUTS_PATH || path.join(root, '.ci', 'site-generation-loop.controller-run-inputs.json');
+const policyResultPath = process.env.HOMEBOY_POLICY_RESULT_PATH || outputPath.replace(/\.json$/, '.complexity-policy-result.json');
 const runtimeOverrides = readHomeboyAgentRuntimeOverrides(process.env);
 const policyInputs = resolvePolicyInputs({ root });
 const complexityPolicy = loadPolicy(policyInputs.policyPath);
@@ -30,6 +31,23 @@ const complexityDecision = evaluateComplexityPolicy({
 	qualitySignals,
 	runId,
 	overrides: policyInputs.overrides,
+});
+
+await writeJsonFile(policyResultPath, {
+	policy_id: 'wpsg-complexity-policy',
+	policy_inputs: {
+		policy_path: path.relative(root, policyInputs.policyPath),
+		quality_signals_path: policyInputs.qualitySignalsPath ? path.relative(root, policyInputs.qualitySignalsPath) : '',
+		overrides: complexityDecision.overrides,
+		current_tier: complexityDecision.current_tier,
+	},
+	policy_results: complexityDecision,
+	provenance: {
+		generated_by: '.github/scripts/build-homeboy-controller-run-inputs.mjs',
+		repository,
+		run_id: runId,
+		policy_schema: complexityDecision.schema,
+	},
 });
 
 await writeJsonFile(outputPath, {
@@ -44,7 +62,6 @@ await writeJsonFile(outputPath, {
 		static_site_publish_gate: process.env.STATIC_SITE_PUBLISH_GATE || '',
 		concept_prompt: process.env.CONCEPT_PROMPT || '',
 		website_flow_slug: process.env.WEBSITE_FLOW_SLUG || 'website-idea-artifact-flow',
-		complexity_policy: complexityDecision,
 		runtime_input_contract: runtimeOverrides.source,
 		artifact_root: process.env.HOMEBOY_ARTIFACT_ROOT || '.ci/homeboy-agent-task-artifacts',
 	},
@@ -53,7 +70,7 @@ await writeJsonFile(outputPath, {
 			run_id: runId,
 			repository,
 			controller_spec: controllerSpecPath,
-			complexity_policy: complexityDecision,
+			complexity_policy_result: path.relative(root, policyResultPath),
 			runtime_input_contract: runtimeOverrides.source,
 			generated_by: '.github/scripts/build-homeboy-controller-run-inputs.mjs',
 			materialized_by: 'homeboy agent-task controller materialize',
