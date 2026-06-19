@@ -4,7 +4,7 @@
     "extensions": {
         "wordpress": {
             "settings": {
-                "wp_codebox_blueprint": {
+                "wordpress_runtime_blueprint": {
                     "$schema": "https://playground.wordpress.net/blueprint-schema.json",
                     "preferredVersions": {
                         "php": "8.3",

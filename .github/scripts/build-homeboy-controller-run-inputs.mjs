@@ -1,12 +1,8 @@
 #!/usr/bin/env node
 import path from 'node:path';
 
-import {
-	requireLocalReplaySeed,
-	readHomeboyAgentRuntimeOverrides,
-	resolveReplayRunId,
-	writeJsonFile,
-} from './lib/ci-runtime-utils.mjs';
+import { writeJsonFile } from './lib/ci-runtime-utils.mjs';
+import { buildSiteGenerationLoopRunContext } from './lib/site-generation-loop-run.mjs';
 import {
 	evaluateComplexityPolicy,
 	loadPolicy,
@@ -15,14 +11,7 @@ import {
 } from './site-generation-complexity-policy.mjs';
 
 const root = process.env.GITHUB_WORKSPACE || process.cwd();
-requireLocalReplaySeed(process.env);
-
-const runId = resolveReplayRunId(process.env);
-const repository = process.env.GITHUB_REPOSITORY || 'chubes4/wp-site-generator';
-const controllerSpecPath = process.env.HOMEBOY_CONTROLLER_SPEC_PATH || '.github/homeboy/controllers/static-site-generation-loop.controller.json';
-const outputPath = process.env.HOMEBOY_CONTROLLER_RUN_INPUTS_PATH || path.join(root, '.ci', 'site-generation-loop.controller-run-inputs.json');
-const policyResultPath = process.env.HOMEBOY_POLICY_RESULT_PATH || outputPath.replace(/\.json$/, '.complexity-policy-result.json');
-const runtimeOverrides = readHomeboyAgentRuntimeOverrides(process.env);
+const { runId, repository, controllerSpecPath, outputPath, policyResultPath, runtimeOverrides } = buildSiteGenerationLoopRunContext({ env: process.env, root });
 const policyInputs = resolvePolicyInputs({ root });
 const complexityPolicy = loadPolicy(policyInputs.policyPath);
 const qualitySignals = loadQualitySignals(policyInputs.qualitySignalsPath);

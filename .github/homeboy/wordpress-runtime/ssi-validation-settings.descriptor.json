@@ -1,0 +1,8 @@
+{
+  "schema": "wpsg/wordpress-runtime-settings-descriptor/v1",
+  "id": "ssi-validation-wordpress-runtime",
+  "settings_fields": {
+    "blueprint": "wordpress_runtime_blueprint",
+    "workloads": "wordpress_runtime_workloads"
+  }
+}

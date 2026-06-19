@@ -56,7 +56,10 @@ const preview = JSON.parse(await readFile(previewPath, 'utf8'));
 assert.equal(settings.stack_manifest.repositories.static_site_importer.sha, 'dddddddddddddddddddddddddddddddddddddddd');
 assert.equal(preview.stack_manifest.repositories.block_artifact_compiler.sha, 'ffffffffffffffffffffffffffffffffffffffff');
 
-const settingsPluginRefs = gitDirectoryRefs(settings.settings.wp_codebox_blueprint.steps);
+assert.equal(settings.runtime_settings_descriptor.settings_fields.blueprint, 'wordpress_runtime_blueprint');
+assert.deepEqual(Object.keys(settings.settings).filter((key) => key.startsWith('wp' + '_codebox_')), []);
+
+const settingsPluginRefs = gitDirectoryRefs(settings.settings.wordpress_runtime_blueprint.steps);
 const previewPluginRefs = gitDirectoryRefs(preview.blueprint.steps);
 for (const refs of [settingsPluginRefs, previewPluginRefs]) {
 	assert.deepEqual(refs, [

@@ -85,7 +85,7 @@ assert.doesNotMatch(settingsPayload.workloads[0].run[0].code, /^<\?php/, 'inline
 assert.deepEqual(settingsPayload.website_artifact.files.map((file) => file.path), ['website/assets/styles.css', 'website/index.html'], 'validation settings pass candidate files as a BAC website artifact');
 assert.equal(settingsPayload.workloads[0].artifacts, undefined, 'runtime import report stays in workload metadata instead of a collectable bench artifact declaration');
 assert.deepEqual(
-	settingsPayload.settings.wp_codebox_blueprint.steps.map((step) => step.options.targetFolderName).slice(0, 3),
+	settingsPayload.settings.wordpress_runtime_blueprint.steps.map((step) => step.options.targetFolderName).slice(0, 3),
 	['block-artifact-compiler', 'block-format-bridge', 'static-site-importer'],
 	'generic validation settings preserve dependency install order without WooCommerce',
 );
@@ -98,7 +98,7 @@ const commerceSettingsResult = spawnSync(process.execPath, ['.github/scripts/bui
 assert.equal(commerceSettingsResult.status, 0, commerceSettingsResult.stderr || commerceSettingsResult.stdout);
 const commerceSettingsPayload = JSON.parse(await readFile(commerceSettingsPath, 'utf8'));
 assert.deepEqual(
-	commerceSettingsPayload.settings.wp_codebox_blueprint.steps.map((step) => step.options.targetFolderName).slice(0, 4),
+	commerceSettingsPayload.settings.wordpress_runtime_blueprint.steps.map((step) => step.options.targetFolderName).slice(0, 4),
 	['woocommerce', 'block-artifact-compiler', 'block-format-bridge', 'static-site-importer'],
 	'commerce validation settings install WooCommerce before the SSI stack',
 );

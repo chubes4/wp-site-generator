@@ -38,11 +38,11 @@ The generated spec declares these groups directly:
 - `dependencies`: SSI stack repositories and the behavior each owns.
 - `gates` and `metrics`: WPSG metric definitions and pass expressions.
 
-Homeboy maps these declarations to durable controller policy/actions through `agent-task controller from-spec`. Homeboy Extensions WordPress supplies WordPress/Codebox runtime details behind generic Homeboy executor/provider contracts when Homeboy selects that implementation.
+Homeboy maps these declarations to durable controller policy/actions through `agent-task controller from-spec`. Homeboy Extensions WordPress supplies WordPress runtime details behind generic Homeboy executor/provider contracts when Homeboy selects an implementation.
 
 ## Runtime Input Migration
 
-WPSG keeps its controller and domain specs backend-agnostic. Reusable Homeboy Agent CI selects the WP Codebox runtime behind its own contract, so WPSG callers pass domain inputs only. Controller run specs use clean `HOMEBOY_AGENT_RUNTIME_*` environment variables as a visible input contract. WPSG does not expose WP Codebox-specific agent runtime fields in its controller/domain specs.
+WPSG keeps its controller and domain specs backend-agnostic. Reusable Homeboy Agent CI selects the concrete runtime behind its own contract, so WPSG callers pass domain inputs only. Controller run specs use clean `HOMEBOY_AGENT_RUNTIME_*` environment variables as a visible input contract. WPSG does not expose backend-specific agent runtime fields in its controller/domain specs.
 
 Controller run specs record `inputs.runtime_input_contract: "homeboy-agent-runtime-env"` to make the seam visible. Keep runtime selection behind the Homeboy runtime contract; do not add backend-specific fields to `.github/homeboy/controllers/static-site-generation-loop.controller.json`.
 

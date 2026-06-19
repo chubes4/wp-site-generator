@@ -2,8 +2,23 @@ import { readJsonFile } from './ci-runtime-utils.mjs';
 import { buildSsiStackManifest } from './ssi-stack-manifest.mjs';
 import { buildSsiImportAbilityPhp, buildSsiImportWorkload, buildSsiStackBlueprint, buildSsiStackProfile } from './ssi-stack-profile.mjs';
 
+export const defaultWordPressRuntimeSettingsDescriptorPath = '.github/homeboy/wordpress-runtime/ssi-validation-settings.descriptor.json';
+
+const fallbackWordPressRuntimeSettingsDescriptor = Object.freeze({
+	schema: 'wpsg/wordpress-runtime-settings-descriptor/v1',
+	id: 'ssi-validation-wordpress-runtime',
+	settings_fields: {
+		blueprint: 'wordpress_runtime_blueprint',
+		workloads: 'wordpress_runtime_workloads',
+	},
+});
+
 export async function loadSsiStackManifest(manifestPath = '') {
 	return manifestPath ? await readJsonFile(manifestPath) : buildSsiStackManifest();
+}
+
+export async function loadWordPressRuntimeSettingsDescriptor(descriptorPath = defaultWordPressRuntimeSettingsDescriptorPath) {
+	return descriptorPath ? await readJsonFile(descriptorPath) : fallbackWordPressRuntimeSettingsDescriptor;
 }
 
 export function buildSsiRuntimeProfile(manifest = buildSsiStackManifest()) {
@@ -14,14 +29,22 @@ export function buildSsiRuntimeBlueprint(options = {}, manifest = buildSsiStackM
 	return buildSsiStackBlueprint(options, buildSsiRuntimeProfile(manifest));
 }
 
-export function buildSsiValidationSettings({ site, lane = 'wordpress', manifest = buildSsiStackManifest(), websiteArtifact = null } = {}) {
+export function buildWordPressRuntimeSettings({ blueprint, workloads = [], descriptor = fallbackWordPressRuntimeSettingsDescriptor } = {}) {
+	const settings = {
+		[descriptor.settings_fields.blueprint]: blueprint,
+		[descriptor.settings_fields.workloads]: workloads,
+	};
+
+	return settings;
+}
+
+export function buildSsiValidationSettings({ site, lane = 'wordpress', manifest = buildSsiStackManifest(), websiteArtifact = null, runtimeSettingsDescriptor = fallbackWordPressRuntimeSettingsDescriptor } = {}) {
 	const workloads = [buildSsiImportWorkload(site, { websiteArtifact })];
+	const blueprint = buildSsiRuntimeBlueprint({ lane }, manifest);
 	return {
-		settings: {
-			wp_codebox_blueprint: buildSsiRuntimeBlueprint({ lane }, manifest),
-			wp_codebox_workloads: workloads,
-		},
+		settings: buildWordPressRuntimeSettings({ blueprint, workloads, descriptor: runtimeSettingsDescriptor }),
 		workloads,
+		runtime_settings_descriptor: runtimeSettingsDescriptor,
 	};
 }
 

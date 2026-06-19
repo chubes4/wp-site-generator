@@ -174,13 +174,13 @@ Idea flows publish issues with `status:idea-ready` plus the relevant `site-kind:
 
 ## Validation Lane
 
-Static-site PR validation is driven by `.github/homeboy/controllers/static-site-generation-loop.controller.json` with `codebox` backend execution and in-sandbox provider assumptions.
+Static-site PR validation is driven by `.github/homeboy/controllers/static-site-generation-loop.controller.json` with Homeboy-owned WordPress runtime execution. WPSG supplies backend-neutral runtime settings; Homeboy Extensions selects and normalizes the concrete adapter.
 
 The validation workflow:
 
 1. Boots WordPress Playground inside GitHub Actions.
-2. Installs Static Site Importer plus the shared block conversion stack via `wp_codebox_blueprint`; WooCommerce is added only for the commerce/WooCommerce lane.
-3. Runs the Static Site Importer `static-site-importer/import-theme` ability on the PR's `static-sites/<slug>/index.html`.
+2. Installs Static Site Importer plus the shared block conversion stack via `wordpress_runtime_blueprint`; WooCommerce is added only for the commerce/WooCommerce lane.
+3. Runs the Static Site Importer `static-site-importer/import-website-artifact` ability against the PR's website artifact.
 4. Captures a Playwright visual parity comparison between the source static HTML and imported WordPress result.
 5. Reads the resulting `import-report.json` and emits importer metrics + the report itself as a Homeboy bench artifact.
 6. Builds `finding-packets.json` for actionable importer, block, and visual parity failures.
@@ -193,7 +193,7 @@ The PR target label gates validation. `target:wordpress` marks content-shaped Wo
 
 Playground preview links use the PR head SHA and source repository when that immutable provenance is available. If a SHA is unavailable, the generated preview payload records the branch fallback and why it was used.
 
-The Homeboy WordPress extension capability that makes this possible (`wp_codebox_workloads`) is generic. SSI is just one consumer; any WordPress plugin can be exercised the same way in CI. The validation workflow refreshes the reusable harness scripts from `origin/main` before running, so older generated-site branches get the current validation behavior without rebasing their source files.
+The Homeboy WordPress extension capability that makes this possible (`wordpress_runtime_workloads`) is generic. SSI is just one consumer; any WordPress plugin can be exercised the same way in CI. The validation workflow refreshes the reusable harness scripts from `origin/main` before running, so older generated-site branches get the current validation behavior without rebasing their source files.
 
 ---
 
@@ -212,7 +212,7 @@ Prompt-level variety keeps the generator moving. Stronger duplicate prevention s
 ```
 wp-site-generator/
   README.md
-  homeboy.json                       Homeboy config: WordPress extension + base wp_codebox_blueprint
+  homeboy.json                       Homeboy config: WordPress extension + base wordpress_runtime_blueprint
   .github/
     workflows/
       static-site-validation.yml     SSI import, visual parity, findings, iterator dispatch
