@@ -20,6 +20,10 @@ if (args.join(' ') === 'agent-task controller materialize --help') {
   console.log('Materialize a repo-authored loop spec with explicit run inputs');
   process.exit(0);
 }
+if (args.join(' ') === 'agent-task controller validate-proof --help') {
+  console.log('Validate a proof, materialized spec, or controller record');
+  process.exit(0);
+}
 if (args.join(' ') === 'agent-task controller resume --help') {
   console.log('Execute pending controller actions until no executable action remains');
   process.exit(0);
@@ -105,6 +109,16 @@ if (args[0] === 'agent-task' && args[1] === 'controller' && args[2] === 'materia
   }
   console.log(JSON.stringify(result));
   process.exit(0);
+}
+if (args[0] === 'agent-task' && args[1] === 'controller' && args[2] === 'validate-proof') {
+  const value = JSON.parse(readFileSync(args[3].replace(/^@/, ''), 'utf8'));
+  const diagnostics = [];
+  if (value.schema !== 'homeboy/agent-task-loop-spec-materialization/v1' || !value.spec) {
+    diagnostics.push({ code: 'materialized_spec_missing', message: 'materialized controller output must include spec' });
+  }
+  const result = { schema: 'homeboy/proof-validation/v1', valid: diagnostics.length === 0, diagnostics };
+  console.log(JSON.stringify(result));
+  process.exit(result.valid ? 0 : 1);
 }
 if (args[0] === 'agent-task' && args[1] === 'controller' && args[2] === 'resume') {
   const outputIndex = args.indexOf('--output');
