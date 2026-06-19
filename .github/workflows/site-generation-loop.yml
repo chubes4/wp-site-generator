@@ -138,6 +138,7 @@ jobs:
           node .github/scripts/assert-site-generation-loop-proof.mjs
           --controller-result "$HOMEBOY_CONTROLLER_FROM_SPEC_RESULT_PATH"
           --controller-run-spec "$HOMEBOY_CONTROLLER_RUN_SPEC_PATH"
+          --artifact-root "$HOMEBOY_ARTIFACT_ROOT"
 
       - name: Upload Homeboy artifacts
         if: always()
