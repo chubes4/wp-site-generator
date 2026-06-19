@@ -153,7 +153,7 @@ const groupResult = spawnSync(process.execPath, [path.join(repoRoot, '.github/sc
 });
 assert.equal(groupResult.status, 0, groupResult.stderr || groupResult.stdout);
 
-const workflowResult = spawnSync(process.execPath, [path.join(repoRoot, '.github/scripts/build-agent-iterator-workflow.mjs'), groupsPath, workflowPath], {
+const workflowResult = spawnSync(process.execPath, [path.join(repoRoot, 'bundles/php-transformer-iterator-agent/scripts/build-agent-iterator-workflow.mjs'), groupsPath, workflowPath], {
 	cwd: repoRoot,
 	env: { ...process.env, VISUAL_ARTIFACT_DIR: visualDir },
 	encoding: 'utf8',

@@ -3,7 +3,7 @@
 import { mkdir, readFile, writeFile } from 'node:fs/promises';
 import path from 'node:path';
 
-const repoRoot = new URL('../..', import.meta.url).pathname;
+const repoRoot = new URL('../../..', import.meta.url).pathname;
 const outputPath = process.env.SSI_STACK_REVIEWER_WORKFLOW_PATH || process.argv[2] || '.ci/ssi-stack-reviewer-workflow.json';
 const pipelinePath = process.env.SSI_STACK_REVIEWER_PIPELINE_PATH || 'bundles/ssi-stack-reviewer-agent/pipelines/ssi-stack-reviewer-pipeline.json';
 const flowPath = process.env.SSI_STACK_REVIEWER_FLOW_PATH || 'bundles/ssi-stack-reviewer-agent/flows/ssi-stack-reviewer-manual-flow.json';

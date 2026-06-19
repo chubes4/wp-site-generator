@@ -13,7 +13,7 @@ assert.match(workflow, /visual_artifact_name:/, 'iterator accepts the visual par
 assert.match(workflow, /"name":"\$\{\{ inputs\.visual_artifact_name \}\}"/, 'iterator downloads the visual parity artifact in the reusable runner');
 assert.match(workflow, /"dir":"\.ci\/visual-parity"/, 'iterator stores visual parity artifacts in a stable local directory');
 assert.match(workflow, /app_token_repos.*chubes4\/block-artifact-compiler/, 'iterator token routing includes block-artifact-compiler');
-assert.match(workflow, /execute_workflow_builder_command.*group-ssi-finding-packets\.mjs .*homeboy-generic-fanout-reconcile\.cjs .*build-agent-iterator-workflow\.mjs/, 'iterator runtime task delegates fanout planning to HBE before building the WPSG finding workflow');
+assert.match(workflow, /execute_workflow_builder_command.*group-ssi-finding-packets\.mjs .*homeboy-generic-fanout-reconcile\.cjs .*bundles\/php-transformer-iterator-agent\/scripts\/build-agent-iterator-workflow\.mjs/, 'iterator runtime task delegates fanout planning to HBE before building the WPSG finding workflow');
 assert.match(workflow, /build-php-transformer-iterator-fanout-config\.mjs/, 'iterator keeps WPSG finding-group fanout config in the repo');
 assert.match(workflow, /execute_workflow_path":"\.ci\/agent-iterator-workflow\.json"/, 'iterator runtime task receives the generated workflow path');
 assert.match(workflow, /ability_tools: .*wp-codebox\/runner-workspace-command.*wp-codebox\/runner-workspace-publish/, 'iterator exposes workspace and PR publication tools through WP Codebox provider runtime identifiers');

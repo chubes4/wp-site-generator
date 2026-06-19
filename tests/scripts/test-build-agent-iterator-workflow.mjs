@@ -74,7 +74,7 @@ await writeFile(fanoutPlanPath, `${JSON.stringify({
 const result = spawnSync(
 	process.execPath,
 	[
-		path.join(repoRoot, '.github/scripts/build-agent-iterator-workflow.mjs'),
+		path.join(repoRoot, 'bundles/php-transformer-iterator-agent/scripts/build-agent-iterator-workflow.mjs'),
 		fanoutPlanPath,
 		outputPath,
 	],
@@ -141,7 +141,7 @@ assert.ok(!aiStep.enabled_tools.includes('list_github_issues'), 'issue-list tool
 const truncatedResult = spawnSync(
 	process.execPath,
 	[
-		path.join(repoRoot, '.github/scripts/build-agent-iterator-workflow.mjs'),
+		path.join(repoRoot, 'bundles/php-transformer-iterator-agent/scripts/build-agent-iterator-workflow.mjs'),
 		groupedPath,
 		truncatedOutputPath,
 	],
