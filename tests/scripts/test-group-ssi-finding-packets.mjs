@@ -33,23 +33,21 @@ assert.equal(grouped.actionable_packet_count, 8);
 assert.equal(grouped.deduped_packet_count, 8);
 assert.equal(grouped.group_count, 8);
 assert.deepEqual(grouped.candidate_repos.sort(), [
-	'chubes4/block-artifact-compiler',
-	'chubes4/block-format-bridge',
-	'chubes4/html-to-blocks-converter',
+	'Automattic/blocks-engine',
 	'chubes4/static-site-importer',
 	'chubes4/wp-site-generator',
 ]);
 
-const h2bcGroup = grouped.groups.find((group) => group.candidate_repo === 'chubes4/html-to-blocks-converter');
+const h2bcGroup = grouped.groups.find((group) => group.candidate_repo === 'Automattic/blocks-engine' && group.kind === 'unsupported_html_fallback');
 assert.equal(h2bcGroup.kind, 'unsupported_html_fallback');
 assert.equal(h2bcGroup.reason_code, 'unsupported_custom_element');
 assert.equal(h2bcGroup.repair_mode, 'pr_or_issue');
 
-const coreHtmlGroup = grouped.groups.find((group) => group.candidate_repo === 'chubes4/html-to-blocks-converter' && group.kind === 'core_html_block');
+const coreHtmlGroup = grouped.groups.find((group) => group.candidate_repo === 'Automattic/blocks-engine' && group.kind === 'core_html_block');
 assert.equal(coreHtmlGroup.count, 1);
 
-const freeformH2bcGroup = grouped.groups.find((group) => group.candidate_repo === 'chubes4/html-to-blocks-converter' && group.kind === 'freeform_block');
-assert.ok(freeformH2bcGroup, 'Concrete freeform diagnostics route to h2bc');
+const freeformH2bcGroup = grouped.groups.find((group) => group.candidate_repo === 'Automattic/blocks-engine' && group.kind === 'freeform_block');
+assert.ok(freeformH2bcGroup, 'Concrete freeform diagnostics route to Blocks Engine');
 assert.equal(freeformH2bcGroup.repair_mode, 'pr_or_issue');
 assert.equal(freeformH2bcGroup.packets[0].block_path, '1');
 assert.match(freeformH2bcGroup.packets[0].emitted_block_preview, /wp:freeform/);
@@ -58,14 +56,14 @@ const ssiGroup = grouped.groups.find((group) => group.candidate_repo === 'chubes
 assert.equal(ssiGroup.count, 1);
 assert.deepEqual(ssiGroup.packets[0].asset_map_refs, ['key:assets/missing.jpg', 'url:assets/missing.jpg']);
 
-const bfbGroup = grouped.groups.find((group) => group.candidate_repo === 'chubes4/block-format-bridge');
+const bfbGroup = grouped.groups.find((group) => group.candidate_repo === 'Automattic/blocks-engine' && group.kind === 'bfb_scope_diagnostic');
 assert.equal(bfbGroup.kind, 'bfb_scope_diagnostic');
-assert.match(bfbGroup.route_reason, /BFB/);
+assert.match(bfbGroup.route_reason, /Blocks Engine/);
 
-const artifactCompilerGroup = grouped.groups.find((group) => group.candidate_repo === 'chubes4/block-artifact-compiler');
+const artifactCompilerGroup = grouped.groups.find((group) => group.candidate_repo === 'Automattic/blocks-engine' && group.kind === 'artifact_schema_violation');
 assert.equal(artifactCompilerGroup.kind, 'artifact_schema_violation');
 assert.equal(artifactCompilerGroup.repair_mode, 'pr_or_issue');
-assert.match(artifactCompilerGroup.route_reason, /artifact schema/);
+assert.match(artifactCompilerGroup.route_reason, /Blocks Engine/);
 
 const ambiguousGroup = grouped.groups.find((group) => group.kind === 'ambiguous_import_quality');
 assert.equal(ambiguousGroup.repair_mode, 'issue_only');
@@ -148,8 +146,8 @@ for (const field of designFields) {
 }
 
 // Routing must stay stable: groups are keyed by diagnostic signals, not design metadata.
-const h2bcGroups = grouped.groups.filter((group) => group.candidate_repo === 'chubes4/html-to-blocks-converter');
-assert.equal(h2bcGroups.length, 3, 'Design fields must not split converter routing groups');
+const transformerGroups = grouped.groups.filter((group) => group.candidate_repo === 'Automattic/blocks-engine');
+assert.equal(transformerGroups.length, 5, 'Design fields must not split transformer routing groups');
 
 const explicitOutputPath = path.join(tmp, 'explicit-owner-groups.json');
 const explicitFixturePath = path.join(tmp, 'explicit-owner-packets.json');
@@ -183,8 +181,8 @@ const explicitResult = spawnSync(process.execPath, [
 assert.equal(explicitResult.status, 0, explicitResult.stderr || explicitResult.stdout);
 const explicitGrouped = JSON.parse(await readFile(explicitOutputPath, 'utf8'));
 assert.equal(explicitGrouped.groups.length, 1);
-assert.equal(explicitGrouped.groups[0].owner_repo, 'chubes4/block-artifact-compiler', 'Valid explicit candidate_repo wins before broad visual routing');
-assert.equal(explicitGrouped.groups[0].candidate_repo, 'chubes4/block-artifact-compiler');
+assert.equal(explicitGrouped.groups[0].owner_repo, 'Automattic/blocks-engine', 'Legacy explicit transformer repo normalizes before broad visual routing');
+assert.equal(explicitGrouped.groups[0].candidate_repo, 'Automattic/blocks-engine');
 
 const structuredOutputPath = path.join(tmp, 'structured-owner-groups.json');
 const structuredFixturePath = path.join(tmp, 'structured-owner-packets.json');
@@ -235,8 +233,8 @@ const structuredResult = spawnSync(process.execPath, [
 assert.equal(structuredResult.status, 0, structuredResult.stderr || structuredResult.stdout);
 const structuredGrouped = JSON.parse(await readFile(structuredOutputPath, 'utf8'));
 const structuredOwnerGroup = structuredGrouped.groups.find((group) => group.diagnostic_id === 'diag-structured-owner-precedence' || group.route_reason === 'structured owner_repo from diagnostic packet');
-assert.equal(structuredOwnerGroup.owner_repo, 'chubes4/block-format-bridge', 'Structured owner_repo wins before candidate_repo and broad visual routing');
-assert.equal(structuredOwnerGroup.candidate_repo, 'chubes4/block-format-bridge');
+assert.equal(structuredOwnerGroup.owner_repo, 'Automattic/blocks-engine', 'Legacy structured transformer owner normalizes before candidate_repo and broad visual routing');
+assert.equal(structuredOwnerGroup.candidate_repo, 'Automattic/blocks-engine');
 assert.equal(structuredOwnerGroup.repair_mode, 'issue_only', 'Structured repair_mode remains authoritative');
 assert.equal(structuredOwnerGroup.route_reason, 'structured owner_repo from diagnostic packet', 'Structured route_reason is preserved');
 

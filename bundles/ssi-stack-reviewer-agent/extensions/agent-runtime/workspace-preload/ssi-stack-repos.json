@@ -16,16 +16,8 @@
                 "url": "https://github.com/chubes4/static-site-importer.git"
             },
             {
-                "name": "html-to-blocks-converter",
-                "url": "https://github.com/chubes4/html-to-blocks-converter.git"
-            },
-            {
-                "name": "block-format-bridge",
-                "url": "https://github.com/chubes4/block-format-bridge.git"
-            },
-            {
-                "name": "block-artifact-compiler",
-                "url": "https://github.com/chubes4/block-artifact-compiler.git"
+                "name": "blocks-engine",
+                "url": "https://github.com/Automattic/blocks-engine.git"
             },
             {
                 "name": "wp-site-generator",

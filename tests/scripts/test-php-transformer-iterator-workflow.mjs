@@ -16,7 +16,7 @@ assert.doesNotMatch(workflow, /runtime_provider: codebox|wpsg-codebox-runtime-pa
 assert.match(workflow, /visual_artifact_name:/, 'iterator accepts the visual parity artifact name from validation');
 assert.match(workflow, /"name":"\$\{\{ inputs\.visual_artifact_name \}\}"/, 'iterator downloads the visual parity artifact in the reusable runner');
 assert.match(workflow, /"dir":"\.ci\/visual-parity"/, 'iterator stores visual parity artifacts in a stable local directory');
-assert.match(workflow, /app_token_repos.*chubes4\/block-artifact-compiler/, 'iterator token routing includes block-artifact-compiler');
+assert.match(workflow, /app_token_repos.*Automattic\/blocks-engine/, 'iterator token routing includes Blocks Engine');
 assert.match(workflow, /execute_workflow_builder_command.*group-ssi-finding-packets\.mjs .*homeboy-generic-fanout-reconcile\.cjs .*bundles\/php-transformer-iterator-agent\/scripts\/build-agent-iterator-workflow\.mjs/, 'iterator runtime task delegates fanout planning to HBE before building the WPSG finding workflow');
 assert.match(workflow, /build-php-transformer-iterator-fanout-config\.mjs/, 'iterator keeps WPSG finding-group fanout config in the repo');
 assert.match(workflow, /execute_workflow_path":"\.ci\/agent-iterator-workflow\.json"/, 'iterator runtime task receives the generated workflow path');
@@ -30,7 +30,7 @@ assert.doesNotMatch(workflow, /actions_artifact_items/, 'iterator no longer fetc
 assert.match(iteratorFlow, /upstream pull requests as durable per source finding/, 'iterator treats upstream PRs as durable across reruns');
 assert.match(iteratorFlow, /deterministic titles/, 'iterator uses stable fallback issue titles for cleanup');
 assert.match(iteratorFlow, /repair_mode=issue_only/, 'iterator treats aggregate-only packets as issue-only evidence');
-assert.match(iteratorFlow, /block-artifact-compiler/, 'iterator prompt includes artifact compiler routing');
+assert.match(iteratorFlow, /Blocks Engine php-transformer/, 'iterator prompt includes canonical transformer routing');
 assert.match(iteratorFlow, /Do not call list_github_issues/, 'iterator prompt prevents repeated issue-list loops');
 assert.doesNotMatch(iteratorFlow, /"list_github_issues"/, 'iterator does not expose issue listing in the live tool path');
 

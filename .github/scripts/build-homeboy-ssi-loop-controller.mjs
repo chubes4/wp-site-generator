@@ -181,7 +181,7 @@ const controller = {
 			workflow_id: 'static-validation',
 			tasks: ['Validate a StaticSiteCandidate artifact through SSI import, static checks, and visual parity before any generated-site pull request is published.'],
 			...handoff({ consumes: ['static_site_candidate'], emits: ['static_validation_run', 'import_validation_result', 'visual_parity_artifact', 'finding_packet_set'] }),
-			dependencies: ['wp-site-generator', 'static-site-importer', 'html-to-blocks-converter', 'block-format-bridge', 'block-artifact-compiler'],
+			dependencies: ['wp-site-generator', 'static-site-importer', 'blocks-engine'],
 			gates: ['fallback_blocks', 'conversion_findings', 'visual_parity'],
 			metrics: ['fallback_blocks', 'conversion_findings', 'visual_parity'],
 		},
@@ -216,7 +216,7 @@ const controller = {
 			workflow_id: 'finding-packets',
 			tasks: ['Group SSI and BFB diagnostic artifacts into finding packets for upstream routing.'],
 			...handoff({ consumes: ['import_validation_result', 'static_validation_run', 'visual_parity_artifact'], emits: ['finding_packet_set', 'finding_group'] }),
-			dependencies: ['wp-site-generator', 'static-site-importer', 'html-to-blocks-converter', 'block-format-bridge', 'block-artifact-compiler'],
+			dependencies: ['wp-site-generator', 'static-site-importer', 'blocks-engine'],
 		},
 		{
 			workflow_id: 'iterator',
@@ -230,13 +230,13 @@ const controller = {
 				group_by: ['owner_repo', 'root_cause', 'group_id'],
 				requires_non_empty: true,
 			},
-			dependencies: ['static-site-importer', 'html-to-blocks-converter', 'block-format-bridge', 'block-artifact-compiler'],
+			dependencies: ['static-site-importer', 'blocks-engine'],
 		},
 		{
 			workflow_id: 'revalidation',
 			tasks: ['Revalidate the static-site candidate from candidate, validation, visual parity, and finding artifacts without requiring a generated-site or upstream pull request.'],
 			...handoff({ consumes: ['static_site_candidate', 'import_validation_result', 'visual_parity_artifact', 'finding_packet_set'], emits: ['revalidation_attempt', 'static_validation_run', 'import_validation_result', 'visual_parity_artifact', 'finding_packet_set'] }),
-			dependencies: ['wp-site-generator', 'static-site-importer', 'html-to-blocks-converter', 'block-format-bridge', 'block-artifact-compiler'],
+			dependencies: ['wp-site-generator', 'static-site-importer', 'blocks-engine'],
 			gates: ['fallback_blocks', 'conversion_findings', 'visual_parity'],
 			metrics: ['fallback_blocks', 'conversion_findings', 'visual_parity'],
 		},
@@ -246,7 +246,7 @@ const controller = {
 			prompt: 'Review candidate, validation, visual parity, finding, and revalidation artifacts before promotion. Treat generated-site and upstream GitHub issue/PR URLs as optional publication evidence only.',
 			abilities: [runtimePackageAbility, 'comment_github_pull_request'],
 			...handoff({ consumes: ['static_site_candidate', 'import_validation_result', 'static_validation_run', 'visual_parity_artifact', 'finding_packet_set', 'revalidation_attempt'], emits: ['reviewer_gate_outcome'] }),
-			dependencies: ['wp-site-generator', 'static-site-importer', 'html-to-blocks-converter', 'block-format-bridge', 'block-artifact-compiler'],
+			dependencies: ['wp-site-generator', 'static-site-importer', 'blocks-engine'],
 			gates: ['reviewer_evidence'],
 			promotion_gate: {
 				requires: ['reviewer_gate_outcome.decision'],
@@ -272,9 +272,7 @@ const controller = {
 	dependencies: [
 		{ dependency_id: 'wp-site-generator', kind: 'repo', value: 'chubes4/wp-site-generator', required: true },
 		{ dependency_id: 'static-site-importer', kind: 'repo', value: 'chubes4/static-site-importer', required: true },
-		{ dependency_id: 'html-to-blocks-converter', kind: 'repo', value: 'chubes4/html-to-blocks-converter', required: true },
-		{ dependency_id: 'block-format-bridge', kind: 'repo', value: 'chubes4/block-format-bridge', required: true },
-		{ dependency_id: 'block-artifact-compiler', kind: 'repo', value: 'chubes4/block-artifact-compiler', required: true },
+		{ dependency_id: 'blocks-engine', kind: 'repo', value: 'Automattic/blocks-engine', required: true },
 	],
 	gates: [
 		{ gate_id: 'fallback_blocks', description: 'SSI import must not emit fallback blocks.', metrics: ['fallback_blocks'] },

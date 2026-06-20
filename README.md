@@ -97,8 +97,7 @@ This repository is the orchestration and generated-site source repo. The working
 - [`Extra-Chill/homeboy-action`](https://github.com/Extra-Chill/homeboy-action) — GitHub Action wrapper that runs Homeboy in repository workflows.
 - [`Extra-Chill/homeboy-extensions`](https://github.com/Extra-Chill/homeboy-extensions) — reusable WordPress Playground workloads, current agent CI workflow, validation reporting, and iterator plumbing.
 - [`chubes4/static-site-importer`](https://github.com/chubes4/static-site-importer) — WordPress plugin that imports each generated static site into a block theme.
-- [`chubes4/html-to-blocks-converter`](https://github.com/chubes4/html-to-blocks-converter) — HTML-to-block transformer used by Static Site Importer.
-- [`chubes4/block-format-bridge`](https://github.com/chubes4/block-format-bridge) — block serialization/format bridge used by the import pipeline.
+- [`Automattic/blocks-engine`](https://github.com/Automattic/blocks-engine) — canonical PHP transformer used by Static Site Importer for HTML-to-block conversion, format conversion, and website artifact compilation.
 - [`WordPress/wordpress-playground`](https://github.com/WordPress/wordpress-playground) — PHP-WASM WordPress runtime used by validation and preview links.
 
 The generated-site PR is only one artifact in the loop. Validation output can produce upstream PRs or issues in the importer and transformer repos, then the generated-site PR is revalidated against the improved stack.
@@ -138,7 +137,7 @@ PR title shape: `🧱 <Concept Name> — static site`. Branch: `static/<slug>`.
 
 ### `php-transformer-iterator-agent`
 
-Consumes grouped SSI finding packets from a generated-site PR's validation run and routes each actionable finding to the owning upstream transformer repo (`static-site-importer`, `html-to-blocks-converter`, or `block-format-bridge`). It opens a focused upstream PR when the evidence is patchable, opens a fallback upstream issue when human narrowing is safer, and comments back on the generated-site PR with the upstream action. It is a repair loop for importer/transformer gaps, not a site-generation agent.
+Consumes grouped SSI finding packets from a generated-site PR's validation run and routes each actionable finding to the owning upstream repo (`static-site-importer`, `Automattic/blocks-engine`, or `wp-site-generator`). It opens a focused upstream PR when the evidence is patchable, opens a fallback upstream issue when human narrowing is safer, and comments back on the generated-site PR with the upstream action. It is a repair loop for importer/transformer gaps, not a site-generation agent.
 
 ### `ssi-stack-reviewer-agent`
 

@@ -1,9 +1,7 @@
 {
   "candidate_repos": [
+    "Automattic/blocks-engine",
     "chubes4/static-site-importer",
-    "chubes4/html-to-blocks-converter",
-    "chubes4/block-format-bridge",
-    "chubes4/block-artifact-compiler",
     "chubes4/wp-site-generator"
   ],
   "default_repo": "chubes4/static-site-importer",
@@ -19,9 +17,9 @@
       "kind": ["visual_parity_outcome", "visual_parity_mismatch"]
     },
     {
-      "id": "block-artifact-compiler-explicit",
-      "repo": "chubes4/block-artifact-compiler",
-      "explicit_repo": ["chubes4/block-artifact-compiler"]
+      "id": "blocks-engine-explicit",
+      "repo": "Automattic/blocks-engine",
+      "explicit_repo": ["Automattic/blocks-engine"]
     },
     {
       "id": "ssi-baseline",
@@ -29,20 +27,20 @@
       "kind": ["report_missing", "import_clean"]
     },
     {
-      "id": "html-to-blocks-converter",
-      "repo": "chubes4/html-to-blocks-converter",
+      "id": "blocks-engine-html-transformer",
+      "repo": "Automattic/blocks-engine",
       "converter_includes": ["html-to-block", "h2bc"],
       "any_includes": ["converter_support", "replace_fallback", "fallback", "core_html", "freeform"]
     },
     {
-      "id": "block-format-bridge",
-      "repo": "chubes4/block-format-bridge",
+      "id": "blocks-engine-format-bridge",
+      "repo": "Automattic/blocks-engine",
       "haystack_includes": ["block-format-bridge", "bfb", "serialization"],
       "category_includes": ["adapter", "scope", "bfb_report"]
     },
     {
-      "id": "block-artifact-compiler",
-      "repo": "chubes4/block-artifact-compiler",
+      "id": "blocks-engine-artifact-compiler",
+      "repo": "Automattic/blocks-engine",
       "haystack_includes": ["block-artifact-compiler", "artifact schema", "artifact contract", "artifact compiler", "artifact_schema", "artifact_contract", "artifact_compiler", "schema_validation", "compile_artifact"],
       "category_includes": ["artifact_schema", "artifact_contract", "artifact_compiler"]
     },
@@ -61,9 +59,7 @@
     }
   ],
   "route_reasons": {
-    "chubes4/html-to-blocks-converter": "converter diagnostic routes to html-to-blocks-converter",
-    "chubes4/block-format-bridge": "BFB adapter/report/scope diagnostic routes to block-format-bridge",
-    "chubes4/block-artifact-compiler": "artifact schema/contract/compiler diagnostic routes to block-artifact-compiler",
+    "Automattic/blocks-engine": "transformer, format bridge, or artifact compiler diagnostic routes to Blocks Engine php-transformer",
     "chubes4/static-site-importer": "SSI import/source-selection/asset-map diagnostic routes to static-site-importer",
     "chubes4/wp-site-generator": "visual parity or generator policy diagnostic routes to wp-site-generator"
   }
