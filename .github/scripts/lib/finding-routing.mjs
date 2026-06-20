@@ -28,7 +28,8 @@ export function candidateRepoFromDiagnostic(diagnostic, type, category, suggeste
 	const converter = text(diagnostic?.converter).toLowerCase();
 	const haystack = `${type} ${category} ${suggestedRepairClass}`.toLowerCase();
 	if (
-		converter === 'html-to-blocks-converter'
+		converter === 'blocks-engine-php-transformer'
+		|| converter === 'html-to-blocks-converter'
 		|| ['unsupported_html_fallback', 'core_html_block', 'freeform_block'].includes(text(type).toLowerCase())
 		|| haystack.includes('fallback_block')
 		|| haystack.includes('replace_unsupported_html')

@@ -40,7 +40,7 @@ await writeFile(
 											source_html_preview: '<a href="#" class="nav-logo">Field Notes Live</a>',
 											emitted_block_preview: '<!-- wp:freeform --><a href="#" class="nav-logo">Field Notes Live</a><!-- /wp:freeform -->',
 											block_name: 'core/freeform',
-											converter: 'html-to-blocks-converter',
+											converter: 'blocks-engine-php-transformer',
 											stage: 'generated_theme_block_analysis',
 											message: 'generated_document_contains_core_freeform',
 										},
@@ -83,7 +83,7 @@ assert.equal(concrete.suggested_repair_class, 'replace_fallback_block');
 assert.equal(concrete.block_name, 'core/freeform');
 assert.equal(concrete.block_path, '1');
 assert.equal(concrete.selector, 'a.nav-logo');
-assert.equal(concrete.converter, 'html-to-blocks-converter');
+assert.equal(concrete.converter, 'blocks-engine-php-transformer');
 assert.equal(concrete.stage, 'generated_theme_block_analysis');
 assert.equal(concrete.reason, 'generated_document_contains_core_freeform');
 assert.equal(concrete.artifact_names.finding_packet_set, 'finding-packets.json');

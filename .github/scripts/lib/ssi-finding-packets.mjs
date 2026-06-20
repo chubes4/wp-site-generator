@@ -271,7 +271,7 @@ export function repairClassFromDiagnostic(type) {
 export function converterFromDiagnostic(type, category) {
 	const haystack = `${type} ${category}`.toLowerCase();
 	if (haystack.includes('bridge') || haystack.includes('bfb')) {
-		return 'block-format-bridge';
+		return 'blocks-engine-php-transformer';
 	}
 	return 'static-site-importer';
 }
