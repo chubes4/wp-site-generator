@@ -7,13 +7,8 @@ export const ssiStackProfile = {
 	components: [
 		{
 			type: 'git:directory',
-			manifestId: 'block_artifact_compiler',
-			targetFolderName: 'block-artifact-compiler',
-		},
-		{
-			type: 'git:directory',
-			manifestId: 'block_format_bridge',
-			targetFolderName: 'block-format-bridge',
+			manifestId: 'blocks_engine_php_transformer',
+			targetFolderName: 'blocks-engine-php-transformer',
 		},
 		{
 			type: 'git:directory',
@@ -69,6 +64,10 @@ export function buildSsiImportWorkload(siteSlug, { websiteArtifact = null } = {}
 		run: [
 			{
 				type: 'php',
+				code: buildBlocksEnginePhpTransformerProbePhp({ includeOpeningTag: false }),
+			},
+			{
+				type: 'php',
 				code: buildSsiImportWebsiteArtifactPhp({
 					artifact: websiteArtifact,
 					siteSlug,
@@ -83,6 +82,20 @@ export function buildSsiImportWorkload(siteSlug, { websiteArtifact = null } = {}
 	};
 }
 
+export function buildBlocksEnginePhpTransformerProbePhp({ trailingNewline = false, includeOpeningTag = true } = {}) {
+	const lines = [
+		"require_once '/wordpress/wp-load.php';",
+		"$has_helper = function_exists( 'blocks_engine_php_transformer_compile_artifact' ) || function_exists( 'blocks_engine_php_transformer_transform_html' );",
+		"$has_class = class_exists( 'Automattic\\\\BlocksEngine\\\\PhpTransformer\\\\ArtifactCompiler\\\\ArtifactCompiler' ) || class_exists( 'Automattic\\\\BlocksEngine\\\\PhpTransformer\\\\HtmlToBlocks\\\\HtmlTransformer' );",
+		'if ( ! $has_helper && ! $has_class ) {',
+		"\tthrow new RuntimeException( 'Blocks Engine PHP Transformer plugin/classes are not available.' );",
+		'}',
+	];
+
+	const php = includeOpeningTag ? ['<?php', ...lines] : lines;
+	return `${php.join('\n')}${trailingNewline ? '\n' : ''}`;
+}
+
 export function buildSsiImportWebsiteArtifactPhp({ artifact, siteSlug, markerPath, assertActiveTheme = false, trailingNewline = false, includeOpeningTag = true }) {
 	if (!artifact || typeof artifact !== 'object') {
 		throw new Error('websiteArtifact is required for SSI import validation.');
@@ -90,6 +103,7 @@ export function buildSsiImportWebsiteArtifactPhp({ artifact, siteSlug, markerPat
 	const artifactJson = Buffer.from(JSON.stringify(artifact)).toString('base64');
 	const lines = [
 		"require_once '/wordpress/wp-load.php';",
+		...blocksEnginePhpTransformerProbeLines('has_transformer'),
 		'wp_set_current_user( 1 );',
 		"if ( ! function_exists( 'wp_get_ability' ) ) {",
 		"\tthrow new RuntimeException( 'WordPress Abilities API is not available.' );",
@@ -151,6 +165,7 @@ export function buildSsiImportWebsiteArtifactPhp({ artifact, siteSlug, markerPat
 export function buildSsiImportAbilityPhp({ htmlPath, siteSlug, markerPath, assertActiveTheme = false, trailingNewline = false, includeOpeningTag = true }) {
 	const lines = [
 		"require_once '/wordpress/wp-load.php';",
+		...blocksEnginePhpTransformerProbeLines('has_transformer'),
 		'wp_set_current_user( 1 );',
 		"if ( ! function_exists( 'wp_get_ability' ) ) {",
 		"\tthrow new RuntimeException( 'WordPress Abilities API is not available.' );",
@@ -219,6 +234,16 @@ function buildPluginInstallStep(component, manifest = ssiStackProfile.manifest) 
 			targetFolderName: component.targetFolderName,
 		},
 	};
+}
+
+function blocksEnginePhpTransformerProbeLines(prefix) {
+	return [
+		`$${prefix}_helper = function_exists( 'blocks_engine_php_transformer_compile_artifact' ) || function_exists( 'blocks_engine_php_transformer_transform_html' );`,
+		`$${prefix}_class = class_exists( 'Automattic\\\\BlocksEngine\\\\PhpTransformer\\\\ArtifactCompiler\\\\ArtifactCompiler' ) || class_exists( 'Automattic\\\\BlocksEngine\\\\PhpTransformer\\\\HtmlToBlocks\\\\HtmlTransformer' );`,
+		`if ( ! $${prefix}_helper && ! $${prefix}_class ) {`,
+		"\tthrow new RuntimeException( 'Blocks Engine PHP Transformer plugin/classes are not available.' );",
+		'}',
+	];
 }
 
 function phpString(value) {

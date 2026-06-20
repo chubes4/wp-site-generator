@@ -15,6 +15,20 @@
                             "step": "installPlugin",
                             "pluginData": {
                                 "resource": "git:directory",
+                                "url": "https://github.com/Automattic/blocks-engine",
+                                "ref": "trunk",
+                                "refType": "branch",
+                                "path": "php-transformer"
+                            },
+                            "options": {
+                                "activate": true,
+                                "targetFolderName": "blocks-engine-php-transformer"
+                            }
+                        },
+                        {
+                            "step": "installPlugin",
+                            "pluginData": {
+                                "resource": "git:directory",
                                 "url": "https://github.com/chubes4/static-site-importer",
                                 "ref": "main",
                                 "refType": "branch"

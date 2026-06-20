@@ -44,6 +44,7 @@ export function gitDirectoryResource(manifest, id) {
 		url: entry.url,
 		ref: entry.sha || entry.ref,
 		refType: entry.sha ? 'commit' : entry.ref_type,
+		...(entry.path ? { path: entry.path } : {}),
 	};
 }
 
@@ -66,6 +67,7 @@ function normalizeEntry(entry) {
 		ref: entry.ref,
 		ref_type: entry.refType || entry.ref_type,
 		sha: entry.sha || '',
+		...(entry.path ? { path: entry.path } : {}),
 		...(entry.targetFolderName ? { target_folder_name: entry.targetFolderName } : {}),
 		...(entry.target_folder_name ? { target_folder_name: entry.target_folder_name } : {}),
 	};
@@ -154,6 +156,7 @@ function repositoriesByExportName(repositories) {
 		homeboyExtensions: repositories.homeboy_extensions,
 		wpCodebox: repositories.wp_codebox,
 		staticSiteImporter: repositories.static_site_importer,
+		blocksEnginePhpTransformer: repositories.blocks_engine_php_transformer,
 		blockFormatBridge: repositories.block_format_bridge,
 		blockArtifactCompiler: repositories.block_artifact_compiler,
 		htmlToBlocksConverter: repositories.html_to_blocks_converter,

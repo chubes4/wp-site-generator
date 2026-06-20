@@ -37,9 +37,12 @@ try {
 	assert.match(payload.candidate_source.relativeSourceDirectory, /^\.ci\/static-site-candidates\/issue-777-direct-candidate$/, 'candidate is materialized into a concrete static-site directory');
 	assert.equal(payload.website_artifact.schema, 'block-artifact-compiler/website-artifact/v1', 'validator converts candidate files to a BAC website artifact');
 	assert.deepEqual(payload.website_artifact.files.map((file) => file.path), ['website/assets/styles.css', 'website/index.html'], 'BAC website artifact contains candidate files under website/');
-	assert.equal(payload.workloads[0].run[0].type, 'php', 'SSI workload imports through the ability PHP bridge');
-	assert.match(payload.workloads[0].run[0].code, /static-site-importer\/import-website-artifact/, 'SSI workload imports through the current website artifact ability');
-	assert.doesNotMatch(payload.workloads[0].run[0].code, /static-site-importer\/import-theme/, 'SSI workload does not depend on the legacy import-theme ability');
+	assert.equal(payload.workloads[0].run[0].type, 'php', 'SSI workload probes transformer availability through PHP');
+	assert.match(payload.workloads[0].run[0].code, /blocks_engine_php_transformer_compile_artifact|Automattic\\\\BlocksEngine\\\\PhpTransformer/, 'SSI workload probes Blocks Engine php-transformer helpers/classes');
+	assert.equal(payload.workloads[0].run[1].type, 'php', 'SSI workload imports through the ability PHP bridge');
+	assert.match(payload.workloads[0].run[1].code, /static-site-importer\/import-website-artifact/, 'SSI workload imports through the current website artifact ability');
+	assert.match(payload.workloads[0].run[1].code, /blocks_engine_php_transformer_compile_artifact|Automattic\\\\BlocksEngine\\\\PhpTransformer/, 'SSI import path requires Blocks Engine php-transformer helpers/classes');
+	assert.doesNotMatch(payload.workloads[0].run[1].code, /static-site-importer\/import-theme/, 'SSI workload does not depend on the legacy import-theme ability');
 	assert.equal(
 		await readFile(path.join(repoRoot, payload.candidate_source.relativeSourceDirectory, 'index.html'), 'utf8'),
 		'<!doctype html><html><body><main>Direct candidate</main></body></html>',
@@ -66,8 +69,8 @@ try {
 	assert.equal(materializedPayload.site, 'direct-static-site', 'validator derives the site slug from a materialized artifact directory');
 	assert.equal(materializedPayload.candidate_source.source, 'source-static-site-dir', 'validator records materialized directory provenance');
 	assert.equal(materializedPayload.website_artifact.schema, 'block-artifact-compiler/website-artifact/v1', 'materialized directory is converted to a BAC website artifact');
-	assert.equal(materializedPayload.workloads[0].run[0].type, 'php', 'materialized directory imports through the ability PHP bridge');
-	assert.match(materializedPayload.workloads[0].run[0].code, /static-site-importer\/import-website-artifact/, 'SSI workload imports provided directory through website artifact ability');
+	assert.equal(materializedPayload.workloads[0].run[1].type, 'php', 'materialized directory imports through the ability PHP bridge');
+	assert.match(materializedPayload.workloads[0].run[1].code, /static-site-importer\/import-website-artifact/, 'SSI workload imports provided directory through website artifact ability');
 
 	const unresolvedResult = spawnSync(process.execPath, ['.github/scripts/build-static-validation-settings.mjs'], {
 		cwd: repoRoot,

@@ -77,17 +77,20 @@ assert.equal(settingsResult.status, 0, settingsResult.stderr || settingsResult.s
 
 const settingsPayload = JSON.parse(await readFile(settingsPath, 'utf8'));
 assert.equal(settingsPayload.workloads[0].id, 'ssi-import', 'native validation adapter emits SSI bench workload');
-assert.equal(settingsPayload.workloads[0].run[0].type, 'php', 'workload imports through PHP');
-assert.match(settingsPayload.workloads[0].run[0].code, /wp_get_ability\( 'static-site-importer\/import-website-artifact' \)/, 'workload runs SSI website artifact import ability');
-assert.doesNotMatch(settingsPayload.workloads[0].run[0].code, /static-site-importer import-theme/, 'workload does not depend on the SSI WP-CLI command');
-assert.doesNotMatch(settingsPayload.workloads[0].run[0].code, /static-site-importer\/import-theme/, 'workload does not depend on the legacy import-theme ability');
-assert.doesNotMatch(settingsPayload.workloads[0].run[0].code, /^<\?php/, 'inline PHP workload code omits an opening tag for eval execution');
+assert.equal(settingsPayload.workloads[0].run[0].type, 'php', 'workload probes through PHP');
+assert.match(settingsPayload.workloads[0].run[0].code, /blocks_engine_php_transformer_compile_artifact|Automattic\\\\BlocksEngine\\\\PhpTransformer/, 'workload probes Blocks Engine php-transformer helpers/classes before import');
+assert.equal(settingsPayload.workloads[0].run[1].type, 'php', 'workload imports through PHP');
+assert.match(settingsPayload.workloads[0].run[1].code, /wp_get_ability\( 'static-site-importer\/import-website-artifact' \)/, 'workload runs SSI website artifact import ability');
+assert.match(settingsPayload.workloads[0].run[1].code, /blocks_engine_php_transformer_compile_artifact|Automattic\\\\BlocksEngine\\\\PhpTransformer/, 'import path requires Blocks Engine php-transformer helpers/classes');
+assert.doesNotMatch(settingsPayload.workloads[0].run[1].code, /static-site-importer import-theme/, 'workload does not depend on the SSI WP-CLI command');
+assert.doesNotMatch(settingsPayload.workloads[0].run[1].code, /static-site-importer\/import-theme/, 'workload does not depend on the legacy import-theme ability');
+assert.doesNotMatch(settingsPayload.workloads[0].run[1].code, /^<\?php/, 'inline PHP workload code omits an opening tag for eval execution');
 assert.deepEqual(settingsPayload.website_artifact.files.map((file) => file.path), ['website/assets/styles.css', 'website/index.html'], 'validation settings pass candidate files as a BAC website artifact');
 assert.equal(settingsPayload.workloads[0].artifacts, undefined, 'runtime import report stays in workload metadata instead of a collectable bench artifact declaration');
 assert.deepEqual(
 	settingsPayload.settings.wordpress_runtime_blueprint.steps.map((step) => step.options.targetFolderName).slice(0, 3),
-	['block-artifact-compiler', 'block-format-bridge', 'static-site-importer'],
-	'generic validation settings preserve dependency install order without WooCommerce',
+	['blocks-engine-php-transformer', 'static-site-importer'],
+	'generic validation settings install Blocks Engine php-transformer before SSI without WooCommerce',
 );
 
 const commerceSettingsPath = path.join(tempDir, 'commerce-settings.json');
@@ -99,7 +102,7 @@ assert.equal(commerceSettingsResult.status, 0, commerceSettingsResult.stderr || 
 const commerceSettingsPayload = JSON.parse(await readFile(commerceSettingsPath, 'utf8'));
 assert.deepEqual(
 	commerceSettingsPayload.settings.wordpress_runtime_blueprint.steps.map((step) => step.options.targetFolderName).slice(0, 4),
-	['woocommerce', 'block-artifact-compiler', 'block-format-bridge', 'static-site-importer'],
+	['woocommerce', 'blocks-engine-php-transformer', 'static-site-importer'],
 	'commerce validation settings install WooCommerce before the SSI stack',
 );
 
