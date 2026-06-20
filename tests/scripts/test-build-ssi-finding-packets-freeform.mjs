@@ -76,7 +76,7 @@ const concrete = packets.find((packet) => packet.kind === 'freeform_block' && pa
 
 assert.ok(concrete, 'Expected concrete freeform diagnostic packet');
 assert.equal(concrete.schema_version, 3);
-assert.equal(concrete.candidate_repo, 'chubes4/html-to-blocks-converter');
+assert.equal(concrete.candidate_repo, 'Automattic/blocks-engine');
 assert.equal(concrete.category, 'fallback_block');
 assert.equal(concrete.reason_code, 'generated_document_contains_core_freeform');
 assert.equal(concrete.suggested_repair_class, 'replace_fallback_block');

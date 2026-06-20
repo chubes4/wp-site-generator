@@ -162,7 +162,7 @@ function aggregateQualityDiagnostics(summary, readiness = null) {
 			category: 'fallback_block',
 			reason_code: config.reason_code,
 			suggested_repair_class: 'converter_support',
-			candidate_repo: 'chubes4/html-to-blocks-converter',
+			candidate_repo: 'Automattic/blocks-engine',
 			converter: 'html-to-blocks-converter',
 			stage: 'generated_theme_block_analysis',
 			block_name: config.block_name,

@@ -421,9 +421,7 @@
       "dependencies": [
         "wp-site-generator",
         "static-site-importer",
-        "html-to-blocks-converter",
-        "block-format-bridge",
-        "block-artifact-compiler"
+        "blocks-engine"
       ],
       "gates": [
         "fallback_blocks",
@@ -544,9 +542,7 @@
       "dependencies": [
         "wp-site-generator",
         "static-site-importer",
-        "html-to-blocks-converter",
-        "block-format-bridge",
-        "block-artifact-compiler"
+        "blocks-engine"
       ]
     },
     {
@@ -583,9 +579,7 @@
       },
       "dependencies": [
         "static-site-importer",
-        "html-to-blocks-converter",
-        "block-format-bridge",
-        "block-artifact-compiler"
+        "blocks-engine"
       ]
     },
     {
@@ -620,9 +614,7 @@
       "dependencies": [
         "wp-site-generator",
         "static-site-importer",
-        "html-to-blocks-converter",
-        "block-format-bridge",
-        "block-artifact-compiler"
+        "blocks-engine"
       ],
       "gates": [
         "fallback_blocks",
@@ -666,9 +658,7 @@
       "dependencies": [
         "wp-site-generator",
         "static-site-importer",
-        "html-to-blocks-converter",
-        "block-format-bridge",
-        "block-artifact-compiler"
+        "blocks-engine"
       ],
       "gates": [
         "reviewer_evidence"
@@ -1091,21 +1081,9 @@
       "required": true
     },
     {
-      "dependency_id": "html-to-blocks-converter",
+      "dependency_id": "blocks-engine",
       "kind": "repo",
-      "value": "chubes4/html-to-blocks-converter",
-      "required": true
-    },
-    {
-      "dependency_id": "block-format-bridge",
-      "kind": "repo",
-      "value": "chubes4/block-format-bridge",
-      "required": true
-    },
-    {
-      "dependency_id": "block-artifact-compiler",
-      "kind": "repo",
-      "value": "chubes4/block-artifact-compiler",
+      "value": "Automattic/blocks-engine",
       "required": true
     }
   ],

@@ -130,8 +130,8 @@ assert.equal(packetResult.status, 0, packetResult.stderr || packetResult.stdout)
 const packets = JSON.parse(await readFile(packetsPath, 'utf8'));
 assert.ok(packets.some((packet) => packet.kind === 'bench_failure'), 'bench harness failure is retained for routing');
 assert.ok(!packets.some((packet) => packet.kind === 'report_missing'), 'recovered import readiness suppresses false report_missing noise');
-assert.ok(packets.some((packet) => packet.kind === 'unsupported_html_fallback'), 'fallback count becomes an H2BC-routed quality packet');
-assert.ok(packets.some((packet) => packet.kind === 'core_html_block'), 'core/html count becomes an H2BC-routed quality packet');
+assert.ok(packets.some((packet) => packet.kind === 'unsupported_html_fallback'), 'fallback count becomes a Blocks Engine-routed quality packet');
+assert.ok(packets.some((packet) => packet.kind === 'core_html_block'), 'core/html count becomes a Blocks Engine-routed quality packet');
 assert.ok(packets.some((packet) => packet.kind === 'visual_parity_mismatch'), 'visual mismatch remains available for WPSG routing');
 assert.ok(
 	packets.some((packet) => packet.diagnostic_id === 'diag-002-unsupported_html_fallback-no_transform-indexhtml'
@@ -142,8 +142,8 @@ assert.ok(
 	'rich SSI summary diagnostics become actionable per-fallback packets',
 );
 assert.ok(
-	packets.filter((packet) => ['unsupported_html_fallback', 'core_html_block'].includes(packet.kind)).every((packet) => packet.candidate_repo === 'chubes4/html-to-blocks-converter'),
-	'quality packets route to H2BC follow-up evidence',
+	packets.filter((packet) => ['unsupported_html_fallback', 'core_html_block'].includes(packet.kind)).every((packet) => packet.candidate_repo === 'Automattic/blocks-engine'),
+	'quality packets route to Blocks Engine follow-up evidence',
 );
 
 const groupResult = spawnSync(process.execPath, [path.join(repoRoot, '.github/scripts/group-ssi-finding-packets.mjs'), packetsPath], {
@@ -162,7 +162,7 @@ assert.equal(workflowResult.status, 0, workflowResult.stderr || workflowResult.s
 
 const workflow = JSON.parse(await readFile(workflowPath, 'utf8'));
 const iteratorPrompt = workflow.workflow.steps[0].prompt_queue[0].prompt;
-assert.match(iteratorPrompt, /"candidate_repo": "chubes4\/html-to-blocks-converter"/, 'workflow embeds H2BC follow-up route');
+assert.match(iteratorPrompt, /"candidate_repo": "Automattic\/blocks-engine"/, 'workflow embeds Blocks Engine follow-up route');
 assert.match(iteratorPrompt, /"candidate_repo": "chubes4\/wp-site-generator"/, 'workflow embeds WPSG harness/visual route');
 assert.doesNotMatch(iteratorPrompt, /"kind": "report_missing"/, 'workflow no longer asks iterator to chase missing-report noise');
 

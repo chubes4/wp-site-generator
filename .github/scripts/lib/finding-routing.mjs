@@ -2,14 +2,25 @@ import { readFileSync } from 'node:fs';
 import { text } from './ssi-finding-packets.mjs';
 
 const policy = JSON.parse(readFileSync(new URL('./finding-routing-policy.json', import.meta.url), 'utf8'));
+const legacyTransformerRepos = new Set([
+	'chubes4/html-to-blocks-converter',
+	'chubes4/block-format-bridge',
+	'chubes4/block-artifact-compiler',
+]);
 
 export function candidateRepoFromDiagnostic(diagnostic, type, category, suggestedRepairClass) {
 	const ownerRepo = text(diagnostic?.owner_repo);
+	if (legacyTransformerRepos.has(ownerRepo)) {
+		return 'Automattic/blocks-engine';
+	}
 	if (isCandidateRepo(ownerRepo)) {
 		return ownerRepo;
 	}
 
 	const explicit = text(diagnostic?.candidate_repo);
+	if (legacyTransformerRepos.has(explicit)) {
+		return 'Automattic/blocks-engine';
+	}
 	if (isCandidateRepo(explicit)) {
 		return explicit;
 	}
@@ -23,10 +34,10 @@ export function candidateRepoFromDiagnostic(diagnostic, type, category, suggeste
 		|| haystack.includes('replace_unsupported_html')
 		|| haystack.includes('replace_fallback_block')
 	) {
-		return 'chubes4/html-to-blocks-converter';
+		return 'Automattic/blocks-engine';
 	}
 	if (converter === 'block-format-bridge' || haystack.includes('bridge') || haystack.includes('bfb')) {
-		return 'chubes4/block-format-bridge';
+		return 'Automattic/blocks-engine';
 	}
 
 	return '';
@@ -34,11 +45,17 @@ export function candidateRepoFromDiagnostic(diagnostic, type, category, suggeste
 
 export function routeCandidateRepo(packet) {
 	const ownerRepo = text(packet.owner_repo);
+	if (legacyTransformerRepos.has(ownerRepo)) {
+		return 'Automattic/blocks-engine';
+	}
 	if (isCandidateRepo(ownerRepo)) {
 		return ownerRepo;
 	}
 
 	const explicit = text(packet.candidate_repo);
+	if (legacyTransformerRepos.has(explicit)) {
+		return 'Automattic/blocks-engine';
+	}
 	if (isCandidateRepo(explicit)) {
 		return explicit;
 	}

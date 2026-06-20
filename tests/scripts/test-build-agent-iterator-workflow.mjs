@@ -103,7 +103,7 @@ assert.ok(iteratorPrompt.includes('Run the PR-first iterator'), 'iterator flow p
 assert.ok(iteratorPrompt.length < 30000, 'iterator prompt stays bounded for reliable agent runs');
 assert.match(iteratorPrompt, /DataPacket child-job hydration/, 'iterator prompt documents embedded finding context');
 assert.match(iteratorPrompt, /"kind": "visual_parity_mismatch"/, 'visual finding is embedded in the AI prompt');
-assert.match(iteratorPrompt, /"candidate_repo": "chubes4\/block-artifact-compiler"/, 'artifact compiler route is embedded in the AI prompt');
+assert.match(iteratorPrompt, /"candidate_repo": "Automattic\/blocks-engine"/, 'Blocks Engine route is embedded in the AI prompt');
 assert.match(iteratorPrompt, /"repair_mode": "issue_only"/, 'issue-only routing is embedded in the AI prompt');
 assert.match(iteratorPrompt, /Use issue_path for repair_mode=issue_only/, 'issue-only groups use issue completion unless patch evidence exists');
 assert.match(iteratorPrompt, /"source_screenshot_path": "/, 'visual artifact paths are embedded in the AI prompt');
