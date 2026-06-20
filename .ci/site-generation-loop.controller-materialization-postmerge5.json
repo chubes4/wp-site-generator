@@ -1,0 +1,2231 @@
+{
+  "success": true,
+  "data": {
+    "schema": "homeboy/agent-task-loop-spec-materialization/v1",
+    "spec": {
+      "abilities": [
+        {
+          "ability_id": "agents/run-runtime-package"
+        },
+        {
+          "ability_id": "github_issue_publish"
+        },
+        {
+          "ability_id": "github_pull_request_publish"
+        },
+        {
+          "ability_id": "comment_github_pull_request"
+        }
+      ],
+      "agents": [
+        {
+          "abilities": [
+            "agents/run-runtime-package"
+          ],
+          "agent_id": "store_idea",
+          "instructions": "Run the store-idea-agent bundle for the WPSG SSI loop when Homeboy selects this workflow.",
+          "metadata": {
+            "bundle": "bundles/store-idea-agent",
+            "emits": [
+              "concept_packet"
+            ],
+            "flow": "store-idea-artifact-flow",
+            "slug": "store-idea-agent"
+          },
+          "role": "store-idea-agent"
+        },
+        {
+          "abilities": [
+            "agents/run-runtime-package"
+          ],
+          "agent_id": "website_idea",
+          "instructions": "Run the website-idea-agent bundle for the WPSG SSI loop when Homeboy selects this workflow.",
+          "metadata": {
+            "bundle": "bundles/website-idea-agent",
+            "emits": [
+              "concept_packet"
+            ],
+            "flow": "website-idea-artifact-flow",
+            "slug": "website-idea-agent"
+          },
+          "role": "website-idea-agent"
+        },
+        {
+          "abilities": [
+            "agents/run-runtime-package"
+          ],
+          "agent_id": "design_store",
+          "instructions": "Run the design-agent bundle for the WPSG SSI loop when Homeboy selects this workflow.",
+          "metadata": {
+            "bundle": "bundles/design-agent",
+            "emits": [
+              "design_packet"
+            ],
+            "flow": "design-artifact-flow",
+            "requires": [
+              "concept_packet"
+            ],
+            "slug": "design-agent"
+          },
+          "role": "design-agent"
+        },
+        {
+          "abilities": [
+            "agents/run-runtime-package"
+          ],
+          "agent_id": "design_website",
+          "instructions": "Run the design-agent bundle for the WPSG SSI loop when Homeboy selects this workflow.",
+          "metadata": {
+            "bundle": "bundles/design-agent",
+            "emits": [
+              "design_packet"
+            ],
+            "flow": "design-artifact-flow",
+            "requires": [
+              "concept_packet"
+            ],
+            "slug": "design-agent"
+          },
+          "role": "design-agent"
+        },
+        {
+          "abilities": [
+            "agents/run-runtime-package"
+          ],
+          "agent_id": "static_store",
+          "instructions": "Run the static-site-agent bundle for the WPSG SSI loop when Homeboy selects this workflow.",
+          "metadata": {
+            "bundle": "bundles/static-site-agent",
+            "emits": [
+              "static_site_candidate"
+            ],
+            "flow": "static-site-candidate-flow",
+            "requires": [
+              "concept_packet",
+              "design_packet"
+            ],
+            "slug": "static-site-agent"
+          },
+          "role": "static-site-agent"
+        },
+        {
+          "abilities": [
+            "agents/run-runtime-package"
+          ],
+          "agent_id": "static_site",
+          "instructions": "Run the static-site-agent bundle for the WPSG SSI loop when Homeboy selects this workflow.",
+          "metadata": {
+            "bundle": "bundles/static-site-agent",
+            "emits": [
+              "static_site_candidate"
+            ],
+            "flow": "static-site-candidate-flow",
+            "requires": [
+              "concept_packet",
+              "design_packet"
+            ],
+            "slug": "static-site-agent"
+          },
+          "role": "static-site-agent"
+        },
+        {
+          "abilities": [
+            "agents/run-runtime-package"
+          ],
+          "agent_id": "php_transformer_iterator",
+          "instructions": "Run the php-transformer-iterator-agent bundle for the WPSG SSI loop when Homeboy selects this workflow.",
+          "metadata": {
+            "bundle": "bundles/php-transformer-iterator-agent",
+            "emits": [
+              "iterator_upstream_issue",
+              "iterator_upstream_pull_request"
+            ],
+            "requires": [
+              "finding_group"
+            ],
+            "slug": "php-transformer-iterator-agent"
+          },
+          "role": "php-transformer-iterator-agent"
+        },
+        {
+          "abilities": [
+            "agents/run-runtime-package"
+          ],
+          "agent_id": "ssi_stack_reviewer",
+          "instructions": "Run the ssi-stack-reviewer-agent bundle for the WPSG SSI loop when Homeboy selects this workflow.",
+          "metadata": {
+            "bundle": "bundles/ssi-stack-reviewer-agent",
+            "emits": [
+              "reviewer_gate_outcome"
+            ],
+            "requires": [
+              "static_site_candidate",
+              "import_validation_result",
+              "static_validation_run",
+              "visual_parity_artifact",
+              "finding_packet_set",
+              "revalidation_attempt"
+            ],
+            "slug": "ssi-stack-reviewer-agent"
+          },
+          "role": "ssi-stack-reviewer-agent"
+        }
+      ],
+      "artifacts": [
+        {
+          "artifact_id": "concept_packet",
+          "description": "concept_packet artifact using wp-site-generator/ConceptPacket/v1",
+          "kind": "wp-site-generator/ConceptPacket/v1",
+          "required": true
+        },
+        {
+          "artifact_id": "design_packet",
+          "description": "design_packet artifact using wp-site-generator/DesignPacket/v1",
+          "kind": "wp-site-generator/DesignPacket/v1",
+          "required": true
+        },
+        {
+          "artifact_id": "static_site_candidate",
+          "description": "static_site_candidate artifact using wp-site-generator/StaticSiteCandidate/v1",
+          "kind": "wp-site-generator/StaticSiteCandidate/v1",
+          "required": true
+        },
+        {
+          "artifact_id": "import_validation_result",
+          "description": "import_validation_result artifact using wp-site-generator/ImportValidationResult/v1",
+          "kind": "wp-site-generator/ImportValidationResult/v1",
+          "required": true
+        },
+        {
+          "artifact_id": "static_site_pull_request",
+          "description": "static_site_pull_request artifact using github/PullRequest/v1",
+          "kind": "github/PullRequest/v1",
+          "required": false
+        },
+        {
+          "artifact_id": "static_validation_run",
+          "description": "static_validation_run artifact using homeboy/Run/v1",
+          "kind": "homeboy/Run/v1",
+          "required": true
+        },
+        {
+          "artifact_id": "visual_parity_artifact",
+          "description": "visual_parity_artifact artifact using wp-site-generator/VisualParityArtifact/v1",
+          "kind": "wp-site-generator/VisualParityArtifact/v1",
+          "required": true
+        },
+        {
+          "artifact_id": "static_site_publish_gate",
+          "description": "static_site_publish_gate artifact using wp-site-generator/StaticSitePublishGate/v1",
+          "kind": "wp-site-generator/StaticSitePublishGate/v1",
+          "required": true
+        },
+        {
+          "artifact_id": "finding_packet_set",
+          "description": "finding_packet_set artifact using wp-site-generator/FindingPacketSet/v1",
+          "kind": "wp-site-generator/FindingPacketSet/v1",
+          "required": true
+        },
+        {
+          "artifact_id": "finding_group",
+          "description": "finding_group artifact using wp-site-generator/FindingGroup/v1",
+          "kind": "wp-site-generator/FindingGroup/v1",
+          "required": true
+        },
+        {
+          "artifact_id": "iterator_upstream_issue",
+          "description": "iterator_upstream_issue artifact using github/Issue/v1",
+          "kind": "github/Issue/v1",
+          "required": false
+        },
+        {
+          "artifact_id": "iterator_upstream_pull_request",
+          "description": "iterator_upstream_pull_request artifact using github/PullRequest/v1",
+          "kind": "github/PullRequest/v1",
+          "required": false
+        },
+        {
+          "artifact_id": "revalidation_attempt",
+          "description": "revalidation_attempt artifact using wp-site-generator/RevalidationAttempt/v1",
+          "kind": "wp-site-generator/RevalidationAttempt/v1",
+          "required": true
+        },
+        {
+          "artifact_id": "reviewer_gate_outcome",
+          "description": "reviewer_gate_outcome artifact using wp-site-generator/SsiStackReviewerGate/v1",
+          "kind": "wp-site-generator/SsiStackReviewerGate/v1",
+          "required": true
+        }
+      ],
+      "config_version": "wpsg-ssi-loop-v1",
+      "dependencies": [
+        {
+          "dependency_id": "wp-site-generator",
+          "kind": "repo",
+          "required": true,
+          "value": "chubes4/wp-site-generator"
+        },
+        {
+          "dependency_id": "static-site-importer",
+          "kind": "repo",
+          "required": true,
+          "value": "chubes4/static-site-importer"
+        },
+        {
+          "dependency_id": "html-to-blocks-converter",
+          "kind": "repo",
+          "required": true,
+          "value": "chubes4/html-to-blocks-converter"
+        },
+        {
+          "dependency_id": "block-format-bridge",
+          "kind": "repo",
+          "required": true,
+          "value": "chubes4/block-format-bridge"
+        },
+        {
+          "dependency_id": "block-artifact-compiler",
+          "kind": "repo",
+          "required": true,
+          "value": "chubes4/block-artifact-compiler"
+        }
+      ],
+      "gates": [
+        {
+          "description": "SSI import must not emit fallback blocks.",
+          "gate_id": "fallback_blocks",
+          "metrics": [
+            "fallback_blocks"
+          ]
+        },
+        {
+          "description": "SSI/BFB diagnostics must not include actionable conversion findings.",
+          "gate_id": "conversion_findings",
+          "metrics": [
+            "conversion_findings"
+          ]
+        },
+        {
+          "description": "Visual parity artifact must report no mismatches or delta.",
+          "gate_id": "visual_parity",
+          "metrics": [
+            "visual_parity"
+          ]
+        },
+        {
+          "description": "Reviewer evidence must use durable candidate, validation, visual, finding, and revalidation artifact references; GitHub URLs are optional publication evidence.",
+          "gate_id": "reviewer_evidence",
+          "metrics": [
+            "reviewer_evidence"
+          ]
+        }
+      ],
+      "loop_id": "wp-site-generator/static-site-generation-loop",
+      "metadata": {
+        "authority": {
+          "builder": ".github/scripts/build-homeboy-ssi-loop-controller.mjs",
+          "contract_issue": "https://github.com/Extra-Chill/homeboy/issues/4658",
+          "controller_primitives": "https://github.com/Extra-Chill/homeboy/pull/5152",
+          "homeboy_from_spec": [
+            "https://github.com/Extra-Chill/homeboy/issues/4722",
+            "https://github.com/Extra-Chill/homeboy/issues/4723"
+          ]
+        },
+        "description": "WPSG-owned domain ingredient contract for generating a static-site candidate, validating it through Static Site Importer, routing finding groups, revalidating, and publishing only when quality metrics clear.",
+        "dispatch_defaults": {
+          "cwd": "/Users/chubes/Developer/wp-site-generator@lab-full-loop-gitproof-20260620",
+          "repo": "wp-site-generator@lab-full-loop-gitproof-20260620"
+        },
+        "policy_materialization": {
+          "wpsg-complexity-policy": {
+            "policy_id": "wpsg-complexity-policy",
+            "policy_inputs": {
+              "current_tier": "foundation",
+              "overrides": {
+                "randomness_seed": "postmerge5"
+              },
+              "policy_path": ".github/site-generation-complexity-policy.json",
+              "quality_signals_path": ""
+            },
+            "policy_results": {
+              "criteria": {
+                "regression": {
+                  "maximum_pass_rate": 0.5,
+                  "minimum_average_actionable_findings": 4,
+                  "minimum_average_fallback_blocks": 2,
+                  "minimum_average_visual_mismatch_ratio": 0.08
+                },
+                "stable": {
+                  "maximum_average_actionable_findings": 1,
+                  "maximum_average_fallback_blocks": 0,
+                  "maximum_average_visual_mismatch_ratio": 0.02,
+                  "minimum_pass_rate": 0.8,
+                  "minimum_results": 4
+                }
+              },
+              "current_tier": "foundation",
+              "decision": "hold",
+              "overrides": {
+                "randomness_seed": "postmerge5"
+              },
+              "policy_path": ".github/site-generation-complexity-policy.json",
+              "quality_signals_path": "",
+              "quality_summary": {
+                "average_actionable_findings": 0,
+                "average_fallback_blocks": 0,
+                "average_visual_mismatch_ratio": 0,
+                "count": 0,
+                "failed": 0,
+                "pass_rate": 0,
+                "passed": 0,
+                "pattern_families": [],
+                "site_kinds": []
+              },
+              "randomness_profile": {
+                "description": "Low variance; deterministic enough for stable importer proof.",
+                "id": "steady",
+                "novelty": "low",
+                "temperature_hint": 0.25
+              },
+              "randomness_seed": "postmerge5",
+              "reason": "no recent quality signals; using current/default tier",
+              "schema": "wp-site-generator/site-generation-complexity-policy/v1",
+              "selected_tier": "foundation",
+              "site_kind_mix": [
+                "store",
+                "website"
+              ],
+              "target_parallel_candidates": 1,
+              "tier": {
+                "allowed_layout_families": [
+                  "single-page",
+                  "simple-section-stack",
+                  "basic-commerce"
+                ],
+                "component_families": [
+                  "hero",
+                  "feature-list",
+                  "cards",
+                  "cta",
+                  "basic-product-grid"
+                ],
+                "description": "Simple, single-purpose sites that prove core importer stability.",
+                "id": "foundation",
+                "prompt_guidance": "Prefer simple static structure, common Gutenberg-compatible sections, low animation, and minimal bespoke interaction.",
+                "rank": 0,
+                "site_kind_mix": [
+                  "store",
+                  "website"
+                ],
+                "target_parallel_candidates": 1
+              },
+              "tier_order": [
+                "foundation",
+                "composed",
+                "stress"
+              ]
+            },
+            "provenance": {
+              "generated_by": ".github/scripts/build-homeboy-controller-run-inputs.mjs",
+              "policy_schema": "wp-site-generator/site-generation-complexity-policy/v1",
+              "repository": "chubes4/wp-site-generator",
+              "run_id": "lab-full-loop-20260620-postmerge5"
+            }
+          }
+        },
+        "run": {
+          "complexity_policy_result": ".ci/site-generation-loop.complexity-policy-result-postmerge5.json",
+          "controller_spec": ".github/homeboy/controllers/static-site-generation-loop.controller.json",
+          "generated_by": ".github/scripts/build-homeboy-controller-run-inputs.mjs",
+          "materialized_by": "homeboy agent-task controller materialize",
+          "repository": "chubes4/wp-site-generator",
+          "run_id": "lab-full-loop-20260620-postmerge5",
+          "runtime_input_contract": "homeboy-agent-runtime-env"
+        },
+        "title": "Static Site Importer self-improving site-generation loop"
+      },
+      "metrics": [
+        {
+          "description": "Fallback block count reported by SSI import validation.",
+          "input": {
+            "paths": [
+              "import_validation_result.metrics.fallback_blocks",
+              "import_validation_result.metrics.fallback_block_count",
+              "import_validation_result.metrics.ssi_fallback_count"
+            ]
+          },
+          "metric_id": "fallback_blocks",
+          "target": "value === 0"
+        },
+        {
+          "description": "Actionable conversion finding count reported by SSI/BFB diagnostics.",
+          "input": {
+            "actionable_kinds": [
+              "unsupported_html_fallback",
+              "core_html_block",
+              "freeform_block"
+            ],
+            "paths": [
+              "import_validation_result.metrics.conversion_findings",
+              "finding_packet_set.actionable_conversion_count"
+            ]
+          },
+          "metric_id": "conversion_findings",
+          "target": "value === 0"
+        },
+        {
+          "description": "Visual parity status, mismatch count, and maximum delta ratio.",
+          "input": {
+            "paths": [
+              "visual_parity_artifact.summary.status",
+              "visual_parity_artifact.summary.mismatch_count",
+              "visual_parity_artifact.summary.max_delta_ratio"
+            ]
+          },
+          "metric_id": "visual_parity",
+          "target": "status === \"pass\" && mismatch_count === 0 && max_delta_ratio === 0"
+        },
+        {
+          "description": "Durable candidate, validation, visual parity, finding, and revalidation evidence references for the reviewer gate.",
+          "input": {
+            "forbids": [
+              "localhost",
+              "127.0.0.1",
+              "/Users/"
+            ],
+            "optional_publication_evidence": [
+              "static_site_pull_request.url",
+              "iterator_upstream_issue.url",
+              "iterator_upstream_pull_request.url"
+            ],
+            "requires": [
+              "static_site_candidate.artifact_url",
+              "import_validation_result.artifact_url",
+              "static_validation_run.artifact_url",
+              "visual_parity_artifact.artifact_url",
+              "finding_packet_set.artifact_url",
+              "revalidation_attempt.artifact_url"
+            ]
+          },
+          "metric_id": "reviewer_evidence"
+        }
+      ],
+      "phase": "init",
+      "schema": "homeboy/agent-task-loop-spec/v1",
+      "workflows": [
+        {
+          "abilities": [
+            "agents/run-runtime-package"
+          ],
+          "agent_id": "store_idea",
+          "artifacts": [
+            "concept_packet"
+          ],
+          "emits": [
+            "concept_packet"
+          ],
+          "inputs": {
+            "artifact_root": ".ci/homeboy-agent-task-artifacts",
+            "concept_packet": "",
+            "concept_prompt": "",
+            "design_packet": "",
+            "import_validation_result": "",
+            "manual_task_kind": "",
+            "policy_inputs": {
+              "wpsg-complexity-policy": {
+                "current_tier": "foundation",
+                "overrides": {
+                  "randomness_seed": "postmerge5"
+                },
+                "policy_path": ".github/site-generation-complexity-policy.json",
+                "quality_signals_path": ""
+              }
+            },
+            "policy_results": {
+              "wpsg-complexity-policy": {
+                "criteria": {
+                  "regression": {
+                    "maximum_pass_rate": 0.5,
+                    "minimum_average_actionable_findings": 4,
+                    "minimum_average_fallback_blocks": 2,
+                    "minimum_average_visual_mismatch_ratio": 0.08
+                  },
+                  "stable": {
+                    "maximum_average_actionable_findings": 1,
+                    "maximum_average_fallback_blocks": 0,
+                    "maximum_average_visual_mismatch_ratio": 0.02,
+                    "minimum_pass_rate": 0.8,
+                    "minimum_results": 4
+                  }
+                },
+                "current_tier": "foundation",
+                "decision": "hold",
+                "overrides": {
+                  "randomness_seed": "postmerge5"
+                },
+                "policy_path": ".github/site-generation-complexity-policy.json",
+                "quality_signals_path": "",
+                "quality_summary": {
+                  "average_actionable_findings": 0,
+                  "average_fallback_blocks": 0,
+                  "average_visual_mismatch_ratio": 0,
+                  "count": 0,
+                  "failed": 0,
+                  "pass_rate": 0,
+                  "passed": 0,
+                  "pattern_families": [],
+                  "site_kinds": []
+                },
+                "randomness_profile": {
+                  "description": "Low variance; deterministic enough for stable importer proof.",
+                  "id": "steady",
+                  "novelty": "low",
+                  "temperature_hint": 0.25
+                },
+                "randomness_seed": "postmerge5",
+                "reason": "no recent quality signals; using current/default tier",
+                "schema": "wp-site-generator/site-generation-complexity-policy/v1",
+                "selected_tier": "foundation",
+                "site_kind_mix": [
+                  "store",
+                  "website"
+                ],
+                "target_parallel_candidates": 1,
+                "tier": {
+                  "allowed_layout_families": [
+                    "single-page",
+                    "simple-section-stack",
+                    "basic-commerce"
+                  ],
+                  "component_families": [
+                    "hero",
+                    "feature-list",
+                    "cards",
+                    "cta",
+                    "basic-product-grid"
+                  ],
+                  "description": "Simple, single-purpose sites that prove core importer stability.",
+                  "id": "foundation",
+                  "prompt_guidance": "Prefer simple static structure, common Gutenberg-compatible sections, low animation, and minimal bespoke interaction.",
+                  "rank": 0,
+                  "site_kind_mix": [
+                    "store",
+                    "website"
+                  ],
+                  "target_parallel_candidates": 1
+                },
+                "tier_order": [
+                  "foundation",
+                  "composed",
+                  "stress"
+                ]
+              }
+            },
+            "repository": "chubes4/wp-site-generator",
+            "run_id": "lab-full-loop-20260620-postmerge5",
+            "runtime_input_contract": "homeboy-agent-runtime-env",
+            "static_site_candidate": "",
+            "static_site_publish_gate": "",
+            "website_flow_slug": "website-idea-artifact-flow"
+          },
+          "prompt": "Produce a commerce concept packet for the WPSG static-site generation loop.",
+          "workflow_id": "store-idea"
+        },
+        {
+          "abilities": [
+            "agents/run-runtime-package"
+          ],
+          "agent_id": "website_idea",
+          "artifacts": [
+            "concept_packet"
+          ],
+          "emits": [
+            "concept_packet"
+          ],
+          "inputs": {
+            "artifact_root": ".ci/homeboy-agent-task-artifacts",
+            "concept_packet": "",
+            "concept_prompt": "",
+            "design_packet": "",
+            "import_validation_result": "",
+            "manual_task_kind": "",
+            "policy_inputs": {
+              "wpsg-complexity-policy": {
+                "current_tier": "foundation",
+                "overrides": {
+                  "randomness_seed": "postmerge5"
+                },
+                "policy_path": ".github/site-generation-complexity-policy.json",
+                "quality_signals_path": ""
+              }
+            },
+            "policy_results": {
+              "wpsg-complexity-policy": {
+                "criteria": {
+                  "regression": {
+                    "maximum_pass_rate": 0.5,
+                    "minimum_average_actionable_findings": 4,
+                    "minimum_average_fallback_blocks": 2,
+                    "minimum_average_visual_mismatch_ratio": 0.08
+                  },
+                  "stable": {
+                    "maximum_average_actionable_findings": 1,
+                    "maximum_average_fallback_blocks": 0,
+                    "maximum_average_visual_mismatch_ratio": 0.02,
+                    "minimum_pass_rate": 0.8,
+                    "minimum_results": 4
+                  }
+                },
+                "current_tier": "foundation",
+                "decision": "hold",
+                "overrides": {
+                  "randomness_seed": "postmerge5"
+                },
+                "policy_path": ".github/site-generation-complexity-policy.json",
+                "quality_signals_path": "",
+                "quality_summary": {
+                  "average_actionable_findings": 0,
+                  "average_fallback_blocks": 0,
+                  "average_visual_mismatch_ratio": 0,
+                  "count": 0,
+                  "failed": 0,
+                  "pass_rate": 0,
+                  "passed": 0,
+                  "pattern_families": [],
+                  "site_kinds": []
+                },
+                "randomness_profile": {
+                  "description": "Low variance; deterministic enough for stable importer proof.",
+                  "id": "steady",
+                  "novelty": "low",
+                  "temperature_hint": 0.25
+                },
+                "randomness_seed": "postmerge5",
+                "reason": "no recent quality signals; using current/default tier",
+                "schema": "wp-site-generator/site-generation-complexity-policy/v1",
+                "selected_tier": "foundation",
+                "site_kind_mix": [
+                  "store",
+                  "website"
+                ],
+                "target_parallel_candidates": 1,
+                "tier": {
+                  "allowed_layout_families": [
+                    "single-page",
+                    "simple-section-stack",
+                    "basic-commerce"
+                  ],
+                  "component_families": [
+                    "hero",
+                    "feature-list",
+                    "cards",
+                    "cta",
+                    "basic-product-grid"
+                  ],
+                  "description": "Simple, single-purpose sites that prove core importer stability.",
+                  "id": "foundation",
+                  "prompt_guidance": "Prefer simple static structure, common Gutenberg-compatible sections, low animation, and minimal bespoke interaction.",
+                  "rank": 0,
+                  "site_kind_mix": [
+                    "store",
+                    "website"
+                  ],
+                  "target_parallel_candidates": 1
+                },
+                "tier_order": [
+                  "foundation",
+                  "composed",
+                  "stress"
+                ]
+              }
+            },
+            "repository": "chubes4/wp-site-generator",
+            "run_id": "lab-full-loop-20260620-postmerge5",
+            "runtime_input_contract": "homeboy-agent-runtime-env",
+            "static_site_candidate": "",
+            "static_site_publish_gate": "",
+            "website_flow_slug": "website-idea-artifact-flow"
+          },
+          "prompt": "Produce a content-site concept packet for the WPSG static-site generation loop.",
+          "workflow_id": "website-idea"
+        },
+        {
+          "abilities": [
+            "agents/run-runtime-package"
+          ],
+          "agent_id": "design_store",
+          "artifacts": [
+            "concept_packet",
+            "design_packet"
+          ],
+          "consumes": [
+            "concept_packet"
+          ],
+          "emits": [
+            "design_packet"
+          ],
+          "inputs": {
+            "artifact_root": ".ci/homeboy-agent-task-artifacts",
+            "concept_packet": "",
+            "concept_prompt": "",
+            "design_packet": "",
+            "import_validation_result": "",
+            "manual_task_kind": "",
+            "policy_inputs": {
+              "wpsg-complexity-policy": {
+                "current_tier": "foundation",
+                "overrides": {
+                  "randomness_seed": "postmerge5"
+                },
+                "policy_path": ".github/site-generation-complexity-policy.json",
+                "quality_signals_path": ""
+              }
+            },
+            "policy_results": {
+              "wpsg-complexity-policy": {
+                "criteria": {
+                  "regression": {
+                    "maximum_pass_rate": 0.5,
+                    "minimum_average_actionable_findings": 4,
+                    "minimum_average_fallback_blocks": 2,
+                    "minimum_average_visual_mismatch_ratio": 0.08
+                  },
+                  "stable": {
+                    "maximum_average_actionable_findings": 1,
+                    "maximum_average_fallback_blocks": 0,
+                    "maximum_average_visual_mismatch_ratio": 0.02,
+                    "minimum_pass_rate": 0.8,
+                    "minimum_results": 4
+                  }
+                },
+                "current_tier": "foundation",
+                "decision": "hold",
+                "overrides": {
+                  "randomness_seed": "postmerge5"
+                },
+                "policy_path": ".github/site-generation-complexity-policy.json",
+                "quality_signals_path": "",
+                "quality_summary": {
+                  "average_actionable_findings": 0,
+                  "average_fallback_blocks": 0,
+                  "average_visual_mismatch_ratio": 0,
+                  "count": 0,
+                  "failed": 0,
+                  "pass_rate": 0,
+                  "passed": 0,
+                  "pattern_families": [],
+                  "site_kinds": []
+                },
+                "randomness_profile": {
+                  "description": "Low variance; deterministic enough for stable importer proof.",
+                  "id": "steady",
+                  "novelty": "low",
+                  "temperature_hint": 0.25
+                },
+                "randomness_seed": "postmerge5",
+                "reason": "no recent quality signals; using current/default tier",
+                "schema": "wp-site-generator/site-generation-complexity-policy/v1",
+                "selected_tier": "foundation",
+                "site_kind_mix": [
+                  "store",
+                  "website"
+                ],
+                "target_parallel_candidates": 1,
+                "tier": {
+                  "allowed_layout_families": [
+                    "single-page",
+                    "simple-section-stack",
+                    "basic-commerce"
+                  ],
+                  "component_families": [
+                    "hero",
+                    "feature-list",
+                    "cards",
+                    "cta",
+                    "basic-product-grid"
+                  ],
+                  "description": "Simple, single-purpose sites that prove core importer stability.",
+                  "id": "foundation",
+                  "prompt_guidance": "Prefer simple static structure, common Gutenberg-compatible sections, low animation, and minimal bespoke interaction.",
+                  "rank": 0,
+                  "site_kind_mix": [
+                    "store",
+                    "website"
+                  ],
+                  "target_parallel_candidates": 1
+                },
+                "tier_order": [
+                  "foundation",
+                  "composed",
+                  "stress"
+                ]
+              }
+            },
+            "repository": "chubes4/wp-site-generator",
+            "run_id": "lab-full-loop-20260620-postmerge5",
+            "runtime_input_contract": "homeboy-agent-runtime-env",
+            "static_site_candidate": "",
+            "static_site_publish_gate": "",
+            "website_flow_slug": "website-idea-artifact-flow"
+          },
+          "prompt": "Produce a design packet from a commerce concept packet for the WPSG static-site generation loop.",
+          "workflow_id": "design-store"
+        },
+        {
+          "abilities": [
+            "agents/run-runtime-package"
+          ],
+          "agent_id": "design_website",
+          "artifacts": [
+            "concept_packet",
+            "design_packet"
+          ],
+          "consumes": [
+            "concept_packet"
+          ],
+          "emits": [
+            "design_packet"
+          ],
+          "inputs": {
+            "artifact_root": ".ci/homeboy-agent-task-artifacts",
+            "concept_packet": "",
+            "concept_prompt": "",
+            "design_packet": "",
+            "import_validation_result": "",
+            "manual_task_kind": "",
+            "policy_inputs": {
+              "wpsg-complexity-policy": {
+                "current_tier": "foundation",
+                "overrides": {
+                  "randomness_seed": "postmerge5"
+                },
+                "policy_path": ".github/site-generation-complexity-policy.json",
+                "quality_signals_path": ""
+              }
+            },
+            "policy_results": {
+              "wpsg-complexity-policy": {
+                "criteria": {
+                  "regression": {
+                    "maximum_pass_rate": 0.5,
+                    "minimum_average_actionable_findings": 4,
+                    "minimum_average_fallback_blocks": 2,
+                    "minimum_average_visual_mismatch_ratio": 0.08
+                  },
+                  "stable": {
+                    "maximum_average_actionable_findings": 1,
+                    "maximum_average_fallback_blocks": 0,
+                    "maximum_average_visual_mismatch_ratio": 0.02,
+                    "minimum_pass_rate": 0.8,
+                    "minimum_results": 4
+                  }
+                },
+                "current_tier": "foundation",
+                "decision": "hold",
+                "overrides": {
+                  "randomness_seed": "postmerge5"
+                },
+                "policy_path": ".github/site-generation-complexity-policy.json",
+                "quality_signals_path": "",
+                "quality_summary": {
+                  "average_actionable_findings": 0,
+                  "average_fallback_blocks": 0,
+                  "average_visual_mismatch_ratio": 0,
+                  "count": 0,
+                  "failed": 0,
+                  "pass_rate": 0,
+                  "passed": 0,
+                  "pattern_families": [],
+                  "site_kinds": []
+                },
+                "randomness_profile": {
+                  "description": "Low variance; deterministic enough for stable importer proof.",
+                  "id": "steady",
+                  "novelty": "low",
+                  "temperature_hint": 0.25
+                },
+                "randomness_seed": "postmerge5",
+                "reason": "no recent quality signals; using current/default tier",
+                "schema": "wp-site-generator/site-generation-complexity-policy/v1",
+                "selected_tier": "foundation",
+                "site_kind_mix": [
+                  "store",
+                  "website"
+                ],
+                "target_parallel_candidates": 1,
+                "tier": {
+                  "allowed_layout_families": [
+                    "single-page",
+                    "simple-section-stack",
+                    "basic-commerce"
+                  ],
+                  "component_families": [
+                    "hero",
+                    "feature-list",
+                    "cards",
+                    "cta",
+                    "basic-product-grid"
+                  ],
+                  "description": "Simple, single-purpose sites that prove core importer stability.",
+                  "id": "foundation",
+                  "prompt_guidance": "Prefer simple static structure, common Gutenberg-compatible sections, low animation, and minimal bespoke interaction.",
+                  "rank": 0,
+                  "site_kind_mix": [
+                    "store",
+                    "website"
+                  ],
+                  "target_parallel_candidates": 1
+                },
+                "tier_order": [
+                  "foundation",
+                  "composed",
+                  "stress"
+                ]
+              }
+            },
+            "repository": "chubes4/wp-site-generator",
+            "run_id": "lab-full-loop-20260620-postmerge5",
+            "runtime_input_contract": "homeboy-agent-runtime-env",
+            "static_site_candidate": "",
+            "static_site_publish_gate": "",
+            "website_flow_slug": "website-idea-artifact-flow"
+          },
+          "prompt": "Produce a design packet from a content-site concept packet for the WPSG static-site generation loop.",
+          "workflow_id": "design-website"
+        },
+        {
+          "abilities": [
+            "agents/run-runtime-package"
+          ],
+          "agent_id": "static_store",
+          "artifacts": [
+            "concept_packet",
+            "design_packet",
+            "static_site_candidate"
+          ],
+          "consumes": [
+            "concept_packet",
+            "design_packet"
+          ],
+          "dependencies": [
+            "wp-site-generator"
+          ],
+          "emits": [
+            "static_site_candidate"
+          ],
+          "inputs": {
+            "artifact_root": ".ci/homeboy-agent-task-artifacts",
+            "concept_packet": "",
+            "concept_prompt": "",
+            "design_packet": "",
+            "import_validation_result": "",
+            "manual_task_kind": "",
+            "policy_inputs": {
+              "wpsg-complexity-policy": {
+                "current_tier": "foundation",
+                "overrides": {
+                  "randomness_seed": "postmerge5"
+                },
+                "policy_path": ".github/site-generation-complexity-policy.json",
+                "quality_signals_path": ""
+              }
+            },
+            "policy_results": {
+              "wpsg-complexity-policy": {
+                "criteria": {
+                  "regression": {
+                    "maximum_pass_rate": 0.5,
+                    "minimum_average_actionable_findings": 4,
+                    "minimum_average_fallback_blocks": 2,
+                    "minimum_average_visual_mismatch_ratio": 0.08
+                  },
+                  "stable": {
+                    "maximum_average_actionable_findings": 1,
+                    "maximum_average_fallback_blocks": 0,
+                    "maximum_average_visual_mismatch_ratio": 0.02,
+                    "minimum_pass_rate": 0.8,
+                    "minimum_results": 4
+                  }
+                },
+                "current_tier": "foundation",
+                "decision": "hold",
+                "overrides": {
+                  "randomness_seed": "postmerge5"
+                },
+                "policy_path": ".github/site-generation-complexity-policy.json",
+                "quality_signals_path": "",
+                "quality_summary": {
+                  "average_actionable_findings": 0,
+                  "average_fallback_blocks": 0,
+                  "average_visual_mismatch_ratio": 0,
+                  "count": 0,
+                  "failed": 0,
+                  "pass_rate": 0,
+                  "passed": 0,
+                  "pattern_families": [],
+                  "site_kinds": []
+                },
+                "randomness_profile": {
+                  "description": "Low variance; deterministic enough for stable importer proof.",
+                  "id": "steady",
+                  "novelty": "low",
+                  "temperature_hint": 0.25
+                },
+                "randomness_seed": "postmerge5",
+                "reason": "no recent quality signals; using current/default tier",
+                "schema": "wp-site-generator/site-generation-complexity-policy/v1",
+                "selected_tier": "foundation",
+                "site_kind_mix": [
+                  "store",
+                  "website"
+                ],
+                "target_parallel_candidates": 1,
+                "tier": {
+                  "allowed_layout_families": [
+                    "single-page",
+                    "simple-section-stack",
+                    "basic-commerce"
+                  ],
+                  "component_families": [
+                    "hero",
+                    "feature-list",
+                    "cards",
+                    "cta",
+                    "basic-product-grid"
+                  ],
+                  "description": "Simple, single-purpose sites that prove core importer stability.",
+                  "id": "foundation",
+                  "prompt_guidance": "Prefer simple static structure, common Gutenberg-compatible sections, low animation, and minimal bespoke interaction.",
+                  "rank": 0,
+                  "site_kind_mix": [
+                    "store",
+                    "website"
+                  ],
+                  "target_parallel_candidates": 1
+                },
+                "tier_order": [
+                  "foundation",
+                  "composed",
+                  "stress"
+                ]
+              }
+            },
+            "repository": "chubes4/wp-site-generator",
+            "run_id": "lab-full-loop-20260620-postmerge5",
+            "runtime_input_contract": "homeboy-agent-runtime-env",
+            "static_site_candidate": "",
+            "static_site_publish_gate": "",
+            "website_flow_slug": "website-idea-artifact-flow"
+          },
+          "prompt": "Produce a commerce static-site candidate artifact from a WPSG design packet.",
+          "workflow_id": "static-store"
+        },
+        {
+          "abilities": [
+            "agents/run-runtime-package"
+          ],
+          "agent_id": "static_site",
+          "artifacts": [
+            "concept_packet",
+            "design_packet",
+            "static_site_candidate"
+          ],
+          "consumes": [
+            "concept_packet",
+            "design_packet"
+          ],
+          "dependencies": [
+            "wp-site-generator"
+          ],
+          "emits": [
+            "static_site_candidate"
+          ],
+          "inputs": {
+            "artifact_root": ".ci/homeboy-agent-task-artifacts",
+            "concept_packet": "",
+            "concept_prompt": "",
+            "design_packet": "",
+            "import_validation_result": "",
+            "manual_task_kind": "",
+            "policy_inputs": {
+              "wpsg-complexity-policy": {
+                "current_tier": "foundation",
+                "overrides": {
+                  "randomness_seed": "postmerge5"
+                },
+                "policy_path": ".github/site-generation-complexity-policy.json",
+                "quality_signals_path": ""
+              }
+            },
+            "policy_results": {
+              "wpsg-complexity-policy": {
+                "criteria": {
+                  "regression": {
+                    "maximum_pass_rate": 0.5,
+                    "minimum_average_actionable_findings": 4,
+                    "minimum_average_fallback_blocks": 2,
+                    "minimum_average_visual_mismatch_ratio": 0.08
+                  },
+                  "stable": {
+                    "maximum_average_actionable_findings": 1,
+                    "maximum_average_fallback_blocks": 0,
+                    "maximum_average_visual_mismatch_ratio": 0.02,
+                    "minimum_pass_rate": 0.8,
+                    "minimum_results": 4
+                  }
+                },
+                "current_tier": "foundation",
+                "decision": "hold",
+                "overrides": {
+                  "randomness_seed": "postmerge5"
+                },
+                "policy_path": ".github/site-generation-complexity-policy.json",
+                "quality_signals_path": "",
+                "quality_summary": {
+                  "average_actionable_findings": 0,
+                  "average_fallback_blocks": 0,
+                  "average_visual_mismatch_ratio": 0,
+                  "count": 0,
+                  "failed": 0,
+                  "pass_rate": 0,
+                  "passed": 0,
+                  "pattern_families": [],
+                  "site_kinds": []
+                },
+                "randomness_profile": {
+                  "description": "Low variance; deterministic enough for stable importer proof.",
+                  "id": "steady",
+                  "novelty": "low",
+                  "temperature_hint": 0.25
+                },
+                "randomness_seed": "postmerge5",
+                "reason": "no recent quality signals; using current/default tier",
+                "schema": "wp-site-generator/site-generation-complexity-policy/v1",
+                "selected_tier": "foundation",
+                "site_kind_mix": [
+                  "store",
+                  "website"
+                ],
+                "target_parallel_candidates": 1,
+                "tier": {
+                  "allowed_layout_families": [
+                    "single-page",
+                    "simple-section-stack",
+                    "basic-commerce"
+                  ],
+                  "component_families": [
+                    "hero",
+                    "feature-list",
+                    "cards",
+                    "cta",
+                    "basic-product-grid"
+                  ],
+                  "description": "Simple, single-purpose sites that prove core importer stability.",
+                  "id": "foundation",
+                  "prompt_guidance": "Prefer simple static structure, common Gutenberg-compatible sections, low animation, and minimal bespoke interaction.",
+                  "rank": 0,
+                  "site_kind_mix": [
+                    "store",
+                    "website"
+                  ],
+                  "target_parallel_candidates": 1
+                },
+                "tier_order": [
+                  "foundation",
+                  "composed",
+                  "stress"
+                ]
+              }
+            },
+            "repository": "chubes4/wp-site-generator",
+            "run_id": "lab-full-loop-20260620-postmerge5",
+            "runtime_input_contract": "homeboy-agent-runtime-env",
+            "static_site_candidate": "",
+            "static_site_publish_gate": "",
+            "website_flow_slug": "website-idea-artifact-flow"
+          },
+          "prompt": "Produce a content static-site candidate artifact from a WPSG design packet.",
+          "workflow_id": "static-site"
+        },
+        {
+          "artifacts": [
+            "static_site_candidate",
+            "static_validation_run",
+            "import_validation_result",
+            "visual_parity_artifact",
+            "finding_packet_set"
+          ],
+          "consumes": [
+            "static_site_candidate"
+          ],
+          "dependencies": [
+            "wp-site-generator",
+            "static-site-importer",
+            "html-to-blocks-converter",
+            "block-format-bridge",
+            "block-artifact-compiler"
+          ],
+          "emits": [
+            "static_validation_run",
+            "import_validation_result",
+            "visual_parity_artifact",
+            "finding_packet_set"
+          ],
+          "gates": [
+            "fallback_blocks",
+            "conversion_findings",
+            "visual_parity"
+          ],
+          "inputs": {
+            "artifact_root": ".ci/homeboy-agent-task-artifacts",
+            "concept_packet": "",
+            "concept_prompt": "",
+            "design_packet": "",
+            "import_validation_result": "",
+            "manual_task_kind": "",
+            "policy_inputs": {
+              "wpsg-complexity-policy": {
+                "current_tier": "foundation",
+                "overrides": {
+                  "randomness_seed": "postmerge5"
+                },
+                "policy_path": ".github/site-generation-complexity-policy.json",
+                "quality_signals_path": ""
+              }
+            },
+            "policy_results": {
+              "wpsg-complexity-policy": {
+                "criteria": {
+                  "regression": {
+                    "maximum_pass_rate": 0.5,
+                    "minimum_average_actionable_findings": 4,
+                    "minimum_average_fallback_blocks": 2,
+                    "minimum_average_visual_mismatch_ratio": 0.08
+                  },
+                  "stable": {
+                    "maximum_average_actionable_findings": 1,
+                    "maximum_average_fallback_blocks": 0,
+                    "maximum_average_visual_mismatch_ratio": 0.02,
+                    "minimum_pass_rate": 0.8,
+                    "minimum_results": 4
+                  }
+                },
+                "current_tier": "foundation",
+                "decision": "hold",
+                "overrides": {
+                  "randomness_seed": "postmerge5"
+                },
+                "policy_path": ".github/site-generation-complexity-policy.json",
+                "quality_signals_path": "",
+                "quality_summary": {
+                  "average_actionable_findings": 0,
+                  "average_fallback_blocks": 0,
+                  "average_visual_mismatch_ratio": 0,
+                  "count": 0,
+                  "failed": 0,
+                  "pass_rate": 0,
+                  "passed": 0,
+                  "pattern_families": [],
+                  "site_kinds": []
+                },
+                "randomness_profile": {
+                  "description": "Low variance; deterministic enough for stable importer proof.",
+                  "id": "steady",
+                  "novelty": "low",
+                  "temperature_hint": 0.25
+                },
+                "randomness_seed": "postmerge5",
+                "reason": "no recent quality signals; using current/default tier",
+                "schema": "wp-site-generator/site-generation-complexity-policy/v1",
+                "selected_tier": "foundation",
+                "site_kind_mix": [
+                  "store",
+                  "website"
+                ],
+                "target_parallel_candidates": 1,
+                "tier": {
+                  "allowed_layout_families": [
+                    "single-page",
+                    "simple-section-stack",
+                    "basic-commerce"
+                  ],
+                  "component_families": [
+                    "hero",
+                    "feature-list",
+                    "cards",
+                    "cta",
+                    "basic-product-grid"
+                  ],
+                  "description": "Simple, single-purpose sites that prove core importer stability.",
+                  "id": "foundation",
+                  "prompt_guidance": "Prefer simple static structure, common Gutenberg-compatible sections, low animation, and minimal bespoke interaction.",
+                  "rank": 0,
+                  "site_kind_mix": [
+                    "store",
+                    "website"
+                  ],
+                  "target_parallel_candidates": 1
+                },
+                "tier_order": [
+                  "foundation",
+                  "composed",
+                  "stress"
+                ]
+              }
+            },
+            "repository": "chubes4/wp-site-generator",
+            "run_id": "lab-full-loop-20260620-postmerge5",
+            "runtime_input_contract": "homeboy-agent-runtime-env",
+            "static_site_candidate": "",
+            "static_site_publish_gate": "",
+            "website_flow_slug": "website-idea-artifact-flow"
+          },
+          "metrics": [
+            "fallback_blocks",
+            "conversion_findings",
+            "visual_parity"
+          ],
+          "tasks": [
+            "Validate a StaticSiteCandidate artifact through SSI import, static checks, and visual parity before any generated-site pull request is published."
+          ],
+          "workflow_id": "static-validation"
+        },
+        {
+          "artifacts": [
+            "import_validation_result",
+            "visual_parity_artifact",
+            "static_site_publish_gate"
+          ],
+          "consumes": [
+            "import_validation_result",
+            "visual_parity_artifact"
+          ],
+          "dependencies": [
+            "wp-site-generator"
+          ],
+          "emits": [
+            "static_site_publish_gate"
+          ],
+          "gates": [
+            "fallback_blocks",
+            "conversion_findings",
+            "visual_parity"
+          ],
+          "inputs": {
+            "artifact_root": ".ci/homeboy-agent-task-artifacts",
+            "concept_packet": "",
+            "concept_prompt": "",
+            "design_packet": "",
+            "import_validation_result": "",
+            "manual_task_kind": "",
+            "policy_inputs": {
+              "wpsg-complexity-policy": {
+                "current_tier": "foundation",
+                "overrides": {
+                  "randomness_seed": "postmerge5"
+                },
+                "policy_path": ".github/site-generation-complexity-policy.json",
+                "quality_signals_path": ""
+              }
+            },
+            "policy_results": {
+              "wpsg-complexity-policy": {
+                "criteria": {
+                  "regression": {
+                    "maximum_pass_rate": 0.5,
+                    "minimum_average_actionable_findings": 4,
+                    "minimum_average_fallback_blocks": 2,
+                    "minimum_average_visual_mismatch_ratio": 0.08
+                  },
+                  "stable": {
+                    "maximum_average_actionable_findings": 1,
+                    "maximum_average_fallback_blocks": 0,
+                    "maximum_average_visual_mismatch_ratio": 0.02,
+                    "minimum_pass_rate": 0.8,
+                    "minimum_results": 4
+                  }
+                },
+                "current_tier": "foundation",
+                "decision": "hold",
+                "overrides": {
+                  "randomness_seed": "postmerge5"
+                },
+                "policy_path": ".github/site-generation-complexity-policy.json",
+                "quality_signals_path": "",
+                "quality_summary": {
+                  "average_actionable_findings": 0,
+                  "average_fallback_blocks": 0,
+                  "average_visual_mismatch_ratio": 0,
+                  "count": 0,
+                  "failed": 0,
+                  "pass_rate": 0,
+                  "passed": 0,
+                  "pattern_families": [],
+                  "site_kinds": []
+                },
+                "randomness_profile": {
+                  "description": "Low variance; deterministic enough for stable importer proof.",
+                  "id": "steady",
+                  "novelty": "low",
+                  "temperature_hint": 0.25
+                },
+                "randomness_seed": "postmerge5",
+                "reason": "no recent quality signals; using current/default tier",
+                "schema": "wp-site-generator/site-generation-complexity-policy/v1",
+                "selected_tier": "foundation",
+                "site_kind_mix": [
+                  "store",
+                  "website"
+                ],
+                "target_parallel_candidates": 1,
+                "tier": {
+                  "allowed_layout_families": [
+                    "single-page",
+                    "simple-section-stack",
+                    "basic-commerce"
+                  ],
+                  "component_families": [
+                    "hero",
+                    "feature-list",
+                    "cards",
+                    "cta",
+                    "basic-product-grid"
+                  ],
+                  "description": "Simple, single-purpose sites that prove core importer stability.",
+                  "id": "foundation",
+                  "prompt_guidance": "Prefer simple static structure, common Gutenberg-compatible sections, low animation, and minimal bespoke interaction.",
+                  "rank": 0,
+                  "site_kind_mix": [
+                    "store",
+                    "website"
+                  ],
+                  "target_parallel_candidates": 1
+                },
+                "tier_order": [
+                  "foundation",
+                  "composed",
+                  "stress"
+                ]
+              }
+            },
+            "repository": "chubes4/wp-site-generator",
+            "run_id": "lab-full-loop-20260620-postmerge5",
+            "runtime_input_contract": "homeboy-agent-runtime-env",
+            "static_site_candidate": "",
+            "static_site_publish_gate": "",
+            "website_flow_slug": "website-idea-artifact-flow"
+          },
+          "metrics": [
+            "fallback_blocks",
+            "conversion_findings",
+            "visual_parity"
+          ],
+          "tasks": [
+            "Evaluate deterministic publication gates from validation and visual parity artifacts before any generated-site pull request is published."
+          ],
+          "workflow_id": "static-publication-gate"
+        },
+        {
+          "abilities": [
+            "github_pull_request_publish"
+          ],
+          "artifacts": [
+            "static_site_candidate",
+            "import_validation_result",
+            "static_site_publish_gate",
+            "static_site_pull_request"
+          ],
+          "consumes": [
+            "static_site_candidate",
+            "import_validation_result",
+            "static_site_publish_gate"
+          ],
+          "dependencies": [
+            "wp-site-generator"
+          ],
+          "emits": [
+            "static_site_pull_request"
+          ],
+          "gates": [
+            "fallback_blocks",
+            "conversion_findings",
+            "visual_parity"
+          ],
+          "inputs": {
+            "artifact_root": ".ci/homeboy-agent-task-artifacts",
+            "concept_packet": "",
+            "concept_prompt": "",
+            "design_packet": "",
+            "import_validation_result": "",
+            "manual_task_kind": "",
+            "policy_inputs": {
+              "wpsg-complexity-policy": {
+                "current_tier": "foundation",
+                "overrides": {
+                  "randomness_seed": "postmerge5"
+                },
+                "policy_path": ".github/site-generation-complexity-policy.json",
+                "quality_signals_path": ""
+              }
+            },
+            "policy_results": {
+              "wpsg-complexity-policy": {
+                "criteria": {
+                  "regression": {
+                    "maximum_pass_rate": 0.5,
+                    "minimum_average_actionable_findings": 4,
+                    "minimum_average_fallback_blocks": 2,
+                    "minimum_average_visual_mismatch_ratio": 0.08
+                  },
+                  "stable": {
+                    "maximum_average_actionable_findings": 1,
+                    "maximum_average_fallback_blocks": 0,
+                    "maximum_average_visual_mismatch_ratio": 0.02,
+                    "minimum_pass_rate": 0.8,
+                    "minimum_results": 4
+                  }
+                },
+                "current_tier": "foundation",
+                "decision": "hold",
+                "overrides": {
+                  "randomness_seed": "postmerge5"
+                },
+                "policy_path": ".github/site-generation-complexity-policy.json",
+                "quality_signals_path": "",
+                "quality_summary": {
+                  "average_actionable_findings": 0,
+                  "average_fallback_blocks": 0,
+                  "average_visual_mismatch_ratio": 0,
+                  "count": 0,
+                  "failed": 0,
+                  "pass_rate": 0,
+                  "passed": 0,
+                  "pattern_families": [],
+                  "site_kinds": []
+                },
+                "randomness_profile": {
+                  "description": "Low variance; deterministic enough for stable importer proof.",
+                  "id": "steady",
+                  "novelty": "low",
+                  "temperature_hint": 0.25
+                },
+                "randomness_seed": "postmerge5",
+                "reason": "no recent quality signals; using current/default tier",
+                "schema": "wp-site-generator/site-generation-complexity-policy/v1",
+                "selected_tier": "foundation",
+                "site_kind_mix": [
+                  "store",
+                  "website"
+                ],
+                "target_parallel_candidates": 1,
+                "tier": {
+                  "allowed_layout_families": [
+                    "single-page",
+                    "simple-section-stack",
+                    "basic-commerce"
+                  ],
+                  "component_families": [
+                    "hero",
+                    "feature-list",
+                    "cards",
+                    "cta",
+                    "basic-product-grid"
+                  ],
+                  "description": "Simple, single-purpose sites that prove core importer stability.",
+                  "id": "foundation",
+                  "prompt_guidance": "Prefer simple static structure, common Gutenberg-compatible sections, low animation, and minimal bespoke interaction.",
+                  "rank": 0,
+                  "site_kind_mix": [
+                    "store",
+                    "website"
+                  ],
+                  "target_parallel_candidates": 1
+                },
+                "tier_order": [
+                  "foundation",
+                  "composed",
+                  "stress"
+                ]
+              }
+            },
+            "repository": "chubes4/wp-site-generator",
+            "run_id": "lab-full-loop-20260620-postmerge5",
+            "runtime_input_contract": "homeboy-agent-runtime-env",
+            "static_site_candidate": "",
+            "static_site_publish_gate": "",
+            "website_flow_slug": "website-idea-artifact-flow"
+          },
+          "metrics": [
+            "fallback_blocks",
+            "conversion_findings",
+            "visual_parity"
+          ],
+          "tasks": [
+            "Publish one generated-site pull request from a validated StaticSiteCandidate only when the deterministic StaticSitePublishGate allows publication."
+          ],
+          "workflow_id": "static-publication"
+        },
+        {
+          "artifacts": [
+            "import_validation_result",
+            "static_validation_run",
+            "visual_parity_artifact",
+            "finding_packet_set",
+            "finding_group"
+          ],
+          "consumes": [
+            "import_validation_result",
+            "static_validation_run",
+            "visual_parity_artifact"
+          ],
+          "dependencies": [
+            "wp-site-generator",
+            "static-site-importer",
+            "html-to-blocks-converter",
+            "block-format-bridge",
+            "block-artifact-compiler"
+          ],
+          "emits": [
+            "finding_packet_set",
+            "finding_group"
+          ],
+          "inputs": {
+            "artifact_root": ".ci/homeboy-agent-task-artifacts",
+            "concept_packet": "",
+            "concept_prompt": "",
+            "design_packet": "",
+            "import_validation_result": "",
+            "manual_task_kind": "",
+            "policy_inputs": {
+              "wpsg-complexity-policy": {
+                "current_tier": "foundation",
+                "overrides": {
+                  "randomness_seed": "postmerge5"
+                },
+                "policy_path": ".github/site-generation-complexity-policy.json",
+                "quality_signals_path": ""
+              }
+            },
+            "policy_results": {
+              "wpsg-complexity-policy": {
+                "criteria": {
+                  "regression": {
+                    "maximum_pass_rate": 0.5,
+                    "minimum_average_actionable_findings": 4,
+                    "minimum_average_fallback_blocks": 2,
+                    "minimum_average_visual_mismatch_ratio": 0.08
+                  },
+                  "stable": {
+                    "maximum_average_actionable_findings": 1,
+                    "maximum_average_fallback_blocks": 0,
+                    "maximum_average_visual_mismatch_ratio": 0.02,
+                    "minimum_pass_rate": 0.8,
+                    "minimum_results": 4
+                  }
+                },
+                "current_tier": "foundation",
+                "decision": "hold",
+                "overrides": {
+                  "randomness_seed": "postmerge5"
+                },
+                "policy_path": ".github/site-generation-complexity-policy.json",
+                "quality_signals_path": "",
+                "quality_summary": {
+                  "average_actionable_findings": 0,
+                  "average_fallback_blocks": 0,
+                  "average_visual_mismatch_ratio": 0,
+                  "count": 0,
+                  "failed": 0,
+                  "pass_rate": 0,
+                  "passed": 0,
+                  "pattern_families": [],
+                  "site_kinds": []
+                },
+                "randomness_profile": {
+                  "description": "Low variance; deterministic enough for stable importer proof.",
+                  "id": "steady",
+                  "novelty": "low",
+                  "temperature_hint": 0.25
+                },
+                "randomness_seed": "postmerge5",
+                "reason": "no recent quality signals; using current/default tier",
+                "schema": "wp-site-generator/site-generation-complexity-policy/v1",
+                "selected_tier": "foundation",
+                "site_kind_mix": [
+                  "store",
+                  "website"
+                ],
+                "target_parallel_candidates": 1,
+                "tier": {
+                  "allowed_layout_families": [
+                    "single-page",
+                    "simple-section-stack",
+                    "basic-commerce"
+                  ],
+                  "component_families": [
+                    "hero",
+                    "feature-list",
+                    "cards",
+                    "cta",
+                    "basic-product-grid"
+                  ],
+                  "description": "Simple, single-purpose sites that prove core importer stability.",
+                  "id": "foundation",
+                  "prompt_guidance": "Prefer simple static structure, common Gutenberg-compatible sections, low animation, and minimal bespoke interaction.",
+                  "rank": 0,
+                  "site_kind_mix": [
+                    "store",
+                    "website"
+                  ],
+                  "target_parallel_candidates": 1
+                },
+                "tier_order": [
+                  "foundation",
+                  "composed",
+                  "stress"
+                ]
+              }
+            },
+            "repository": "chubes4/wp-site-generator",
+            "run_id": "lab-full-loop-20260620-postmerge5",
+            "runtime_input_contract": "homeboy-agent-runtime-env",
+            "static_site_candidate": "",
+            "static_site_publish_gate": "",
+            "website_flow_slug": "website-idea-artifact-flow"
+          },
+          "tasks": [
+            "Group SSI and BFB diagnostic artifacts into finding packets for upstream routing."
+          ],
+          "workflow_id": "finding-packets"
+        },
+        {
+          "abilities": [
+            "agents/run-runtime-package",
+            "github_issue_publish",
+            "github_pull_request_publish",
+            "comment_github_pull_request"
+          ],
+          "agent_id": "php_transformer_iterator",
+          "artifacts": [
+            "finding_group",
+            "iterator_upstream_issue",
+            "iterator_upstream_pull_request"
+          ],
+          "consumes": [
+            "finding_group"
+          ],
+          "dependencies": [
+            "static-site-importer",
+            "html-to-blocks-converter",
+            "block-format-bridge",
+            "block-artifact-compiler"
+          ],
+          "emits": [
+            "iterator_upstream_issue",
+            "iterator_upstream_pull_request"
+          ],
+          "inputs": {
+            "artifact_root": ".ci/homeboy-agent-task-artifacts",
+            "concept_packet": "",
+            "concept_prompt": "",
+            "design_packet": "",
+            "import_validation_result": "",
+            "manual_task_kind": "",
+            "policy_inputs": {
+              "wpsg-complexity-policy": {
+                "current_tier": "foundation",
+                "overrides": {
+                  "randomness_seed": "postmerge5"
+                },
+                "policy_path": ".github/site-generation-complexity-policy.json",
+                "quality_signals_path": ""
+              }
+            },
+            "policy_results": {
+              "wpsg-complexity-policy": {
+                "criteria": {
+                  "regression": {
+                    "maximum_pass_rate": 0.5,
+                    "minimum_average_actionable_findings": 4,
+                    "minimum_average_fallback_blocks": 2,
+                    "minimum_average_visual_mismatch_ratio": 0.08
+                  },
+                  "stable": {
+                    "maximum_average_actionable_findings": 1,
+                    "maximum_average_fallback_blocks": 0,
+                    "maximum_average_visual_mismatch_ratio": 0.02,
+                    "minimum_pass_rate": 0.8,
+                    "minimum_results": 4
+                  }
+                },
+                "current_tier": "foundation",
+                "decision": "hold",
+                "overrides": {
+                  "randomness_seed": "postmerge5"
+                },
+                "policy_path": ".github/site-generation-complexity-policy.json",
+                "quality_signals_path": "",
+                "quality_summary": {
+                  "average_actionable_findings": 0,
+                  "average_fallback_blocks": 0,
+                  "average_visual_mismatch_ratio": 0,
+                  "count": 0,
+                  "failed": 0,
+                  "pass_rate": 0,
+                  "passed": 0,
+                  "pattern_families": [],
+                  "site_kinds": []
+                },
+                "randomness_profile": {
+                  "description": "Low variance; deterministic enough for stable importer proof.",
+                  "id": "steady",
+                  "novelty": "low",
+                  "temperature_hint": 0.25
+                },
+                "randomness_seed": "postmerge5",
+                "reason": "no recent quality signals; using current/default tier",
+                "schema": "wp-site-generator/site-generation-complexity-policy/v1",
+                "selected_tier": "foundation",
+                "site_kind_mix": [
+                  "store",
+                  "website"
+                ],
+                "target_parallel_candidates": 1,
+                "tier": {
+                  "allowed_layout_families": [
+                    "single-page",
+                    "simple-section-stack",
+                    "basic-commerce"
+                  ],
+                  "component_families": [
+                    "hero",
+                    "feature-list",
+                    "cards",
+                    "cta",
+                    "basic-product-grid"
+                  ],
+                  "description": "Simple, single-purpose sites that prove core importer stability.",
+                  "id": "foundation",
+                  "prompt_guidance": "Prefer simple static structure, common Gutenberg-compatible sections, low animation, and minimal bespoke interaction.",
+                  "rank": 0,
+                  "site_kind_mix": [
+                    "store",
+                    "website"
+                  ],
+                  "target_parallel_candidates": 1
+                },
+                "tier_order": [
+                  "foundation",
+                  "composed",
+                  "stress"
+                ]
+              }
+            },
+            "repository": "chubes4/wp-site-generator",
+            "run_id": "lab-full-loop-20260620-postmerge5",
+            "runtime_input_contract": "homeboy-agent-runtime-env",
+            "static_site_candidate": "",
+            "static_site_publish_gate": "",
+            "website_flow_slug": "website-idea-artifact-flow"
+          },
+          "prompt": "Route each finding group to the owning SSI stack repository and open the focused upstream issue or pull request described by the packet evidence.",
+          "workflow_id": "iterator"
+        },
+        {
+          "artifacts": [
+            "static_site_candidate",
+            "import_validation_result",
+            "visual_parity_artifact",
+            "finding_packet_set",
+            "revalidation_attempt",
+            "static_validation_run",
+            "import_validation_result",
+            "visual_parity_artifact",
+            "finding_packet_set"
+          ],
+          "consumes": [
+            "static_site_candidate",
+            "import_validation_result",
+            "visual_parity_artifact",
+            "finding_packet_set"
+          ],
+          "dependencies": [
+            "wp-site-generator",
+            "static-site-importer",
+            "html-to-blocks-converter",
+            "block-format-bridge",
+            "block-artifact-compiler"
+          ],
+          "emits": [
+            "revalidation_attempt",
+            "static_validation_run",
+            "import_validation_result",
+            "visual_parity_artifact",
+            "finding_packet_set"
+          ],
+          "gates": [
+            "fallback_blocks",
+            "conversion_findings",
+            "visual_parity"
+          ],
+          "inputs": {
+            "artifact_root": ".ci/homeboy-agent-task-artifacts",
+            "concept_packet": "",
+            "concept_prompt": "",
+            "design_packet": "",
+            "import_validation_result": "",
+            "manual_task_kind": "",
+            "policy_inputs": {
+              "wpsg-complexity-policy": {
+                "current_tier": "foundation",
+                "overrides": {
+                  "randomness_seed": "postmerge5"
+                },
+                "policy_path": ".github/site-generation-complexity-policy.json",
+                "quality_signals_path": ""
+              }
+            },
+            "policy_results": {
+              "wpsg-complexity-policy": {
+                "criteria": {
+                  "regression": {
+                    "maximum_pass_rate": 0.5,
+                    "minimum_average_actionable_findings": 4,
+                    "minimum_average_fallback_blocks": 2,
+                    "minimum_average_visual_mismatch_ratio": 0.08
+                  },
+                  "stable": {
+                    "maximum_average_actionable_findings": 1,
+                    "maximum_average_fallback_blocks": 0,
+                    "maximum_average_visual_mismatch_ratio": 0.02,
+                    "minimum_pass_rate": 0.8,
+                    "minimum_results": 4
+                  }
+                },
+                "current_tier": "foundation",
+                "decision": "hold",
+                "overrides": {
+                  "randomness_seed": "postmerge5"
+                },
+                "policy_path": ".github/site-generation-complexity-policy.json",
+                "quality_signals_path": "",
+                "quality_summary": {
+                  "average_actionable_findings": 0,
+                  "average_fallback_blocks": 0,
+                  "average_visual_mismatch_ratio": 0,
+                  "count": 0,
+                  "failed": 0,
+                  "pass_rate": 0,
+                  "passed": 0,
+                  "pattern_families": [],
+                  "site_kinds": []
+                },
+                "randomness_profile": {
+                  "description": "Low variance; deterministic enough for stable importer proof.",
+                  "id": "steady",
+                  "novelty": "low",
+                  "temperature_hint": 0.25
+                },
+                "randomness_seed": "postmerge5",
+                "reason": "no recent quality signals; using current/default tier",
+                "schema": "wp-site-generator/site-generation-complexity-policy/v1",
+                "selected_tier": "foundation",
+                "site_kind_mix": [
+                  "store",
+                  "website"
+                ],
+                "target_parallel_candidates": 1,
+                "tier": {
+                  "allowed_layout_families": [
+                    "single-page",
+                    "simple-section-stack",
+                    "basic-commerce"
+                  ],
+                  "component_families": [
+                    "hero",
+                    "feature-list",
+                    "cards",
+                    "cta",
+                    "basic-product-grid"
+                  ],
+                  "description": "Simple, single-purpose sites that prove core importer stability.",
+                  "id": "foundation",
+                  "prompt_guidance": "Prefer simple static structure, common Gutenberg-compatible sections, low animation, and minimal bespoke interaction.",
+                  "rank": 0,
+                  "site_kind_mix": [
+                    "store",
+                    "website"
+                  ],
+                  "target_parallel_candidates": 1
+                },
+                "tier_order": [
+                  "foundation",
+                  "composed",
+                  "stress"
+                ]
+              }
+            },
+            "repository": "chubes4/wp-site-generator",
+            "run_id": "lab-full-loop-20260620-postmerge5",
+            "runtime_input_contract": "homeboy-agent-runtime-env",
+            "static_site_candidate": "",
+            "static_site_publish_gate": "",
+            "website_flow_slug": "website-idea-artifact-flow"
+          },
+          "metrics": [
+            "fallback_blocks",
+            "conversion_findings",
+            "visual_parity"
+          ],
+          "tasks": [
+            "Revalidate the static-site candidate from candidate, validation, visual parity, and finding artifacts without requiring a generated-site or upstream pull request."
+          ],
+          "workflow_id": "revalidation"
+        },
+        {
+          "abilities": [
+            "agents/run-runtime-package",
+            "comment_github_pull_request"
+          ],
+          "agent_id": "ssi_stack_reviewer",
+          "artifacts": [
+            "static_site_candidate",
+            "import_validation_result",
+            "static_validation_run",
+            "visual_parity_artifact",
+            "finding_packet_set",
+            "revalidation_attempt",
+            "reviewer_gate_outcome"
+          ],
+          "consumes": [
+            "static_site_candidate",
+            "import_validation_result",
+            "static_validation_run",
+            "visual_parity_artifact",
+            "finding_packet_set",
+            "revalidation_attempt"
+          ],
+          "dependencies": [
+            "wp-site-generator",
+            "static-site-importer",
+            "html-to-blocks-converter",
+            "block-format-bridge",
+            "block-artifact-compiler"
+          ],
+          "emits": [
+            "reviewer_gate_outcome"
+          ],
+          "gates": [
+            "reviewer_evidence"
+          ],
+          "inputs": {
+            "artifact_root": ".ci/homeboy-agent-task-artifacts",
+            "concept_packet": "",
+            "concept_prompt": "",
+            "design_packet": "",
+            "import_validation_result": "",
+            "manual_task_kind": "",
+            "policy_inputs": {
+              "wpsg-complexity-policy": {
+                "current_tier": "foundation",
+                "overrides": {
+                  "randomness_seed": "postmerge5"
+                },
+                "policy_path": ".github/site-generation-complexity-policy.json",
+                "quality_signals_path": ""
+              }
+            },
+            "policy_results": {
+              "wpsg-complexity-policy": {
+                "criteria": {
+                  "regression": {
+                    "maximum_pass_rate": 0.5,
+                    "minimum_average_actionable_findings": 4,
+                    "minimum_average_fallback_blocks": 2,
+                    "minimum_average_visual_mismatch_ratio": 0.08
+                  },
+                  "stable": {
+                    "maximum_average_actionable_findings": 1,
+                    "maximum_average_fallback_blocks": 0,
+                    "maximum_average_visual_mismatch_ratio": 0.02,
+                    "minimum_pass_rate": 0.8,
+                    "minimum_results": 4
+                  }
+                },
+                "current_tier": "foundation",
+                "decision": "hold",
+                "overrides": {
+                  "randomness_seed": "postmerge5"
+                },
+                "policy_path": ".github/site-generation-complexity-policy.json",
+                "quality_signals_path": "",
+                "quality_summary": {
+                  "average_actionable_findings": 0,
+                  "average_fallback_blocks": 0,
+                  "average_visual_mismatch_ratio": 0,
+                  "count": 0,
+                  "failed": 0,
+                  "pass_rate": 0,
+                  "passed": 0,
+                  "pattern_families": [],
+                  "site_kinds": []
+                },
+                "randomness_profile": {
+                  "description": "Low variance; deterministic enough for stable importer proof.",
+                  "id": "steady",
+                  "novelty": "low",
+                  "temperature_hint": 0.25
+                },
+                "randomness_seed": "postmerge5",
+                "reason": "no recent quality signals; using current/default tier",
+                "schema": "wp-site-generator/site-generation-complexity-policy/v1",
+                "selected_tier": "foundation",
+                "site_kind_mix": [
+                  "store",
+                  "website"
+                ],
+                "target_parallel_candidates": 1,
+                "tier": {
+                  "allowed_layout_families": [
+                    "single-page",
+                    "simple-section-stack",
+                    "basic-commerce"
+                  ],
+                  "component_families": [
+                    "hero",
+                    "feature-list",
+                    "cards",
+                    "cta",
+                    "basic-product-grid"
+                  ],
+                  "description": "Simple, single-purpose sites that prove core importer stability.",
+                  "id": "foundation",
+                  "prompt_guidance": "Prefer simple static structure, common Gutenberg-compatible sections, low animation, and minimal bespoke interaction.",
+                  "rank": 0,
+                  "site_kind_mix": [
+                    "store",
+                    "website"
+                  ],
+                  "target_parallel_candidates": 1
+                },
+                "tier_order": [
+                  "foundation",
+                  "composed",
+                  "stress"
+                ]
+              }
+            },
+            "repository": "chubes4/wp-site-generator",
+            "run_id": "lab-full-loop-20260620-postmerge5",
+            "runtime_input_contract": "homeboy-agent-runtime-env",
+            "static_site_candidate": "",
+            "static_site_publish_gate": "",
+            "website_flow_slug": "website-idea-artifact-flow"
+          },
+          "prompt": "Review candidate, validation, visual parity, finding, and revalidation artifacts before promotion. Treat generated-site and upstream GitHub issue/PR URLs as optional publication evidence only.",
+          "workflow_id": "reviewer"
+        }
+      ]
+    }
+  }
+}

@@ -1,0 +1,95 @@
+{
+  "policy_id": "wpsg-complexity-policy",
+  "policy_inputs": {
+    "policy_path": ".github/site-generation-complexity-policy.json",
+    "quality_signals_path": "",
+    "overrides": {
+      "randomness_seed": "postmerge5"
+    },
+    "current_tier": "foundation"
+  },
+  "policy_results": {
+    "schema": "wp-site-generator/site-generation-complexity-policy/v1",
+    "policy_path": ".github/site-generation-complexity-policy.json",
+    "quality_signals_path": "",
+    "current_tier": "foundation",
+    "selected_tier": "foundation",
+    "decision": "hold",
+    "reason": "no recent quality signals; using current/default tier",
+    "randomness_seed": "postmerge5",
+    "randomness_profile": {
+      "id": "steady",
+      "description": "Low variance; deterministic enough for stable importer proof.",
+      "temperature_hint": 0.25,
+      "novelty": "low"
+    },
+    "site_kind_mix": [
+      "store",
+      "website"
+    ],
+    "target_parallel_candidates": 1,
+    "criteria": {
+      "stable": {
+        "minimum_results": 4,
+        "minimum_pass_rate": 0.8,
+        "maximum_average_fallback_blocks": 0,
+        "maximum_average_visual_mismatch_ratio": 0.02,
+        "maximum_average_actionable_findings": 1
+      },
+      "regression": {
+        "maximum_pass_rate": 0.5,
+        "minimum_average_fallback_blocks": 2,
+        "minimum_average_visual_mismatch_ratio": 0.08,
+        "minimum_average_actionable_findings": 4
+      }
+    },
+    "quality_summary": {
+      "count": 0,
+      "passed": 0,
+      "failed": 0,
+      "pass_rate": 0,
+      "average_fallback_blocks": 0,
+      "average_visual_mismatch_ratio": 0,
+      "average_actionable_findings": 0,
+      "site_kinds": [],
+      "pattern_families": []
+    },
+    "tier": {
+      "id": "foundation",
+      "rank": 0,
+      "description": "Simple, single-purpose sites that prove core importer stability.",
+      "target_parallel_candidates": 1,
+      "site_kind_mix": [
+        "store",
+        "website"
+      ],
+      "allowed_layout_families": [
+        "single-page",
+        "simple-section-stack",
+        "basic-commerce"
+      ],
+      "component_families": [
+        "hero",
+        "feature-list",
+        "cards",
+        "cta",
+        "basic-product-grid"
+      ],
+      "prompt_guidance": "Prefer simple static structure, common Gutenberg-compatible sections, low animation, and minimal bespoke interaction."
+    },
+    "tier_order": [
+      "foundation",
+      "composed",
+      "stress"
+    ],
+    "overrides": {
+      "randomness_seed": "postmerge5"
+    }
+  },
+  "provenance": {
+    "generated_by": ".github/scripts/build-homeboy-controller-run-inputs.mjs",
+    "repository": "chubes4/wp-site-generator",
+    "run_id": "lab-full-loop-20260620-postmerge5",
+    "policy_schema": "wp-site-generator/site-generation-complexity-policy/v1"
+  }
+}

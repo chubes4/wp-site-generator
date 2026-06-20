@@ -1,0 +1,27 @@
+{
+  "inputs": {
+    "repository": "chubes4/wp-site-generator",
+    "run_id": "lab-full-loop-20260620-postmerge5",
+    "manual_task_kind": "",
+    "concept_packet": "",
+    "design_packet": "",
+    "static_site_candidate": "",
+    "import_validation_result": "",
+    "static_site_publish_gate": "",
+    "concept_prompt": "",
+    "website_flow_slug": "website-idea-artifact-flow",
+    "runtime_input_contract": "homeboy-agent-runtime-env",
+    "artifact_root": ".ci/homeboy-agent-task-artifacts"
+  },
+  "metadata": {
+    "run": {
+      "run_id": "lab-full-loop-20260620-postmerge5",
+      "repository": "chubes4/wp-site-generator",
+      "controller_spec": ".github/homeboy/controllers/static-site-generation-loop.controller.json",
+      "complexity_policy_result": ".ci/site-generation-loop.complexity-policy-result-postmerge5.json",
+      "runtime_input_contract": "homeboy-agent-runtime-env",
+      "generated_by": ".github/scripts/build-homeboy-controller-run-inputs.mjs",
+      "materialized_by": "homeboy agent-task controller materialize"
+    }
+  }
+}
