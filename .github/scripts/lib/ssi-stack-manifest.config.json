@@ -34,6 +34,16 @@
       "ref_type": "branch",
       "target_folder_name": "static-site-importer"
     },
+    "blocks_engine_php_transformer": {
+      "id": "blocks_engine_php_transformer",
+      "label": "Blocks Engine PHP Transformer",
+      "url": "https://github.com/Automattic/blocks-engine",
+      "git_url": "https://github.com/Automattic/blocks-engine.git",
+      "ref": "trunk",
+      "ref_type": "branch",
+      "path": "php-transformer",
+      "target_folder_name": "blocks-engine-php-transformer"
+    },
     "block_format_bridge": {
       "id": "block_format_bridge",
       "label": "Block Format Bridge",

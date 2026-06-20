@@ -1,6 +1,6 @@
 import { readJsonFile } from './ci-runtime-utils.mjs';
 import { buildSsiStackManifest } from './ssi-stack-manifest.mjs';
-import { buildSsiImportAbilityPhp, buildSsiImportWorkload, buildSsiStackBlueprint, buildSsiStackProfile } from './ssi-stack-profile.mjs';
+import { buildBlocksEnginePhpTransformerProbePhp, buildSsiImportAbilityPhp, buildSsiImportWorkload, buildSsiStackBlueprint, buildSsiStackProfile } from './ssi-stack-profile.mjs';
 
 export const defaultWordPressRuntimeSettingsDescriptorPath = '.github/homeboy/wordpress-runtime/ssi-validation-settings.descriptor.json';
 
@@ -82,6 +82,10 @@ export function buildSsiPreviewBlueprint({ site, source, lane = 'wordpress', man
 					refType: source.refType,
 					path: `static-sites/${site}`,
 				},
+			},
+			{
+				step: 'runPHP',
+				code: buildBlocksEnginePhpTransformerProbePhp({ trailingNewline: true }),
 			},
 			{
 				step: 'runPHP',

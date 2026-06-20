@@ -26,6 +26,7 @@ await writeJson(manifestPath, {
 		homeboy_extensions: manifestEntry('homeboy_extensions', 'Homeboy Extensions', 'https://github.com/Extra-Chill/homeboy-extensions', 'bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb'),
 		wp_codebox: manifestEntry('wp_codebox', 'WP Codebox', 'https://github.com/Automattic/wp-codebox', 'cccccccccccccccccccccccccccccccccccccccc'),
 		static_site_importer: manifestEntry('static_site_importer', 'Static Site Importer', 'https://github.com/chubes4/static-site-importer', 'dddddddddddddddddddddddddddddddddddddddd'),
+		blocks_engine_php_transformer: manifestEntry('blocks_engine_php_transformer', 'Blocks Engine PHP Transformer', 'https://github.com/Automattic/blocks-engine', '9999999999999999999999999999999999999999', { path: 'php-transformer', target_folder_name: 'blocks-engine-php-transformer' }),
 		block_format_bridge: manifestEntry('block_format_bridge', 'Block Format Bridge', 'https://github.com/chubes4/block-format-bridge', 'eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee'),
 		block_artifact_compiler: manifestEntry('block_artifact_compiler', 'Block Artifact Compiler', 'https://github.com/chubes4/block-artifact-compiler', 'ffffffffffffffffffffffffffffffffffffffff'),
 		html_to_blocks_converter: manifestEntry('html_to_blocks_converter', 'HTML to Blocks Converter', 'https://github.com/chubes4/html-to-blocks-converter', '1111111111111111111111111111111111111111'),
@@ -63,15 +64,23 @@ const settingsPluginRefs = gitDirectoryRefs(settings.settings.wordpress_runtime_
 const previewPluginRefs = gitDirectoryRefs(preview.blueprint.steps);
 for (const refs of [settingsPluginRefs, previewPluginRefs]) {
 	assert.deepEqual(refs, [
-		['https://github.com/chubes4/block-artifact-compiler', 'ffffffffffffffffffffffffffffffffffffffff', 'commit'],
-		['https://github.com/chubes4/block-format-bridge', 'eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee', 'commit'],
-		['https://github.com/chubes4/static-site-importer', 'dddddddddddddddddddddddddddddddddddddddd', 'commit'],
+		['https://github.com/Automattic/blocks-engine', '9999999999999999999999999999999999999999', 'commit', 'php-transformer'],
+		['https://github.com/chubes4/static-site-importer', 'dddddddddddddddddddddddddddddddddddddddd', 'commit', ''],
 	]);
 }
+
+const previewRunPhp = preview.blueprint.steps.filter((step) => step.step === 'runPHP').map((step) => step.code).join('\n');
+const validationRunPhp = settings.workloads.flatMap((workload) => workload.run).filter((step) => step.type === 'php' && step.code).map((step) => step.code).join('\n');
+assert.match(previewRunPhp, /blocks_engine_php_transformer_compile_artifact|Automattic\\\\BlocksEngine\\\\PhpTransformer/, 'preview probes Blocks Engine php-transformer helpers/classes before import');
+assert.match(validationRunPhp, /blocks_engine_php_transformer_compile_artifact|Automattic\\\\BlocksEngine\\\\PhpTransformer/, 'validation probes Blocks Engine php-transformer helpers/classes before import');
+assert.doesNotMatch(JSON.stringify(settings.settings.wordpress_runtime_blueprint.steps), /block-artifact-compiler|block-format-bridge/, 'validation runtime no longer installs old scattered transformer repos');
+assert.doesNotMatch(JSON.stringify(preview.blueprint.steps), /block-artifact-compiler|block-format-bridge/, 'preview runtime no longer installs old scattered transformer repos');
 
 const defaultManifest = buildSsiStackManifest();
 assert.equal(defaultManifest.repositories.static_site_importer.url, 'https://github.com/chubes4/static-site-importer');
 assert.equal(defaultManifest.repositories.static_site_importer.ref, 'main');
+assert.equal(defaultManifest.repositories.blocks_engine_php_transformer.url, 'https://github.com/Automattic/blocks-engine');
+assert.equal(defaultManifest.repositories.blocks_engine_php_transformer.path, 'php-transformer');
 
 const configPath = path.join(tempDir, 'ssi-stack-config.json');
 await writeJson(configPath, {
@@ -81,6 +90,7 @@ await writeJson(configPath, {
 		homeboy_extensions: manifestEntry('homeboy_extensions', 'Homeboy Extensions', 'https://github.com/Extra-Chill/homeboy-extensions', 'bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb'),
 		wp_codebox: manifestEntry('wp_codebox', 'WP Codebox', 'https://github.com/Automattic/wp-codebox', 'cccccccccccccccccccccccccccccccccccccccc'),
 		static_site_importer: manifestEntry('static_site_importer', 'Static Site Importer', 'https://github.com/example/static-site-importer', 'dddddddddddddddddddddddddddddddddddddddd'),
+		blocks_engine_php_transformer: manifestEntry('blocks_engine_php_transformer', 'Blocks Engine PHP Transformer', 'https://github.com/Automattic/blocks-engine', '9999999999999999999999999999999999999999', { path: 'php-transformer', target_folder_name: 'blocks-engine-php-transformer' }),
 		block_format_bridge: manifestEntry('block_format_bridge', 'Block Format Bridge', 'https://github.com/chubes4/block-format-bridge', 'eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee'),
 		block_artifact_compiler: manifestEntry('block_artifact_compiler', 'Block Artifact Compiler', 'https://github.com/chubes4/block-artifact-compiler', 'ffffffffffffffffffffffffffffffffffffffff'),
 		html_to_blocks_converter: manifestEntry('html_to_blocks_converter', 'HTML to Blocks Converter', 'https://github.com/chubes4/html-to-blocks-converter', '1111111111111111111111111111111111111111'),
@@ -120,10 +130,10 @@ function gitDirectoryRefs(steps) {
 	return steps
 		.map((step) => step.pluginData)
 		.filter((pluginData) => pluginData?.resource === 'git:directory')
-		.map((pluginData) => [pluginData.url, pluginData.ref, pluginData.refType]);
+		.map((pluginData) => [pluginData.url, pluginData.ref, pluginData.refType, pluginData.path || '']);
 }
 
-function manifestEntry(id, label, url, sha) {
+function manifestEntry(id, label, url, sha, extra = {}) {
 	return {
 		id,
 		label,
@@ -132,6 +142,7 @@ function manifestEntry(id, label, url, sha) {
 		ref: 'main',
 		ref_type: 'branch',
 		sha,
+		...extra,
 	};
 }
 
