@@ -43,33 +43,6 @@
       "ref_type": "branch",
       "path": "php-transformer",
       "target_folder_name": "blocks-engine-php-transformer"
-    },
-    "block_format_bridge": {
-      "id": "block_format_bridge",
-      "label": "Block Format Bridge",
-      "url": "https://github.com/chubes4/block-format-bridge",
-      "git_url": "https://github.com/chubes4/block-format-bridge.git",
-      "ref": "main",
-      "ref_type": "branch",
-      "target_folder_name": "block-format-bridge"
-    },
-    "block_artifact_compiler": {
-      "id": "block_artifact_compiler",
-      "label": "Block Artifact Compiler",
-      "url": "https://github.com/chubes4/block-artifact-compiler",
-      "git_url": "https://github.com/chubes4/block-artifact-compiler.git",
-      "ref": "main",
-      "ref_type": "branch",
-      "target_folder_name": "block-artifact-compiler"
-    },
-    "html_to_blocks_converter": {
-      "id": "html_to_blocks_converter",
-      "label": "HTML to Blocks Converter",
-      "url": "https://github.com/chubes4/html-to-blocks-converter",
-      "git_url": "https://github.com/chubes4/html-to-blocks-converter.git",
-      "ref": "main",
-      "ref_type": "branch",
-      "target_folder_name": "html-to-blocks-converter"
     }
   }
 }

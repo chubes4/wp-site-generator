@@ -185,7 +185,7 @@ function renderBacStatus(metrics, compiler) {
 	const summary = compiler && typeof compiler === 'object' ? compiler : {};
 	const rows = ssiBacMetrics.map(([key, label]) => `| ${label} | ${formatCount(metricValue(metrics, key))} |`);
 
-	const lines = ['### Block Artifact Compiler', '| Signal | Count |', '| --- | ---: |', ...rows];
+	const lines = ['### Blocks Engine Artifact Compiler', '| Signal | Count |', '| --- | ---: |', ...rows];
 	if (summary.status) {
 		lines.push('', `- **Status:** \`${escapeCell(summary.status)}\``);
 	}

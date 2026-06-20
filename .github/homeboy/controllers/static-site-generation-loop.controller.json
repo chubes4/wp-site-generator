@@ -521,7 +521,7 @@
     {
       "workflow_id": "finding-packets",
       "tasks": [
-        "Group SSI and BFB diagnostic artifacts into finding packets for upstream routing."
+        "Group SSI and Blocks Engine transformer diagnostic artifacts into finding packets for upstream routing."
       ],
       "consumes": [
         "import_validation_result",
@@ -1097,7 +1097,7 @@
     },
     {
       "gate_id": "conversion_findings",
-      "description": "SSI/BFB diagnostics must not include actionable conversion findings.",
+      "description": "SSI and Blocks Engine transformer diagnostics must not include actionable conversion findings.",
       "metrics": [
         "conversion_findings"
       ]
@@ -1132,7 +1132,7 @@
     },
     {
       "metric_id": "conversion_findings",
-      "description": "Actionable conversion finding count reported by SSI/BFB diagnostics.",
+      "description": "Actionable conversion finding count reported by SSI and Blocks Engine transformer diagnostics.",
       "target": "value === 0",
       "input": {
         "paths": [

@@ -22,16 +22,13 @@ await writeFile(path.join(sourceStaticSiteDir, 'index.html'), '<!doctype html><h
 await writeJson(manifestPath, {
 	schema_version: 1,
 	harness: manifestEntry('wp_site_generator_validation_harness', 'WP Site Generator validation harness scripts', 'https://github.com/chubes4/wp-site-generator', 'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa'),
-	repositories: {
-		homeboy_extensions: manifestEntry('homeboy_extensions', 'Homeboy Extensions', 'https://github.com/Extra-Chill/homeboy-extensions', 'bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb'),
-		wp_codebox: manifestEntry('wp_codebox', 'WP Codebox', 'https://github.com/Automattic/wp-codebox', 'cccccccccccccccccccccccccccccccccccccccc'),
-		static_site_importer: manifestEntry('static_site_importer', 'Static Site Importer', 'https://github.com/chubes4/static-site-importer', 'dddddddddddddddddddddddddddddddddddddddd'),
-		blocks_engine_php_transformer: manifestEntry('blocks_engine_php_transformer', 'Blocks Engine PHP Transformer', 'https://github.com/Automattic/blocks-engine', '9999999999999999999999999999999999999999', { path: 'php-transformer', target_folder_name: 'blocks-engine-php-transformer' }),
-		block_format_bridge: manifestEntry('block_format_bridge', 'Block Format Bridge', 'https://github.com/chubes4/block-format-bridge', 'eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee'),
-		block_artifact_compiler: manifestEntry('block_artifact_compiler', 'Block Artifact Compiler', 'https://github.com/chubes4/block-artifact-compiler', 'ffffffffffffffffffffffffffffffffffffffff'),
-		html_to_blocks_converter: manifestEntry('html_to_blocks_converter', 'HTML to Blocks Converter', 'https://github.com/chubes4/html-to-blocks-converter', '1111111111111111111111111111111111111111'),
-	},
-});
+		repositories: {
+			homeboy_extensions: manifestEntry('homeboy_extensions', 'Homeboy Extensions', 'https://github.com/Extra-Chill/homeboy-extensions', 'bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb'),
+			wp_codebox: manifestEntry('wp_codebox', 'WP Codebox', 'https://github.com/Automattic/wp-codebox', 'cccccccccccccccccccccccccccccccccccccccc'),
+			static_site_importer: manifestEntry('static_site_importer', 'Static Site Importer', 'https://github.com/chubes4/static-site-importer', 'dddddddddddddddddddddddddddddddddddddddd'),
+			blocks_engine_php_transformer: manifestEntry('blocks_engine_php_transformer', 'Blocks Engine PHP Transformer', 'https://github.com/Automattic/blocks-engine', '9999999999999999999999999999999999999999', { path: 'php-transformer', target_folder_name: 'blocks-engine-php-transformer' }),
+		},
+	});
 
 const settingsResult = spawnSync(process.execPath, [
 	path.join(repoRoot, '.github/scripts/build-static-validation-settings.mjs'),
@@ -55,7 +52,7 @@ const settings = JSON.parse(await readFile(settingsPath, 'utf8'));
 const preview = JSON.parse(await readFile(previewPath, 'utf8'));
 
 assert.equal(settings.stack_manifest.repositories.static_site_importer.sha, 'dddddddddddddddddddddddddddddddddddddddd');
-assert.equal(preview.stack_manifest.repositories.block_artifact_compiler.sha, 'ffffffffffffffffffffffffffffffffffffffff');
+assert.equal(preview.stack_manifest.repositories.blocks_engine_php_transformer.sha, '9999999999999999999999999999999999999999');
 
 assert.equal(settings.runtime_settings_descriptor.settings_fields.blueprint, 'wordpress_runtime_blueprint');
 assert.deepEqual(Object.keys(settings.settings).filter((key) => key.startsWith('wp' + '_codebox_')), []);
@@ -86,16 +83,13 @@ const configPath = path.join(tempDir, 'ssi-stack-config.json');
 await writeJson(configPath, {
 	schema_version: 1,
 	harness: manifestEntry('wp_site_generator_validation_harness', 'WP Site Generator validation harness scripts', 'https://github.com/example/wp-site-generator', 'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa'),
-	repositories: {
-		homeboy_extensions: manifestEntry('homeboy_extensions', 'Homeboy Extensions', 'https://github.com/Extra-Chill/homeboy-extensions', 'bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb'),
-		wp_codebox: manifestEntry('wp_codebox', 'WP Codebox', 'https://github.com/Automattic/wp-codebox', 'cccccccccccccccccccccccccccccccccccccccc'),
-		static_site_importer: manifestEntry('static_site_importer', 'Static Site Importer', 'https://github.com/example/static-site-importer', 'dddddddddddddddddddddddddddddddddddddddd'),
-		blocks_engine_php_transformer: manifestEntry('blocks_engine_php_transformer', 'Blocks Engine PHP Transformer', 'https://github.com/Automattic/blocks-engine', '9999999999999999999999999999999999999999', { path: 'php-transformer', target_folder_name: 'blocks-engine-php-transformer' }),
-		block_format_bridge: manifestEntry('block_format_bridge', 'Block Format Bridge', 'https://github.com/chubes4/block-format-bridge', 'eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee'),
-		block_artifact_compiler: manifestEntry('block_artifact_compiler', 'Block Artifact Compiler', 'https://github.com/chubes4/block-artifact-compiler', 'ffffffffffffffffffffffffffffffffffffffff'),
-		html_to_blocks_converter: manifestEntry('html_to_blocks_converter', 'HTML to Blocks Converter', 'https://github.com/chubes4/html-to-blocks-converter', '1111111111111111111111111111111111111111'),
-	},
-});
+		repositories: {
+			homeboy_extensions: manifestEntry('homeboy_extensions', 'Homeboy Extensions', 'https://github.com/Extra-Chill/homeboy-extensions', 'bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb'),
+			wp_codebox: manifestEntry('wp_codebox', 'WP Codebox', 'https://github.com/Automattic/wp-codebox', 'cccccccccccccccccccccccccccccccccccccccc'),
+			static_site_importer: manifestEntry('static_site_importer', 'Static Site Importer', 'https://github.com/example/static-site-importer', 'dddddddddddddddddddddddddddddddddddddddd'),
+			blocks_engine_php_transformer: manifestEntry('blocks_engine_php_transformer', 'Blocks Engine PHP Transformer', 'https://github.com/Automattic/blocks-engine', '9999999999999999999999999999999999999999', { path: 'php-transformer', target_folder_name: 'blocks-engine-php-transformer' }),
+		},
+	});
 const fileConfigManifest = buildSsiStackManifest({ config: loadSsiStackConfig({ configPath }) });
 assert.equal(fileConfigManifest.harness.url, 'https://github.com/example/wp-site-generator');
 assert.equal(fileConfigManifest.repositories.static_site_importer.url, 'https://github.com/example/static-site-importer');
@@ -106,7 +100,7 @@ const envConfigManifest = buildSsiStackManifest({
 			SSI_STACK_CONFIG_JSON: JSON.stringify({
 				schema_version: 1,
 				repositories: {
-					block_artifact_compiler: {
+					blocks_engine_php_transformer: {
 						ref: 'release/v1',
 						ref_type: 'tag',
 					},
@@ -115,9 +109,9 @@ const envConfigManifest = buildSsiStackManifest({
 		},
 	}),
 });
-assert.equal(envConfigManifest.repositories.block_artifact_compiler.ref, 'release/v1');
-assert.equal(envConfigManifest.repositories.block_artifact_compiler.ref_type, 'tag');
-assert.equal(envConfigManifest.repositories.block_format_bridge.ref, 'main');
+assert.equal(envConfigManifest.repositories.blocks_engine_php_transformer.ref, 'release/v1');
+assert.equal(envConfigManifest.repositories.blocks_engine_php_transformer.ref_type, 'tag');
+assert.equal(envConfigManifest.repositories.static_site_importer.ref, 'main');
 
 assert.throws(
 	() => loadSsiStackConfig({ env: { SSI_STACK_CONFIG_JSON: JSON.stringify({ schema_version: 1, repositories: { static_site_importer: { ref_type: 'floating' } } }) } }),
