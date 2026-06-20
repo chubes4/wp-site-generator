@@ -214,7 +214,7 @@ const controller = {
 		},
 		{
 			workflow_id: 'finding-packets',
-			tasks: ['Group SSI and BFB diagnostic artifacts into finding packets for upstream routing.'],
+			tasks: ['Group SSI and Blocks Engine transformer diagnostic artifacts into finding packets for upstream routing.'],
 			...handoff({ consumes: ['import_validation_result', 'static_validation_run', 'visual_parity_artifact'], emits: ['finding_packet_set', 'finding_group'] }),
 			dependencies: ['wp-site-generator', 'static-site-importer', 'blocks-engine'],
 		},
@@ -276,7 +276,7 @@ const controller = {
 	],
 	gates: [
 		{ gate_id: 'fallback_blocks', description: 'SSI import must not emit fallback blocks.', metrics: ['fallback_blocks'] },
-		{ gate_id: 'conversion_findings', description: 'SSI/BFB diagnostics must not include actionable conversion findings.', metrics: ['conversion_findings'] },
+		{ gate_id: 'conversion_findings', description: 'SSI and Blocks Engine transformer diagnostics must not include actionable conversion findings.', metrics: ['conversion_findings'] },
 		{ gate_id: 'visual_parity', description: 'Visual parity artifact must report no mismatches or delta.', metrics: ['visual_parity'] },
 		{ gate_id: 'reviewer_evidence', description: 'Reviewer evidence must use durable candidate, validation, visual, finding, and revalidation artifact references; GitHub URLs are optional publication evidence.', metrics: ['reviewer_evidence'] },
 	],
@@ -289,7 +289,7 @@ const controller = {
 		},
 		{
 			metric_id: 'conversion_findings',
-			description: 'Actionable conversion finding count reported by SSI/BFB diagnostics.',
+			description: 'Actionable conversion finding count reported by SSI and Blocks Engine transformer diagnostics.',
 			target: 'value === 0',
 			input: {
 				paths: ['import_validation_result.metrics.conversion_findings', 'finding_packet_set.actionable_conversion_count'],
