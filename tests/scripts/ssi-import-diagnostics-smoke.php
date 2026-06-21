@@ -10,6 +10,8 @@ $repo_root = dirname( __DIR__, 2 );
 $tmp_dir   = sys_get_temp_dir() . '/ssi-import-diagnostics-' . bin2hex( random_bytes( 4 ) );
 $theme_dir = $tmp_dir . '/wp-content/themes/demo-theme';
 
+const WPSG_CODEBOX_VALIDATION_ARTIFACT_ENVELOPE_SCHEMA = 'wp-codebox/validation-artifact-envelope/v1';
+
 register_shutdown_function(
 	static function () use ( $tmp_dir ): void {
 		if ( ! is_dir( $tmp_dir ) ) {
@@ -84,7 +86,7 @@ $report = array(
 		),
 	),
 	'codebox_validation_artifact' => array(
-		'schema'          => 'wp-codebox/validation-artifact-envelope/v1',
+		'schema'          => WPSG_CODEBOX_VALIDATION_ARTIFACT_ENVELOPE_SCHEMA,
 		'status'          => 'passed',
 		'validation_hash' => 'validation-fixture-hash',
 		'artifacts'       => array(
@@ -128,7 +130,7 @@ assert_same( 'website_artifact', $blocks_engine_summary['import_mode'] ?? null, 
 assert_same( 'success', $blocks_engine_summary['website_artifact_summary']['status'] ?? null, 'Blocks Engine website artifact status summary' );
 assert_same( 2, $blocks_engine_summary['rejected_count'] ?? null, 'Blocks Engine rejected summary' );
 $validation_envelope = $summary['validation_artifact_envelope'] ?? array();
-assert_same( 'wp-codebox/validation-artifact-envelope/v1', $validation_envelope['schema'] ?? null, 'validation artifact envelope schema' );
+assert_same( WPSG_CODEBOX_VALIDATION_ARTIFACT_ENVELOPE_SCHEMA, $validation_envelope['schema'] ?? null, 'validation artifact envelope schema' );
 assert_same( 'validation-fixture-hash', $validation_envelope['validation_hash'] ?? null, 'validation artifact envelope hash' );
 
 $modern_row = $modern_rows[0];

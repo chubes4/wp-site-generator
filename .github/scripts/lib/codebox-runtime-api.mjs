@@ -10,6 +10,11 @@ export const codeboxRuntimeApi = Object.freeze({
 	}),
 	runtimeSchemas: Object.freeze({
 		workspaceRecipe: 'wp-codebox/workspace-recipe/v1',
+		validationArtifactEnvelope: 'wp-codebox/validation-artifact-envelope/v1',
+	}),
+	abilities: Object.freeze({
+		runnerWorkspaceCommand: 'wp-codebox/runner-workspace-command',
+		runnerWorkspacePublish: 'wp-codebox/runner-workspace-publish',
 	}),
 	preview: Object.freeze({
 		playgroundUrl: 'https://playground.wordpress.net/',
@@ -42,6 +47,18 @@ export function codeboxPluginMountTarget() {
 
 export function codeboxWorkspaceRecipeSchema() {
 	return codeboxRuntimeApi.runtimeSchemas.workspaceRecipe;
+}
+
+export function codeboxValidationArtifactEnvelopeSchema() {
+	return codeboxRuntimeApi.runtimeSchemas.validationArtifactEnvelope;
+}
+
+export function codeboxRunnerWorkspaceCommandAbility() {
+	return codeboxRuntimeApi.abilities.runnerWorkspaceCommand;
+}
+
+export function codeboxRunnerWorkspacePublishAbility() {
+	return codeboxRuntimeApi.abilities.runnerWorkspacePublish;
 }
 
 export function buildCodeboxPlaygroundPreviewUrl(blueprint) {
