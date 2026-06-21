@@ -12,7 +12,7 @@ concept -> design -> static candidate
   -> revalidation -> reviewer gate -> publication/evidence PRs and issues
 ```
 
-WPSG does not define a backend abstraction layer and does not encode WordPress or WP Codebox execution knowledge. WPSG declares domain ingredients only. Homeboy owns controller execution, fan-out, retries, state, lineage, gate decisions, and executor/provider contracts. WordPress runtime and Codebox mapping belongs to `homeboy-extensions/wordpress`, not to this repo-owned spec.
+WPSG declares domain ingredients only. Homeboy owns controller execution, fan-out, retries, state, lineage, gate decisions, and executor/provider contracts. `homeboy-extensions/wordpress` supplies the WordPress runtime and Codebox mapping for the selected execution path.
 
 ## Native Controller Path
 
@@ -22,9 +22,9 @@ Build or refresh the checked-in controller spec:
 node .github/scripts/build-homeboy-ssi-loop-controller.mjs
 ```
 
-The generated spec is intended for a Homeboy repo-loop bridge that consumes repo-owned domain ingredients. The repo spec does not pick an executor backend, runtime provider, WordPress runtime, WP Codebox API, controller state store, retry policy, dedupe implementation, routing policy, or fan-out mechanism.
+The generated spec is intended for a Homeboy repo-loop bridge that consumes repo-owned domain ingredients. Homeboy supplies the executor backend, runtime provider, WordPress runtime, WP Codebox API mapping, controller state store, retry policy, dedupe implementation, routing policy, and fan-out mechanism.
 
-Homeboy should derive execution behavior from the declaration and its own controller policy. Resume, dedupe, joins, retries, routing, gate decisions, and lineage persistence are Homeboy responsibilities.
+Homeboy derives execution behavior from the declaration and its own controller policy. Resume, dedupe, joins, retries, routing, gate decisions, and lineage persistence are Homeboy responsibilities.
 
 ## Domain Ingredients
 
@@ -42,9 +42,9 @@ Homeboy maps these declarations to durable controller policy/actions through `ag
 
 ## Runtime Input Migration
 
-WPSG keeps its controller and domain specs backend-agnostic. Reusable Homeboy Agent CI selects the concrete runtime behind its own contract, so WPSG callers pass domain inputs only. Controller run specs use clean `HOMEBOY_AGENT_RUNTIME_*` environment variables as a visible input contract. WPSG does not expose backend-specific agent runtime fields in its controller/domain specs.
+WPSG keeps its controller and domain specs backend-agnostic. Reusable Homeboy Agent CI selects the concrete runtime behind its own contract, so WPSG callers pass domain inputs only. Controller run specs use clean `HOMEBOY_AGENT_RUNTIME_*` environment variables as a visible input contract. Runtime-specific fields stay in the Homeboy runtime contract.
 
-Controller run specs record `inputs.runtime_input_contract: "homeboy-agent-runtime-env"` to make the seam visible. Keep runtime selection behind the Homeboy runtime contract; do not add backend-specific fields to `.github/homeboy/controllers/static-site-generation-loop.controller.json`.
+Controller run specs record `inputs.runtime_input_contract: "homeboy-agent-runtime-env"` to make the seam visible. Runtime selection flows through the Homeboy runtime contract rather than `.github/homeboy/controllers/static-site-generation-loop.controller.json` fields.
 
 ## Quality Gates
 
@@ -53,7 +53,7 @@ The native controller exposes these WPSG-owned gate metrics and pass conditions:
 - **Fallback blocks:** `fallback_blocks`, `fallback_block_count`, or `ssi_fallback_count` must be `0`.
 - **Conversion findings:** actionable conversion finding count must be `0`; fallback/core HTML/freeform finding kinds are identified for Homeboy-owned routing.
 - **Visual parity:** visual parity must report `status === "pass"`, `mismatch_count === 0`, and `max_delta_ratio === 0`.
-- **Reviewer evidence:** reviewer-facing evidence must link to durable candidate, validation, visual, finding, and revalidation artifacts and must not use local-only URLs or filesystem paths. Generated-site PRs and upstream issue/PR URLs are optional publication evidence after the artifact gates.
+- **Reviewer evidence:** reviewer-facing evidence links to durable candidate, validation, visual, finding, and revalidation artifacts through reviewer-accessible URLs. Generated-site PRs and upstream issue/PR URLs are optional publication evidence after the artifact gates.
 
 The gate declarations define metrics and pass conditions only. Homeboy owns fail/pass routing, bounded revalidation, escalation, and completion decisions.
 

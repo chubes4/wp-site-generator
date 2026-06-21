@@ -70,10 +70,10 @@ const previewRunPhp = preview.blueprint.steps.filter((step) => step.step === 'ru
 const validationRunPhp = settings.workloads.flatMap((workload) => workload.run).filter((step) => step.type === 'php' && step.code).map((step) => step.code).join('\n');
 assert.match(previewRunPhp, /blocks_engine_php_transformer_compile_artifact|Automattic\\\\BlocksEngine\\\\PhpTransformer/, 'preview probes Blocks Engine php-transformer helpers/classes before import');
 assert.match(previewRunPhp, /static-site-importer\/import-website-artifact/, 'preview imports through the website artifact ability');
-assert.doesNotMatch(previewRunPhp, /static-site-importer\/import-theme/, 'preview no longer uses the legacy import-theme ability');
+assert.doesNotMatch(previewRunPhp, /static-site-importer\/import-theme/, 'preview import code stays on the website artifact ability');
 assert.match(validationRunPhp, /blocks_engine_php_transformer_compile_artifact|Automattic\\\\BlocksEngine\\\\PhpTransformer/, 'validation probes Blocks Engine php-transformer helpers/classes before import');
-assert.doesNotMatch(JSON.stringify(settings.settings.wordpress_runtime_blueprint.steps), /block-artifact-compiler|block-format-bridge/, 'validation runtime no longer installs old scattered transformer repos');
-assert.doesNotMatch(JSON.stringify(preview.blueprint.steps), /block-artifact-compiler|block-format-bridge/, 'preview runtime no longer installs old scattered transformer repos');
+assert.doesNotMatch(JSON.stringify(settings.settings.wordpress_runtime_blueprint.steps), /block-artifact-compiler|block-format-bridge/, 'validation runtime installs the consolidated transformer stack');
+assert.doesNotMatch(JSON.stringify(preview.blueprint.steps), /block-artifact-compiler|block-format-bridge/, 'preview runtime installs the consolidated transformer stack');
 
 const defaultManifest = buildSsiStackManifest();
 assert.equal(defaultManifest.repositories.static_site_importer.url, 'https://github.com/chubes4/static-site-importer');

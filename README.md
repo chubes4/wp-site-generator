@@ -131,7 +131,7 @@ The bridge between the idea agents and the build agent. Reads one open `status:i
 
 ### `static-site-agent`
 
-Reads one open `status:design-ready` source concept issue plus the separate design-direction issue recorded by the design task, then authors a **static HTML/CSS site PR**. The source concept remains the identity contract: PR title, branch, static-site directory, and `Closes #...` derive from the concept issue, not the design issue. Files live under `static-sites/<slug>/`. The exact set of files is the agent's call based on what the design needs; there is no required file list and no forbidden file list. PRs open with `target:wordpress` for content concepts or `target:woocommerce` for commerce concepts. Validation happens in CI.
+Reads one open `status:design-ready` source concept issue plus the separate design-direction issue recorded by the design task, then authors a **static HTML/CSS site PR**. The source concept remains the identity contract: PR title, branch, static-site directory, and `Closes #...` derive from the concept issue, not the design issue. Files live under `static-sites/<slug>/`. The agent chooses the file set based on what the design needs. PRs open with `target:wordpress` for content concepts or `target:woocommerce` for commerce concepts. Validation happens in CI.
 
 PR title shape: `🧱 <Concept Name> — static site`. Branch: `static/<slug>`.
 
@@ -263,11 +263,11 @@ Required GitHub secrets depend on the selected Homeboy runtime and AI provider. 
 1. Runtime provider/model credentials, for example `OPENAI_API_KEY` when the selected provider uses OpenAI.
 2. Runtime selection hints such as `runtime_backend`, `runtime_provider_id`, or `runtime_selector` when the hosted Codebox profile needs a specific backend/provider route.
 
-The reusable `.github/workflows/wpsg-runtime-agent-ci.yml` seam accepts a `runtime_workload_profile` such as `workspace-iteration` or `workspace-publication`, then renders Homeboy runtime profile/tool requirements through `.github/scripts/render-homeboy-runtime-workflow-inputs.mjs`. `agents/run-runtime-package` remains in runtime execution descriptors because WP Codebox has not yet exposed a canonical package-execution wrapper for that Agents API entry point; WPSG should not add a local shim for it.
+The reusable `.github/workflows/wpsg-runtime-agent-ci.yml` seam accepts a `runtime_workload_profile` such as `workspace-iteration` or `workspace-publication`, then renders Homeboy runtime profile/tool requirements through `.github/scripts/render-homeboy-runtime-workflow-inputs.mjs`. Runtime execution descriptors use the Agents API `agents/run-runtime-package` entry point for Codebox package execution.
 
 For headless contract validation without GitHub workflow-to-workflow dispatch, run `.github/scripts/validate-headless-site-generation-loop.mjs`. It drives `homeboy agent-task controller materialize`, `validate-proof`, `from-spec`, `resume`, and `events` directly, then asserts WPSG artifact evidence with `.github/scripts/assert-site-generation-loop-proof.mjs`. With `--fixture-artifacts` it is deterministic contract proof; with `--artifact-root` it validates artifacts from a real Homeboy run.
 
-The PHP transformer iterator supplies WPSG-owned finding grouping and fanout packet input, then calls Homeboy's public `homeboy agent-task fanout plan` primitive. WPSG does not clone Homeboy Extensions or call HBE internal helper paths for fanout planning.
+The PHP transformer iterator supplies WPSG-owned finding grouping and fanout packet input, then calls Homeboy's public `homeboy agent-task fanout plan` primitive for fanout planning.
 
 Useful workflow entry points:
 

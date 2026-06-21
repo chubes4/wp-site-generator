@@ -13,7 +13,7 @@ assert.match(
 assert.doesNotMatch(
 	bootstrap,
 	/wp-codebox\/runner-workspace-publish/,
-	'bootstrap does not hardcode a concrete runtime publish ability',
+	'bootstrap resolves the publish ability from runtime configuration',
 );
 assert.doesNotMatch(
 	bootstrap,
