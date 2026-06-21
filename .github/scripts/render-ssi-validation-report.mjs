@@ -2,7 +2,7 @@
 
 import { readFile } from 'node:fs/promises';
 import { loadJsonOrNull, loadRecoveredSsiImportSummary, recoveredSsiScenarioFromImportSummary } from './lib/ssi-import-summary.mjs';
-import { ssiBacMetrics, ssiSignalMetrics, validationReportMetricValue } from './lib/ssi-metrics.mjs';
+import { ssiBlocksEngineMetrics, ssiSignalMetrics, validationReportMetricValue } from './lib/ssi-metrics.mjs';
 
 import { manifestSummaryRows } from './lib/ssi-stack-manifest.mjs';
 
@@ -17,7 +17,7 @@ const consumedMetricPatterns = [
 	/^ssi_report_readable_(max|mean|min|p50|p95|p99)$/,
 	/^ssi_report_top_level_keys_(max|mean|min|p50|p95|p99)$/,
 	...ssiSignalMetrics.map(([key]) => new RegExp(`^${escapeRegExp(key)}(_(max|mean|min|p50|p95|p99))?$`)),
-	...ssiBacMetrics.map(([key]) => new RegExp(`^${escapeRegExp(key)}(_(max|mean|min|p50|p95|p99))?$`)),
+	...ssiBlocksEngineMetrics.map(([key]) => new RegExp(`^${escapeRegExp(key)}(_(max|mean|min|p50|p95|p99))?$`)),
 ];
 
 const benchRead = await readInput(benchPath)
@@ -85,7 +85,7 @@ function renderReport(ssi, stackManifest) {
 	}
 
 	const importReportSummary = ssi?.metadata?.import_report_summary;
-	sections.push(renderBacStatus(metrics, importReportSummary?.block_artifact_compiler));
+	sections.push(renderBlocksEngineStatus(metrics, importReportSummary?.blocks_engine));
 	sections.push(renderSourceDocuments(importReportSummary?.source_documents, importReportSummary?.diagnostics));
 	sections.push(renderImportReport(importReportSummary));
 
@@ -181,11 +181,11 @@ function renderUnexpectedMetrics(metrics) {
 	return ['### Other Metrics', '| Metric | Value |', '| --- | ---: |', ...rows].join('\n');
 }
 
-function renderBacStatus(metrics, compiler) {
+function renderBlocksEngineStatus(metrics, compiler) {
 	const summary = compiler && typeof compiler === 'object' ? compiler : {};
-	const rows = ssiBacMetrics.map(([key, label]) => `| ${label} | ${formatCount(metricValue(metrics, key))} |`);
+	const rows = ssiBlocksEngineMetrics.map(([key, label]) => `| ${label} | ${formatCount(metricValue(metrics, key))} |`);
 
-	const lines = ['### Blocks Engine Artifact Compiler', '| Signal | Count |', '| --- | ---: |', ...rows];
+	const lines = ['### Blocks Engine Transformer', '| Signal | Count |', '| --- | ---: |', ...rows];
 	if (summary.status) {
 		lines.push('', `- **Status:** \`${escapeCell(summary.status)}\``);
 	}

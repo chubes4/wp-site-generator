@@ -157,8 +157,5 @@ function repositoriesByExportName(repositories) {
 		wpCodebox: repositories.wp_codebox,
 		staticSiteImporter: repositories.static_site_importer,
 		blocksEnginePhpTransformer: repositories.blocks_engine_php_transformer,
-		blockFormatBridge: repositories.block_format_bridge,
-		blockArtifactCompiler: repositories.block_artifact_compiler,
-		htmlToBlocksConverter: repositories.html_to_blocks_converter,
 	};
 }

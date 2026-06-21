@@ -24,7 +24,7 @@ const bench = {
 						import_report_summary: {
 							path: '/tmp/import-report.json',
 							readable: true,
-							top_level_keys: ['source_documents', 'block_artifact_compiler', 'diagnostics'],
+							top_level_keys: ['source_documents', 'blocks_engine', 'diagnostics'],
 							source_documents: {
 								total_count: 4,
 								counts_by_kind: {
@@ -34,7 +34,7 @@ const bench = {
 								},
 								skipped_mdx_count: 1,
 							},
-							block_artifact_compiler: {
+							blocks_engine: {
 								available: true,
 								status: 'success_with_warnings',
 								source_documents: {
@@ -73,8 +73,8 @@ const output = await runRenderer(renderer, bench);
 
 assert.match(output, /### SSI Signals/, 'existing SSI metrics remain visible');
 assert.match(output, /fallback blocks/, 'existing fallback metric remains visible');
-assert.match(output, /### Blocks Engine Artifact Compiler/, 'Blocks Engine artifact compiler status section remains visible');
-assert.match(output, /\*\*Status:\*\* `success_with_warnings`/, 'Blocks Engine artifact compiler status is rendered');
+assert.match(output, /### Blocks Engine Transformer/, 'Blocks Engine status section remains visible');
+assert.match(output, /\*\*Status:\*\* `success_with_warnings`/, 'Blocks Engine status is rendered');
 assert.match(output, /Blocks Engine Source Documents/, 'Blocks Engine source-document counts are rendered');
 assert.match(output, /\| markdown \| 1 \|/, 'Blocks Engine source-document counts include Markdown');
 assert.match(output, /\| mdx \| 1 \|/, 'Blocks Engine source-document counts include MDX');

@@ -45,27 +45,27 @@ assert.deepEqual(grouped.candidate_repos.sort(), [
 	'chubes4/wp-site-generator',
 ]);
 
-const h2bcGroup = grouped.groups.find((group) => group.candidate_repo === 'Automattic/blocks-engine' && group.kind === 'unsupported_html_fallback');
-assert.equal(h2bcGroup.kind, 'unsupported_html_fallback');
-assert.equal(h2bcGroup.reason_code, 'unsupported_custom_element');
-assert.equal(h2bcGroup.repair_mode, 'pr_or_issue');
+const blocksEngineFallbackGroup = grouped.groups.find((group) => group.candidate_repo === 'Automattic/blocks-engine' && group.kind === 'unsupported_html_fallback');
+assert.equal(blocksEngineFallbackGroup.kind, 'unsupported_html_fallback');
+assert.equal(blocksEngineFallbackGroup.reason_code, 'unsupported_custom_element');
+assert.equal(blocksEngineFallbackGroup.repair_mode, 'pr_or_issue');
 
 const coreHtmlGroup = grouped.groups.find((group) => group.candidate_repo === 'Automattic/blocks-engine' && group.kind === 'core_html_block');
 assert.equal(coreHtmlGroup.count, 1);
 
-const freeformH2bcGroup = grouped.groups.find((group) => group.candidate_repo === 'Automattic/blocks-engine' && group.kind === 'freeform_block');
-assert.ok(freeformH2bcGroup, 'Concrete freeform diagnostics route to Blocks Engine');
-assert.equal(freeformH2bcGroup.repair_mode, 'pr_or_issue');
-assert.equal(freeformH2bcGroup.packets[0].block_path, '1');
-assert.match(freeformH2bcGroup.packets[0].emitted_block_preview, /wp:freeform/);
+const freeformBlocksEngineGroup = grouped.groups.find((group) => group.candidate_repo === 'Automattic/blocks-engine' && group.kind === 'freeform_block');
+assert.ok(freeformBlocksEngineGroup, 'Concrete freeform diagnostics route to Blocks Engine');
+assert.equal(freeformBlocksEngineGroup.repair_mode, 'pr_or_issue');
+assert.equal(freeformBlocksEngineGroup.packets[0].block_path, '1');
+assert.match(freeformBlocksEngineGroup.packets[0].emitted_block_preview, /wp:freeform/);
 
 const ssiGroup = grouped.groups.find((group) => group.candidate_repo === 'chubes4/static-site-importer' && group.kind === 'asset_map');
 assert.equal(ssiGroup.count, 1);
 assert.deepEqual(ssiGroup.packets[0].asset_map_refs, ['key:assets/missing.jpg', 'url:assets/missing.jpg']);
 
-const bfbGroup = grouped.groups.find((group) => group.candidate_repo === 'Automattic/blocks-engine' && group.kind === 'bfb_scope_diagnostic');
-assert.equal(bfbGroup.kind, 'bfb_scope_diagnostic');
-assert.match(bfbGroup.route_reason, /Blocks Engine/);
+const blocksEngineScopeGroup = grouped.groups.find((group) => group.candidate_repo === 'Automattic/blocks-engine' && group.kind === 'blocks_engine_scope_diagnostic');
+assert.equal(blocksEngineScopeGroup.kind, 'blocks_engine_scope_diagnostic');
+assert.match(blocksEngineScopeGroup.route_reason, /Blocks Engine/);
 
 const artifactCompilerGroup = grouped.groups.find((group) => group.candidate_repo === 'Automattic/blocks-engine' && group.kind === 'artifact_schema_violation');
 assert.equal(artifactCompilerGroup.kind, 'artifact_schema_violation');
@@ -166,8 +166,8 @@ await writeFile(explicitFixturePath, `${JSON.stringify([
 		category: 'artifact_schema',
 		reason_code: 'schema_validation_failed',
 		suggested_repair_class: 'repair_artifact_schema_contract',
-		candidate_repo: 'chubes4/block-artifact-compiler',
-		converter: 'block-artifact-compiler',
+		candidate_repo: 'Automattic/blocks-engine',
+		converter: 'blocks-engine-php-transformer',
 		stage: 'artifact_contract_validation',
 		source_path: 'artifacts/site.json',
 		selector: '$.blocks[0]',
@@ -188,7 +188,7 @@ const explicitResult = spawnSync(process.execPath, [
 assert.equal(explicitResult.status, 0, explicitResult.stderr || explicitResult.stdout);
 const explicitGrouped = JSON.parse(await readFile(explicitOutputPath, 'utf8'));
 assert.equal(explicitGrouped.groups.length, 1);
-assert.equal(explicitGrouped.groups[0].owner_repo, 'Automattic/blocks-engine', 'Legacy explicit transformer repo normalizes before broad visual routing');
+assert.equal(explicitGrouped.groups[0].owner_repo, 'Automattic/blocks-engine', 'Explicit transformer repo routes before broad visual routing');
 assert.equal(explicitGrouped.groups[0].candidate_repo, 'Automattic/blocks-engine');
 
 const structuredOutputPath = path.join(tmp, 'structured-owner-groups.json');
@@ -201,13 +201,13 @@ await writeFile(structuredFixturePath, `${JSON.stringify([
 		category: 'visual_parity',
 		reason_code: 'visual_mismatch',
 		suggested_repair_class: 'inspect_visual_parity_policy',
-		owner_repo: 'chubes4/block-format-bridge',
+		owner_repo: 'Automattic/blocks-engine',
 		candidate_repo: 'chubes4/wp-site-generator',
 		converter: 'visual-parity',
 		stage: 'screenshots',
 		source_path: 'visual-diff.json',
 		selector: '.hero',
-		reason: 'Legacy haystack looks visual, but structured owner_repo identifies the serializer boundary.',
+		reason: 'Visual haystack looks visual, but structured owner_repo identifies the serializer boundary.',
 		repair_mode: 'issue_only',
 		route_reason: 'structured owner_repo from diagnostic packet',
 	},

@@ -246,7 +246,7 @@ export function categoryFromDiagnostic(type, diagnostic) {
 		return 'source_region';
 	}
 	if (normalizedType.includes('bridge') || normalizedType.includes('serialization')) {
-		return 'bfb_report';
+		return 'blocks_engine_report';
 	}
 	return 'import_quality';
 }
@@ -270,7 +270,7 @@ export function repairClassFromDiagnostic(type) {
 
 export function converterFromDiagnostic(type, category) {
 	const haystack = `${type} ${category}`.toLowerCase();
-	if (haystack.includes('bridge') || haystack.includes('bfb')) {
+	if (haystack.includes('bridge')) {
 		return 'blocks-engine-php-transformer';
 	}
 	return 'static-site-importer';

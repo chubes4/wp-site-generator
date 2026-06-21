@@ -29,19 +29,19 @@
     {
       "id": "blocks-engine-html-transformer",
       "repo": "Automattic/blocks-engine",
-      "converter_includes": ["html-to-block", "h2bc"],
+      "converter_includes": ["blocks-engine"],
       "any_includes": ["converter_support", "replace_fallback", "fallback", "core_html", "freeform"]
     },
     {
       "id": "blocks-engine-format-bridge",
       "repo": "Automattic/blocks-engine",
-      "haystack_includes": ["block-format-bridge", "bfb", "serialization"],
-      "category_includes": ["adapter", "scope", "bfb_report"]
+      "haystack_includes": ["blocks-engine", "format bridge", "serialization"],
+      "category_includes": ["adapter", "scope", "blocks_engine_report"]
     },
     {
       "id": "blocks-engine-artifact-compiler",
       "repo": "Automattic/blocks-engine",
-      "haystack_includes": ["block-artifact-compiler", "artifact schema", "artifact contract", "artifact compiler", "artifact_schema", "artifact_contract", "artifact_compiler", "schema_validation", "compile_artifact"],
+      "haystack_includes": ["blocks-engine", "artifact schema", "artifact contract", "artifact compiler", "artifact_schema", "artifact_contract", "artifact_compiler", "schema_validation", "compile_artifact"],
       "category_includes": ["artifact_schema", "artifact_contract", "artifact_compiler"]
     },
     {
