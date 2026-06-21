@@ -9,18 +9,19 @@ const iteratorFlow = await readFile(path.join(repoRoot, 'bundles/php-transformer
 
 assert.match(workflow, /\.\/\.github\/workflows\/wpsg-runtime-agent-ci\.yml/, 'iterator uses the WPSG runtime seam workflow');
 assert.match(runtimeWorkflow, /runtime-agent-ci\.yml@main/, 'WPSG seam delegates to the generic Homeboy Extensions runtime agent workflow');
-assert.match(workflow, /runtime_execution: .*actions_artifact_downloads/, 'iterator passes validation artifact downloads through the runtime execution payload');
+assert.match(workflow, /runtime_execution:[\s\S]*actions_artifact_downloads/, 'iterator passes validation artifact downloads through the runtime execution payload');
 assert.match(workflow, /agents\/run-runtime-package/, 'iterator uses the generic Agents API runtime package ability');
-assert.match(workflow, /codebox_workload_profile: workspace-iteration/, 'iterator selects a Codebox workspace iteration workload profile');
+assert.match(workflow, /runtime_workload_profile: workspace-iteration/, 'iterator selects a generic workspace iteration workload profile');
 assert.doesNotMatch(workflow, /runtime_provider: codebox|wpsg-codebox-runtime-package|wp-codebox\//, 'iterator workflow does not hard-code backend-specific runtime selection');
 assert.match(workflow, /visual_artifact_name:/, 'iterator accepts the visual parity artifact name from validation');
 assert.match(workflow, /"name":"\$\{\{ inputs\.visual_artifact_name \}\}"/, 'iterator downloads the visual parity artifact in the reusable runner');
 assert.match(workflow, /"dir":"\.ci\/visual-parity"/, 'iterator stores visual parity artifacts in a stable local directory');
 assert.match(workflow, /app_token_repos.*Automattic\/blocks-engine/, 'iterator token routing includes Blocks Engine');
-assert.match(workflow, /execute_workflow_builder_command.*group-ssi-finding-packets\.mjs .*homeboy-generic-fanout-reconcile\.cjs .*bundles\/php-transformer-iterator-agent\/scripts\/build-agent-iterator-workflow\.mjs/, 'iterator runtime task delegates fanout planning to HBE before building the WPSG finding workflow');
+assert.match(workflow, /execute_workflow_builder_command.*group-ssi-finding-packets\.mjs .*run-homeboy-fanout-reconcile\.mjs .*bundles\/php-transformer-iterator-agent\/scripts\/build-agent-iterator-workflow\.mjs/, 'iterator runtime task delegates fanout planning through the replaceable Homeboy adapter before building the WPSG finding workflow');
+assert.doesNotMatch(workflow, /git clone .*homeboy-extensions|homeboy-generic-fanout-reconcile\.cjs/, 'iterator workflow does not clone HBE or call its internal script directly');
 assert.match(workflow, /build-php-transformer-iterator-fanout-config\.mjs/, 'iterator keeps WPSG finding-group fanout config in the repo');
 assert.match(workflow, /execute_workflow_path":"\.ci\/agent-iterator-workflow\.json"/, 'iterator runtime task receives the generated workflow path');
-assert.match(runtimeWorkflow, /codebox_workload_profile:[\s\S]*default: workspace-iteration/, 'WPSG seam exposes Codebox workload profile selection');
+assert.match(runtimeWorkflow, /runtime_workload_profile:[\s\S]*default: workspace-iteration/, 'WPSG seam exposes generic workload profile selection');
 assert.match(runtimeWorkflow, /runtime_profile:[\s\S]*default: wpsg-agent-runtime-package/, 'WPSG seam exposes a generic runtime package profile by default');
 assert.match(runtimeWorkflow, /render-homeboy-runtime-workflow-inputs\.mjs/, 'WPSG seam renders runtime profiles and tool abilities from the Homeboy runtime contract helper');
 assert.match(runtimeWorkflow, /ability_tools: \$\{\{ needs\.runtime-contracts\.outputs\.ability_tools \}\}/, 'WPSG seam consumes generated runtime tool declarations');
