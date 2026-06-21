@@ -1,4 +1,8 @@
 export const codeboxRuntimeApi = Object.freeze({
+	providerProfile: Object.freeze({
+		id: 'wp-codebox',
+		provider: 'wp-codebox',
+	}),
 	visualParity: Object.freeze({
 		outputRoot: 'visual-parity-artifacts',
 	}),
@@ -37,6 +41,14 @@ export function codeboxRunnerWorkspaceCommandAbility() {
 
 export function codeboxRunnerWorkspacePublishAbility() {
 	return codeboxRuntimeApi.abilities.runnerWorkspacePublish;
+}
+
+export function codeboxRuntimeProviderProfile() {
+	return {
+		...codeboxRuntimeApi.providerProfile,
+		workspaceCommandAbility: codeboxRunnerWorkspaceCommandAbility(),
+		workspacePublishAbility: codeboxRunnerWorkspacePublishAbility(),
+	};
 }
 
 export function buildCodeboxPlaygroundPreviewUrl(blueprint) {

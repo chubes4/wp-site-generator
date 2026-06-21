@@ -1,12 +1,9 @@
+import { codeboxRuntimeProviderProfile } from './codebox-runtime-api.mjs';
+
 const defaultRuntimePackageAbility = 'agents/run-runtime-package';
 
 export const runtimeProviderProfiles = Object.freeze({
-	wpCodebox: Object.freeze({
-		id: 'wp-codebox',
-		provider: 'wp-codebox',
-		workspaceCommandAbility: 'wp-codebox/runner-workspace-command',
-		workspacePublishAbility: 'wp-codebox/runner-workspace-publish',
-	}),
+	wpCodebox: Object.freeze(codeboxRuntimeProviderProfile()),
 });
 
 export const runtimeApiAbilities = Object.freeze({

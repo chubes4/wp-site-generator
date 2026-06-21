@@ -16,7 +16,6 @@ export const wordpressRuntimeApi = Object.freeze({
 		php: 'php',
 	}),
 	abilities: Object.freeze({
-		importTheme: 'static-site-importer/import-theme',
 		importWebsiteArtifact: 'static-site-importer/import-website-artifact',
 	}),
 });
