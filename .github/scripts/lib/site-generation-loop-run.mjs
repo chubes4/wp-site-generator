@@ -11,6 +11,7 @@ export function buildSiteGenerationLoopRunContext({ env = process.env, root = en
 	requireLocalReplaySeed(env);
 
 	const runId = resolveReplayRunId(env);
+	const loopId = buildSiteGenerationLoopId(runId);
 	const repository = env.GITHUB_REPOSITORY || 'chubes4/wp-site-generator';
 	const source = resolveImmutableSourceRef({ env, root, repository });
 	const dependencyRefs = resolveDependencyRefs({ env, root });
@@ -21,6 +22,7 @@ export function buildSiteGenerationLoopRunContext({ env = process.env, root = en
 
 	return {
 		runId,
+		loopId,
 		repository,
 		controllerSpecPath,
 		outputPath,
@@ -87,4 +89,16 @@ function compactObject(object) {
 		}
 		return true;
 	}));
+}
+
+export function buildSiteGenerationLoopId(runId) {
+	return `wp-site-generator/static-site-generation-loop/${requiredLoopIdSegment(runId)}`;
+}
+
+function requiredLoopIdSegment(value) {
+	const segment = String(value || '').trim().replace(/[^A-Za-z0-9._-]+/g, '-').replace(/^-+|-+$/g, '');
+	if (!segment) {
+		throw new Error('Site generation loop run id is required.');
+	}
+	return segment;
 }

@@ -115,7 +115,7 @@ jobs:
           materialization_proof_path="${HOMEBOY_CONTROLLER_MATERIALIZATION_RESULT_PATH%.json}.proof.json"
           jq '.data // .value // .' "$HOMEBOY_CONTROLLER_MATERIALIZATION_RESULT_PATH" > "$materialization_proof_path"
           homeboy agent-task controller validate-proof "@$materialization_proof_path"
-          jq '.data.spec // .value.spec // .spec' "$HOMEBOY_CONTROLLER_MATERIALIZATION_RESULT_PATH" > "$HOMEBOY_CONTROLLER_RUN_SPEC_PATH"
+          node .github/scripts/write-materialized-controller-run-spec.mjs "$HOMEBOY_CONTROLLER_MATERIALIZATION_RESULT_PATH" "$HOMEBOY_CONTROLLER_RUN_SPEC_PATH"
           jq empty "$HOMEBOY_CONTROLLER_RUN_SPEC_PATH"
           echo "path=$HOMEBOY_CONTROLLER_RUN_SPEC_PATH" >> "$GITHUB_OUTPUT"
 
