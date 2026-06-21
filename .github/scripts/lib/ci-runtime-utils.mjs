@@ -30,6 +30,7 @@ export {
 
 export {
 	buildCodeboxPlaygroundPreviewUrl,
+	codeboxRuntimeProviderProfile,
 	codeboxRuntimeApi,
 	codeboxRuntimeWorkspaceRecipeSchema,
 	codeboxRunnerWorkspaceCommandAbility,

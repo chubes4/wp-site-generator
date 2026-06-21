@@ -12,6 +12,11 @@ assert.match(
 );
 assert.doesNotMatch(
 	bootstrap,
+	/wp-codebox\/runner-workspace-publish/,
+	'bootstrap does not hardcode a concrete runtime publish ability',
+);
+assert.doesNotMatch(
+	bootstrap,
 	/workspace_clone|workspace_worktree_add|create_github_pull_request|create_github_issue/,
 	'bootstrap leaves routine workspace and upstream action tools to run-scoped ability_tools',
 );
