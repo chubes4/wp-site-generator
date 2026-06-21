@@ -18,7 +18,9 @@ import {
 	runtimeApiAbilities,
 	runtimePackageProfile,
 	runtimePackageProfiles,
+	runtimeToolProfileInputs,
 	runtimeToolProfiles,
+	runtimeWorkflowInputs,
 	textValue,
 	wpSiteGeneratorPluginMountTarget,
 } from '../../.github/scripts/lib/ci-runtime-utils.mjs';
@@ -34,7 +36,8 @@ assert.equal(repoPathResolver('/tmp/repo')('.ci', 'artifact.json'), path.join('/
 assert.equal(textValue(' ok '), 'ok');
 assert.equal(numberValue('4'), 4);
 assert.equal(numberValue('bad', 9), 9);
-assert.equal(runtimePackageProfile.provider, 'codebox', 'Codebox remains the compatibility backend');
+assert.equal(runtimePackageProfile.provider, 'wp-codebox', 'WP Codebox public runtime is selected by default');
+assert.equal(runtimePackageProfile.compatibilityProvider, 'codebox', 'legacy Codebox backend id remains documented as compatibility data');
 assert.equal(codeboxRuntimeApi.runtimeSchemas.workspaceRecipe, 'wp-codebox/workspace-recipe/v1', 'runtime recipe schema is centralized');
 assert.equal(runtimePackageProfile.id, 'wpsg-agent-runtime-package', 'consumer-facing runtime package profile is generic');
 assert.equal(runtimePackageProfile.compatibilityId, 'wpsg-codebox-runtime-package', 'legacy runtime package profile id remains mapped');
@@ -48,6 +51,7 @@ assert.equal(wpSiteGeneratorPluginMountTarget(), '/wordpress/wp-content/plugins/
 assert.equal(codeboxWorkspaceRecipeSchema(), 'wp-codebox/workspace-recipe/v1');
 assert.deepEqual(runtimePackageProfiles(), {
 	'wpsg-agent-runtime-package': {
+		schema: 'homeboy/runtime-profile/v1',
 		id: 'wpsg-agent-runtime-package',
 		runtime_task_ability: 'agents/run-runtime-package',
 		runtime_bundle_ability: 'agents/run-runtime-package',
@@ -55,6 +59,7 @@ assert.deepEqual(runtimePackageProfiles(), {
 		ability_requirements: ['agents/run-runtime-package'],
 	},
 	'wpsg-codebox-runtime-package': {
+		schema: 'homeboy/runtime-profile/v1',
 		id: 'wpsg-codebox-runtime-package',
 		runtime_task_ability: 'agents/run-runtime-package',
 		runtime_bundle_ability: 'agents/run-runtime-package',
@@ -76,6 +81,18 @@ assert.deepEqual(runtimeToolProfiles.workspaceIteration.abilityTools.map((tool) 
 	'create_github_issue',
 ]);
 assert.deepEqual(runtimeToolProfiles.workspacePublication.abilityTools, []);
+assert.deepEqual(runtimeToolProfileInputs('workspace-publication'), {
+	ability_requirements: '["agents/run-runtime-package","wp-codebox/runner-workspace-publish"]',
+	ability_tools: '[]',
+});
+assert.deepEqual(runtimeWorkflowInputs('workspace-iteration'), {
+	runtime_provider: 'wp-codebox',
+	runtime_profile: 'wpsg-agent-runtime-package',
+	runtime_profiles: JSON.stringify(runtimePackageProfiles()),
+	ability_requirements: JSON.stringify(runtimeToolProfiles.workspaceIteration.abilityRequirements),
+	ability_tools: JSON.stringify(runtimeToolProfiles.workspaceIteration.abilityTools),
+});
+assert.throws(() => runtimeToolProfileInputs('missing-profile'), /Unknown WPSG runtime tool profile/);
 
 const workflow = buildSingleAiWorkflow({
 	step: buildSingleAiWorkflowStep({
