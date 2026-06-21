@@ -1,7 +1,8 @@
 import path from 'node:path';
 
 export const codeboxRuntimeApi = Object.freeze({
-	provider: 'codebox',
+	provider: 'wp-codebox',
+	compatibilityProvider: 'codebox',
 	abilities: Object.freeze({
 		runRuntimePackage: 'agents/run-runtime-package',
 		workspaceCapture: 'wp-codebox/runner-workspace-capture',
@@ -47,6 +48,7 @@ export const runtimePackageProfile = Object.freeze({
 	id: 'wpsg-agent-runtime-package',
 	compatibilityId: 'wpsg-codebox-runtime-package',
 	provider: codeboxRuntimeApi.provider,
+	compatibilityProvider: codeboxRuntimeApi.compatibilityProvider,
 	runtimeTaskAbility: codeboxRuntimeApi.abilities.runRuntimePackage,
 	runtimeBundleAbility: codeboxRuntimeApi.abilities.runRuntimePackage,
 	runtimeWorkflowAbility: codeboxRuntimeApi.abilities.runRuntimePackage,
@@ -85,6 +87,7 @@ export const runtimeToolProfiles = Object.freeze({
 
 export function runtimePackageProfiles() {
 	const profile = {
+		schema: 'homeboy/runtime-profile/v1',
 		id: runtimePackageProfile.id,
 		runtime_task_ability: runtimePackageProfile.runtimeTaskAbility,
 		runtime_bundle_ability: runtimePackageProfile.runtimeBundleAbility,
@@ -97,6 +100,26 @@ export function runtimePackageProfiles() {
 			...profile,
 			id: runtimePackageProfile.compatibilityId,
 		},
+	};
+}
+
+export function runtimeToolProfileInputs(profileId) {
+	const profile = runtimeToolProfiles[profileId] || Object.values(runtimeToolProfiles).find((candidate) => candidate.id === profileId);
+	if (!profile) {
+		throw new Error(`Unknown WPSG runtime tool profile: ${profileId}`);
+	}
+	return {
+		ability_requirements: JSON.stringify(profile.abilityRequirements),
+		ability_tools: JSON.stringify(profile.abilityTools),
+	};
+}
+
+export function runtimeWorkflowInputs(profileId) {
+	return {
+		runtime_provider: runtimePackageProfile.provider,
+		runtime_profile: runtimePackageProfile.id,
+		runtime_profiles: JSON.stringify(runtimePackageProfiles()),
+		...runtimeToolProfileInputs(profileId),
 	};
 }
 

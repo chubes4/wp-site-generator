@@ -11,7 +11,9 @@ export {
 	runtimeApiAbilities,
 	runtimePackageProfile,
 	runtimePackageProfiles,
+	runtimeToolProfileInputs,
 	runtimeToolProfiles,
+	runtimeWorkflowInputs,
 	wpSiteGeneratorPluginMountTarget,
 } from './codebox-runtime-api.mjs';
 

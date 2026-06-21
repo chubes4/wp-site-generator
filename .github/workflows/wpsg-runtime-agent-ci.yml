@@ -17,9 +17,9 @@ on:
         default: workspace-iteration
         type: string
       runtime_provider:
-        description: Compatibility runtime backend. Defaults to the existing Codebox backend.
+        description: WP Codebox public runtime id.
         required: false
-        default: codebox
+        default: wp-codebox
         type: string
       runtime_profile:
         description: Generic WPSG runtime package profile.
@@ -27,9 +27,9 @@ on:
         default: wpsg-agent-runtime-package
         type: string
       runtime_profiles:
-        description: Runtime package profiles, including the legacy Codebox profile alias.
+        description: Runtime package profiles. Defaults are rendered from the WPSG Codebox contract helper.
         required: false
-        default: '{"wpsg-agent-runtime-package":{"id":"wpsg-agent-runtime-package","runtime_task_ability":"agents/run-runtime-package","runtime_bundle_ability":"agents/run-runtime-package","runtime_workflow_ability":"agents/run-runtime-package","ability_requirements":["agents/run-runtime-package"]},"wpsg-codebox-runtime-package":{"id":"wpsg-codebox-runtime-package","runtime_task_ability":"agents/run-runtime-package","runtime_bundle_ability":"agents/run-runtime-package","runtime_workflow_ability":"agents/run-runtime-package","ability_requirements":["agents/run-runtime-package"]}}'
+        default: ''
         type: string
       transcript_slots:
         description: Transcript artifact slots for the runtime workflow.
@@ -43,31 +43,48 @@ on:
         type: number
 
 jobs:
+  runtime-contracts:
+    runs-on: ubuntu-latest
+    outputs:
+      runtime_provider: ${{ steps.contract.outputs.runtime_provider }}
+      runtime_profile: ${{ steps.contract.outputs.runtime_profile }}
+      runtime_profiles: ${{ steps.contract.outputs.runtime_profiles }}
+      ability_requirements: ${{ steps.contract.outputs.ability_requirements }}
+      ability_tools: ${{ steps.contract.outputs.ability_tools }}
+    steps:
+      - uses: actions/checkout@v4
+      - id: contract
+        env:
+          RUNTIME_TOOL_PROFILE: ${{ inputs.runtime_tool_profile }}
+        run: node .github/scripts/render-codebox-runtime-workflow-inputs.mjs
+
   workspace-iteration:
+    needs: runtime-contracts
     if: inputs.runtime_tool_profile == 'workspace-iteration'
     uses: Extra-Chill/homeboy-extensions/.github/workflows/runtime-agent-ci.yml@main
     with:
-      runtime_provider: ${{ inputs.runtime_provider }}
+      runtime_provider: ${{ inputs.runtime_provider || needs.runtime-contracts.outputs.runtime_provider }}
       model: ${{ inputs.model }}
-      runtime_profile: ${{ inputs.runtime_profile }}
-      runtime_profiles: ${{ inputs.runtime_profiles }}
+      runtime_profile: ${{ inputs.runtime_profile || needs.runtime-contracts.outputs.runtime_profile }}
+      runtime_profiles: ${{ inputs.runtime_profiles || needs.runtime-contracts.outputs.runtime_profiles }}
       runtime_execution: ${{ inputs.runtime_execution }}
-      ability_requirements: '["agents/run-runtime-package","wp-codebox/runner-workspace-command","wp-codebox/runner-workspace-publish"]'
-      ability_tools: '[{"name":"workspace_clone","ability":"wp-codebox/runner-workspace-command"},{"name":"workspace_worktree_add","ability":"wp-codebox/runner-workspace-command"},{"name":"workspace_read","ability":"wp-codebox/runner-workspace-command"},{"name":"workspace_write","ability":"wp-codebox/runner-workspace-command"},{"name":"workspace_edit","ability":"wp-codebox/runner-workspace-command"},{"name":"workspace_git_status","ability":"wp-codebox/runner-workspace-command"},{"name":"workspace_git_commit","ability":"wp-codebox/runner-workspace-command"},{"name":"workspace_git_push","ability":"wp-codebox/runner-workspace-command"},{"name":"create_github_pull_request","ability":"wp-codebox/runner-workspace-publish"},{"name":"create_github_issue","ability":"wp-codebox/runner-workspace-publish"}]'
+      ability_requirements: ${{ needs.runtime-contracts.outputs.ability_requirements }}
+      ability_tools: ${{ needs.runtime-contracts.outputs.ability_tools }}
       transcript_slots: ${{ inputs.transcript_slots }}
       task_timeout_seconds: ${{ inputs.task_timeout_seconds }}
     secrets: inherit
 
   workspace-publication:
+    needs: runtime-contracts
     if: inputs.runtime_tool_profile == 'workspace-publication'
     uses: Extra-Chill/homeboy-extensions/.github/workflows/runtime-agent-ci.yml@main
     with:
-      runtime_provider: ${{ inputs.runtime_provider }}
+      runtime_provider: ${{ inputs.runtime_provider || needs.runtime-contracts.outputs.runtime_provider }}
       model: ${{ inputs.model }}
-      runtime_profile: ${{ inputs.runtime_profile }}
-      runtime_profiles: ${{ inputs.runtime_profiles }}
+      runtime_profile: ${{ inputs.runtime_profile || needs.runtime-contracts.outputs.runtime_profile }}
+      runtime_profiles: ${{ inputs.runtime_profiles || needs.runtime-contracts.outputs.runtime_profiles }}
       runtime_execution: ${{ inputs.runtime_execution }}
-      ability_requirements: '["agents/run-runtime-package","wp-codebox/runner-workspace-publish"]'
+      ability_requirements: ${{ needs.runtime-contracts.outputs.ability_requirements }}
       transcript_slots: ${{ inputs.transcript_slots }}
       task_timeout_seconds: ${{ inputs.task_timeout_seconds }}
     secrets: inherit
