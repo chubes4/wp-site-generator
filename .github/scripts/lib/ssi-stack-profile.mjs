@@ -1,7 +1,14 @@
 import { buildSsiStackManifest, gitDirectoryResource } from './ssi-stack-manifest.mjs';
+import {
+	wordpressRuntimeAbilityId,
+	wordpressRuntimeBlueprintSchema,
+	wordpressRuntimePhpFileStep,
+	wordpressRuntimePhpStep,
+	wordpressRuntimeRequireWpLoadPhp,
+} from './wordpress-runtime-api.mjs';
 
 export const ssiStackProfile = {
-	blueprintSchema: 'https://playground.wordpress.net/blueprint-schema.json',
+	blueprintSchema: wordpressRuntimeBlueprintSchema(),
 	preferredVersions: { php: '8.3', wp: 'latest' },
 	manifest: buildSsiStackManifest(),
 	components: [
@@ -62,29 +69,20 @@ export function buildSsiImportWorkload(siteSlug, { websiteArtifact = null } = {}
 		id: 'ssi-import',
 		label: `Static Site Importer: ${siteSlug}`,
 		run: [
-			{
-				type: 'php',
-				code: buildBlocksEnginePhpTransformerProbePhp({ includeOpeningTag: false }),
-			},
-			{
-				type: 'php',
-				code: buildSsiImportWebsiteArtifactPhp({
-					artifact: websiteArtifact,
-					siteSlug,
-					includeOpeningTag: false,
-				}),
-			},
-			{
-				type: 'php',
-				file: '.github/homeboy/ssi-import-diagnostics.php',
-			},
+			wordpressRuntimePhpStep(buildBlocksEnginePhpTransformerProbePhp({ includeOpeningTag: false })),
+			wordpressRuntimePhpStep(buildSsiImportWebsiteArtifactPhp({
+				artifact: websiteArtifact,
+				siteSlug,
+				includeOpeningTag: false,
+			})),
+			wordpressRuntimePhpFileStep('.github/homeboy/ssi-import-diagnostics.php'),
 		],
 	};
 }
 
 export function buildBlocksEnginePhpTransformerProbePhp({ trailingNewline = false, includeOpeningTag = true } = {}) {
 	const lines = [
-		"require_once '/wordpress/wp-load.php';",
+		wordpressRuntimeRequireWpLoadPhp(),
 		"$has_helper = function_exists( 'blocks_engine_php_transformer_compile_artifact' ) || function_exists( 'blocks_engine_php_transformer_transform_html' );",
 		"$has_class = class_exists( 'Automattic\\\\BlocksEngine\\\\PhpTransformer\\\\ArtifactCompiler\\\\ArtifactCompiler' ) || class_exists( 'Automattic\\\\BlocksEngine\\\\PhpTransformer\\\\HtmlToBlocks\\\\HtmlTransformer' );",
 		'if ( ! $has_helper && ! $has_class ) {',
@@ -102,13 +100,13 @@ export function buildSsiImportWebsiteArtifactPhp({ artifact, siteSlug, markerPat
 	}
 	const artifactJson = Buffer.from(JSON.stringify(artifact)).toString('base64');
 	const lines = [
-		"require_once '/wordpress/wp-load.php';",
+		wordpressRuntimeRequireWpLoadPhp(),
 		...blocksEnginePhpTransformerProbeLines('has_transformer'),
 		'wp_set_current_user( 1 );',
 		"if ( ! function_exists( 'wp_get_ability' ) ) {",
 		"\tthrow new RuntimeException( 'WordPress Abilities API is not available.' );",
 		'}',
-		"$ability = wp_get_ability( 'static-site-importer/import-website-artifact' );",
+		`$ability = wp_get_ability( ${phpString(wordpressRuntimeAbilityId('importWebsiteArtifact'))} );`,
 		'if ( ! $ability ) {',
 		"\tthrow new RuntimeException( 'Static Site Importer website artifact ability is not registered.' );",
 		'}',
@@ -164,13 +162,13 @@ export function buildSsiImportWebsiteArtifactPhp({ artifact, siteSlug, markerPat
 
 export function buildSsiImportAbilityPhp({ htmlPath, siteSlug, markerPath, assertActiveTheme = false, trailingNewline = false, includeOpeningTag = true }) {
 	const lines = [
-		"require_once '/wordpress/wp-load.php';",
+		wordpressRuntimeRequireWpLoadPhp(),
 		...blocksEnginePhpTransformerProbeLines('has_transformer'),
 		'wp_set_current_user( 1 );',
 		"if ( ! function_exists( 'wp_get_ability' ) ) {",
 		"\tthrow new RuntimeException( 'WordPress Abilities API is not available.' );",
 		'}',
-		"$ability = wp_get_ability( 'static-site-importer/import-theme' );",
+		`$ability = wp_get_ability( ${phpString(wordpressRuntimeAbilityId('importTheme'))} );`,
 		'if ( ! $ability ) {',
 		"\tthrow new RuntimeException( 'Static Site Importer import ability is not registered.' );",
 		'}',

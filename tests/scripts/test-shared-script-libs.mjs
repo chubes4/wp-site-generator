@@ -26,12 +26,22 @@ import {
 	resolveVisualParityOutputRoot,
 	resolveWpCodeboxCliPath,
 	runtimeApiAbilities,
+	runtimeBundleExecution,
 	runtimePackageProfile,
 	runtimePackageProfiles,
 	runtimeToolProfileInputs,
 	runtimeToolProfiles,
+	runtimeWorkflowBuilderExecution,
 	runtimeWorkflowInputs,
 	textValue,
+	wordpressRuntimeAbilityId,
+	wordpressRuntimeApi,
+	wordpressRuntimeBlueprintSchema,
+	wordpressRuntimePhpFileStep,
+	wordpressRuntimePhpStep,
+	wordpressRuntimeRequireWpLoadPhp,
+	wordpressRuntimeSettingsDescriptor,
+	wordpressRuntimeSettingsFields,
 	wpSiteGeneratorPluginMountTarget,
 } from '../../.github/scripts/lib/ci-runtime-utils.mjs';
 import { loadRecoveredSsiImportSummary, recoveredSsiScenarioFromImportSummary } from '../../.github/scripts/lib/ssi-import-summary.mjs';
@@ -47,6 +57,15 @@ assert.equal(textValue(' ok '), 'ok');
 assert.equal(numberValue('4'), 4);
 assert.equal(numberValue('bad', 9), 9);
 assert.equal(codeboxRuntimeApi.runtimeSchemas.workspaceRecipe, 'wp-codebox/workspace-recipe/v1', 'runtime recipe schema is centralized');
+assert.equal(wordpressRuntimeApi.paths.wpLoadPhp, '/wordpress/wp-load.php', 'WordPress runtime path constants are centralized');
+assert.equal(wordpressRuntimeBlueprintSchema(), 'https://playground.wordpress.net/blueprint-schema.json');
+assert.equal(wordpressRuntimeSettingsDescriptor().settings_fields.blueprint, 'wordpress_runtime_blueprint');
+assert.deepEqual(wordpressRuntimeSettingsFields(), { blueprint: 'wordpress_runtime_blueprint', workloads: 'wordpress_runtime_workloads' });
+assert.deepEqual(wordpressRuntimePhpStep('do_work();'), { type: 'php', code: 'do_work();' });
+assert.deepEqual(wordpressRuntimePhpFileStep('script.php'), { type: 'php', file: 'script.php' });
+assert.equal(wordpressRuntimeRequireWpLoadPhp(), "require_once '/wordpress/wp-load.php';");
+assert.equal(wordpressRuntimeAbilityId('importWebsiteArtifact'), 'static-site-importer/import-website-artifact');
+assert.throws(() => wordpressRuntimeAbilityId('missing'), /Unknown WordPress runtime ability/);
 assert.equal(runtimePackageProfile.id, 'wpsg-agent-runtime-package', 'consumer-facing runtime package profile is generic');
 assert.equal(runtimePackageProfile.runtimeTaskAbility, runtimeApiAbilities.runRuntimePackage, 'runtime package profile uses the generic runtime package ability');
 assert.equal(resolveCodeboxCliPath('/tmp/repo', {}), path.join('/tmp/repo', '.ci/wp-codebox/packages/cli/dist/index.js'));
@@ -138,6 +157,35 @@ assert.deepEqual(runtimeWorkflowInputs('workspace-iteration', defaultRuntimeCont
 	ability_tools: '[]',
 });
 assert.throws(() => codeboxRuntimeToolProfileInputs('missing-profile'), /Unknown WPSG runtime tool profile/);
+assert.deepEqual(runtimeBundleExecution({
+	packageSource: 'bundles/example-agent',
+	packageSlug: 'example-agent',
+	workflowId: 'example-flow',
+	input: { wait_for_completion: true },
+}), {
+	runtime_execution: {
+		kind: 'bundle',
+		ability: 'agents/run-runtime-package',
+		input: {
+			package: { source: 'bundles/example-agent', slug: 'example-agent' },
+			workflow: { id: 'example-flow' },
+			input: { wait_for_completion: true },
+		},
+	},
+});
+assert.throws(() => runtimeBundleExecution({ packageSource: 'bundles/example-agent' }), /packageSource, packageSlug, and workflowId/);
+assert.deepEqual(runtimeWorkflowBuilderExecution({
+	kind: 'wpsg-example',
+	workflowBuilder: 'bundles/example-agent/scripts/build-workflow.mjs',
+	artifacts_dir: '.ci/artifacts',
+}), {
+	runtime_execution: {
+		kind: 'wpsg-example',
+		workflow_builder: 'bundles/example-agent/scripts/build-workflow.mjs',
+		artifacts_dir: '.ci/artifacts',
+	},
+});
+assert.throws(() => runtimeWorkflowBuilderExecution({ kind: 'wpsg-example' }), /kind and workflowBuilder/);
 
 const configuredRuntimeContract = readAgentRuntimeContract({
 	HOMEBOY_AGENT_RUNTIME_PROVIDER: 'wp-codebox',

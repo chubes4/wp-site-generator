@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 
-import { appendGithubOutput, parseArgs, writeJsonFile } from './lib/ci-runtime-utils.mjs';
+import { appendGithubOutput, parseArgs, wordpressRuntimeSettingsFields, writeJsonFile } from './lib/ci-runtime-utils.mjs';
 import { buildWebsiteArtifactFromSource, resolveStaticSiteCandidateSource } from './lib/static-site-candidate.mjs';
 import { buildSsiValidationSettings, loadSsiStackManifest, loadWordPressRuntimeSettingsDescriptor } from './lib/ssi-stack-runtime.mjs';
 
@@ -21,6 +21,7 @@ const websiteArtifact = await buildWebsiteArtifactFromSource(candidateSource);
 const manifest = await loadSsiStackManifest(manifestPath);
 const runtimeSettingsDescriptor = await loadWordPressRuntimeSettingsDescriptor(runtimeSettingsDescriptorPath);
 const { settings, workloads } = buildSsiValidationSettings({ site: candidateSource.site, lane, manifest, websiteArtifact, runtimeSettingsDescriptor });
+const runtimeSettingsFields = wordpressRuntimeSettingsFields(runtimeSettingsDescriptor);
 const payload = { site: candidateSource.site, lane, candidate_source: candidateSource, website_artifact: websiteArtifact, settings, workloads, runtime_settings_descriptor: runtimeSettingsDescriptor, stack_manifest: manifest };
 
 if (outputPath) {
@@ -33,7 +34,7 @@ if (githubOutput) {
 		source_static_site_dir: candidateSource.sourceDirectory,
 		settings: JSON.stringify(settings),
 		workloads: JSON.stringify(workloads),
-		wordpress_runtime_workloads: JSON.stringify(settings.wordpress_runtime_workloads),
+		[runtimeSettingsFields.workloads]: JSON.stringify(settings[runtimeSettingsFields.workloads]),
 		stack_manifest: JSON.stringify(manifest),
 	});
 } else {
