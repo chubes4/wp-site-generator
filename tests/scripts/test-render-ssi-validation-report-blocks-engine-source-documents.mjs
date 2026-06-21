@@ -17,8 +17,8 @@ const bench = {
 						ssi_signal_total_count: 3,
 						ssi_fallback_count: 1,
 						ssi_freeform_block_count: 2,
-						ssi_bac_available: 1,
-						ssi_bac_component_count: 4,
+						ssi_blocks_engine_available: 1,
+						ssi_blocks_engine_component_count: 4,
 					},
 					metadata: {
 						import_report_summary: {

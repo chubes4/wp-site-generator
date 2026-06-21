@@ -106,12 +106,12 @@ assert_same( $theme_dir . '/import-report.json', $summary['path'] ?? null, 'reso
 assert_same( true, $summary['readable'] ?? null, 'resolved report readable' );
 assert_same( 1, $result['metrics']['ssi_fallback_count'] ?? null, 'fallback metric' );
 assert_same( 1, $result['metrics']['ssi_core_html_count'] ?? null, 'core/html metric' );
-assert_same( 1, $result['metrics']['ssi_bac_available'] ?? null, 'Blocks Engine available metric' );
-assert_same( 1, $result['metrics']['ssi_bac_fragment_count'] ?? null, 'Blocks Engine fragment metric' );
-assert_same( 5, $result['metrics']['ssi_bac_component_count'] ?? null, 'Blocks Engine component metric' );
-assert_same( 2, $result['metrics']['ssi_bac_rejected_count'] ?? null, 'Blocks Engine rejected metric' );
-assert_same( 2, $result['metrics']['ssi_bac_diagnostic_count'] ?? null, 'Blocks Engine diagnostic metric' );
-assert_same( 1, $result['metrics']['ssi_bac_website_artifact_present'] ?? null, 'Blocks Engine website artifact metric' );
+assert_same( 1, $result['metrics']['ssi_blocks_engine_available'] ?? null, 'Blocks Engine available metric' );
+assert_same( 1, $result['metrics']['ssi_blocks_engine_fragment_count'] ?? null, 'Blocks Engine fragment metric' );
+assert_same( 5, $result['metrics']['ssi_blocks_engine_component_count'] ?? null, 'Blocks Engine component metric' );
+assert_same( 2, $result['metrics']['ssi_blocks_engine_rejected_count'] ?? null, 'Blocks Engine rejected metric' );
+assert_same( 2, $result['metrics']['ssi_blocks_engine_diagnostic_count'] ?? null, 'Blocks Engine diagnostic metric' );
+assert_same( 1, $result['metrics']['ssi_blocks_engine_website_artifact_present'] ?? null, 'Blocks Engine website artifact metric' );
 assert_same( 1, count( $modern_rows ), 'modern diagnostic row count' );
 $blocks_engine_summary = $summary['blocks_engine'] ?? array();
 assert_same( 'website_artifact', $blocks_engine_summary['import_mode'] ?? null, 'Blocks Engine import mode summary' );

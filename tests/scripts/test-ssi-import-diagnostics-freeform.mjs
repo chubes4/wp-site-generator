@@ -16,7 +16,7 @@ const benchPath = path.join(tmp, 'bench.json');
 
 assert.match(diagnostics, /'ssi_freeform_block_count'\s*=>\s*0/, 'diagnostics initializes a freeform block metric');
 assert.match(diagnostics, /'diagnostics'\s*=>\s*\$diagnostics/, 'diagnostics exposes modern diagnostic rows');
-assert.match(diagnostics, /'ssi_bac_available'\s*=>\s*0/, 'diagnostics initializes Blocks Engine availability metric');
+assert.match(diagnostics, /'ssi_blocks_engine_available'\s*=>\s*0/, 'diagnostics initializes Blocks Engine availability metric');
 assert.doesNotMatch(diagnostics, /freeform_diagnostics/, 'diagnostics does not expose legacy freeform diagnostic rows');
 assert.doesNotMatch(diagnostics, /fallback_diagnostics/, 'diagnostics does not expose legacy fallback diagnostic rows');
 assert.doesNotMatch(diagnostics, /'findings'/, 'diagnostics does not expose legacy finding rows');
@@ -31,7 +31,7 @@ await writeJson(benchPath, {
 					metrics: {
 						ssi_signal_total_count: 1,
 						ssi_freeform_block_count: 1,
-						ssi_bac_available: 1,
+						ssi_blocks_engine_available: 1,
 					},
 					metadata: {
 						import_report_summary: {
