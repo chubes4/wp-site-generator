@@ -1,10 +1,10 @@
 #!/usr/bin/env node
 
-import { appendGithubOutput, parseArgs, runtimeWorkflowInputs } from './lib/ci-runtime-utils.mjs';
+import { appendGithubOutput, codeboxRuntimeWorkflowInputs, parseArgs } from './lib/ci-runtime-utils.mjs';
 
 const args = parseArgs(process.argv.slice(2));
 const profile = args.get('--runtime-tool-profile') || process.env.RUNTIME_TOOL_PROFILE || 'workspace-iteration';
-const outputs = runtimeWorkflowInputs(profile);
+const outputs = codeboxRuntimeWorkflowInputs(profile);
 
 if (process.env.GITHUB_OUTPUT) {
 	await appendGithubOutput(process.env.GITHUB_OUTPUT, outputs);

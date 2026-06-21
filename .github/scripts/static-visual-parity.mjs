@@ -8,7 +8,7 @@ import path from 'node:path';
 import { buildSsiImportWebsiteArtifactPhp, requiresCommerceStack } from './lib/ssi-stack-profile.mjs';
 import { buildWebsiteArtifactFromSource, resolveStaticSiteCandidateSource } from './lib/static-site-candidate.mjs';
 import { buildSsiRuntimeBlueprint, loadSsiStackManifest } from './lib/ssi-stack-runtime.mjs';
-import { resolveVisualParityOutputRoot, resolveWpCodeboxCliPath, wpSiteGeneratorPluginMountTarget } from './lib/codebox-runtime-api.mjs';
+import { codeboxPluginMountTarget, resolveCodeboxCliPath, resolveCodeboxVisualParityOutputRoot } from './lib/codebox-runtime-api.mjs';
 
 const require = createRequire(import.meta.url);
 const { runStaticVisualParity } = require('homeboy-extension-wordpress/static-visual-parity');
@@ -17,10 +17,10 @@ const repoRoot = process.cwd();
 const requestedSite = process.env.SITE || process.argv[2] || '';
 const lane = process.env.TARGET_LANE || process.env.LANE || 'wordpress';
 const manifestPath = process.env.SSI_STACK_MANIFEST_PATH || '';
-const outputRoot = resolveVisualParityOutputRoot();
+const outputRoot = resolveCodeboxVisualParityOutputRoot();
 const sourcePort = Number(process.env.SOURCE_PORT || 4173);
-const wpCodeboxCli = resolveWpCodeboxCliPath(repoRoot);
-const pluginMountTarget = wpSiteGeneratorPluginMountTarget();
+const wpCodeboxCli = resolveCodeboxCliPath(repoRoot);
+const pluginMountTarget = codeboxPluginMountTarget();
 const viewport = {
 	width: Number(process.env.VISUAL_PARITY_WIDTH || 1280),
 	height: Number(process.env.VISUAL_PARITY_HEIGHT || 1600),
