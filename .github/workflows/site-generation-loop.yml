@@ -15,6 +15,22 @@ on:
         description: Homeboy Extensions ref with generic runtime package agent-task support.
         required: true
         default: main
+      agents_api_ref:
+        description: Agents API ref used by the selected runtime profile.
+        required: true
+        default: main
+      ai_provider_openai_ref:
+        description: OpenAI provider ref used by the selected runtime profile.
+        required: true
+        default: trunk
+      ref_policy:
+        description: Dependency ref policy. Use branch-defaults for staging; production requires immutable dependency refs.
+        required: true
+        default: branch-defaults
+        type: choice
+        options:
+          - branch-defaults
+          - production
       complexity_tier:
         description: Optional WPSG prompt complexity tier override.
         required: false
@@ -53,8 +69,9 @@ jobs:
       OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
       HOMEBOY_REF: ${{ inputs.homeboy_ref }}
       HOMEBOY_EXTENSIONS_REF: ${{ inputs.homeboy_extensions_ref }}
-      AGENTS_API_REF: main
-      AI_PROVIDER_OPENAI_REF: trunk
+      WPSG_REF_POLICY: ${{ inputs.ref_policy }}
+      AGENTS_API_REF: ${{ inputs.agents_api_ref }}
+      AI_PROVIDER_OPENAI_REF: ${{ inputs.ai_provider_openai_ref }}
       HOMEBOY_CONTROLLER_RUN_INPUTS_PATH: ${{ github.workspace }}/.ci/site-generation-loop.controller-run-inputs.json
       HOMEBOY_POLICY_RESULT_PATH: ${{ github.workspace }}/.ci/site-generation-loop.complexity-policy-result.json
       HOMEBOY_CONTROLLER_RUN_SPEC_PATH: ${{ github.workspace }}/.ci/site-generation-loop.controller-run-spec.json

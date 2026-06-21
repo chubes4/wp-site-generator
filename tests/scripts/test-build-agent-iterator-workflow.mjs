@@ -56,18 +56,17 @@ const configResult = spawnSync(
 
 assert.equal(configResult.status, 0, configResult.stderr || configResult.stdout);
 const fanoutConfig = JSON.parse(await readFile(fanoutConfigPath, 'utf8'));
-assert.equal(fanoutConfig.schema, 'homeboy/generic-fanout-reconcile-config/v1', 'iterator emits HBE generic fanout config');
-assert.equal(fanoutConfig.groups.length, 8, 'iterator passes WPSG-owned grouped findings as caller-provided HBE groups');
-assert.equal(fanoutConfig.groups[0].items.length, 1, 'each HBE fanout group wraps one WPSG finding group');
-assert.equal(fanoutConfig.task_request_template.finding_group, '{{group.items.0}}', 'task template preserves the typed WPSG finding group');
+assert.equal(fanoutConfig.schema, 'wp-site-generator/php-transformer-iterator-fanout-input/v1', 'iterator emits Homeboy-compatible fanout packet input');
+assert.equal(fanoutConfig.packets.length, 8, 'iterator passes WPSG-owned grouped findings as caller-provided Homeboy packets');
+assert.equal(fanoutConfig.packets[0].inputs.finding_group.group_id, 'Automattic/blocks-engine:php-transformer', 'each Homeboy packet preserves one WPSG finding group');
 
 await writeFile(fanoutPlanPath, `${JSON.stringify({
-	schema: 'homeboy/fanout-reconcile-plan/v1',
-	task_requests: fanoutConfig.groups.map((group) => ({
-		id: `php-transformer-iterator-${group.key}`,
-		group_key: group.key,
-		finding_group: group.items[0],
-		inputs: { finding_group: group.items[0] },
+	schema: 'homeboy/agent-task-plan/v1',
+	tasks: fanoutConfig.packets.map((packet) => ({
+		task_id: packet.task_id,
+		group_key: packet.group_key,
+		inputs: packet.inputs,
+		metadata: packet.metadata,
 	})),
 }, null, 2)}\n`);
 

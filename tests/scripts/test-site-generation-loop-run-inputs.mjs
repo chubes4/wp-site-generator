@@ -6,7 +6,7 @@ import { mkdtemp, readFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 
-import { buildSiteGenerationLoopRunContext } from '../../.github/scripts/lib/site-generation-loop-run.mjs';
+import { buildSiteGenerationLoopRunContext, validateRefPolicy } from '../../.github/scripts/lib/site-generation-loop-run.mjs';
 
 const repoRoot = path.resolve(import.meta.dirname, '../..');
 const tempDir = await mkdtemp(path.join(tmpdir(), 'wp-site-generator-loop-run-inputs-'));
@@ -34,6 +34,24 @@ assert.equal(context.loopId, 'wp-site-generator/static-site-generation-loop/loca
 assert.equal(context.outputPath, outputPath);
 assert.equal(context.policyResultPath, policyResultPath);
 assert.equal(context.source.sha.length, 40, 'loop context records an immutable source commit');
+assert.doesNotThrow(() => validateRefPolicy({
+	policy: 'branch-defaults',
+	dependencyRefs: {
+		homeboy: { id: 'homeboy', input_ref: 'main', ref_type: 'mutable-ref-unresolved' },
+	},
+}), 'branch-defaults mode allows staging refs');
+assert.throws(() => validateRefPolicy({
+	policy: 'production',
+	dependencyRefs: {
+		homeboy: { id: 'homeboy', input_ref: 'main', sha: 'a'.repeat(40), ref_type: 'commit' },
+	},
+}), /production ref policy requires immutable dependency refs/, 'production mode rejects mutable dependency inputs');
+assert.doesNotThrow(() => validateRefPolicy({
+	policy: 'production',
+	dependencyRefs: {
+		homeboy: { id: 'homeboy', input_ref: 'a'.repeat(40), sha: 'a'.repeat(40), ref_type: 'commit' },
+	},
+}), 'production mode accepts immutable dependency inputs');
 
 const result = spawnSync(process.execPath, [path.join(repoRoot, '.github/scripts/build-homeboy-controller-run-inputs.mjs')], {
 	cwd: repoRoot,
