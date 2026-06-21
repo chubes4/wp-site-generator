@@ -140,3 +140,39 @@ Homeboy remains the controller, executor, scheduler, and loop-spec materializer.
 ## Upstream Contract
 
 Extra-Chill/homeboy#5152 is the upstream runtime dependency for the generic `agent-task controller from-spec`, `resume`, and `events` primitives. Extra-Chill/homeboy#5186 is the upstream dependency for `agent-task controller materialize`, which expands WPSG's run-input payload into workflow inputs without WPSG assembling the full controller run spec locally. If a backend-specific WordPress or WP Codebox mapping is needed, it belongs behind generic Homeboy executor/provider contracts in `homeboy-extensions/wordpress`, not in this WPSG spec.
+
+## Headless Contract Validation
+
+The deterministic headless validation path is `.github/scripts/validate-headless-site-generation-loop.mjs`. It proves WPSG can exercise the production loop contract through Homeboy controller primitives without `gh workflow run` or workflow-to-workflow dispatch:
+
+```bash
+HOMEBOY_BIN=homeboy node .github/scripts/validate-headless-site-generation-loop.mjs \
+  --run-id headless-contract \
+  --randomness-seed headless-contract-seed \
+  --runtime-id wp-codebox \
+  --fixture-artifacts \
+  --evidence .ci/headless-site-generation-loop-evidence.json
+```
+
+The command sequence it records is the reviewer-facing contract evidence:
+
+```bash
+node .github/scripts/build-homeboy-controller-run-inputs.mjs
+homeboy agent-task controller materialize @.github/homeboy/controllers/static-site-generation-loop.controller.json --inputs @<run-inputs> --policy-result @<policy-result> --output <materialization>
+homeboy agent-task controller validate-proof @<materialization-proof>
+node .github/scripts/write-materialized-controller-run-spec.mjs <materialization> <controller-run-spec>
+homeboy agent-task controller from-spec @<controller-run-spec> --output <controller-result> --artifact-root <artifact-root>
+homeboy agent-task controller resume <loop-id> --output <resume-result> --artifact-root <artifact-root>
+homeboy agent-task controller events <loop-id> --event-type headless.validation.completed --event-key <run-id> --payload '{...}' --output <event-result>
+node .github/scripts/assert-site-generation-loop-proof.mjs --controller-result <controller-result> --controller-run-spec <controller-run-spec> --artifact-root <artifact-root>
+```
+
+`--fixture-artifacts` writes deterministic passing artifacts for the WPSG artifact proof. Omit it and pass `--artifact-root <artifact-root>` when validating artifacts emitted by a real Homeboy run. Runtime selection remains outside the controller spec through `HOMEBOY_AGENT_RUNTIME_*`; `--runtime-id wp-codebox` is one backend selection, not a WPSG-owned contract.
+
+Current upstream dependencies before this can be treated as full runtime proof instead of deterministic contract proof:
+
+- Extra-Chill/homeboy#5152: durable controller `from-spec`, `resume`, and `events` primitives.
+- Extra-Chill/homeboy#5186: controller `materialize` primitive.
+- Extra-Chill/homeboy-extensions#1644: generic runtime execution contracts.
+- Extra-Chill/homeboy-extensions#1645: headless deterministic loop runner.
+- Extra-Chill/homeboy-extensions#1646: WP Codebox runtime contract manifest consumption.

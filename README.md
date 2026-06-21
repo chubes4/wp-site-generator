@@ -265,6 +265,8 @@ Required GitHub secrets depend on the selected Homeboy runtime and AI provider. 
 
 The reusable `.github/workflows/wpsg-runtime-agent-ci.yml` seam accepts a `codebox_workload_profile` such as `workspace-iteration` or `workspace-publication`, then renders WP Codebox runtime profile/workspace wrapper requirements through `.github/scripts/render-homeboy-runtime-workflow-inputs.mjs`. `agents/run-runtime-package` remains in runtime execution descriptors because WP Codebox has not yet exposed a canonical package-execution wrapper for that Agents API entry point; WPSG should not add a local shim for it.
 
+For headless contract validation without GitHub workflow-to-workflow dispatch, run `.github/scripts/validate-headless-site-generation-loop.mjs`. It drives `homeboy agent-task controller materialize`, `validate-proof`, `from-spec`, `resume`, and `events` directly, then asserts WPSG artifact evidence with `.github/scripts/assert-site-generation-loop-proof.mjs`. With `--fixture-artifacts` it is deterministic contract proof; with `--artifact-root` it validates artifacts from a real Homeboy run.
+
 Useful workflow entry points:
 
 1. **`store-idea-agent.yml`** — manually generate one commerce concept issue from a prompt.
