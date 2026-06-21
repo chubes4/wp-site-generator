@@ -2,7 +2,7 @@
 
 import { mkdir, writeFile } from 'node:fs/promises';
 import path from 'node:path';
-import { parseArgs } from './lib/ci-runtime-utils.mjs';
+import { parseArgs, runtimeApiAbilities } from './lib/ci-runtime-utils.mjs';
 
 const args = parseArgs(process.argv.slice(2));
 const root = process.env.GITHUB_WORKSPACE || process.cwd();
@@ -36,7 +36,7 @@ const agentBundles = {
 	ssi_stack_reviewer: { bundle: 'bundles/ssi-stack-reviewer-agent', slug: 'ssi-stack-reviewer-agent', requires: ['static_site_candidate', 'import_validation_result', 'static_validation_run', 'visual_parity_artifact', 'finding_packet_set', 'revalidation_attempt'], emits: ['reviewer_gate_outcome'] },
 };
 
-const runtimePackageAbility = 'agents/run-runtime-package';
+const runtimePackageAbility = runtimeApiAbilities.runRuntimePackage;
 
 const abilityIds = [
 	runtimePackageAbility,
