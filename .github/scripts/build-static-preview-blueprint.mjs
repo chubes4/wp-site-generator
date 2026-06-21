@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 
-import { appendGithubOutput, parseArgs, writeJsonFile } from './lib/ci-runtime-utils.mjs';
+import { appendGithubOutput, buildCodeboxPlaygroundPreviewUrl, parseArgs, writeJsonFile } from './lib/ci-runtime-utils.mjs';
 import { buildSsiPreviewBlueprint, buildSsiPreviewSource, loadSsiStackManifest } from './lib/ssi-stack-runtime.mjs';
 
 const args = parseArgs(process.argv.slice(2));
@@ -20,7 +20,7 @@ if (!site) {
 const source = buildSsiPreviewSource({ repo: sourceRepo, sha: sourceHeadSha, branch });
 const manifest = await loadSsiStackManifest(manifestPath);
 const blueprint = buildSsiPreviewBlueprint({ site, source, lane, manifest });
-const url = `https://playground.wordpress.net/#${encodeURIComponent(JSON.stringify(blueprint))}`;
+const url = buildCodeboxPlaygroundPreviewUrl(blueprint);
 
 if (outputPath) {
 	await writeJsonFile(outputPath, { site, lane, branch, source, url, blueprint, stack_manifest: manifest });

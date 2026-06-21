@@ -13,6 +13,7 @@ export {
 
 export {
 	codeboxAgentRuntimeContract,
+	buildCodeboxPlaygroundPreviewUrl,
 	codeboxPluginMountTarget,
 	codeboxRuntimeApi,
 	codeboxRuntimePackageAbility,

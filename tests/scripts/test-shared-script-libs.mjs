@@ -5,6 +5,7 @@ import path from 'node:path';
 
 import { buildSingleAiWorkflow, buildSingleAiWorkflowStep } from '../../bundles/php-transformer-iterator-agent/scripts/lib/agent-ai-workflow.mjs';
 import {
+	buildCodeboxPlaygroundPreviewUrl,
 	codeboxAgentRuntimeContract,
 	codeboxPluginMountTarget,
 	codeboxRuntimeApi,
@@ -59,6 +60,7 @@ assert.equal(resolveVisualParityOutputRoot({ VISUAL_PARITY_OUTPUT: 'custom-artif
 assert.equal(codeboxPluginMountTarget(), '/wordpress/wp-content/plugins/wp-site-generator');
 assert.equal(wpSiteGeneratorPluginMountTarget(), '/wordpress/wp-content/plugins/wp-site-generator');
 assert.equal(codeboxWorkspaceRecipeSchema(), 'wp-codebox/workspace-recipe/v1');
+assert.equal(buildCodeboxPlaygroundPreviewUrl({ steps: [{ step: 'login' }] }), 'https://playground.wordpress.net/#%7B%22steps%22%3A%5B%7B%22step%22%3A%22login%22%7D%5D%7D');
 assert.deepEqual(codeboxAgentRuntimeContract({ HOMEBOY_AGENT_RUNTIME_BACKEND: 'codebox', HOMEBOY_AGENT_RUNTIME_SELECTOR: 'sandbox' }), {
 	provider: 'wp-codebox',
 	profile: 'wpsg-agent-runtime-package',
