@@ -100,9 +100,13 @@ if (args[0] === 'agent-task' && args[1] === 'controller' && args[2] === 'materia
       },
     };
   }
-  const result = {
+  const materialization = {
     schema: 'homeboy/agent-task-loop-spec-materialization/v1',
     spec,
+  };
+  const result = {
+    success: true,
+    data: materialization,
   };
   if (outputIndex !== -1) {
     writeFileSync(args[outputIndex + 1], JSON.stringify(result, null, 2) + '\\n');
@@ -114,7 +118,7 @@ if (args[0] === 'agent-task' && args[1] === 'controller' && args[2] === 'validat
   const value = JSON.parse(readFileSync(args[3].replace(/^@/, ''), 'utf8'));
   const diagnostics = [];
   if (value.schema !== 'homeboy/agent-task-loop-spec-materialization/v1' || !value.spec) {
-    diagnostics.push({ code: 'materialized_spec_missing', message: 'materialized controller output must include spec' });
+    diagnostics.push({ code: 'materialized_spec_missing', message: 'proof validation input must be an unwrapped materialized controller spec' });
   }
   const result = { schema: 'homeboy/proof-validation/v1', valid: diagnostics.length === 0, diagnostics };
   console.log(JSON.stringify(result));
