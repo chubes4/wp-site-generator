@@ -149,6 +149,10 @@ export function runtimeWorkflowBuilderExecution({ kind, workflowBuilder, ...meta
 	};
 }
 
+export function runtimePackageAbility() {
+	return runtimeApiAbilities.runRuntimePackage;
+}
+
 function text(value) {
 	return String(value || '').trim();
 }

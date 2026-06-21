@@ -6,6 +6,7 @@ export {
 	runtimeBundleExecution,
 	runtimePackageProfile,
 	runtimePackageProfiles,
+	runtimePackageAbility,
 	readAgentRuntimeContract,
 	runtimeToolProfileInputs,
 	runtimeToolProfiles,
@@ -25,16 +26,9 @@ export {
 } from './wordpress-runtime-api.mjs';
 
 export {
-	codeboxAgentRuntimeContract,
 	buildCodeboxPlaygroundPreviewUrl,
 	codeboxPluginMountTarget,
 	codeboxRuntimeApi,
-	codeboxRuntimePackageAbility,
-	codeboxRuntimePackageProfiles,
-	codeboxRuntimeProfileId,
-	codeboxRuntimeProvider,
-	codeboxRuntimeToolProfileInputs,
-	codeboxRuntimeWorkflowInputs,
 	codeboxWorkspaceRecipeSchema,
 	resolveCodeboxCliPath,
 	resolveCodeboxVisualParityOutputRoot,

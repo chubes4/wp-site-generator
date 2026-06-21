@@ -181,14 +181,19 @@ jobs:
           npm ci
           npm run build
 
+      - name: Check out Homeboy Extensions for visual parity helper
+        if: always()
+        uses: actions/checkout@v4
+        with:
+          repository: Extra-Chill/homeboy-extensions
+          ref: ${{ steps.stack-manifest.outputs.homeboy_extensions_sha }}
+          path: .homeboy-extensions
+
       - name: Install visual parity helper dependency
         if: always()
         shell: bash
         run: |
           set -euo pipefail
-          git clone --depth 1 --branch main https://github.com/Extra-Chill/homeboy-extensions .homeboy-extensions
-          git -C .homeboy-extensions fetch --depth 1 origin "${{ steps.stack-manifest.outputs.homeboy_extensions_sha }}"
-          git -C .homeboy-extensions checkout --detach "${{ steps.stack-manifest.outputs.homeboy_extensions_sha }}"
           npm install --no-save --prefix "$PWD" ./.homeboy-extensions/wordpress
           npx playwright install --with-deps chromium
 

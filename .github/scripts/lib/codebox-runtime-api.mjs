@@ -1,14 +1,5 @@
 import path from 'node:path';
 
-import {
-	runtimeApiAbilities,
-	runtimePackageProfile,
-	runtimePackageProfiles,
-	readAgentRuntimeContract,
-	runtimeToolProfileInputs,
-	runtimeWorkflowInputs,
-} from './agent-runtime-api.mjs';
-
 export const codeboxRuntimeApi = Object.freeze({
 	componentPaths: Object.freeze({
 		wpCodeboxCli: '.ci/wp-codebox/packages/cli/dist/index.js',
@@ -24,39 +15,6 @@ export const codeboxRuntimeApi = Object.freeze({
 		playgroundUrl: 'https://playground.wordpress.net/',
 	}),
 });
-
-export function codeboxRuntimePackageAbility() {
-	return runtimeApiAbilities.runRuntimePackage;
-}
-
-export function codeboxRuntimeProvider() {
-	return 'wp-codebox';
-}
-
-export function codeboxRuntimeProfileId() {
-	return runtimePackageProfile.id;
-}
-
-export function codeboxAgentRuntimeContract(env = process.env) {
-	return readAgentRuntimeContract({
-		...env,
-		HOMEBOY_AGENT_RUNTIME_PROVIDER: env.HOMEBOY_AGENT_RUNTIME_PROVIDER || 'wp-codebox',
-		HOMEBOY_AGENT_RUNTIME_WORKSPACE_COMMAND_ABILITY: env.HOMEBOY_AGENT_RUNTIME_WORKSPACE_COMMAND_ABILITY || 'wp-codebox/runner-workspace-command',
-		HOMEBOY_AGENT_RUNTIME_WORKSPACE_PUBLISH_ABILITY: env.HOMEBOY_AGENT_RUNTIME_WORKSPACE_PUBLISH_ABILITY || 'wp-codebox/runner-workspace-publish',
-	});
-}
-
-export function codeboxRuntimePackageProfiles(contract = codeboxAgentRuntimeContract({})) {
-	return runtimePackageProfiles(contract);
-}
-
-export function codeboxRuntimeToolProfileInputs(profileId, contract = codeboxAgentRuntimeContract({})) {
-	return runtimeToolProfileInputs(profileId, contract);
-}
-
-export function codeboxRuntimeWorkflowInputs(profileId, contract = codeboxAgentRuntimeContract({})) {
-	return runtimeWorkflowInputs(profileId, contract);
-}
 
 export function resolveWpCodeboxCliPath(repoRoot, env = process.env) {
 	return env.WP_CODEBOX_CLI || path.join(repoRoot, codeboxRuntimeApi.componentPaths.wpCodeboxCli);

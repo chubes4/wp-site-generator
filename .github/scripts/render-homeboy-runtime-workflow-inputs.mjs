@@ -1,10 +1,10 @@
 #!/usr/bin/env node
 
-import { appendGithubOutput, codeboxAgentRuntimeContract, codeboxRuntimeWorkflowInputs, parseArgs } from './lib/ci-runtime-utils.mjs';
+import { appendGithubOutput, parseArgs, readAgentRuntimeContract, runtimeWorkflowInputs } from './lib/ci-runtime-utils.mjs';
 
 const args = parseArgs(process.argv.slice(2));
-const profile = args.get('--codebox-workload-profile') || process.env.CODEBOX_WORKLOAD_PROFILE || 'workspace-iteration';
-const outputs = codeboxRuntimeWorkflowInputs(profile, codeboxAgentRuntimeContract(process.env));
+const profile = args.get('--runtime-workload-profile') || process.env.RUNTIME_WORKLOAD_PROFILE || 'workspace-iteration';
+const outputs = runtimeWorkflowInputs(profile, readAgentRuntimeContract(process.env));
 
 if (process.env.GITHUB_OUTPUT) {
 	await appendGithubOutput(process.env.GITHUB_OUTPUT, outputs);
