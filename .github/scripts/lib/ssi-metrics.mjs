@@ -10,7 +10,7 @@ export const ssiSignalMetrics = [
 	['ssi_ignored_region_count', 'ignored regions'],
 ];
 
-export const ssiBacMetrics = [
+export const ssiBlocksEngineMetrics = [
 	['ssi_bac_available', 'compiler available'],
 	['ssi_bac_website_artifact_present', 'website artifact present'],
 	['ssi_bac_fragment_count', 'compiled fragments'],

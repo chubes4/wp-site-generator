@@ -85,7 +85,7 @@ assert.match(settingsPayload.workloads[0].run[1].code, /blocks_engine_php_transf
 assert.doesNotMatch(settingsPayload.workloads[0].run[1].code, /static-site-importer import-theme/, 'workload does not depend on the SSI WP-CLI command');
 assert.doesNotMatch(settingsPayload.workloads[0].run[1].code, /static-site-importer\/import-theme/, 'workload does not depend on the legacy import-theme ability');
 assert.doesNotMatch(settingsPayload.workloads[0].run[1].code, /^<\?php/, 'inline PHP workload code omits an opening tag for eval execution');
-assert.deepEqual(settingsPayload.website_artifact.files.map((file) => file.path), ['website/assets/styles.css', 'website/index.html'], 'validation settings pass candidate files as a BAC website artifact');
+assert.deepEqual(settingsPayload.website_artifact.files.map((file) => file.path), ['website/assets/styles.css', 'website/index.html'], 'validation settings pass candidate files as a website artifact');
 assert.equal(settingsPayload.workloads[0].artifacts, undefined, 'runtime import report stays in workload metadata instead of a collectable bench artifact declaration');
 assert.deepEqual(
 	settingsPayload.settings.wordpress_runtime_blueprint.steps.map((step) => step.options.targetFolderName).slice(0, 3),

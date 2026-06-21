@@ -16,7 +16,7 @@ const benchPath = path.join(tmp, 'bench.json');
 
 assert.match(diagnostics, /'ssi_freeform_block_count'\s*=>\s*0/, 'diagnostics initializes a freeform block metric');
 assert.match(diagnostics, /'diagnostics'\s*=>\s*\$diagnostics/, 'diagnostics exposes modern diagnostic rows');
-assert.match(diagnostics, /'ssi_bac_available'\s*=>\s*0/, 'diagnostics initializes BAC availability metric');
+assert.match(diagnostics, /'ssi_bac_available'\s*=>\s*0/, 'diagnostics initializes Blocks Engine availability metric');
 assert.doesNotMatch(diagnostics, /freeform_diagnostics/, 'diagnostics does not expose legacy freeform diagnostic rows');
 assert.doesNotMatch(diagnostics, /fallback_diagnostics/, 'diagnostics does not expose legacy fallback diagnostic rows');
 assert.doesNotMatch(diagnostics, /'findings'/, 'diagnostics does not expose legacy finding rows');
@@ -37,8 +37,8 @@ await writeJson(benchPath, {
 						import_report_summary: {
 							path: '/tmp/import-report.json',
 							readable: true,
-							top_level_keys: ['quality', 'diagnostics', 'block_artifact_compiler'],
-							block_artifact_compiler: {
+							top_level_keys: ['quality', 'diagnostics', 'blocks_engine'],
+							blocks_engine: {
 								status: 'success',
 								website_artifact_summary: { component_count: 4 },
 							},
@@ -74,8 +74,8 @@ const rendered = spawnSync(process.execPath, [path.join(repoRoot, '.github/scrip
 
 assert.equal(rendered.status, 0, rendered.stderr || rendered.stdout);
 assert.match(rendered.stdout, /\| freeform blocks \| 1 \|/, 'validation report renders freeform block counts from the artifact contract');
-assert.match(rendered.stdout, /### Blocks Engine Artifact Compiler/, 'validation report displays Blocks Engine compiler status from the import report');
-assert.match(rendered.stdout, /Website Artifact Summary/, 'validation report displays BAC website artifact summary');
+assert.match(rendered.stdout, /### Blocks Engine Transformer/, 'validation report displays Blocks Engine status from the import report');
+assert.match(rendered.stdout, /Website Artifact Summary/, 'validation report displays Blocks Engine website artifact summary');
 assert.match(rendered.stdout, /Reason Code/, 'validation report displays modern diagnostic fields');
 assert.match(rendered.stdout, /diag-freeform-header/, 'validation report renders modern diagnostic rows');
 

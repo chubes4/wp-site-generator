@@ -241,8 +241,8 @@ return static function (): array {
 		);
 	};
 
-	$bac_summary = static function ( array $report ) use ( $get_path, $count_value, $sum_nested_counts, $normalize_source_documents ): array {
-		$compiler = $get_path( $report, array( 'block_artifact_compiler' ) );
+	$blocks_engine_summary = static function ( array $report ) use ( $get_path, $count_value, $sum_nested_counts, $normalize_source_documents ): array {
+		$compiler = $get_path( $report, array( 'blocks_engine' ) );
 		$compiler = is_array( $compiler ) ? $compiler : array();
 		$fragments = isset( $compiler['fragments'] ) && is_array( $compiler['fragments'] ) ? $compiler['fragments'] : array();
 		$website_artifact = isset( $compiler['website_artifact'] ) && is_array( $compiler['website_artifact'] ) ? $compiler['website_artifact'] : array();
@@ -349,13 +349,13 @@ return static function (): array {
 	};
 
 	if ( is_array( $report ) ) {
-		$block_artifact_compiler = $bac_summary( $report );
-		$metrics['ssi_bac_available'] = $block_artifact_compiler['available'] ? 1 : 0;
-		$metrics['ssi_bac_fragment_count'] = $block_artifact_compiler['fragment_count'];
-		$metrics['ssi_bac_component_count'] = $block_artifact_compiler['component_count'];
-		$metrics['ssi_bac_rejected_count'] = $block_artifact_compiler['rejected_count'];
-		$metrics['ssi_bac_diagnostic_count'] = $block_artifact_compiler['diagnostic_count'];
-		$metrics['ssi_bac_website_artifact_present'] = $block_artifact_compiler['website_artifact_present'] ? 1 : 0;
+		$blocks_engine = $blocks_engine_summary( $report );
+		$metrics['ssi_bac_available'] = $blocks_engine['available'] ? 1 : 0;
+		$metrics['ssi_bac_fragment_count'] = $blocks_engine['fragment_count'];
+		$metrics['ssi_bac_component_count'] = $blocks_engine['component_count'];
+		$metrics['ssi_bac_rejected_count'] = $blocks_engine['rejected_count'];
+		$metrics['ssi_bac_diagnostic_count'] = $blocks_engine['diagnostic_count'];
+		$metrics['ssi_bac_website_artifact_present'] = $blocks_engine['website_artifact_present'] ? 1 : 0;
 
 		$collect_modern_diagnostics( $report );
 
@@ -415,7 +415,7 @@ return static function (): array {
 				'top_level_keys' => is_array( $report ) ? array_keys( $report ) : array(),
 				'source_documents' => is_array( $report ) ? $normalize_source_documents( $get_path( $report, array( 'source_documents' ) ) ) : array(),
 				'diagnostics' => $diagnostics,
-				'block_artifact_compiler' => is_array( $report ) ? $bac_summary( $report ) : array(),
+				'blocks_engine' => is_array( $report ) ? $blocks_engine_summary( $report ) : array(),
 				'asset_map' => is_array( $get_path( $report, array( 'asset_map' ) ) ) ? $get_path( $report, array( 'asset_map' ) ) : array(),
 			),
 		),
