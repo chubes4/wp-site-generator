@@ -97,7 +97,7 @@ This repository is the orchestration and generated-site source repo. The working
 - [`Extra-Chill/homeboy-action`](https://github.com/Extra-Chill/homeboy-action) — GitHub Action wrapper that runs Homeboy in repository workflows.
 - [`Extra-Chill/homeboy-extensions`](https://github.com/Extra-Chill/homeboy-extensions) — reusable WordPress Playground workloads, current agent CI workflow, validation reporting, and iterator plumbing.
 - [`chubes4/static-site-importer`](https://github.com/chubes4/static-site-importer) — WordPress plugin that imports each generated static site into a block theme.
-- [`Automattic/blocks-engine`](https://github.com/Automattic/blocks-engine) — canonical PHP transformer used by Static Site Importer for HTML-to-block conversion, format conversion, and website artifact compilation.
+- [`Automattic/blocks-engine`](https://github.com/Automattic/blocks-engine) — tagged PHP transform contract used by Static Site Importer for HTML-to-block conversion, block serialization, and site-artifact diagnostics.
 - [`WordPress/wordpress-playground`](https://github.com/WordPress/wordpress-playground) — PHP-WASM WordPress runtime used by validation and preview links.
 
 The generated-site PR is only one artifact in the loop. Validation output can produce upstream PRs or issues in the importer and transformer repos, then the generated-site PR is revalidated against the improved stack.

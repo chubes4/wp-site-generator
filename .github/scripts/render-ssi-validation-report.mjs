@@ -86,6 +86,7 @@ function renderReport(ssi, stackManifest) {
 
 	const importReportSummary = ssi?.metadata?.import_report_summary;
 	sections.push(renderBlocksEngineStatus(metrics, importReportSummary?.blocks_engine));
+	sections.push(renderValidationArtifactEnvelope(importReportSummary?.validation_artifact_envelope || ssi?.metadata?.validation_artifact_envelope));
 	sections.push(renderSourceDocuments(importReportSummary?.source_documents, importReportSummary?.diagnostics));
 	sections.push(renderImportReport(importReportSummary));
 
@@ -179,6 +180,25 @@ function renderUnexpectedMetrics(metrics) {
 	}
 
 	return ['### Other Metrics', '| Metric | Value |', '| --- | ---: |', ...rows].join('\n');
+}
+
+function renderValidationArtifactEnvelope(envelope) {
+	const summary = envelope && typeof envelope === 'object' ? envelope : {};
+	if (Object.keys(summary).length === 0) {
+		return '';
+	}
+
+	const artifacts = Array.isArray(summary.artifacts) ? summary.artifacts : [];
+	const rows = [
+		['schema', summary.schema],
+		['status', summary.status || summary.result?.status],
+		['validation hash', summary.validation_hash || summary.hash],
+		['artifact count', artifacts.length || summary.artifact_count],
+	]
+		.filter(([, value]) => value !== undefined && value !== null && value !== '')
+		.map(([label, value]) => `| ${escapeCell(label)} | ${escapeCell(formatValue(value))} |`);
+
+	return ['### Codebox Validation Artifact Envelope', '| Field | Value |', '| --- | --- |', ...rows].join('\n');
 }
 
 function renderBlocksEngineStatus(metrics, compiler) {

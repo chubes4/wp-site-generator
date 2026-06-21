@@ -35,7 +35,7 @@ try {
 	assert.equal(payload.site, 'issue-777-direct-candidate', 'validator derives the site slug from the candidate payload');
 	assert.equal(payload.candidate_source.source, 'static-site-candidate-json', 'validator records direct candidate JSON provenance');
 	assert.match(payload.candidate_source.relativeSourceDirectory, /^\.ci\/static-site-candidates\/issue-777-direct-candidate$/, 'candidate is materialized into a concrete static-site directory');
-	assert.equal(payload.website_artifact.schema, 'block-artifact-compiler/website-artifact/v1', 'validator converts candidate files to SSI-compatible website artifact input');
+	assert.equal(payload.website_artifact.schema, 'blocks-engine/php-transformer/site-artifact/v1', 'validator converts candidate files to SSI-compatible Blocks Engine site artifact input');
 	assert.deepEqual(payload.website_artifact.files.map((file) => file.path), ['website/assets/styles.css', 'website/index.html'], 'website artifact contains candidate files under website/');
 	assert.equal(payload.workloads[0].run[0].type, 'php', 'SSI workload probes transformer availability through PHP');
 	assert.match(payload.workloads[0].run[0].code, /blocks_engine_php_transformer_compile_artifact|Automattic\\\\BlocksEngine\\\\PhpTransformer/, 'SSI workload probes Blocks Engine php-transformer helpers/classes');
@@ -68,7 +68,7 @@ try {
 	const materializedPayload = JSON.parse(await readFile(materializedSettingsPath, 'utf8'));
 	assert.equal(materializedPayload.site, 'direct-static-site', 'validator derives the site slug from a materialized artifact directory');
 	assert.equal(materializedPayload.candidate_source.source, 'source-static-site-dir', 'validator records materialized directory provenance');
-	assert.equal(materializedPayload.website_artifact.schema, 'block-artifact-compiler/website-artifact/v1', 'materialized directory is converted to SSI-compatible website artifact input');
+	assert.equal(materializedPayload.website_artifact.schema, 'blocks-engine/php-transformer/site-artifact/v1', 'materialized directory is converted to SSI-compatible Blocks Engine site artifact input');
 	assert.equal(materializedPayload.workloads[0].run[1].type, 'php', 'materialized directory imports through the ability PHP bridge');
 	assert.match(materializedPayload.workloads[0].run[1].code, /static-site-importer\/import-website-artifact/, 'SSI workload imports provided directory through website artifact ability');
 
