@@ -14,10 +14,18 @@ const candidateFiles = execFileSync('git', ['ls-files', '--cached', '--others', 
 const termPattern = new RegExp(config.terms.map(escapeRegExp).join('|'));
 const matches = [];
 for (const file of candidateFiles) {
-  const body = await readFile(path.join(repoRoot, file), 'utf8');
-  if (termPattern.test(body)) {
-    matches.push(file);
-  }
+	let body = '';
+	try {
+		body = await readFile(path.join(repoRoot, file), 'utf8');
+	} catch (error) {
+		if (error?.code === 'ENOENT') {
+			continue;
+		}
+		throw error;
+	}
+	if (termPattern.test(body)) {
+		matches.push(file);
+	}
 }
 
 const quarantined = config.quarantine || {};

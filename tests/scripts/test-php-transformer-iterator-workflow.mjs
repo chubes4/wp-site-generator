@@ -20,11 +20,13 @@ assert.match(workflow, /app_token_repos.*Automattic\/blocks-engine/, 'iterator t
 assert.match(workflow, /execute_workflow_builder_command.*group-ssi-finding-packets\.mjs .*homeboy-generic-fanout-reconcile\.cjs .*bundles\/php-transformer-iterator-agent\/scripts\/build-agent-iterator-workflow\.mjs/, 'iterator runtime task delegates fanout planning to HBE before building the WPSG finding workflow');
 assert.match(workflow, /build-php-transformer-iterator-fanout-config\.mjs/, 'iterator keeps WPSG finding-group fanout config in the repo');
 assert.match(workflow, /execute_workflow_path":"\.ci\/agent-iterator-workflow\.json"/, 'iterator runtime task receives the generated workflow path');
-assert.match(runtimeWorkflow, /runtime_provider:[\s\S]*default: wp-codebox/, 'WPSG seam defaults to the WP Codebox public runtime id');
+assert.match(runtimeWorkflow, /runtime_provider:[\s\S]*default: ''/, 'WPSG seam leaves runtime provider selection to Homeboy/runtime policy by default');
 assert.match(runtimeWorkflow, /runtime_profile:[\s\S]*default: wpsg-agent-runtime-package/, 'WPSG seam exposes a generic runtime package profile by default');
-assert.match(runtimeWorkflow, /render-codebox-runtime-workflow-inputs\.mjs/, 'WPSG seam renders runtime profiles and tool abilities from the Codebox contract helper');
-assert.match(runtimeWorkflow, /ability_tools: \$\{\{ needs\.runtime-contracts\.outputs\.ability_tools \}\}/, 'WPSG seam consumes generated Codebox tool declarations');
+assert.match(runtimeWorkflow, /render-homeboy-runtime-workflow-inputs\.mjs/, 'WPSG seam renders runtime profiles and tool abilities from the Homeboy runtime contract helper');
+assert.match(runtimeWorkflow, /ability_tools: \$\{\{ needs\.runtime-contracts\.outputs\.ability_tools \}\}/, 'WPSG seam consumes generated runtime tool declarations');
 assert.doesNotMatch(runtimeWorkflow, /ability_tools: .*wp-codebox\/runner-workspace-command/, 'WPSG seam does not inline Codebox workspace tool abilities');
+assert.match(workflow, /runtime_workspace_command_ability: \$\{\{ vars\.HOMEBOY_AGENT_RUNTIME_WORKSPACE_COMMAND_ABILITY \}\}/, 'iterator accepts workspace command ability from runtime config');
+assert.match(workflow, /runtime_workspace_publish_ability: \$\{\{ vars\.HOMEBOY_AGENT_RUNTIME_WORKSPACE_PUBLISH_ABILITY \}\}/, 'iterator accepts workspace publish ability from runtime config');
 assert.match(workflow, /runtime_output_projections.*source_callback_url/, 'iterator declares generic runtime output projections');
 assert.match(workflow, /evidence_projections.*create_github_pull_request.*upstream_action_url/, 'iterator records upstream action evidence through generic evidence projections');
 assert.doesNotMatch(workflow, /actions_artifact_items/, 'iterator no longer fetches artifact ZIPs inside WordPress runtime');

@@ -1,8 +1,8 @@
 # Data Machine Boundary
 
-WPSG may know WP Codebox, but WPSG-owned generation, validation, and review domain code should not know Data Machine or Data Machine Code.
+WPSG-owned generation, validation, and review domain code should not know Data Machine or Data Machine Code. Agent-runtime dispatch should consume generic Homeboy runtime configuration rather than selecting a concrete backend in this repo.
 
-WPSG workflows call the local `.github/workflows/wpsg-runtime-agent-ci.yml` seam. Bundle execution stays described with HBE `runtime_execution` descriptors and dispatches through the Agents API `agents/run-runtime-package` ability. Domain workflows select generic WPSG runtime tool profiles such as `workspace-iteration` and `workspace-publication`; the seam maps those profiles to the current Codebox-compatible provider defaults.
+WPSG workflows call the local `.github/workflows/wpsg-runtime-agent-ci.yml` seam. Bundle execution stays described with HBE `runtime_execution` descriptors and dispatches through the Agents API `agents/run-runtime-package` ability. Domain workflows select generic WPSG runtime tool profiles such as `workspace-iteration` and `workspace-publication`; the seam reads provider, backend, selector, profile, and workspace ability inputs from the Homeboy runtime contract.
 
 The enforced quarantine lives in `.github/datamachine-boundary-quarantine.json`. Run `node tests/scripts/test-datamachine-boundary.mjs` to print the current boundary report and fail on new unclassified references.
 
@@ -19,6 +19,6 @@ The older Playground proof scripts, workloads, workflow, and transitional adapte
 - WPSG workflows check out Agents API and Homeboy Extensions, and no longer check out concrete runtime implementation repositories.
 - Iterator callback publication uses generic `runtime_output_projections` over semantic `outputs.*` values populated by `evidence_projections`, not legacy engine-data helper functions or config keys.
 
-WP Codebox now materializes `agent-runtime/workspace-preload`, so WPSG declares workspace preload artifacts directly with `agent-runtime/workspace-preload/v1` extension payloads instead of adapter artifact metadata.
+Runtime packages materialize `agent-runtime/workspace-preload`, so WPSG declares workspace preload artifacts directly with `agent-runtime/workspace-preload/v1` extension payloads instead of adapter artifact metadata.
 
-WPSG does not add local shims around runtime execution. Provider-specific behavior belongs in the WP Codebox runtime package or Homeboy Extensions runtime execution support.
+WPSG does not add local shims around runtime execution. Provider-specific behavior belongs in the selected runtime package or Homeboy Extensions runtime execution support.

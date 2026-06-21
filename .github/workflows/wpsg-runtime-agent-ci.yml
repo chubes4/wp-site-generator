@@ -17,9 +17,9 @@ on:
         default: workspace-iteration
         type: string
       runtime_provider:
-        description: WP Codebox public runtime id.
+        description: Homeboy runtime provider id. Leave empty to use Homeboy/runtime policy.
         required: false
-        default: wp-codebox
+        default: ''
         type: string
       runtime_profile:
         description: Generic WPSG runtime package profile.
@@ -27,7 +27,47 @@ on:
         default: wpsg-agent-runtime-package
         type: string
       runtime_profiles:
-        description: Runtime package profiles. Defaults are rendered from the WPSG Codebox contract helper.
+        description: Runtime package profiles JSON. Leave empty to render a generic WPSG package profile.
+        required: false
+        default: ''
+        type: string
+      runtime_backend:
+        description: Optional Homeboy runtime backend selector recorded in the rendered profile.
+        required: false
+        default: ''
+        type: string
+      runtime_provider_id:
+        description: Optional provider id recorded in the rendered profile.
+        required: false
+        default: ''
+        type: string
+      runtime_selector:
+        description: Optional runtime selector recorded in the rendered profile.
+        required: false
+        default: ''
+        type: string
+      runtime_task_ability:
+        description: Ability used to execute runtime tasks.
+        required: false
+        default: agents/run-runtime-package
+        type: string
+      runtime_bundle_ability:
+        description: Ability used to execute runtime bundles.
+        required: false
+        default: agents/run-runtime-package
+        type: string
+      runtime_workflow_ability:
+        description: Ability used to execute runtime workflows.
+        required: false
+        default: agents/run-runtime-package
+        type: string
+      runtime_workspace_command_ability:
+        description: Optional ability for workspace command tools supplied by the selected runtime.
+        required: false
+        default: ''
+        type: string
+      runtime_workspace_publish_ability:
+        description: Optional ability for workspace publication tools supplied by the selected runtime.
         required: false
         default: ''
         type: string
@@ -56,7 +96,18 @@ jobs:
       - id: contract
         env:
           RUNTIME_TOOL_PROFILE: ${{ inputs.runtime_tool_profile }}
-        run: node .github/scripts/render-codebox-runtime-workflow-inputs.mjs
+          HOMEBOY_AGENT_RUNTIME_PROVIDER: ${{ inputs.runtime_provider }}
+          HOMEBOY_AGENT_RUNTIME_PROFILE: ${{ inputs.runtime_profile }}
+          HOMEBOY_AGENT_RUNTIME_PROFILES: ${{ inputs.runtime_profiles }}
+          HOMEBOY_AGENT_RUNTIME_BACKEND: ${{ inputs.runtime_backend }}
+          HOMEBOY_AGENT_RUNTIME_PROVIDER_ID: ${{ inputs.runtime_provider_id }}
+          HOMEBOY_AGENT_RUNTIME_SELECTOR: ${{ inputs.runtime_selector }}
+          HOMEBOY_AGENT_RUNTIME_TASK_ABILITY: ${{ inputs.runtime_task_ability }}
+          HOMEBOY_AGENT_RUNTIME_BUNDLE_ABILITY: ${{ inputs.runtime_bundle_ability }}
+          HOMEBOY_AGENT_RUNTIME_WORKFLOW_ABILITY: ${{ inputs.runtime_workflow_ability }}
+          HOMEBOY_AGENT_RUNTIME_WORKSPACE_COMMAND_ABILITY: ${{ inputs.runtime_workspace_command_ability }}
+          HOMEBOY_AGENT_RUNTIME_WORKSPACE_PUBLISH_ABILITY: ${{ inputs.runtime_workspace_publish_ability }}
+        run: node .github/scripts/render-homeboy-runtime-workflow-inputs.mjs
 
   workspace-iteration:
     needs: runtime-contracts
