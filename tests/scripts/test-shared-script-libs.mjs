@@ -6,6 +6,7 @@ import path from 'node:path';
 import { buildSingleAiWorkflow, buildSingleAiWorkflowStep } from '../../bundles/php-transformer-iterator-agent/scripts/lib/agent-ai-workflow.mjs';
 import {
 	buildCodeboxPlaygroundPreviewUrl,
+	codeboxRuntimeProviderProfile,
 	codeboxRuntimeApi,
 	codeboxRuntimeWorkspaceRecipeSchema,
 	codeboxRunnerWorkspaceCommandAbility,
@@ -57,6 +58,12 @@ assert.equal(wordpressRuntimePluginMountTarget(), '/wordpress/wp-content/plugins
 assert.equal(codeboxValidationArtifactEnvelopeSchema(), 'wp-codebox/validation-artifact-envelope/v1', 'validation artifact schema is centralized');
 assert.equal(codeboxRunnerWorkspaceCommandAbility(), 'wp-codebox/runner-workspace-command', 'Codebox workspace command ability is centralized');
 assert.equal(codeboxRunnerWorkspacePublishAbility(), 'wp-codebox/runner-workspace-publish', 'Codebox workspace publish ability is centralized');
+assert.deepEqual(codeboxRuntimeProviderProfile(), {
+	id: 'wp-codebox',
+	provider: 'wp-codebox',
+	workspaceCommandAbility: 'wp-codebox/runner-workspace-command',
+	workspacePublishAbility: 'wp-codebox/runner-workspace-publish',
+}, 'Codebox provider profile vocabulary is centralized');
 assert.equal(wordpressRuntimeBlueprintSchema(), 'https://playground.wordpress.net/blueprint-schema.json');
 assert.equal(wordpressRuntimeSettingsDescriptor().settings_fields.blueprint, 'wordpress_runtime_blueprint');
 assert.deepEqual(wordpressRuntimeSettingsFields(), { blueprint: 'wordpress_runtime_blueprint', workloads: 'wordpress_runtime_workloads' });
