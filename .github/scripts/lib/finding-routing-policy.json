@@ -1,6 +1,7 @@
 {
   "candidate_repos": [
     "Automattic/blocks-engine",
+    "Extra-Chill/homeboy-extensions",
     "chubes4/static-site-importer",
     "chubes4/wp-site-generator"
   ],
@@ -8,7 +9,7 @@
   "rules": [
     {
       "id": "bench-failure",
-      "repo": "chubes4/wp-site-generator",
+      "repo": "Extra-Chill/homeboy-extensions",
       "kind": ["bench_failure"]
     },
     {
@@ -60,6 +61,7 @@
   ],
   "route_reasons": {
     "Automattic/blocks-engine": "transformer, format bridge, or artifact compiler diagnostic routes to Blocks Engine php-transformer",
+    "Extra-Chill/homeboy-extensions": "Homeboy WordPress runtime workload diagnostic routes to Homeboy Extensions",
     "chubes4/static-site-importer": "SSI import/source-selection/asset-map diagnostic routes to static-site-importer",
     "chubes4/wp-site-generator": "visual parity or generator policy diagnostic routes to wp-site-generator"
   }

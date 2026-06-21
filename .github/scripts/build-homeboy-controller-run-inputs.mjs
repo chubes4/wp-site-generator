@@ -11,7 +11,7 @@ import {
 } from './site-generation-complexity-policy.mjs';
 
 const root = process.env.GITHUB_WORKSPACE || process.cwd();
-const { runId, repository, controllerSpecPath, outputPath, policyResultPath, runtimeOverrides } = buildSiteGenerationLoopRunContext({ env: process.env, root });
+const { runId, repository, controllerSpecPath, outputPath, policyResultPath, runtimeOverrides, source, dependencyRefs } = buildSiteGenerationLoopRunContext({ env: process.env, root });
 const policyInputs = resolvePolicyInputs({ root });
 const complexityPolicy = loadPolicy(policyInputs.policyPath);
 const qualitySignals = loadQualitySignals(policyInputs.qualitySignalsPath);
@@ -53,11 +53,19 @@ await writeJsonFile(outputPath, {
 		website_flow_slug: process.env.WEBSITE_FLOW_SLUG || 'website-idea-artifact-flow',
 		runtime_input_contract: runtimeOverrides.source,
 		artifact_root: process.env.HOMEBOY_ARTIFACT_ROOT || '.ci/homeboy-agent-task-artifacts',
+		randomness_seed: complexityDecision.randomness_seed,
+		randomness_profile: complexityDecision.randomness_profile.id,
+		source,
+		dependency_refs: dependencyRefs,
 	},
 	metadata: {
 		run: {
 			run_id: runId,
 			repository,
+			randomness_seed: complexityDecision.randomness_seed,
+			randomness_profile: complexityDecision.randomness_profile.id,
+			source,
+			dependency_refs: dependencyRefs,
 			controller_spec: controllerSpecPath,
 			complexity_policy_result: path.relative(root, policyResultPath),
 			runtime_input_contract: runtimeOverrides.source,
