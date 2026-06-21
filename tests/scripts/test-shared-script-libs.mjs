@@ -6,16 +6,21 @@ import path from 'node:path';
 import { buildSingleAiWorkflow, buildSingleAiWorkflowStep } from '../../bundles/php-transformer-iterator-agent/scripts/lib/agent-ai-workflow.mjs';
 import {
 	codeboxRuntimeBackend,
+	codeboxRuntimeApi,
+	codeboxWorkspaceRecipeSchema,
 	envOrArg,
 	numberValue,
 	parseArgs,
 	readJsonOrNull,
 	repoPathResolver,
+	resolveVisualParityOutputRoot,
+	resolveWpCodeboxCliPath,
 	runtimeApiAbilities,
 	runtimePackageProfile,
 	runtimePackageProfiles,
 	runtimeToolProfiles,
 	textValue,
+	wpSiteGeneratorPluginMountTarget,
 } from '../../.github/scripts/lib/ci-runtime-utils.mjs';
 import { loadRecoveredSsiImportSummary, recoveredSsiScenarioFromImportSummary } from '../../.github/scripts/lib/ssi-import-summary.mjs';
 import { ssiPrBodyMetrics, validationMetricValue } from '../../.github/scripts/lib/ssi-metrics.mjs';
@@ -30,10 +35,17 @@ assert.equal(textValue(' ok '), 'ok');
 assert.equal(numberValue('4'), 4);
 assert.equal(numberValue('bad', 9), 9);
 assert.equal(runtimePackageProfile.provider, 'codebox', 'Codebox remains the compatibility backend');
+assert.equal(codeboxRuntimeApi.runtimeSchemas.workspaceRecipe, 'wp-codebox/workspace-recipe/v1', 'runtime recipe schema is centralized');
 assert.equal(runtimePackageProfile.id, 'wpsg-agent-runtime-package', 'consumer-facing runtime package profile is generic');
 assert.equal(runtimePackageProfile.compatibilityId, 'wpsg-codebox-runtime-package', 'legacy runtime package profile id remains mapped');
 assert.equal(runtimePackageProfile.runtimeTaskAbility, runtimeApiAbilities.runRuntimePackage, 'runtime package profile uses the generic runtime package ability');
 assert.equal(codeboxRuntimeBackend.workspacePublishAbility, 'wp-codebox/runner-workspace-publish', 'Codebox publish ability is backend profile data');
+assert.equal(resolveWpCodeboxCliPath('/tmp/repo', {}), path.join('/tmp/repo', '.ci/wp-codebox/packages/cli/dist/index.js'));
+assert.equal(resolveWpCodeboxCliPath('/tmp/repo', { WP_CODEBOX_CLI: '/custom/codebox.js' }), '/custom/codebox.js');
+assert.equal(resolveVisualParityOutputRoot({}), 'visual-parity-artifacts');
+assert.equal(resolveVisualParityOutputRoot({ VISUAL_PARITY_OUTPUT: 'custom-artifacts' }), 'custom-artifacts');
+assert.equal(wpSiteGeneratorPluginMountTarget(), '/wordpress/wp-content/plugins/wp-site-generator');
+assert.equal(codeboxWorkspaceRecipeSchema(), 'wp-codebox/workspace-recipe/v1');
 assert.deepEqual(runtimePackageProfiles(), {
 	'wpsg-agent-runtime-package': {
 		id: 'wpsg-agent-runtime-package',
