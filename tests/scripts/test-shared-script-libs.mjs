@@ -6,19 +6,15 @@ import path from 'node:path';
 import { buildSingleAiWorkflow, buildSingleAiWorkflowStep } from '../../bundles/php-transformer-iterator-agent/scripts/lib/agent-ai-workflow.mjs';
 import {
 	buildCodeboxPlaygroundPreviewUrl,
-	codeboxPluginMountTarget,
 	codeboxRuntimeApi,
-	codeboxWorkspaceRecipeSchema,
+	codeboxRuntimeWorkspaceRecipeSchema,
 	envOrArg,
 	numberValue,
 	parseArgs,
 	readAgentRuntimeContract,
 	readJsonOrNull,
 	repoPathResolver,
-	resolveCodeboxCliPath,
-	resolveCodeboxVisualParityOutputRoot,
 	resolveVisualParityOutputRoot,
-	resolveWpCodeboxCliPath,
 	runtimeApiAbilities,
 	runtimeBundleExecution,
 	runtimePackageAbility,
@@ -32,12 +28,12 @@ import {
 	wordpressRuntimeAbilityId,
 	wordpressRuntimeApi,
 	wordpressRuntimeBlueprintSchema,
+	wordpressRuntimePluginMountTarget,
 	wordpressRuntimePhpFileStep,
 	wordpressRuntimePhpStep,
 	wordpressRuntimeRequireWpLoadPhp,
 	wordpressRuntimeSettingsDescriptor,
 	wordpressRuntimeSettingsFields,
-	wpSiteGeneratorPluginMountTarget,
 } from '../../.github/scripts/lib/ci-runtime-utils.mjs';
 import { loadRecoveredSsiImportSummary, recoveredSsiScenarioFromImportSummary } from '../../.github/scripts/lib/ssi-import-summary.mjs';
 import { ssiPrBodyMetrics, validationMetricValue } from '../../.github/scripts/lib/ssi-metrics.mjs';
@@ -53,6 +49,7 @@ assert.equal(numberValue('4'), 4);
 assert.equal(numberValue('bad', 9), 9);
 assert.equal(codeboxRuntimeApi.runtimeSchemas.workspaceRecipe, 'wp-codebox/workspace-recipe/v1', 'runtime recipe schema is centralized');
 assert.equal(wordpressRuntimeApi.paths.wpLoadPhp, '/wordpress/wp-load.php', 'WordPress runtime path constants are centralized');
+assert.equal(wordpressRuntimePluginMountTarget(), '/wordpress/wp-content/plugins/wp-site-generator', 'WordPress plugin mount target is centralized');
 assert.equal(wordpressRuntimeBlueprintSchema(), 'https://playground.wordpress.net/blueprint-schema.json');
 assert.equal(wordpressRuntimeSettingsDescriptor().settings_fields.blueprint, 'wordpress_runtime_blueprint');
 assert.deepEqual(wordpressRuntimeSettingsFields(), { blueprint: 'wordpress_runtime_blueprint', workloads: 'wordpress_runtime_workloads' });
@@ -64,17 +61,9 @@ assert.throws(() => wordpressRuntimeAbilityId('missing'), /Unknown WordPress run
 assert.equal(runtimePackageProfile.id, 'wpsg-agent-runtime-package', 'consumer-facing runtime package profile is generic');
 assert.equal(runtimePackageProfile.runtimeTaskAbility, runtimeApiAbilities.runRuntimePackage, 'runtime package profile uses the generic runtime package ability');
 assert.equal(runtimePackageAbility(), 'agents/run-runtime-package', 'runtime package ability is generic');
-assert.equal(resolveCodeboxCliPath('/tmp/repo', {}), path.join('/tmp/repo', '.ci/wp-codebox/packages/cli/dist/index.js'));
-assert.equal(resolveCodeboxCliPath('/tmp/repo', { WP_CODEBOX_CLI: '/custom/codebox.js' }), '/custom/codebox.js');
-assert.equal(resolveWpCodeboxCliPath('/tmp/repo', {}), path.join('/tmp/repo', '.ci/wp-codebox/packages/cli/dist/index.js'));
-assert.equal(resolveWpCodeboxCliPath('/tmp/repo', { WP_CODEBOX_CLI: '/custom/codebox.js' }), '/custom/codebox.js');
-assert.equal(resolveCodeboxVisualParityOutputRoot({}), 'visual-parity-artifacts');
-assert.equal(resolveCodeboxVisualParityOutputRoot({ VISUAL_PARITY_OUTPUT: 'custom-artifacts' }), 'custom-artifacts');
 assert.equal(resolveVisualParityOutputRoot({}), 'visual-parity-artifacts');
 assert.equal(resolveVisualParityOutputRoot({ VISUAL_PARITY_OUTPUT: 'custom-artifacts' }), 'custom-artifacts');
-assert.equal(codeboxPluginMountTarget(), '/wordpress/wp-content/plugins/wp-site-generator');
-assert.equal(wpSiteGeneratorPluginMountTarget(), '/wordpress/wp-content/plugins/wp-site-generator');
-assert.equal(codeboxWorkspaceRecipeSchema(), 'wp-codebox/workspace-recipe/v1');
+assert.equal(codeboxRuntimeWorkspaceRecipeSchema(), 'wp-codebox/workspace-recipe/v1');
 assert.equal(buildCodeboxPlaygroundPreviewUrl({ steps: [{ step: 'login' }] }), 'https://playground.wordpress.net/#%7B%22steps%22%3A%5B%7B%22step%22%3A%22login%22%7D%5D%7D');
 const defaultRuntimeContract = readAgentRuntimeContract({});
 assert.equal(defaultRuntimeContract.provider, '', 'WPSG does not select a runtime provider by default');

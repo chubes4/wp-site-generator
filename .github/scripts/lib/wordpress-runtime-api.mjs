@@ -2,6 +2,7 @@ export const wordpressRuntimeApi = Object.freeze({
 	blueprintSchema: 'https://playground.wordpress.net/blueprint-schema.json',
 	paths: Object.freeze({
 		wpLoadPhp: '/wordpress/wp-load.php',
+		pluginMount: '/wordpress/wp-content/plugins/wp-site-generator',
 	}),
 	settingsDescriptor: Object.freeze({
 		schema: 'wpsg/wordpress-runtime-settings-descriptor/v1',
@@ -48,6 +49,10 @@ export function wordpressRuntimePhpFileStep(file) {
 
 export function wordpressRuntimeRequireWpLoadPhp() {
 	return `require_once '${wordpressRuntimeApi.paths.wpLoadPhp}';`;
+}
+
+export function wordpressRuntimePluginMountTarget() {
+	return wordpressRuntimeApi.paths.pluginMount;
 }
 
 export function wordpressRuntimeAbilityId(name) {

@@ -18,6 +18,7 @@ export {
 	wordpressRuntimeAbilityId,
 	wordpressRuntimeApi,
 	wordpressRuntimeBlueprintSchema,
+	wordpressRuntimePluginMountTarget,
 	wordpressRuntimePhpFileStep,
 	wordpressRuntimePhpStep,
 	wordpressRuntimeRequireWpLoadPhp,
@@ -27,14 +28,9 @@ export {
 
 export {
 	buildCodeboxPlaygroundPreviewUrl,
-	codeboxPluginMountTarget,
 	codeboxRuntimeApi,
-	codeboxWorkspaceRecipeSchema,
-	resolveCodeboxCliPath,
-	resolveCodeboxVisualParityOutputRoot,
+	codeboxRuntimeWorkspaceRecipeSchema,
 	resolveVisualParityOutputRoot,
-	resolveWpCodeboxCliPath,
-	wpSiteGeneratorPluginMountTarget,
 } from './codebox-runtime-api.mjs';
 
 export function parseArgs(argv) {

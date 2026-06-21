@@ -165,22 +165,6 @@ jobs:
           HOMEBOY_SETTINGS_JSON: ${{ steps.settings.outputs.settings }}
           HOMEBOY_BENCH_ITERATIONS: '1'
 
-      - name: Check out WP Codebox
-        if: always()
-        uses: actions/checkout@v4
-        with:
-          repository: Automattic/wp-codebox
-          ref: ${{ steps.stack-manifest.outputs.wp_codebox_sha }}
-          path: .ci/wp-codebox
-
-      - name: Build WP Codebox CLI
-        if: always()
-        working-directory: .ci/wp-codebox
-        run: |
-          set -euo pipefail
-          npm ci
-          npm run build
-
       - name: Check out Homeboy Extensions for visual parity helper
         if: always()
         uses: actions/checkout@v4
