@@ -11,7 +11,7 @@ import {
 } from './site-generation-complexity-policy.mjs';
 
 const root = process.env.GITHUB_WORKSPACE || process.cwd();
-const { runId, repository, controllerSpecPath, outputPath, policyResultPath, runtimeOverrides, source, dependencyRefs } = buildSiteGenerationLoopRunContext({ env: process.env, root });
+const { runId, loopId, repository, controllerSpecPath, outputPath, policyResultPath, runtimeOverrides, source, dependencyRefs } = buildSiteGenerationLoopRunContext({ env: process.env, root });
 const policyInputs = resolvePolicyInputs({ root });
 const complexityPolicy = loadPolicy(policyInputs.policyPath);
 const qualitySignals = loadQualitySignals(policyInputs.qualitySignalsPath);
@@ -41,6 +41,7 @@ await writeJsonFile(policyResultPath, {
 
 await writeJsonFile(outputPath, {
 	inputs: {
+		loop_id: loopId,
 		repository,
 		run_id: runId,
 		manual_task_kind: process.env.HOMEBOY_TASK_KIND || '',
@@ -61,6 +62,7 @@ await writeJsonFile(outputPath, {
 	metadata: {
 		run: {
 			run_id: runId,
+			loop_id: loopId,
 			repository,
 			randomness_seed: complexityDecision.randomness_seed,
 			randomness_profile: complexityDecision.randomness_profile.id,
