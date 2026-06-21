@@ -58,7 +58,8 @@ assert.equal(configResult.status, 0, configResult.stderr || configResult.stdout)
 const fanoutConfig = JSON.parse(await readFile(fanoutConfigPath, 'utf8'));
 assert.equal(fanoutConfig.schema, 'wp-site-generator/php-transformer-iterator-fanout-input/v1', 'iterator emits Homeboy-compatible fanout packet input');
 assert.equal(fanoutConfig.packets.length, 8, 'iterator passes WPSG-owned grouped findings as caller-provided Homeboy packets');
-assert.equal(fanoutConfig.packets[0].inputs.finding_group.group_id, 'Automattic/blocks-engine:php-transformer', 'each Homeboy packet preserves one WPSG finding group');
+assert.equal(fanoutConfig.packets[0].inputs.finding_group.count, 1, 'each Homeboy packet preserves one WPSG finding group');
+assert.equal(fanoutConfig.packets[0].metadata.finding_group.group_id, fanoutConfig.packets[0].inputs.finding_group.group_id, 'packet metadata preserves the typed WPSG finding group');
 
 await writeFile(fanoutPlanPath, `${JSON.stringify({
 	schema: 'homeboy/agent-task-plan/v1',
