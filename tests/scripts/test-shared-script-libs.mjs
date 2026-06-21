@@ -7,7 +7,10 @@ import { buildSingleAiWorkflow, buildSingleAiWorkflowStep } from '../../bundles/
 import {
 	buildCodeboxPlaygroundPreviewUrl,
 	codeboxPluginMountTarget,
+	codeboxRunnerWorkspaceCommandAbility,
+	codeboxRunnerWorkspacePublishAbility,
 	codeboxRuntimeApi,
+	codeboxValidationArtifactEnvelopeSchema,
 	codeboxWorkspaceRecipeSchema,
 	envOrArg,
 	numberValue,
@@ -52,6 +55,9 @@ assert.equal(textValue(' ok '), 'ok');
 assert.equal(numberValue('4'), 4);
 assert.equal(numberValue('bad', 9), 9);
 assert.equal(codeboxRuntimeApi.runtimeSchemas.workspaceRecipe, 'wp-codebox/workspace-recipe/v1', 'runtime recipe schema is centralized');
+assert.equal(codeboxValidationArtifactEnvelopeSchema(), 'wp-codebox/validation-artifact-envelope/v1', 'validation artifact schema is centralized');
+assert.equal(codeboxRunnerWorkspaceCommandAbility(), 'wp-codebox/runner-workspace-command', 'Codebox workspace command ability is centralized');
+assert.equal(codeboxRunnerWorkspacePublishAbility(), 'wp-codebox/runner-workspace-publish', 'Codebox workspace publish ability is centralized');
 assert.equal(wordpressRuntimeApi.paths.wpLoadPhp, '/wordpress/wp-load.php', 'WordPress runtime path constants are centralized');
 assert.equal(wordpressRuntimeBlueprintSchema(), 'https://playground.wordpress.net/blueprint-schema.json');
 assert.equal(wordpressRuntimeSettingsDescriptor().settings_fields.blueprint, 'wordpress_runtime_blueprint');
@@ -89,8 +95,8 @@ assert.deepEqual(runtimePackageProfiles(defaultRuntimeContract), {
 	},
 }, 'runtime package profiles derive from the generic runtime package API');
 const workspaceIterationInputs = runtimeToolProfileInputs('workspace-iteration', readAgentRuntimeContract({
-	HOMEBOY_AGENT_RUNTIME_WORKSPACE_COMMAND_ABILITY: 'wp-codebox/runner-workspace-command',
-	HOMEBOY_AGENT_RUNTIME_WORKSPACE_PUBLISH_ABILITY: 'wp-codebox/runner-workspace-publish',
+	HOMEBOY_AGENT_RUNTIME_WORKSPACE_COMMAND_ABILITY: codeboxRunnerWorkspaceCommandAbility(),
+	HOMEBOY_AGENT_RUNTIME_WORKSPACE_PUBLISH_ABILITY: codeboxRunnerWorkspacePublishAbility(),
 }));
 const workspaceIterationTools = JSON.parse(workspaceIterationInputs.ability_tools);
 const workspaceIterationRequirements = JSON.parse(workspaceIterationInputs.ability_requirements);
@@ -108,15 +114,15 @@ assert.deepEqual(runtimeToolProfiles.workspaceIteration.tools.map(([name]) => na
 	'create_github_issue',
 ]);
 assert.deepEqual(workspaceIterationTools.map((tool) => tool.name), runtimeToolProfiles.workspaceIteration.tools.map(([name]) => name));
-assert.deepEqual(workspaceIterationRequirements, ['agents/run-runtime-package', 'wp-codebox/runner-workspace-command', 'wp-codebox/runner-workspace-publish']);
-assert.deepEqual(runtimeToolProfileInputs('workspace-publication', readAgentRuntimeContract({ HOMEBOY_AGENT_RUNTIME_WORKSPACE_PUBLISH_ABILITY: 'wp-codebox/runner-workspace-publish' })), {
-	ability_requirements: '["agents/run-runtime-package","wp-codebox/runner-workspace-publish"]',
+assert.deepEqual(workspaceIterationRequirements, ['agents/run-runtime-package', codeboxRunnerWorkspaceCommandAbility(), codeboxRunnerWorkspacePublishAbility()]);
+assert.deepEqual(runtimeToolProfileInputs('workspace-publication', readAgentRuntimeContract({ HOMEBOY_AGENT_RUNTIME_WORKSPACE_PUBLISH_ABILITY: codeboxRunnerWorkspacePublishAbility() })), {
+	ability_requirements: JSON.stringify(['agents/run-runtime-package', codeboxRunnerWorkspacePublishAbility()]),
 	ability_tools: '[]',
 });
 assert.deepEqual(runtimeWorkflowInputs('workspace-iteration', readAgentRuntimeContract({
 	HOMEBOY_AGENT_RUNTIME_PROVIDER: 'wp-codebox',
-	HOMEBOY_AGENT_RUNTIME_WORKSPACE_COMMAND_ABILITY: 'wp-codebox/runner-workspace-command',
-	HOMEBOY_AGENT_RUNTIME_WORKSPACE_PUBLISH_ABILITY: 'wp-codebox/runner-workspace-publish',
+	HOMEBOY_AGENT_RUNTIME_WORKSPACE_COMMAND_ABILITY: codeboxRunnerWorkspaceCommandAbility(),
+	HOMEBOY_AGENT_RUNTIME_WORKSPACE_PUBLISH_ABILITY: codeboxRunnerWorkspacePublishAbility(),
 })), {
 	runtime_provider: 'wp-codebox',
 	runtime_profile: 'wpsg-agent-runtime-package',
@@ -126,12 +132,12 @@ assert.deepEqual(runtimeWorkflowInputs('workspace-iteration', readAgentRuntimeCo
 });
 assert.deepEqual(runtimeWorkflowInputs('workspace-publication', readAgentRuntimeContract({
 	HOMEBOY_AGENT_RUNTIME_PROVIDER: 'wp-codebox',
-	HOMEBOY_AGENT_RUNTIME_WORKSPACE_PUBLISH_ABILITY: 'wp-codebox/runner-workspace-publish',
+	HOMEBOY_AGENT_RUNTIME_WORKSPACE_PUBLISH_ABILITY: codeboxRunnerWorkspacePublishAbility(),
 })), {
 	runtime_provider: 'wp-codebox',
 	runtime_profile: 'wpsg-agent-runtime-package',
 	runtime_profiles: JSON.stringify(runtimePackageProfiles(readAgentRuntimeContract({ HOMEBOY_AGENT_RUNTIME_PROVIDER: 'wp-codebox' }))),
-	ability_requirements: '["agents/run-runtime-package","wp-codebox/runner-workspace-publish"]',
+	ability_requirements: JSON.stringify(['agents/run-runtime-package', codeboxRunnerWorkspacePublishAbility()]),
 	ability_tools: '[]',
 }, 'publication workload profile can consume externally supplied publish wrappers');
 assert.deepEqual(runtimeToolProfiles.workspacePublication.tools, []);
@@ -182,8 +188,8 @@ const configuredRuntimeContract = readAgentRuntimeContract({
 	HOMEBOY_AGENT_RUNTIME_BACKEND: 'codebox',
 	HOMEBOY_AGENT_RUNTIME_PROVIDER_ID: 'openai',
 	HOMEBOY_AGENT_RUNTIME_SELECTOR: 'sandbox',
-	HOMEBOY_AGENT_RUNTIME_WORKSPACE_COMMAND_ABILITY: 'wp-codebox/runner-workspace-command',
-	HOMEBOY_AGENT_RUNTIME_WORKSPACE_PUBLISH_ABILITY: 'wp-codebox/runner-workspace-publish',
+	HOMEBOY_AGENT_RUNTIME_WORKSPACE_COMMAND_ABILITY: codeboxRunnerWorkspaceCommandAbility(),
+	HOMEBOY_AGENT_RUNTIME_WORKSPACE_PUBLISH_ABILITY: codeboxRunnerWorkspacePublishAbility(),
 });
 assert.deepEqual(runtimePackageProfiles(configuredRuntimeContract)['wpsg-agent-runtime-package'].runtime_selection, {
 	backend: 'codebox',
@@ -191,7 +197,7 @@ assert.deepEqual(runtimePackageProfiles(configuredRuntimeContract)['wpsg-agent-r
 	selector: 'sandbox',
 }, 'runtime backend/provider/selector are config inputs, not WPSG constants');
 assert.deepEqual(runtimeToolProfileInputs('workspace-publication', configuredRuntimeContract), {
-	ability_requirements: '["agents/run-runtime-package","wp-codebox/runner-workspace-publish"]',
+	ability_requirements: JSON.stringify(['agents/run-runtime-package', codeboxRunnerWorkspacePublishAbility()]),
 	ability_tools: '[]',
 }, 'Codebox-compatible abilities can still be supplied externally');
 

@@ -28,7 +28,10 @@ export {
 export {
 	buildCodeboxPlaygroundPreviewUrl,
 	codeboxPluginMountTarget,
+	codeboxRunnerWorkspaceCommandAbility,
+	codeboxRunnerWorkspacePublishAbility,
 	codeboxRuntimeApi,
+	codeboxValidationArtifactEnvelopeSchema,
 	codeboxWorkspaceRecipeSchema,
 	resolveCodeboxCliPath,
 	resolveCodeboxVisualParityOutputRoot,

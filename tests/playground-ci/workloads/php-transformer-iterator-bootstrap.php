@@ -15,6 +15,7 @@ if ( ! is_array( $finding_groups ) || empty( $finding_groups['groups'] ) ) {
 
 if ( ! class_exists( 'WC_Site_Generator_PHP_Transformer_Iterator_Callback_Tool' ) ) {
 	class WC_Site_Generator_PHP_Transformer_Iterator_Callback_Tool {
+		private const CODEBOX_RUNNER_WORKSPACE_PUBLISH_ABILITY = 'wp-codebox/runner-workspace-publish';
 
 		public static function handle_comment_tool_call( array $parameters, array $tool_def = array() ): array {
 			$publish_ability = self::runtime_publish_ability();
@@ -42,7 +43,7 @@ if ( ! class_exists( 'WC_Site_Generator_PHP_Transformer_Iterator_Callback_Tool' 
 
 		private static function runtime_publish_ability(): string {
 			$ability = trim( (string) getenv( 'WPSG_RUNTIME_PUBLISH_ABILITY' ) );
-			return '' !== $ability ? $ability : 'wp-codebox/runner-workspace-publish';
+			return '' !== $ability ? $ability : self::CODEBOX_RUNNER_WORKSPACE_PUBLISH_ABILITY;
 		}
 
 		private static function prepare_source_callback_parameters( array $parameters ): array {

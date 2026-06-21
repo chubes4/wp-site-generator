@@ -4,6 +4,8 @@ import assert from 'node:assert/strict';
 import { spawn } from 'node:child_process';
 import path from 'node:path';
 
+import { codeboxValidationArtifactEnvelopeSchema } from '../../.github/scripts/lib/ci-runtime-utils.mjs';
+
 const repoRoot = path.resolve(import.meta.dirname, '../..');
 const renderer = path.join(repoRoot, '.github/scripts/render-ssi-validation-report.mjs');
 
@@ -52,7 +54,7 @@ const bench = {
 								},
 							},
 							validation_artifact_envelope: {
-								schema: 'wp-codebox/validation-artifact-envelope/v1',
+								schema: codeboxValidationArtifactEnvelopeSchema(),
 								status: 'passed',
 								validation_hash: 'codebox-validation-fixture',
 								artifacts: [{ name: 'import-report.json' }, { name: 'visual-summary.json' }],
