@@ -45,7 +45,12 @@ try {
   assert.equal(materializeResult.status, 0, materializeResult.stderr || materializeResult.stdout);
   const materialization = JSON.parse(await readFile(controllerMaterializationPath, 'utf8'));
   await writeFile(controllerMaterializationProofPath, JSON.stringify(materialization.data || materialization.value || materialization, null, 2) + '\n');
-  await writeFile(controllerRunSpecPath, JSON.stringify(materialization.data?.spec || materialization.value?.spec || materialization.spec, null, 2) + '\n');
+
+  const writeRunSpecResult = spawnSync(process.execPath, ['.github/scripts/write-materialized-controller-run-spec.mjs', controllerMaterializationPath, controllerRunSpecPath], {
+    cwd: repoRoot,
+    encoding: 'utf8',
+  });
+  assert.equal(writeRunSpecResult.status, 0, writeRunSpecResult.stderr || writeRunSpecResult.stdout);
 
   const validateProofResult = spawnSync(homeboyFixturePath, ['agent-task', 'controller', 'validate-proof', `@${controllerMaterializationProofPath}`], {
     cwd: repoRoot,
@@ -67,7 +72,7 @@ try {
   assert.equal(fromSpecResult.status, 0, fromSpecResult.stderr || fromSpecResult.stdout);
   const controllerResult = JSON.parse(await readFile(controllerResultPath, 'utf8'));
   assert.equal(controllerResult.schema, 'homeboy/agent-task-loop-controller-from-spec-result/v1');
-  assert.equal(controllerResult.loop_id, 'wp-site-generator_static-site-generation-loop');
+  assert.equal(controllerResult.loop_id, 'wp-site-generator_static-site-generation-loop_proof-replay');
 
   const eventResult = spawnSync(homeboyFixturePath, ['agent-task', 'controller', 'events', controllerResult.loop_id, '--event-type', 'github.workflow.completed', '--event-key', 'proof-replay', '--payload', '{"run_id":"proof-replay"}', '--output', controllerEventPath], {
     cwd: repoRoot,
@@ -99,6 +104,60 @@ try {
   );
   assert.notEqual(missingArtifactProof.status, 0, 'controller proof fails without real artifacts');
   assert.match(missingArtifactProof.stderr || missingArtifactProof.stdout, /artifact root contains static_site_candidate/);
+
+  const placeholderControllerResultPath = path.join(tempDir, 'site-generation-loop.controller-placeholder-result.json');
+  await writeFile(placeholderControllerResultPath, JSON.stringify({
+    success: true,
+    data: {
+      loop_id: controllerResult.loop_id,
+      results: [
+        {
+          action_id: 'action-1',
+          status: 'completed',
+          execution: {
+            result: {
+              aggregate: {
+                outcomes: [
+                  {
+                    outputs: {
+                      typed_artifacts: {
+                        concept_packet: {
+                          schema: 'homeboy/agent-task-typed-artifact/v1',
+                          artifact_id: 'concept_packet',
+                          payload: {
+                            content: `<workspace_ls path="${repoRoot}" />`,
+                            format: 'markdown',
+                          },
+                        },
+                      },
+                    },
+                  },
+                ],
+              },
+            },
+          },
+        },
+      ],
+    },
+  }, null, 2) + '\n');
+  const placeholderProof = spawnSync(
+    process.execPath,
+    [
+      '.github/scripts/assert-site-generation-loop-proof.mjs',
+      '--controller-result',
+      placeholderControllerResultPath,
+      '--controller-run-spec',
+      controllerRunSpecPath,
+      '--artifact-root',
+      artifactRoot,
+    ],
+    {
+      cwd: repoRoot,
+      encoding: 'utf8',
+    }
+  );
+  assert.notEqual(placeholderProof.status, 0, 'controller proof fails when typed artifacts contain tool-call placeholders');
+  assert.match(placeholderProof.stderr || placeholderProof.stdout, /concept_packet contains an unexecuted workspace tool-call placeholder/);
 
   await writeArtifact('static_site_candidate', {
     schema: 'wp-site-generator/StaticSiteCandidate/v1',

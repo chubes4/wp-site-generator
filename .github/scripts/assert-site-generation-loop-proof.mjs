@@ -4,6 +4,7 @@ import { readdir, readFile } from 'node:fs/promises';
 import path from 'node:path';
 
 import { parseArgs, readJsonFile, repoPathResolver } from './lib/ci-runtime-utils.mjs';
+import { buildSiteGenerationLoopId } from './lib/site-generation-loop-run.mjs';
 import { buildSsiImportWorkload } from './lib/ssi-stack-profile.mjs';
 
 const args = parseArgs(process.argv.slice(2));
@@ -65,6 +66,38 @@ function artifactMatches(value, artifactId, schema) {
 		.filter(Boolean)
 		.map((item) => String(item));
 	return haystack.some((item) => item === artifactId || item === schema || item.endsWith(`/${artifactId}`));
+}
+
+function assertRunScopedLoopId(controllerRunSpec) {
+	const runId = controllerRunSpec.metadata?.run?.run_id;
+	assert.ok(runId, 'controller run spec records a run id');
+	assert.equal(controllerRunSpec.loop_id, buildSiteGenerationLoopId(runId), 'controller run spec keeps the run-scoped WPSG loop id');
+	assert.equal(controllerRunSpec.metadata?.run?.loop_id, controllerRunSpec.loop_id, 'controller run metadata records the run-scoped WPSG loop id');
+}
+
+function assertNoToolCallPlaceholderArtifacts(value, seen = new Set()) {
+	if (!value || typeof value !== 'object' || seen.has(value)) {
+		return;
+	}
+	seen.add(value);
+
+	if (value.schema === 'homeboy/agent-task-typed-artifact/v1') {
+		const content = String(value.payload?.content || '').trim();
+		if (/^<workspace_[a-z0-9_:-]+(?:\s[^>]*)?\/>$/i.test(content)) {
+			fail(`${value.artifact_id || value.name || value.type || 'typed artifact'} contains an unexecuted workspace tool-call placeholder`);
+		}
+	}
+
+	if (Array.isArray(value)) {
+		for (const item of value) {
+			assertNoToolCallPlaceholderArtifacts(item, seen);
+		}
+		return;
+	}
+
+	for (const item of Object.values(value)) {
+		assertNoToolCallPlaceholderArtifacts(item, seen);
+	}
 }
 
 async function readArtifactJsonFiles(rootDir) {
@@ -163,7 +196,7 @@ if (controllerResultPath || controllerRunSpecPath) {
 	const controllerRunSpec = await readJsonFile(controllerRunSpecPath || controllerPath);
 	const controllerResult = await readJsonFile(controllerResultPath);
 	// Homeboy validate-proof covers generic materialization readiness; this script keeps WPSG-specific semantic assertions.
-	assert.equal(controllerRunSpec.loop_id, 'wp-site-generator/static-site-generation-loop', 'controller run spec keeps the WPSG loop id');
+	assertRunScopedLoopId(controllerRunSpec);
 	assert.equal(controllerRunSpec.metadata?.authority?.builder, '.github/scripts/build-homeboy-ssi-loop-controller.mjs', 'controller run spec records its repo-owned builder');
 	assert.ok(controllerRunSpec.workflows?.every((workflow) => workflow.inputs?.policy_results?.['wpsg-complexity-policy']), 'controller run spec carries WPSG complexity policy results on materialized workflows');
 	assert.ok(controllerRunSpec.metadata?.policy_materialization?.['wpsg-complexity-policy'], 'controller run spec records Homeboy policy materialization metadata');
@@ -171,6 +204,7 @@ if (controllerResultPath || controllerRunSpecPath) {
 	assert.ok(controllerRunSpec.metrics?.some((metric) => metric.metric_id === 'conversion_findings'), 'controller run spec keeps conversion finding metrics');
 	assert.ok(controllerRunSpec.metrics?.some((metric) => metric.metric_id === 'visual_parity'), 'controller run spec keeps visual parity metrics');
 	assert.ok(controllerResult.loop_id || controllerResult.data?.loop_id || controllerResult.value?.loop_id, 'controller result returns a durable loop id');
+	assertNoToolCallPlaceholderArtifacts(controllerResult);
 	await assertControllerArtifactProof(controllerRunSpec);
 	console.log('site generation loop semantic proof passed');
 	process.exit(0);
