@@ -50,7 +50,7 @@ await writeJson(benchPath, {
 									format: 'html',
 									source_path: 'parts/header.html',
 									block_name: 'core/freeform',
-									converter: 'html-to-blocks-converter',
+									converter: 'blocks-engine-php-transformer',
 									stage: 'generated_theme_block_analysis',
 									reason_code: 'generated_document_contains_core_freeform',
 									suggested_repair_class: 'replace_fallback_block',
@@ -74,7 +74,7 @@ const rendered = spawnSync(process.execPath, [path.join(repoRoot, '.github/scrip
 
 assert.equal(rendered.status, 0, rendered.stderr || rendered.stdout);
 assert.match(rendered.stdout, /\| freeform blocks \| 1 \|/, 'validation report renders freeform block counts from the artifact contract');
-assert.match(rendered.stdout, /### Block Artifact Compiler/, 'validation report displays BAC status from the import report');
+assert.match(rendered.stdout, /### Blocks Engine Artifact Compiler/, 'validation report displays Blocks Engine compiler status from the import report');
 assert.match(rendered.stdout, /Website Artifact Summary/, 'validation report displays BAC website artifact summary');
 assert.match(rendered.stdout, /Reason Code/, 'validation report displays modern diagnostic fields');
 assert.match(rendered.stdout, /diag-freeform-header/, 'validation report renders modern diagnostic rows');

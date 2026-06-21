@@ -58,7 +58,7 @@ await writeJson(path.join(visualDir, 'summary.json'), {
 						source_html_preview: '<iframe id="reservation-widget" class="embedded checkout"></iframe>',
 						emitted_block_preview: '<!-- wp:html --><iframe id="reservation-widget" class="embedded checkout"></iframe><!-- /wp:html -->',
 						block_name: 'core/html',
-						converter: 'html-to-blocks-converter',
+						converter: 'blocks-engine-php-transformer',
 						stage: 'html_to_blocks',
 						reason: 'no_transform',
 					},

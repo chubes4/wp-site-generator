@@ -163,7 +163,7 @@ function aggregateQualityDiagnostics(summary, readiness = null) {
 			reason_code: config.reason_code,
 			suggested_repair_class: 'converter_support',
 			candidate_repo: 'Automattic/blocks-engine',
-			converter: 'html-to-blocks-converter',
+			converter: 'blocks-engine-php-transformer',
 			stage: 'generated_theme_block_analysis',
 			block_name: config.block_name,
 			source_path: entryFile,
