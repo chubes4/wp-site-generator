@@ -2,7 +2,18 @@ import { readFile, writeFile } from 'node:fs/promises';
 import path from 'node:path';
 
 export {
+	runtimeApiAbilities,
+	runtimePackageProfile,
+	runtimePackageProfiles,
+	readAgentRuntimeContract,
+	runtimeToolProfileInputs,
+	runtimeToolProfiles,
+	runtimeWorkflowInputs,
+} from './agent-runtime-api.mjs';
+
+export {
 	codeboxPluginMountTarget,
+	codeboxRuntimeApi,
 	codeboxRuntimePackageAbility,
 	codeboxRuntimePackageProfiles,
 	codeboxRuntimeProfileId,
@@ -12,6 +23,9 @@ export {
 	codeboxWorkspaceRecipeSchema,
 	resolveCodeboxCliPath,
 	resolveCodeboxVisualParityOutputRoot,
+	resolveVisualParityOutputRoot,
+	resolveWpCodeboxCliPath,
+	wpSiteGeneratorPluginMountTarget,
 } from './codebox-runtime-api.mjs';
 
 export function parseArgs(argv) {

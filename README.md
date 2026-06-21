@@ -258,9 +258,12 @@ That's the loop. Generate. Design. Build. Validate. Review. Decide. Repeat.
 
 The primary loop runs in GitHub Actions through Homeboy's durable controller primitives. The workflow stamps WPSG-owned run inputs onto `.github/homeboy/controllers/static-site-generation-loop.controller.json`, initializes Homeboy with `homeboy agent-task controller from-spec`, resumes execution with `homeboy agent-task controller resume`, and records GitHub Actions lineage through `homeboy agent-task controller events`. Homeboy owns controller state, action scheduling, event application, and runtime/provider selection.
 
-Required GitHub secrets:
+Required GitHub secrets depend on the selected Homeboy runtime and AI provider. For the current hosted configuration, configure them outside WPSG through repository/environment secrets and variables such as:
 
-1. `OPENAI_API_KEY`
+1. Runtime provider/model credentials, for example `OPENAI_API_KEY` when the selected provider uses OpenAI.
+2. Runtime workspace abilities, for example `HOMEBOY_AGENT_RUNTIME_WORKSPACE_COMMAND_ABILITY` and `HOMEBOY_AGENT_RUNTIME_WORKSPACE_PUBLISH_ABILITY` when the selected runtime exposes workspace tools through named abilities.
+
+The reusable `.github/workflows/wpsg-runtime-agent-ci.yml` seam also accepts `runtime_provider`, `runtime_backend`, `runtime_provider_id`, `runtime_selector`, `runtime_profile`, and `runtime_profiles` inputs. A non-Codebox runtime plugs in by supplying those Homeboy runtime inputs plus compatible bundle execution and workspace/publication abilities; WPSG does not select the backend in controller specs or production loop code.
 
 Useful workflow entry points:
 
@@ -277,7 +280,7 @@ Local Studio remains useful for bundle development or manual runtime experiments
 
 1. A WordPress agent runtime capable of importing these bundles.
 2. A GitHub credential profile scoped to this repo with `Contents`, `Issues`, and `Pull requests` write access.
-3. An AI provider configured (today: OpenAI, model `gpt-5.5`).
+3. An AI provider and model configured in the selected runtime.
 4. The bundles imported and pointed at `chubes4/wp-site-generator`.
 
 Use the active runtime's bundle import and flow-run commands to install or refresh bundles and run a default manual flow.
