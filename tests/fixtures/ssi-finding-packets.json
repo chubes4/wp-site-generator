@@ -112,7 +112,7 @@
     "block_name": "core/group",
     "selector": "main > section.hero",
     "source_html_preview": "<section class=\"hero\"><h1>Shop</h1></section>",
-    "reason": "BFB adapter report did not retain source fragment scope for fallback diagnostics.",
+    "reason": "Blocks Engine format bridge report did not retain source fragment scope for fallback diagnostics.",
     "diagnostic_refs": ["diag-004-blocks-engine-scope-report"],
     "asset_map_refs": [],
     "design_system": "editorial-magazine",

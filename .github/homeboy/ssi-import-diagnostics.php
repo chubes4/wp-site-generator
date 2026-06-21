@@ -28,12 +28,12 @@ return static function (): array {
 		'ssi_freeform_block_count' => 0,
 		'ssi_invalid_block_count' => 0,
 		'ssi_manifest_error_count' => 0,
-		'ssi_bac_available' => 0,
-		'ssi_bac_fragment_count' => 0,
-		'ssi_bac_component_count' => 0,
-		'ssi_bac_rejected_count' => 0,
-		'ssi_bac_diagnostic_count' => 0,
-		'ssi_bac_website_artifact_present' => 0,
+		'ssi_blocks_engine_available' => 0,
+		'ssi_blocks_engine_fragment_count' => 0,
+		'ssi_blocks_engine_component_count' => 0,
+		'ssi_blocks_engine_rejected_count' => 0,
+		'ssi_blocks_engine_diagnostic_count' => 0,
+		'ssi_blocks_engine_website_artifact_present' => 0,
 	);
 	$diagnostics = array();
 	$seen_diagnostics = array();
@@ -257,13 +257,6 @@ return static function (): array {
 				$candidate_counts[ $key ] = $count_value( $value );
 			}
 		}
-		$wordpress_artifacts = isset( $website_artifact['wordpress_artifacts'] ) && is_array( $website_artifact['wordpress_artifacts'] ) ? $website_artifact['wordpress_artifacts'] : array();
-		foreach ( array( 'components' => 'component_candidate_count', 'blocks' => 'block_candidate_count', 'block_types' => 'block_type_count' ) as $artifact_key => $count_key ) {
-			if ( ! isset( $candidate_counts[ $count_key ] ) && isset( $wordpress_artifacts[ $artifact_key ] ) ) {
-				$candidate_counts[ $count_key ] = $count_value( $wordpress_artifacts[ $artifact_key ] );
-			}
-		}
-
 		$component_count = $sum_nested_counts( $fragments, array( array( 'component_count' ), array( 'summary', 'component_count' ) ) );
 		$rejected_count = $sum_nested_counts( $fragments, array( array( 'rejected_count' ), array( 'input', 'rejected_count' ) ) );
 		$diagnostic_count = $sum_nested_counts( $fragments, array( array( 'diagnostic_count' ), array( 'diagnostics' ) ) );
@@ -350,12 +343,12 @@ return static function (): array {
 
 	if ( is_array( $report ) ) {
 		$blocks_engine = $blocks_engine_summary( $report );
-		$metrics['ssi_bac_available'] = $blocks_engine['available'] ? 1 : 0;
-		$metrics['ssi_bac_fragment_count'] = $blocks_engine['fragment_count'];
-		$metrics['ssi_bac_component_count'] = $blocks_engine['component_count'];
-		$metrics['ssi_bac_rejected_count'] = $blocks_engine['rejected_count'];
-		$metrics['ssi_bac_diagnostic_count'] = $blocks_engine['diagnostic_count'];
-		$metrics['ssi_bac_website_artifact_present'] = $blocks_engine['website_artifact_present'] ? 1 : 0;
+		$metrics['ssi_blocks_engine_available'] = $blocks_engine['available'] ? 1 : 0;
+		$metrics['ssi_blocks_engine_fragment_count'] = $blocks_engine['fragment_count'];
+		$metrics['ssi_blocks_engine_component_count'] = $blocks_engine['component_count'];
+		$metrics['ssi_blocks_engine_rejected_count'] = $blocks_engine['rejected_count'];
+		$metrics['ssi_blocks_engine_diagnostic_count'] = $blocks_engine['diagnostic_count'];
+		$metrics['ssi_blocks_engine_website_artifact_present'] = $blocks_engine['website_artifact_present'] ? 1 : 0;
 
 		$collect_modern_diagnostics( $report );
 
