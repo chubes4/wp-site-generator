@@ -59,6 +59,10 @@ try {
 	assert.equal(controllerRunSpec.loop_id, 'wp-site-generator/static-site-generation-loop');
 	assert.equal(storeIdeaInputs.run_id, '409');
 	assert.equal(storeIdeaInputs.repository, 'chubes4/wp-site-generator');
+	assert.equal(storeIdeaInputs.randomness_seed, complexityPolicy.randomness_seed, 'controller inputs persist the effective replay seed');
+	assert.equal(storeIdeaInputs.randomness_profile, 'steady', 'controller inputs persist the effective randomness profile');
+	assert.equal(storeIdeaInputs.source.ref_type, 'commit', 'controller inputs persist immutable source provenance');
+	assert.equal(storeIdeaInputs.source.sha.length, 40, 'controller inputs include the source checkout SHA');
 	assert.equal(storeIdeaInputs.runtime_input_contract, 'homeboy-agent-runtime-env');
 	assert.equal(complexityPolicy.schema, 'wp-site-generator/site-generation-complexity-policy/v1');
 	assert.equal(complexityPolicy.current_tier, 'foundation');
@@ -69,6 +73,8 @@ try {
 	assert.deepEqual(complexityPolicy.site_kind_mix, ['store', 'website']);
 	assert.equal(controllerRunSpec.metadata.policy_materialization['wpsg-complexity-policy'].provenance.run_id, '409');
 	assert.equal(controllerRunSpec.metadata.run.generated_by, '.github/scripts/build-homeboy-controller-run-inputs.mjs');
+	assert.equal(controllerRunSpec.metadata.run.randomness_seed, complexityPolicy.randomness_seed, 'run metadata persists deterministic replay seed');
+	assert.equal(controllerRunSpec.metadata.run.source.sha, storeIdeaInputs.source.sha, 'run metadata persists source commit');
 	assert.equal(controllerRunSpec.metadata.run.materialized_by, 'homeboy agent-task controller materialize');
 	assert.equal(controllerRunSpec.metadata.run.controller_spec, '.github/homeboy/controllers/static-site-generation-loop.controller.json');
 	assert.equal(controllerRunSpec.metadata.authority.builder, '.github/scripts/build-homeboy-ssi-loop-controller.mjs');

@@ -51,8 +51,10 @@ assert.equal(packetResult.status, 0, packetResult.stderr || packetResult.stdout)
 const packets = JSON.parse(await readFile(packetsPath, 'utf8'));
 assert.equal(packets.filter((packet) => packet.kind === 'bench_failure').length, 1);
 assert.equal(packets.some((packet) => packet.kind === 'report_missing'), false, 'bench failures should not route synthetic missing-report packets to SSI');
-assert.equal(packets[0].candidate_repo, 'chubes4/wp-site-generator');
+assert.equal(packets[0].candidate_repo, 'Extra-Chill/homeboy-extensions');
 assert.equal(packets[0].reason_code, 'bench_runner');
+assert.equal(packets[0].category, 'homeboy_runtime_workload');
+assert.equal(packets[0].converter, 'homeboy-wordpress-extension');
 assert.match(packets[0].reason, /status=failed/);
 assert.match(packets[0].reason, /exit_code=1/);
 assert.match(packets[0].preview, /RuntimeException/);

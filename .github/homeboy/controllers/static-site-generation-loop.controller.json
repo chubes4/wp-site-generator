@@ -579,7 +579,8 @@
       },
       "dependencies": [
         "static-site-importer",
-        "blocks-engine"
+        "blocks-engine",
+        "homeboy-extensions"
       ]
     },
     {
@@ -1084,6 +1085,12 @@
       "dependency_id": "blocks-engine",
       "kind": "repo",
       "value": "Automattic/blocks-engine",
+      "required": true
+    },
+    {
+      "dependency_id": "homeboy-extensions",
+      "kind": "repo",
+      "value": "Extra-Chill/homeboy-extensions",
       "required": true
     }
   ],
