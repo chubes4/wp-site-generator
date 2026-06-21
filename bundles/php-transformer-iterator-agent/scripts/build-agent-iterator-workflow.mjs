@@ -98,6 +98,11 @@ function normalizeIteratorFindingInput(input) {
 			.map((request) => request?.finding_group || request?.inputs?.finding_group || null)
 			.filter(Boolean);
 	}
+	if (Array.isArray(input?.tasks)) {
+		return input.tasks
+			.map((task) => task?.inputs?.finding_group || task?.metadata?.finding_group || null)
+			.filter(Boolean);
+	}
 
 	return normalizeFindingInput(input);
 }

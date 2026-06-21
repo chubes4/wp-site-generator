@@ -1,5 +1,14 @@
 const defaultRuntimePackageAbility = 'agents/run-runtime-package';
 
+export const runtimeProviderProfiles = Object.freeze({
+	wpCodebox: Object.freeze({
+		id: 'wp-codebox',
+		provider: 'wp-codebox',
+		workspaceCommandAbility: 'wp-codebox/runner-workspace-command',
+		workspacePublishAbility: 'wp-codebox/runner-workspace-publish',
+	}),
+});
+
 export const runtimeApiAbilities = Object.freeze({
 	runRuntimePackage: defaultRuntimePackageAbility,
 });
@@ -36,8 +45,9 @@ export const runtimeToolProfiles = Object.freeze({
 });
 
 export function readAgentRuntimeContract(env = process.env) {
+	const providerProfile = runtimeProviderProfile(env.HOMEBOY_AGENT_RUNTIME_PROVIDER_PROFILE);
 	return {
-		provider: text(env.HOMEBOY_AGENT_RUNTIME_PROVIDER),
+		provider: text(env.HOMEBOY_AGENT_RUNTIME_PROVIDER) || providerProfile.provider || '',
 		profile: text(env.HOMEBOY_AGENT_RUNTIME_PROFILE) || runtimePackageProfile.id,
 		profiles: text(env.HOMEBOY_AGENT_RUNTIME_PROFILES),
 		backend: text(env.HOMEBOY_AGENT_RUNTIME_BACKEND),
@@ -46,9 +56,21 @@ export function readAgentRuntimeContract(env = process.env) {
 		runtimeTaskAbility: text(env.HOMEBOY_AGENT_RUNTIME_TASK_ABILITY) || runtimePackageProfile.runtimeTaskAbility,
 		runtimeBundleAbility: text(env.HOMEBOY_AGENT_RUNTIME_BUNDLE_ABILITY) || runtimePackageProfile.runtimeBundleAbility,
 		runtimeWorkflowAbility: text(env.HOMEBOY_AGENT_RUNTIME_WORKFLOW_ABILITY) || runtimePackageProfile.runtimeWorkflowAbility,
-		workspaceCommandAbility: text(env.HOMEBOY_AGENT_RUNTIME_WORKSPACE_COMMAND_ABILITY),
-		workspacePublishAbility: text(env.HOMEBOY_AGENT_RUNTIME_WORKSPACE_PUBLISH_ABILITY),
+		workspaceCommandAbility: text(env.HOMEBOY_AGENT_RUNTIME_WORKSPACE_COMMAND_ABILITY) || providerProfile.workspaceCommandAbility || '',
+		workspacePublishAbility: text(env.HOMEBOY_AGENT_RUNTIME_WORKSPACE_PUBLISH_ABILITY) || providerProfile.workspacePublishAbility || '',
 	};
+}
+
+export function runtimeProviderProfile(profileId) {
+	const id = text(profileId);
+	if (!id) {
+		return {};
+	}
+	const profile = runtimeProviderProfiles[id] || Object.values(runtimeProviderProfiles).find((candidate) => candidate.id === id);
+	if (!profile) {
+		throw new Error(`Unknown WPSG runtime provider profile: ${id}`);
+	}
+	return profile;
 }
 
 export function runtimePackageProfiles(contract = readAgentRuntimeContract()) {

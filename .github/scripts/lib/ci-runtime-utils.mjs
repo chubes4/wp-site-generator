@@ -8,6 +8,8 @@ export {
 	runtimePackageProfiles,
 	runtimePackageAbility,
 	readAgentRuntimeContract,
+	runtimeProviderProfile,
+	runtimeProviderProfiles,
 	runtimeToolProfileInputs,
 	runtimeToolProfiles,
 	runtimeWorkflowBuilderExecution,
