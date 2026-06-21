@@ -5,6 +5,7 @@ export {
 	runtimeApiAbilities,
 	runtimePackageProfile,
 	runtimePackageProfiles,
+	runtimePackageAbility,
 	readAgentRuntimeContract,
 	runtimeToolProfileInputs,
 	runtimeToolProfiles,
@@ -12,16 +13,9 @@ export {
 } from './agent-runtime-api.mjs';
 
 export {
-	codeboxAgentRuntimeContract,
 	buildCodeboxPlaygroundPreviewUrl,
 	codeboxPluginMountTarget,
 	codeboxRuntimeApi,
-	codeboxRuntimePackageAbility,
-	codeboxRuntimePackageProfiles,
-	codeboxRuntimeProfileId,
-	codeboxRuntimeProvider,
-	codeboxRuntimeToolProfileInputs,
-	codeboxRuntimeWorkflowInputs,
 	codeboxWorkspaceRecipeSchema,
 	resolveCodeboxCliPath,
 	resolveCodeboxVisualParityOutputRoot,

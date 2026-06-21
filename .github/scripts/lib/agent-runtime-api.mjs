@@ -111,6 +111,10 @@ export function runtimeWorkflowInputs(profileId, contract = readAgentRuntimeCont
 	};
 }
 
+export function runtimePackageAbility() {
+	return runtimeApiAbilities.runRuntimePackage;
+}
+
 function text(value) {
 	return String(value || '').trim();
 }
