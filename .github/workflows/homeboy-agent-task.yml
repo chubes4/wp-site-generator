@@ -55,6 +55,18 @@ on:
         description: Homeboy Extensions ref with generic runtime package agent-task support.
         required: true
         default: main
+      runtime_provider_profile:
+        description: Codebox runtime provider profile id.
+        required: true
+        default: wp-codebox
+      runtime_components:
+        description: JSON array of Codebox component contracts supplied to the runtime.
+        required: false
+        default: ''
+      runtime_provider_plugins:
+        description: JSON array of Codebox provider plugin contracts supplied to the runtime.
+        required: false
+        default: ''
 
 permissions:
   contents: write
@@ -80,6 +92,9 @@ jobs:
       CONCEPT_PROMPT: ${{ inputs.concept_prompt }}
       WEBSITE_FLOW_SLUG: ${{ inputs.website_flow_slug }}
       OPENAI_MODEL: ${{ inputs.openai_model }}
+      HOMEBOY_AGENT_RUNTIME_PROVIDER_PROFILE: ${{ inputs.runtime_provider_profile }}
+      HOMEBOY_AGENT_RUNTIME_COMPONENTS: ${{ inputs.runtime_components }}
+      HOMEBOY_AGENT_RUNTIME_PROVIDER_PLUGINS: ${{ inputs.runtime_provider_plugins }}
       GITHUB_TOKEN: ${{ github.token }}
       OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
       HOMEBOY_CONTROLLER_RUN_INPUTS_PATH: ${{ github.workspace }}/.ci/homeboy-agent-task.controller-run-inputs.json
@@ -108,20 +123,6 @@ jobs:
           repository: Extra-Chill/homeboy-extensions
           ref: ${{ inputs.homeboy_extensions_ref }}
           path: .ci/homeboy-extensions
-
-      - name: Check out Agents API
-        uses: actions/checkout@v4
-        with:
-          repository: Automattic/agents-api
-          ref: main
-          path: .ci/agents-api
-
-      - name: Check out OpenAI provider
-        uses: actions/checkout@v4
-        with:
-          repository: WordPress/ai-provider-for-openai
-          ref: trunk
-          path: .ci/ai-provider-for-openai
 
       - name: Build Homeboy
         run: cargo install --path .ci/homeboy --locked

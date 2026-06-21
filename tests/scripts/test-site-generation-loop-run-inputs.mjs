@@ -34,6 +34,8 @@ assert.equal(context.loopId, 'wp-site-generator/static-site-generation-loop/loca
 assert.equal(context.outputPath, outputPath);
 assert.equal(context.policyResultPath, policyResultPath);
 assert.equal(context.source.sha.length, 40, 'loop context records an immutable source commit');
+assert.equal(context.dependencyRefs.agents_api, undefined, 'runtime component refs are supplied through Codebox contracts, not fixed checkout paths');
+assert.equal(context.dependencyRefs.ai_provider_for_openai, undefined, 'runtime provider refs are supplied through Codebox contracts, not fixed checkout paths');
 assert.doesNotThrow(() => validateRefPolicy({
 	policy: 'branch-defaults',
 	dependencyRefs: {

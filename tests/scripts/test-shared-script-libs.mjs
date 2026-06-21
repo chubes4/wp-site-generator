@@ -1,11 +1,12 @@
 import assert from 'node:assert/strict';
-import { mkdir, mkdtemp, writeFile } from 'node:fs/promises';
+import { mkdir, mkdtemp, readFile, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 
 import { buildSingleAiWorkflow, buildSingleAiWorkflowStep } from '../../bundles/php-transformer-iterator-agent/scripts/lib/agent-ai-workflow.mjs';
 import {
 	buildCodeboxPlaygroundPreviewUrl,
+	codeboxProviderRuntimeInvocationContract,
 	codeboxRuntimeProviderProfile,
 	codeboxRuntimeApi,
 	codeboxRuntimeWorkspaceRecipeSchema,
@@ -43,7 +44,9 @@ import {
 import { loadRecoveredSsiImportSummary, recoveredSsiScenarioFromImportSummary } from '../../.github/scripts/lib/ssi-import-summary.mjs';
 import { ssiPrBodyMetrics, validationMetricValue } from '../../.github/scripts/lib/ssi-metrics.mjs';
 
+const repoRoot = path.resolve(import.meta.dirname, '../..');
 const args = parseArgs(['--repo', 'owner/repo', '--dry-run']);
+const codeboxContractFixture = JSON.parse(await readFile(path.join(repoRoot, 'tests/fixtures/codebox-provider-runtime-contract.json'), 'utf8'));
 assert.equal(envOrArg(args, '--repo', { SOURCE_REPO: 'env/repo' }, 'SOURCE_REPO'), 'owner/repo');
 assert.equal(envOrArg(new Map(), '--repo', { SOURCE_REPO: 'env/repo' }, 'SOURCE_REPO'), 'env/repo');
 assert.equal(envOrArg(new Map(), '--ref', {}, 'REF', 'main'), 'main');
@@ -56,13 +59,14 @@ assert.equal(codeboxRuntimeApi.runtimeSchemas.workspaceRecipe, 'wp-codebox/works
 assert.equal(wordpressRuntimeApi.paths.wpLoadPhp, '/wordpress/wp-load.php', 'WordPress runtime path constants are centralized');
 assert.equal(wordpressRuntimePluginMountTarget(), '/wordpress/wp-content/plugins/wp-site-generator', 'WordPress plugin mount target is centralized');
 assert.equal(codeboxValidationArtifactEnvelopeSchema(), 'wp-codebox/validation-artifact-envelope/v1', 'validation artifact schema is centralized');
-assert.equal(codeboxRunnerWorkspaceCommandAbility(), 'wp-codebox/runner-workspace-command', 'Codebox workspace command ability is centralized');
-assert.equal(codeboxRunnerWorkspacePublishAbility(), 'wp-codebox/runner-workspace-publish', 'Codebox workspace publish ability is centralized');
+assert.deepEqual(codeboxProviderRuntimeInvocationContract(), codeboxContractFixture, 'Codebox provider runtime invocation contract matches the upstream fixture');
+assert.equal(codeboxRunnerWorkspaceCommandAbility(), codeboxContractFixture.abilities.workspaceCommand, 'Codebox workspace command ability is read from the provider runtime contract');
+assert.equal(codeboxRunnerWorkspacePublishAbility(), codeboxContractFixture.abilities.workspacePublish, 'Codebox workspace publish ability is read from the provider runtime contract');
 assert.deepEqual(codeboxRuntimeProviderProfile(), {
 	id: 'wp-codebox',
 	provider: 'wp-codebox',
-	workspaceCommandAbility: 'wp-codebox/runner-workspace-command',
-	workspacePublishAbility: 'wp-codebox/runner-workspace-publish',
+	workspaceCommandAbility: codeboxContractFixture.abilities.workspaceCommand,
+	workspacePublishAbility: codeboxContractFixture.abilities.workspacePublish,
 }, 'Codebox provider profile vocabulary is centralized');
 assert.equal(wordpressRuntimeBlueprintSchema(), 'https://playground.wordpress.net/blueprint-schema.json');
 assert.equal(wordpressRuntimeSettingsDescriptor().settings_fields.blueprint, 'wordpress_runtime_blueprint');
