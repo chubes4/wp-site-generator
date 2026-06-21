@@ -2,7 +2,7 @@
 
 import { readFile } from 'node:fs/promises';
 import { loadJsonOrNull, loadRecoveredSsiImportSummary, recoveredSsiScenarioFromImportSummary } from './lib/ssi-import-summary.mjs';
-import { ssiBacMetrics, ssiSignalMetrics, validationReportMetricValue } from './lib/ssi-metrics.mjs';
+import { ssiBlocksEngineMetrics, ssiSignalMetrics, validationReportMetricValue } from './lib/ssi-metrics.mjs';
 
 import { manifestSummaryRows } from './lib/ssi-stack-manifest.mjs';
 
@@ -17,7 +17,7 @@ const consumedMetricPatterns = [
 	/^ssi_report_readable_(max|mean|min|p50|p95|p99)$/,
 	/^ssi_report_top_level_keys_(max|mean|min|p50|p95|p99)$/,
 	...ssiSignalMetrics.map(([key]) => new RegExp(`^${escapeRegExp(key)}(_(max|mean|min|p50|p95|p99))?$`)),
-	...ssiBacMetrics.map(([key]) => new RegExp(`^${escapeRegExp(key)}(_(max|mean|min|p50|p95|p99))?$`)),
+	...ssiBlocksEngineMetrics.map(([key]) => new RegExp(`^${escapeRegExp(key)}(_(max|mean|min|p50|p95|p99))?$`)),
 ];
 
 const benchRead = await readInput(benchPath)
@@ -85,7 +85,8 @@ function renderReport(ssi, stackManifest) {
 	}
 
 	const importReportSummary = ssi?.metadata?.import_report_summary;
-	sections.push(renderBacStatus(metrics, importReportSummary?.block_artifact_compiler));
+	sections.push(renderBlocksEngineStatus(metrics, importReportSummary?.blocks_engine));
+	sections.push(renderValidationArtifactEnvelope(importReportSummary?.validation_artifact_envelope || ssi?.metadata?.validation_artifact_envelope));
 	sections.push(renderSourceDocuments(importReportSummary?.source_documents, importReportSummary?.diagnostics));
 	sections.push(renderImportReport(importReportSummary));
 
@@ -181,11 +182,30 @@ function renderUnexpectedMetrics(metrics) {
 	return ['### Other Metrics', '| Metric | Value |', '| --- | ---: |', ...rows].join('\n');
 }
 
-function renderBacStatus(metrics, compiler) {
-	const summary = compiler && typeof compiler === 'object' ? compiler : {};
-	const rows = ssiBacMetrics.map(([key, label]) => `| ${label} | ${formatCount(metricValue(metrics, key))} |`);
+function renderValidationArtifactEnvelope(envelope) {
+	const summary = envelope && typeof envelope === 'object' ? envelope : {};
+	if (Object.keys(summary).length === 0) {
+		return '';
+	}
 
-	const lines = ['### Blocks Engine Artifact Compiler', '| Signal | Count |', '| --- | ---: |', ...rows];
+	const artifacts = Array.isArray(summary.artifacts) ? summary.artifacts : [];
+	const rows = [
+		['schema', summary.schema],
+		['status', summary.status || summary.result?.status],
+		['validation hash', summary.validation_hash || summary.hash],
+		['artifact count', artifacts.length || summary.artifact_count],
+	]
+		.filter(([, value]) => value !== undefined && value !== null && value !== '')
+		.map(([label, value]) => `| ${escapeCell(label)} | ${escapeCell(formatValue(value))} |`);
+
+	return ['### Codebox Validation Artifact Envelope', '| Field | Value |', '| --- | --- |', ...rows].join('\n');
+}
+
+function renderBlocksEngineStatus(metrics, compiler) {
+	const summary = compiler && typeof compiler === 'object' ? compiler : {};
+	const rows = ssiBlocksEngineMetrics.map(([key, label]) => `| ${label} | ${formatCount(metricValue(metrics, key))} |`);
+
+	const lines = ['### Blocks Engine Transformer', '| Signal | Count |', '| --- | ---: |', ...rows];
 	if (summary.status) {
 		lines.push('', `- **Status:** \`${escapeCell(summary.status)}\``);
 	}

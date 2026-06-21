@@ -10,13 +10,13 @@ export const ssiSignalMetrics = [
 	['ssi_ignored_region_count', 'ignored regions'],
 ];
 
-export const ssiBacMetrics = [
-	['ssi_bac_available', 'compiler available'],
-	['ssi_bac_website_artifact_present', 'website artifact present'],
-	['ssi_bac_fragment_count', 'compiled fragments'],
-	['ssi_bac_component_count', 'components'],
-	['ssi_bac_rejected_count', 'rejected inputs'],
-	['ssi_bac_diagnostic_count', 'compiler diagnostics'],
+export const ssiBlocksEngineMetrics = [
+	['ssi_blocks_engine_available', 'compiler available'],
+	['ssi_blocks_engine_website_artifact_present', 'website artifact present'],
+	['ssi_blocks_engine_fragment_count', 'compiled fragments'],
+	['ssi_blocks_engine_component_count', 'components'],
+	['ssi_blocks_engine_rejected_count', 'rejected inputs'],
+	['ssi_blocks_engine_diagnostic_count', 'compiler diagnostics'],
 ];
 
 export const ssiImportMetricAliases = {

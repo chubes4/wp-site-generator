@@ -11,15 +11,15 @@ on:
         description: Generic runtime execution descriptor.
         required: true
         type: string
-      runtime_tool_profile:
-        description: WPSG generic runtime tool profile.
+      codebox_workload_profile:
+        description: WP Codebox workload profile for runtime tool exposure.
         required: false
         default: workspace-iteration
         type: string
       runtime_provider:
-        description: WP Codebox public runtime id.
+        description: Homeboy runtime provider id. Leave empty to use Homeboy/runtime policy.
         required: false
-        default: wp-codebox
+        default: ''
         type: string
       runtime_profile:
         description: Generic WPSG runtime package profile.
@@ -27,7 +27,22 @@ on:
         default: wpsg-agent-runtime-package
         type: string
       runtime_profiles:
-        description: Runtime package profiles. Defaults are rendered from the WPSG Codebox contract helper.
+        description: Runtime package profiles JSON. Leave empty to render a generic WPSG package profile.
+        required: false
+        default: ''
+        type: string
+      runtime_backend:
+        description: Optional Homeboy runtime backend selector recorded in the rendered profile.
+        required: false
+        default: ''
+        type: string
+      runtime_provider_id:
+        description: Optional provider id recorded in the rendered profile.
+        required: false
+        default: ''
+        type: string
+      runtime_selector:
+        description: Optional runtime selector recorded in the rendered profile.
         required: false
         default: ''
         type: string
@@ -55,12 +70,18 @@ jobs:
       - uses: actions/checkout@v4
       - id: contract
         env:
-          RUNTIME_TOOL_PROFILE: ${{ inputs.runtime_tool_profile }}
-        run: node .github/scripts/render-codebox-runtime-workflow-inputs.mjs
+          CODEBOX_WORKLOAD_PROFILE: ${{ inputs.codebox_workload_profile }}
+          HOMEBOY_AGENT_RUNTIME_PROVIDER: ${{ inputs.runtime_provider }}
+          HOMEBOY_AGENT_RUNTIME_PROFILE: ${{ inputs.runtime_profile }}
+          HOMEBOY_AGENT_RUNTIME_PROFILES: ${{ inputs.runtime_profiles }}
+          HOMEBOY_AGENT_RUNTIME_BACKEND: ${{ inputs.runtime_backend }}
+          HOMEBOY_AGENT_RUNTIME_PROVIDER_ID: ${{ inputs.runtime_provider_id }}
+          HOMEBOY_AGENT_RUNTIME_SELECTOR: ${{ inputs.runtime_selector }}
+        run: node .github/scripts/render-homeboy-runtime-workflow-inputs.mjs
 
   workspace-iteration:
     needs: runtime-contracts
-    if: inputs.runtime_tool_profile == 'workspace-iteration'
+    if: inputs.codebox_workload_profile == 'workspace-iteration'
     uses: Extra-Chill/homeboy-extensions/.github/workflows/runtime-agent-ci.yml@main
     with:
       runtime_provider: ${{ inputs.runtime_provider || needs.runtime-contracts.outputs.runtime_provider }}
@@ -76,7 +97,7 @@ jobs:
 
   workspace-publication:
     needs: runtime-contracts
-    if: inputs.runtime_tool_profile == 'workspace-publication'
+    if: inputs.codebox_workload_profile == 'workspace-publication'
     uses: Extra-Chill/homeboy-extensions/.github/workflows/runtime-agent-ci.yml@main
     with:
       runtime_provider: ${{ inputs.runtime_provider || needs.runtime-contracts.outputs.runtime_provider }}

@@ -6,7 +6,6 @@ import { spawnSync } from 'node:child_process';
 
 import { evaluateComplexityPolicy, loadPolicy } from '../../.github/scripts/site-generation-complexity-policy.mjs';
 import { createHomeboyControllerFixture } from '../helpers/homeboy-fixtures.mjs';
-
 const repoRoot = path.resolve(new URL('../..', import.meta.url).pathname);
 const tempDir = await mkdtemp(path.join(tmpdir(), 'wpsg-homeboy-controller-'));
 const controllerRunSpecPath = path.join(tempDir, 'controller-run-spec.json');
@@ -37,9 +36,12 @@ async function materializeControllerSpec({ outputPath, env }) {
 		encoding: 'utf8',
 	});
 	assert.equal(materializeResult.status, 0, materializeResult.stderr || materializeResult.stdout);
-	const materialization = JSON.parse(await readFile(materializationPath, 'utf8'));
-	const spec = materialization.data?.spec || materialization.value?.spec || materialization.spec;
-	await writeFile(outputPath, JSON.stringify(spec, null, 2) + '\n');
+	const writeSpecResult = spawnSync(process.execPath, ['.github/scripts/write-materialized-controller-run-spec.mjs', materializationPath, outputPath], {
+		cwd: repoRoot,
+		encoding: 'utf8',
+	});
+	assert.equal(writeSpecResult.status, 0, writeSpecResult.stderr || writeSpecResult.stdout);
+	const spec = JSON.parse(await readFile(outputPath, 'utf8'));
 	return spec;
 }
 
@@ -56,9 +58,14 @@ try {
 	const complexityPolicy = storeIdeaInputs.policy_results['wpsg-complexity-policy'];
 
 	assert.equal(controllerRunSpec.schema, 'homeboy/agent-task-loop-spec/v1');
-	assert.equal(controllerRunSpec.loop_id, 'wp-site-generator/static-site-generation-loop');
+	assert.equal(controllerRunSpec.loop_id, 'wp-site-generator/static-site-generation-loop/409');
 	assert.equal(storeIdeaInputs.run_id, '409');
+	assert.equal(storeIdeaInputs.loop_id, 'wp-site-generator/static-site-generation-loop/409');
 	assert.equal(storeIdeaInputs.repository, 'chubes4/wp-site-generator');
+	assert.equal(storeIdeaInputs.randomness_seed, complexityPolicy.randomness_seed, 'controller inputs persist the effective replay seed');
+	assert.equal(storeIdeaInputs.randomness_profile, 'steady', 'controller inputs persist the effective randomness profile');
+	assert.equal(storeIdeaInputs.source.ref_type, 'commit', 'controller inputs persist immutable source provenance');
+	assert.equal(storeIdeaInputs.source.sha.length, 40, 'controller inputs include the source checkout SHA');
 	assert.equal(storeIdeaInputs.runtime_input_contract, 'homeboy-agent-runtime-env');
 	assert.equal(complexityPolicy.schema, 'wp-site-generator/site-generation-complexity-policy/v1');
 	assert.equal(complexityPolicy.current_tier, 'foundation');
@@ -67,9 +74,12 @@ try {
 	assert.equal(complexityPolicy.randomness_profile.id, 'steady');
 	assert.equal(complexityPolicy.randomness_seed.length, 12);
 	assert.deepEqual(complexityPolicy.site_kind_mix, ['store', 'website']);
-	assert.equal(controllerRunSpec.metadata.policy_materialization['wpsg-complexity-policy'].provenance.run_id, '409');
-	assert.equal(controllerRunSpec.metadata.run.generated_by, '.github/scripts/build-homeboy-controller-run-inputs.mjs');
-	assert.equal(controllerRunSpec.metadata.run.materialized_by, 'homeboy agent-task controller materialize');
+assert.equal(controllerRunSpec.metadata.policy_materialization['wpsg-complexity-policy'].provenance.run_id, '409');
+assert.equal(controllerRunSpec.metadata.run.generated_by, '.github/scripts/build-homeboy-controller-run-inputs.mjs');
+assert.equal(controllerRunSpec.metadata.run.loop_id, 'wp-site-generator/static-site-generation-loop/409');
+assert.equal(controllerRunSpec.metadata.run.randomness_seed, complexityPolicy.randomness_seed, 'run metadata persists deterministic replay seed');
+assert.equal(controllerRunSpec.metadata.run.source.sha, storeIdeaInputs.source.sha, 'run metadata persists source commit');
+assert.equal(controllerRunSpec.metadata.run.materialized_by, 'homeboy agent-task controller materialize');
 	assert.equal(controllerRunSpec.metadata.run.controller_spec, '.github/homeboy/controllers/static-site-generation-loop.controller.json');
 	assert.equal(controllerRunSpec.metadata.authority.builder, '.github/scripts/build-homeboy-ssi-loop-controller.mjs');
 
@@ -118,6 +128,7 @@ try {
 	});
 	const localReplayInputs = localReplaySpec.workflows.find((workflow) => workflow.workflow_id === 'store-idea').inputs;
 	assert.equal(localReplayInputs.run_id, 'local-replay-409', 'local replay identity replaces timestamp fallback');
+	assert.equal(localReplaySpec.loop_id, 'wp-site-generator/static-site-generation-loop/local-replay-409', 'local replay identity scopes durable controller state');
 	assert.equal(localReplayInputs.policy_results['wpsg-complexity-policy'].randomness_seed, 'local-seed', 'local replay seed is explicit');
 
 	assert.ok(controllerRunSpec.workflows.find((workflow) => workflow.workflow_id === 'revalidation').artifacts.includes('revalidation_attempt'), 'controller checkpoints revalidation attempts');

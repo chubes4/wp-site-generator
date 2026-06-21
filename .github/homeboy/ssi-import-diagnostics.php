@@ -28,12 +28,12 @@ return static function (): array {
 		'ssi_freeform_block_count' => 0,
 		'ssi_invalid_block_count' => 0,
 		'ssi_manifest_error_count' => 0,
-		'ssi_bac_available' => 0,
-		'ssi_bac_fragment_count' => 0,
-		'ssi_bac_component_count' => 0,
-		'ssi_bac_rejected_count' => 0,
-		'ssi_bac_diagnostic_count' => 0,
-		'ssi_bac_website_artifact_present' => 0,
+		'ssi_blocks_engine_available' => 0,
+		'ssi_blocks_engine_fragment_count' => 0,
+		'ssi_blocks_engine_component_count' => 0,
+		'ssi_blocks_engine_rejected_count' => 0,
+		'ssi_blocks_engine_diagnostic_count' => 0,
+		'ssi_blocks_engine_website_artifact_present' => 0,
 	);
 	$diagnostics = array();
 	$seen_diagnostics = array();
@@ -241,15 +241,15 @@ return static function (): array {
 		);
 	};
 
-	$bac_summary = static function ( array $report ) use ( $get_path, $count_value, $sum_nested_counts, $normalize_source_documents ): array {
-		$compiler = $get_path( $report, array( 'block_artifact_compiler' ) );
-		$compiler = is_array( $compiler ) ? $compiler : array();
-		$fragments = isset( $compiler['fragments'] ) && is_array( $compiler['fragments'] ) ? $compiler['fragments'] : array();
-		$website_artifact = isset( $compiler['website_artifact'] ) && is_array( $compiler['website_artifact'] ) ? $compiler['website_artifact'] : array();
+	$blocks_engine_summary = static function ( array $report ) use ( $get_path, $count_value, $sum_nested_counts, $normalize_source_documents ): array {
+		$blocks_engine = $get_path( $report, array( 'blocks_engine' ) );
+		$blocks_engine = is_array( $blocks_engine ) ? $blocks_engine : array();
+		$fragments = isset( $blocks_engine['fragments'] ) && is_array( $blocks_engine['fragments'] ) ? $blocks_engine['fragments'] : array();
+		$website_artifact = isset( $blocks_engine['website_artifact'] ) && is_array( $blocks_engine['website_artifact'] ) ? $blocks_engine['website_artifact'] : array();
 		$website_summary = isset( $website_artifact['summary'] ) && is_array( $website_artifact['summary'] ) ? $website_artifact['summary'] : array();
 		$website_input = isset( $website_artifact['input'] ) && is_array( $website_artifact['input'] ) ? $website_artifact['input'] : array();
 		$website_diagnostics = isset( $website_artifact['diagnostics'] ) && is_array( $website_artifact['diagnostics'] ) ? $website_artifact['diagnostics'] : array();
-		$source_documents = $normalize_source_documents( $compiler['source_documents'] ?? $website_artifact['source_documents'] ?? null, $website_input );
+		$source_documents = $normalize_source_documents( $blocks_engine['source_documents'] ?? $website_artifact['source_documents'] ?? null, $website_input );
 		$candidate_counts = array();
 		foreach ( array( 'component_candidate_count', 'block_candidate_count', 'component_count', 'block_type_count', 'block_count' ) as $key ) {
 			$value = $website_summary[ $key ] ?? $website_artifact[ $key ] ?? null;
@@ -257,13 +257,6 @@ return static function (): array {
 				$candidate_counts[ $key ] = $count_value( $value );
 			}
 		}
-		$wordpress_artifacts = isset( $website_artifact['wordpress_artifacts'] ) && is_array( $website_artifact['wordpress_artifacts'] ) ? $website_artifact['wordpress_artifacts'] : array();
-		foreach ( array( 'components' => 'component_candidate_count', 'blocks' => 'block_candidate_count', 'block_types' => 'block_type_count' ) as $artifact_key => $count_key ) {
-			if ( ! isset( $candidate_counts[ $count_key ] ) && isset( $wordpress_artifacts[ $artifact_key ] ) ) {
-				$candidate_counts[ $count_key ] = $count_value( $wordpress_artifacts[ $artifact_key ] );
-			}
-		}
-
 		$component_count = $sum_nested_counts( $fragments, array( array( 'component_count' ), array( 'summary', 'component_count' ) ) );
 		$rejected_count = $sum_nested_counts( $fragments, array( array( 'rejected_count' ), array( 'input', 'rejected_count' ) ) );
 		$diagnostic_count = $sum_nested_counts( $fragments, array( array( 'diagnostic_count' ), array( 'diagnostics' ) ) );
@@ -286,10 +279,10 @@ return static function (): array {
 		}
 
 		return array(
-			'available' => ! empty( $compiler['available'] ) || ! empty( $fragments ) || ! empty( $website_artifact ),
-			'status' => is_scalar( $compiler['status'] ?? $website_artifact['status'] ?? '' ) ? (string) ( $compiler['status'] ?? $website_artifact['status'] ?? '' ) : '',
+			'available' => ! empty( $blocks_engine['available'] ) || ! empty( $fragments ) || ! empty( $website_artifact ),
+			'status' => is_scalar( $blocks_engine['status'] ?? $website_artifact['status'] ?? '' ) ? (string) ( $blocks_engine['status'] ?? $website_artifact['status'] ?? '' ) : '',
 			'import_mode' => is_scalar( $import_mode ) ? (string) $import_mode : '',
-			'fragment_count' => $count_value( $compiler['fragment_count'] ?? $fragments ),
+			'fragment_count' => $count_value( $blocks_engine['fragment_count'] ?? $fragments ),
 			'component_count' => $component_count,
 			'rejected_count' => $rejected_count,
 			'diagnostic_count' => $diagnostic_count,
@@ -300,6 +293,17 @@ return static function (): array {
 			'source_documents' => $source_documents,
 			'candidate_counts' => $candidate_counts,
 		);
+	};
+
+	$validation_artifact_envelope = static function ( array $report ) use ( $get_path ): array {
+		foreach ( array( 'codebox_validation_artifact', 'codebox_validation', 'validation_artifact', 'validation_artifact_envelope' ) as $key ) {
+			$value = $get_path( $report, array( $key ) );
+			if ( is_array( $value ) ) {
+				return $value;
+			}
+		}
+
+		return array();
 	};
 
 	$count_diagnostics = static function ( array $report, callable $matches ) use ( $get_path ): int {
@@ -349,13 +353,13 @@ return static function (): array {
 	};
 
 	if ( is_array( $report ) ) {
-		$block_artifact_compiler = $bac_summary( $report );
-		$metrics['ssi_bac_available'] = $block_artifact_compiler['available'] ? 1 : 0;
-		$metrics['ssi_bac_fragment_count'] = $block_artifact_compiler['fragment_count'];
-		$metrics['ssi_bac_component_count'] = $block_artifact_compiler['component_count'];
-		$metrics['ssi_bac_rejected_count'] = $block_artifact_compiler['rejected_count'];
-		$metrics['ssi_bac_diagnostic_count'] = $block_artifact_compiler['diagnostic_count'];
-		$metrics['ssi_bac_website_artifact_present'] = $block_artifact_compiler['website_artifact_present'] ? 1 : 0;
+		$blocks_engine = $blocks_engine_summary( $report );
+		$metrics['ssi_blocks_engine_available'] = $blocks_engine['available'] ? 1 : 0;
+		$metrics['ssi_blocks_engine_fragment_count'] = $blocks_engine['fragment_count'];
+		$metrics['ssi_blocks_engine_component_count'] = $blocks_engine['component_count'];
+		$metrics['ssi_blocks_engine_rejected_count'] = $blocks_engine['rejected_count'];
+		$metrics['ssi_blocks_engine_diagnostic_count'] = $blocks_engine['diagnostic_count'];
+		$metrics['ssi_blocks_engine_website_artifact_present'] = $blocks_engine['website_artifact_present'] ? 1 : 0;
 
 		$collect_modern_diagnostics( $report );
 
@@ -415,7 +419,8 @@ return static function (): array {
 				'top_level_keys' => is_array( $report ) ? array_keys( $report ) : array(),
 				'source_documents' => is_array( $report ) ? $normalize_source_documents( $get_path( $report, array( 'source_documents' ) ) ) : array(),
 				'diagnostics' => $diagnostics,
-				'block_artifact_compiler' => is_array( $report ) ? $bac_summary( $report ) : array(),
+				'blocks_engine' => is_array( $report ) ? $blocks_engine_summary( $report ) : array(),
+				'validation_artifact_envelope' => is_array( $report ) ? $validation_artifact_envelope( $report ) : array(),
 				'asset_map' => is_array( $get_path( $report, array( 'asset_map' ) ) ) ? $get_path( $report, array( 'asset_map' ) ) : array(),
 			),
 		),

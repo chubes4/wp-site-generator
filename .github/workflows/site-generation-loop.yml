@@ -51,6 +51,10 @@ jobs:
       OPENAI_MODEL: ${{ inputs.openai_model }}
       GITHUB_TOKEN: ${{ github.token }}
       OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+      HOMEBOY_REF: ${{ inputs.homeboy_ref }}
+      HOMEBOY_EXTENSIONS_REF: ${{ inputs.homeboy_extensions_ref }}
+      AGENTS_API_REF: main
+      AI_PROVIDER_OPENAI_REF: trunk
       HOMEBOY_CONTROLLER_RUN_INPUTS_PATH: ${{ github.workspace }}/.ci/site-generation-loop.controller-run-inputs.json
       HOMEBOY_POLICY_RESULT_PATH: ${{ github.workspace }}/.ci/site-generation-loop.complexity-policy-result.json
       HOMEBOY_CONTROLLER_RUN_SPEC_PATH: ${{ github.workspace }}/.ci/site-generation-loop.controller-run-spec.json
@@ -72,28 +76,28 @@ jobs:
         uses: actions/checkout@v4
         with:
           repository: Extra-Chill/homeboy
-          ref: ${{ inputs.homeboy_ref }}
+          ref: ${{ env.HOMEBOY_REF }}
           path: .ci/homeboy
 
       - name: Check out Homeboy Extensions
         uses: actions/checkout@v4
         with:
           repository: Extra-Chill/homeboy-extensions
-          ref: ${{ inputs.homeboy_extensions_ref }}
+          ref: ${{ env.HOMEBOY_EXTENSIONS_REF }}
           path: .ci/homeboy-extensions
 
       - name: Check out Agents API
         uses: actions/checkout@v4
         with:
           repository: Automattic/agents-api
-          ref: main
+          ref: ${{ env.AGENTS_API_REF }}
           path: .ci/agents-api
 
       - name: Check out OpenAI provider
         uses: actions/checkout@v4
         with:
           repository: WordPress/ai-provider-for-openai
-          ref: trunk
+          ref: ${{ env.AI_PROVIDER_OPENAI_REF }}
           path: .ci/ai-provider-for-openai
 
       - name: Build Homeboy
@@ -111,7 +115,7 @@ jobs:
           materialization_proof_path="${HOMEBOY_CONTROLLER_MATERIALIZATION_RESULT_PATH%.json}.proof.json"
           jq '.data // .value // .' "$HOMEBOY_CONTROLLER_MATERIALIZATION_RESULT_PATH" > "$materialization_proof_path"
           homeboy agent-task controller validate-proof "@$materialization_proof_path"
-          jq '.data.spec // .value.spec // .spec' "$HOMEBOY_CONTROLLER_MATERIALIZATION_RESULT_PATH" > "$HOMEBOY_CONTROLLER_RUN_SPEC_PATH"
+          node .github/scripts/write-materialized-controller-run-spec.mjs "$HOMEBOY_CONTROLLER_MATERIALIZATION_RESULT_PATH" "$HOMEBOY_CONTROLLER_RUN_SPEC_PATH"
           jq empty "$HOMEBOY_CONTROLLER_RUN_SPEC_PATH"
           echo "path=$HOMEBOY_CONTROLLER_RUN_SPEC_PATH" >> "$GITHUB_OUTPUT"
 

@@ -16,8 +16,8 @@
                             "pluginData": {
                                 "resource": "git:directory",
                                 "url": "https://github.com/Automattic/blocks-engine",
-                                "ref": "trunk",
-                                "refType": "branch",
+                                "ref": "php-transformer-v0.1.0",
+                                "refType": "tag",
                                 "path": "php-transformer"
                             },
                             "options": {

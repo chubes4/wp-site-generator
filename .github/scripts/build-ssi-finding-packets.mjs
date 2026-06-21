@@ -293,13 +293,13 @@ function packetFromBenchFailure(failure) {
 	}
 	const reason = reasonParts.join('; ') || 'Homeboy bench step did not produce a parseable scenario summary.';
 	return {
-		...packetBase(generatorRepo),
+		...packetBase('Extra-Chill/homeboy-extensions'),
 		diagnostic_id: 'bench-runner-failure',
 		kind: 'bench_failure',
 		source_path: benchPath,
 		path: benchPath,
 		severity: 'error',
-		category: 'generator_policy',
+		category: 'homeboy_runtime_workload',
 		reason_code: failure.source || 'bench_runner_failure',
 		suggested_repair_class: 'repair_validation_harness',
 		preview: truncate(failure.stderr_tail || failure.detail || reason, 180),
@@ -307,7 +307,7 @@ function packetFromBenchFailure(failure) {
 		excerpt: '',
 		source_html_preview: '',
 		block_name: '',
-		converter: 'homeboy-bench',
+		converter: 'homeboy-wordpress-extension',
 		stage: failure.source || 'bench_runner',
 		reason,
 		diagnostic_refs: [],

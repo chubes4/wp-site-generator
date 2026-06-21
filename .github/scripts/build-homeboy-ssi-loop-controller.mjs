@@ -230,7 +230,7 @@ const controller = {
 				group_by: ['owner_repo', 'root_cause', 'group_id'],
 				requires_non_empty: true,
 			},
-			dependencies: ['static-site-importer', 'blocks-engine'],
+			dependencies: ['static-site-importer', 'blocks-engine', 'homeboy-extensions'],
 		},
 		{
 			workflow_id: 'revalidation',
@@ -273,6 +273,7 @@ const controller = {
 		{ dependency_id: 'wp-site-generator', kind: 'repo', value: 'chubes4/wp-site-generator', required: true },
 		{ dependency_id: 'static-site-importer', kind: 'repo', value: 'chubes4/static-site-importer', required: true },
 		{ dependency_id: 'blocks-engine', kind: 'repo', value: 'Automattic/blocks-engine', required: true },
+		{ dependency_id: 'homeboy-extensions', kind: 'repo', value: 'Extra-Chill/homeboy-extensions', required: true },
 	],
 	gates: [
 		{ gate_id: 'fallback_blocks', description: 'SSI import must not emit fallback blocks.', metrics: ['fallback_blocks'] },

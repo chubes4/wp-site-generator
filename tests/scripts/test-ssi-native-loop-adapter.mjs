@@ -61,9 +61,11 @@ assert.deepEqual(controller.workflows.find((workflow) => workflow.workflow_id ==
 assert.deepEqual(controller.workflows.find((workflow) => workflow.workflow_id === 'reviewer').consumes, ['static_site_candidate', 'import_validation_result', 'static_validation_run', 'visual_parity_artifact', 'finding_packet_set', 'revalidation_attempt'], 'reviewer consumes artifact evidence instead of PR transport');
 assert.equal(controller.artifacts.find((artifact) => artifact.artifact_id === 'static_site_pull_request').evidence_only, true, 'generated PR is optional publication evidence');
 assert.deepEqual(controller.workflows.find((workflow) => workflow.workflow_id === 'iterator').artifacts.slice(-2), ['iterator_upstream_issue', 'iterator_upstream_pull_request'], 'iterator workflow declares emitted artifacts');
+assert.ok(controller.workflows.find((workflow) => workflow.workflow_id === 'iterator').dependencies.includes('homeboy-extensions'), 'iterator routing can target Homeboy Extensions runtime findings');
 assert.equal(controller.workflows.find((workflow) => workflow.workflow_id === 'iterator').builder, undefined, 'iterator workflow does not expose backend-specific builder policy');
 assert.equal(controller.artifacts.find((artifact) => artifact.artifact_id === 'revalidation_attempt').kind, 'wp-site-generator/RevalidationAttempt/v1', 'controller declares artifact schemas');
 assert.ok(controller.dependencies.some((dependency) => dependency.value === 'chubes4/static-site-importer'), 'controller declares SSI stack dependencies');
+assert.ok(controller.dependencies.some((dependency) => dependency.value === 'Extra-Chill/homeboy-extensions'), 'controller declares upstream Homeboy Extensions owner for runtime workload findings');
 assert.equal(controller.metrics.find((metric) => metric.metric_id === 'fallback_blocks').target, 'value === 0', 'fallback block metric gate is explicit');
 assert.equal(controller.metrics.find((metric) => metric.metric_id === 'conversion_findings').target, 'value === 0', 'conversion finding metric gate is explicit');
 assert.equal(controller.metrics.find((metric) => metric.metric_id === 'visual_parity').target, 'status === "pass" && mismatch_count === 0 && max_delta_ratio === 0', 'visual parity metric gate is explicit');
@@ -85,7 +87,7 @@ assert.match(settingsPayload.workloads[0].run[1].code, /blocks_engine_php_transf
 assert.doesNotMatch(settingsPayload.workloads[0].run[1].code, /static-site-importer import-theme/, 'workload does not depend on the SSI WP-CLI command');
 assert.doesNotMatch(settingsPayload.workloads[0].run[1].code, /static-site-importer\/import-theme/, 'workload does not depend on the legacy import-theme ability');
 assert.doesNotMatch(settingsPayload.workloads[0].run[1].code, /^<\?php/, 'inline PHP workload code omits an opening tag for eval execution');
-assert.deepEqual(settingsPayload.website_artifact.files.map((file) => file.path), ['website/assets/styles.css', 'website/index.html'], 'validation settings pass candidate files as a BAC website artifact');
+assert.deepEqual(settingsPayload.website_artifact.files.map((file) => file.path), ['website/assets/styles.css', 'website/index.html'], 'validation settings pass candidate files as a website artifact');
 assert.equal(settingsPayload.workloads[0].artifacts, undefined, 'runtime import report stays in workload metadata instead of a collectable bench artifact declaration');
 assert.deepEqual(
 	settingsPayload.settings.wordpress_runtime_blueprint.steps.map((step) => step.options.targetFolderName).slice(0, 3),

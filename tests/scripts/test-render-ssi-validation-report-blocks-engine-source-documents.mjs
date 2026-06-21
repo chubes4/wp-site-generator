@@ -17,14 +17,14 @@ const bench = {
 						ssi_signal_total_count: 3,
 						ssi_fallback_count: 1,
 						ssi_freeform_block_count: 2,
-						ssi_bac_available: 1,
-						ssi_bac_component_count: 4,
+						ssi_blocks_engine_available: 1,
+						ssi_blocks_engine_component_count: 4,
 					},
 					metadata: {
 						import_report_summary: {
 							path: '/tmp/import-report.json',
 							readable: true,
-							top_level_keys: ['source_documents', 'block_artifact_compiler', 'diagnostics'],
+							top_level_keys: ['source_documents', 'blocks_engine', 'diagnostics'],
 							source_documents: {
 								total_count: 4,
 								counts_by_kind: {
@@ -34,7 +34,7 @@ const bench = {
 								},
 								skipped_mdx_count: 1,
 							},
-							block_artifact_compiler: {
+							blocks_engine: {
 								available: true,
 								status: 'success_with_warnings',
 								source_documents: {
@@ -50,6 +50,12 @@ const bench = {
 									component_candidate_count: 5,
 									block_candidate_count: 8,
 								},
+							},
+							validation_artifact_envelope: {
+								schema: 'wp-codebox/validation-artifact-envelope/v1',
+								status: 'passed',
+								validation_hash: 'codebox-validation-fixture',
+								artifacts: [{ name: 'import-report.json' }, { name: 'visual-summary.json' }],
 							},
 							diagnostics: [
 								{
@@ -73,13 +79,16 @@ const output = await runRenderer(renderer, bench);
 
 assert.match(output, /### SSI Signals/, 'existing SSI metrics remain visible');
 assert.match(output, /fallback blocks/, 'existing fallback metric remains visible');
-assert.match(output, /### Blocks Engine Artifact Compiler/, 'Blocks Engine artifact compiler status section remains visible');
-assert.match(output, /\*\*Status:\*\* `success_with_warnings`/, 'Blocks Engine artifact compiler status is rendered');
+assert.match(output, /### Blocks Engine Transformer/, 'Blocks Engine status section remains visible');
+assert.match(output, /\*\*Status:\*\* `success_with_warnings`/, 'Blocks Engine status is rendered');
 assert.match(output, /Blocks Engine Source Documents/, 'Blocks Engine source-document counts are rendered');
 assert.match(output, /\| markdown \| 1 \|/, 'Blocks Engine source-document counts include Markdown');
 assert.match(output, /\| mdx \| 1 \|/, 'Blocks Engine source-document counts include MDX');
 assert.match(output, /\| component candidate count \| 5 \|/, 'Blocks Engine component candidate count is rendered');
 assert.match(output, /\| block candidate count \| 8 \|/, 'Blocks Engine block candidate count is rendered');
+assert.match(output, /### Codebox Validation Artifact Envelope/, 'optional Codebox validation artifact envelope is rendered');
+assert.match(output, /wp-codebox\/validation-artifact-envelope\/v1/, 'validation artifact envelope schema is rendered');
+assert.match(output, /codebox-validation-fixture/, 'validation artifact envelope hash is rendered');
 assert.match(output, /### Source Documents/, 'SSI source-document section is rendered');
 assert.match(output, /Skipped\/Unsupported MDX/, 'MDX diagnostics table is rendered');
 assert.match(output, /docs\/widget\.mdx/, 'MDX diagnostic includes source path');

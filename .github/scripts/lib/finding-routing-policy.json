@@ -1,6 +1,7 @@
 {
   "candidate_repos": [
     "Automattic/blocks-engine",
+    "Extra-Chill/homeboy-extensions",
     "chubes4/static-site-importer",
     "chubes4/wp-site-generator"
   ],
@@ -8,7 +9,7 @@
   "rules": [
     {
       "id": "bench-failure",
-      "repo": "chubes4/wp-site-generator",
+      "repo": "Extra-Chill/homeboy-extensions",
       "kind": ["bench_failure"]
     },
     {
@@ -29,19 +30,19 @@
     {
       "id": "blocks-engine-html-transformer",
       "repo": "Automattic/blocks-engine",
-      "converter_includes": ["html-to-block", "h2bc"],
+      "converter_includes": ["blocks-engine"],
       "any_includes": ["converter_support", "replace_fallback", "fallback", "core_html", "freeform"]
     },
     {
       "id": "blocks-engine-format-bridge",
       "repo": "Automattic/blocks-engine",
-      "haystack_includes": ["block-format-bridge", "bfb", "serialization"],
-      "category_includes": ["adapter", "scope", "bfb_report"]
+      "haystack_includes": ["blocks-engine", "transform contract", "serialization"],
+      "category_includes": ["adapter", "scope", "blocks_engine_report"]
     },
     {
       "id": "blocks-engine-artifact-compiler",
       "repo": "Automattic/blocks-engine",
-      "haystack_includes": ["block-artifact-compiler", "artifact schema", "artifact contract", "artifact compiler", "artifact_schema", "artifact_contract", "artifact_compiler", "schema_validation", "compile_artifact"],
+      "haystack_includes": ["blocks-engine", "artifact schema", "artifact contract", "site artifact", "artifact_schema", "artifact_contract", "schema_validation", "compile_artifact"],
       "category_includes": ["artifact_schema", "artifact_contract", "artifact_compiler"]
     },
     {
@@ -59,7 +60,8 @@
     }
   ],
   "route_reasons": {
-    "Automattic/blocks-engine": "transformer, format bridge, or artifact compiler diagnostic routes to Blocks Engine php-transformer",
+    "Automattic/blocks-engine": "transformer, serialization, or site-artifact diagnostic routes to tagged Blocks Engine php-transformer contracts",
+    "Extra-Chill/homeboy-extensions": "Homeboy WordPress runtime workload diagnostic routes to Homeboy Extensions",
     "chubes4/static-site-importer": "SSI import/source-selection/asset-map diagnostic routes to static-site-importer",
     "chubes4/wp-site-generator": "visual parity or generator policy diagnostic routes to wp-site-generator"
   }

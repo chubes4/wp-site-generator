@@ -78,7 +78,7 @@ export async function buildWebsiteArtifactFromSource(candidateSource) {
 	}
 
 	return {
-		schema: 'block-artifact-compiler/website-artifact/v1',
+		schema: 'blocks-engine/php-transformer/site-artifact/v1',
 		files,
 		metadata: {
 			source: 'wp-site-generator/StaticSiteCandidate',

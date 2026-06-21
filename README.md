@@ -97,7 +97,7 @@ This repository is the orchestration and generated-site source repo. The working
 - [`Extra-Chill/homeboy-action`](https://github.com/Extra-Chill/homeboy-action) — GitHub Action wrapper that runs Homeboy in repository workflows.
 - [`Extra-Chill/homeboy-extensions`](https://github.com/Extra-Chill/homeboy-extensions) — reusable WordPress Playground workloads, current agent CI workflow, validation reporting, and iterator plumbing.
 - [`chubes4/static-site-importer`](https://github.com/chubes4/static-site-importer) — WordPress plugin that imports each generated static site into a block theme.
-- [`Automattic/blocks-engine`](https://github.com/Automattic/blocks-engine) — canonical PHP transformer used by Static Site Importer for HTML-to-block conversion, format conversion, and website artifact compilation.
+- [`Automattic/blocks-engine`](https://github.com/Automattic/blocks-engine) — tagged PHP transform contract used by Static Site Importer for HTML-to-block conversion, block serialization, and site-artifact diagnostics.
 - [`WordPress/wordpress-playground`](https://github.com/WordPress/wordpress-playground) — PHP-WASM WordPress runtime used by validation and preview links.
 
 The generated-site PR is only one artifact in the loop. Validation output can produce upstream PRs or issues in the importer and transformer repos, then the generated-site PR is revalidated against the improved stack.
@@ -258,9 +258,12 @@ That's the loop. Generate. Design. Build. Validate. Review. Decide. Repeat.
 
 The primary loop runs in GitHub Actions through Homeboy's durable controller primitives. The workflow stamps WPSG-owned run inputs onto `.github/homeboy/controllers/static-site-generation-loop.controller.json`, initializes Homeboy with `homeboy agent-task controller from-spec`, resumes execution with `homeboy agent-task controller resume`, and records GitHub Actions lineage through `homeboy agent-task controller events`. Homeboy owns controller state, action scheduling, event application, and runtime/provider selection.
 
-Required GitHub secrets:
+Required GitHub secrets depend on the selected Homeboy runtime and AI provider. For the current hosted Codebox configuration, configure provider credentials outside WPSG through repository/environment secrets and variables such as:
 
-1. `OPENAI_API_KEY`
+1. Runtime provider/model credentials, for example `OPENAI_API_KEY` when the selected provider uses OpenAI.
+2. Runtime selection hints such as `runtime_backend`, `runtime_provider_id`, or `runtime_selector` when the hosted Codebox profile needs a specific backend/provider route.
+
+The reusable `.github/workflows/wpsg-runtime-agent-ci.yml` seam accepts a `codebox_workload_profile` such as `workspace-iteration` or `workspace-publication`, then renders WP Codebox runtime profile/workspace wrapper requirements through `.github/scripts/render-homeboy-runtime-workflow-inputs.mjs`. `agents/run-runtime-package` remains in runtime execution descriptors because WP Codebox has not yet exposed a canonical package-execution wrapper for that Agents API entry point; WPSG should not add a local shim for it.
 
 Useful workflow entry points:
 
@@ -277,7 +280,7 @@ Local Studio remains useful for bundle development or manual runtime experiments
 
 1. A WordPress agent runtime capable of importing these bundles.
 2. A GitHub credential profile scoped to this repo with `Contents`, `Issues`, and `Pull requests` write access.
-3. An AI provider configured (today: OpenAI, model `gpt-5.5`).
+3. An AI provider and model configured in the selected runtime.
 4. The bundles imported and pointed at `chubes4/wp-site-generator`.
 
 Use the active runtime's bundle import and flow-run commands to install or refresh bundles and run a default manual flow.
