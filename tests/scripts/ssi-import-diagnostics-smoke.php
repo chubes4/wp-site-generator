@@ -83,6 +83,16 @@ $report = array(
 			),
 		),
 	),
+	'codebox_validation_artifact' => array(
+		'schema'          => 'wp-codebox/validation-artifact-envelope/v1',
+		'status'          => 'passed',
+		'validation_hash' => 'validation-fixture-hash',
+		'artifacts'       => array(
+			array(
+				'name' => 'import-report.json',
+			),
+		),
+	),
 	'diagnostics' => array(
 		array(
 			'type'         => 'unsupported_html_fallback',
@@ -117,6 +127,9 @@ $blocks_engine_summary = $summary['blocks_engine'] ?? array();
 assert_same( 'website_artifact', $blocks_engine_summary['import_mode'] ?? null, 'Blocks Engine import mode summary' );
 assert_same( 'success', $blocks_engine_summary['website_artifact_summary']['status'] ?? null, 'Blocks Engine website artifact status summary' );
 assert_same( 2, $blocks_engine_summary['rejected_count'] ?? null, 'Blocks Engine rejected summary' );
+$validation_envelope = $summary['validation_artifact_envelope'] ?? array();
+assert_same( 'wp-codebox/validation-artifact-envelope/v1', $validation_envelope['schema'] ?? null, 'validation artifact envelope schema' );
+assert_same( 'validation-fixture-hash', $validation_envelope['validation_hash'] ?? null, 'validation artifact envelope hash' );
 
 $modern_row = $modern_rows[0];
 assert_same( 'unsupported_html_fallback', $modern_row['type'] ?? null, 'modern diagnostic type' );

@@ -300,7 +300,7 @@ async function assertImportAndIteratorWorkflow() {
   const workflow = await readFile(repoPath('.github/workflows/static-site-validation.yml'), 'utf8');
   const validationWorkload = buildSsiImportWorkload('proof-site', {
     websiteArtifact: {
-      schema: 'block-artifact-compiler/website-artifact/v1',
+      schema: 'blocks-engine/php-transformer/site-artifact/v1',
       files: [
         {
           path: 'website/index.html',

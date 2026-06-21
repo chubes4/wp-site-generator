@@ -51,6 +51,12 @@ const bench = {
 									block_candidate_count: 8,
 								},
 							},
+							validation_artifact_envelope: {
+								schema: 'wp-codebox/validation-artifact-envelope/v1',
+								status: 'passed',
+								validation_hash: 'codebox-validation-fixture',
+								artifacts: [{ name: 'import-report.json' }, { name: 'visual-summary.json' }],
+							},
 							diagnostics: [
 								{
 									diagnostic_id: 'unsupported-source-doc-docs-widget-mdx',
@@ -80,6 +86,9 @@ assert.match(output, /\| markdown \| 1 \|/, 'Blocks Engine source-document count
 assert.match(output, /\| mdx \| 1 \|/, 'Blocks Engine source-document counts include MDX');
 assert.match(output, /\| component candidate count \| 5 \|/, 'Blocks Engine component candidate count is rendered');
 assert.match(output, /\| block candidate count \| 8 \|/, 'Blocks Engine block candidate count is rendered');
+assert.match(output, /### Codebox Validation Artifact Envelope/, 'optional Codebox validation artifact envelope is rendered');
+assert.match(output, /wp-codebox\/validation-artifact-envelope\/v1/, 'validation artifact envelope schema is rendered');
+assert.match(output, /codebox-validation-fixture/, 'validation artifact envelope hash is rendered');
 assert.match(output, /### Source Documents/, 'SSI source-document section is rendered');
 assert.match(output, /Skipped\/Unsupported MDX/, 'MDX diagnostics table is rendered');
 assert.match(output, /docs\/widget\.mdx/, 'MDX diagnostic includes source path');
