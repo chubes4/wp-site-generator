@@ -5,6 +5,7 @@ import path from 'node:path';
 
 import { buildSingleAiWorkflow, buildSingleAiWorkflowStep } from '../../bundles/php-transformer-iterator-agent/scripts/lib/agent-ai-workflow.mjs';
 import {
+	codeboxAgentRuntimeContract,
 	codeboxPluginMountTarget,
 	codeboxRuntimeApi,
 	codeboxRuntimePackageAbility,
@@ -58,6 +59,19 @@ assert.equal(resolveVisualParityOutputRoot({ VISUAL_PARITY_OUTPUT: 'custom-artif
 assert.equal(codeboxPluginMountTarget(), '/wordpress/wp-content/plugins/wp-site-generator');
 assert.equal(wpSiteGeneratorPluginMountTarget(), '/wordpress/wp-content/plugins/wp-site-generator');
 assert.equal(codeboxWorkspaceRecipeSchema(), 'wp-codebox/workspace-recipe/v1');
+assert.deepEqual(codeboxAgentRuntimeContract({ HOMEBOY_AGENT_RUNTIME_BACKEND: 'codebox', HOMEBOY_AGENT_RUNTIME_SELECTOR: 'sandbox' }), {
+	provider: 'wp-codebox',
+	profile: 'wpsg-agent-runtime-package',
+	profiles: '',
+	backend: 'codebox',
+	providerId: '',
+	selector: 'sandbox',
+	runtimeTaskAbility: 'agents/run-runtime-package',
+	runtimeBundleAbility: 'agents/run-runtime-package',
+	runtimeWorkflowAbility: 'agents/run-runtime-package',
+	workspaceCommandAbility: 'wp-codebox/runner-workspace-command',
+	workspacePublishAbility: 'wp-codebox/runner-workspace-publish',
+}, 'Codebox runtime contract applies canonical provider and workspace wrapper defaults while preserving selection hints');
 const defaultRuntimeContract = readAgentRuntimeContract({});
 assert.equal(defaultRuntimeContract.provider, '', 'WPSG does not select a runtime provider by default');
 assert.deepEqual(runtimePackageProfiles(defaultRuntimeContract), {
@@ -102,6 +116,13 @@ assert.deepEqual(codeboxRuntimeWorkflowInputs('workspace-iteration'), {
 	ability_requirements: workspaceIterationInputs.ability_requirements,
 	ability_tools: workspaceIterationInputs.ability_tools,
 });
+assert.deepEqual(codeboxRuntimeWorkflowInputs('workspace-publication'), {
+	runtime_provider: 'wp-codebox',
+	runtime_profile: 'wpsg-agent-runtime-package',
+	runtime_profiles: JSON.stringify(codeboxRuntimePackageProfiles()),
+	ability_requirements: '["agents/run-runtime-package","wp-codebox/runner-workspace-publish"]',
+	ability_tools: '[]',
+}, 'Codebox publication workload profile exposes only the canonical publish wrapper');
 assert.deepEqual(runtimeToolProfiles.workspacePublication.tools, []);
 assert.deepEqual(runtimeToolProfileInputs('workspace-publication', defaultRuntimeContract), {
 	ability_requirements: '["agents/run-runtime-package"]',

@@ -11,8 +11,8 @@ on:
         description: Generic runtime execution descriptor.
         required: true
         type: string
-      runtime_tool_profile:
-        description: WPSG generic runtime tool profile.
+      codebox_workload_profile:
+        description: WP Codebox workload profile for runtime tool exposure.
         required: false
         default: workspace-iteration
         type: string
@@ -46,31 +46,6 @@ on:
         required: false
         default: ''
         type: string
-      runtime_task_ability:
-        description: Ability used to execute runtime tasks.
-        required: false
-        default: agents/run-runtime-package
-        type: string
-      runtime_bundle_ability:
-        description: Ability used to execute runtime bundles.
-        required: false
-        default: agents/run-runtime-package
-        type: string
-      runtime_workflow_ability:
-        description: Ability used to execute runtime workflows.
-        required: false
-        default: agents/run-runtime-package
-        type: string
-      runtime_workspace_command_ability:
-        description: Optional ability for workspace command tools supplied by the selected runtime.
-        required: false
-        default: ''
-        type: string
-      runtime_workspace_publish_ability:
-        description: Optional ability for workspace publication tools supplied by the selected runtime.
-        required: false
-        default: ''
-        type: string
       transcript_slots:
         description: Transcript artifact slots for the runtime workflow.
         required: false
@@ -95,23 +70,18 @@ jobs:
       - uses: actions/checkout@v4
       - id: contract
         env:
-          RUNTIME_TOOL_PROFILE: ${{ inputs.runtime_tool_profile }}
+          CODEBOX_WORKLOAD_PROFILE: ${{ inputs.codebox_workload_profile }}
           HOMEBOY_AGENT_RUNTIME_PROVIDER: ${{ inputs.runtime_provider }}
           HOMEBOY_AGENT_RUNTIME_PROFILE: ${{ inputs.runtime_profile }}
           HOMEBOY_AGENT_RUNTIME_PROFILES: ${{ inputs.runtime_profiles }}
           HOMEBOY_AGENT_RUNTIME_BACKEND: ${{ inputs.runtime_backend }}
           HOMEBOY_AGENT_RUNTIME_PROVIDER_ID: ${{ inputs.runtime_provider_id }}
           HOMEBOY_AGENT_RUNTIME_SELECTOR: ${{ inputs.runtime_selector }}
-          HOMEBOY_AGENT_RUNTIME_TASK_ABILITY: ${{ inputs.runtime_task_ability }}
-          HOMEBOY_AGENT_RUNTIME_BUNDLE_ABILITY: ${{ inputs.runtime_bundle_ability }}
-          HOMEBOY_AGENT_RUNTIME_WORKFLOW_ABILITY: ${{ inputs.runtime_workflow_ability }}
-          HOMEBOY_AGENT_RUNTIME_WORKSPACE_COMMAND_ABILITY: ${{ inputs.runtime_workspace_command_ability }}
-          HOMEBOY_AGENT_RUNTIME_WORKSPACE_PUBLISH_ABILITY: ${{ inputs.runtime_workspace_publish_ability }}
         run: node .github/scripts/render-homeboy-runtime-workflow-inputs.mjs
 
   workspace-iteration:
     needs: runtime-contracts
-    if: inputs.runtime_tool_profile == 'workspace-iteration'
+    if: inputs.codebox_workload_profile == 'workspace-iteration'
     uses: Extra-Chill/homeboy-extensions/.github/workflows/runtime-agent-ci.yml@main
     with:
       runtime_provider: ${{ inputs.runtime_provider || needs.runtime-contracts.outputs.runtime_provider }}
@@ -127,7 +97,7 @@ jobs:
 
   workspace-publication:
     needs: runtime-contracts
-    if: inputs.runtime_tool_profile == 'workspace-publication'
+    if: inputs.codebox_workload_profile == 'workspace-publication'
     uses: Extra-Chill/homeboy-extensions/.github/workflows/runtime-agent-ci.yml@main
     with:
       runtime_provider: ${{ inputs.runtime_provider || needs.runtime-contracts.outputs.runtime_provider }}
