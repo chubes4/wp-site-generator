@@ -4,7 +4,19 @@ import { tmpdir } from 'node:os';
 import path from 'node:path';
 
 import { buildSingleAiWorkflow, buildSingleAiWorkflowStep } from '../../bundles/php-transformer-iterator-agent/scripts/lib/agent-ai-workflow.mjs';
-import { envOrArg, numberValue, parseArgs, readJsonOrNull, repoPathResolver, runtimePackageProfile, runtimeToolProfiles, textValue } from '../../.github/scripts/lib/ci-runtime-utils.mjs';
+import {
+	codeboxRuntimeBackend,
+	envOrArg,
+	numberValue,
+	parseArgs,
+	readJsonOrNull,
+	repoPathResolver,
+	runtimeApiAbilities,
+	runtimePackageProfile,
+	runtimePackageProfiles,
+	runtimeToolProfiles,
+	textValue,
+} from '../../.github/scripts/lib/ci-runtime-utils.mjs';
 import { loadRecoveredSsiImportSummary, recoveredSsiScenarioFromImportSummary } from '../../.github/scripts/lib/ssi-import-summary.mjs';
 import { ssiPrBodyMetrics, validationMetricValue } from '../../.github/scripts/lib/ssi-metrics.mjs';
 
@@ -20,6 +32,24 @@ assert.equal(numberValue('bad', 9), 9);
 assert.equal(runtimePackageProfile.provider, 'codebox', 'Codebox remains the compatibility backend');
 assert.equal(runtimePackageProfile.id, 'wpsg-agent-runtime-package', 'consumer-facing runtime package profile is generic');
 assert.equal(runtimePackageProfile.compatibilityId, 'wpsg-codebox-runtime-package', 'legacy runtime package profile id remains mapped');
+assert.equal(runtimePackageProfile.runtimeTaskAbility, runtimeApiAbilities.runRuntimePackage, 'runtime package profile uses the generic runtime package ability');
+assert.equal(codeboxRuntimeBackend.workspacePublishAbility, 'wp-codebox/runner-workspace-publish', 'Codebox publish ability is backend profile data');
+assert.deepEqual(runtimePackageProfiles(), {
+	'wpsg-agent-runtime-package': {
+		id: 'wpsg-agent-runtime-package',
+		runtime_task_ability: 'agents/run-runtime-package',
+		runtime_bundle_ability: 'agents/run-runtime-package',
+		runtime_workflow_ability: 'agents/run-runtime-package',
+		ability_requirements: ['agents/run-runtime-package'],
+	},
+	'wpsg-codebox-runtime-package': {
+		id: 'wpsg-codebox-runtime-package',
+		runtime_task_ability: 'agents/run-runtime-package',
+		runtime_bundle_ability: 'agents/run-runtime-package',
+		runtime_workflow_ability: 'agents/run-runtime-package',
+		ability_requirements: ['agents/run-runtime-package'],
+	},
+}, 'runtime package profiles derive from the generic runtime package API');
 assert.equal(runtimeToolProfiles.workspaceIteration.id, 'workspace-iteration');
 assert.deepEqual(runtimeToolProfiles.workspaceIteration.abilityTools.map((tool) => tool.name), [
 	'workspace_clone',

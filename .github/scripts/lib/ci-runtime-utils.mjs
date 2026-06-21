@@ -1,21 +1,34 @@
 import { readFile, writeFile } from 'node:fs/promises';
 import path from 'node:path';
 
+export const runtimeApiAbilities = Object.freeze({
+	runRuntimePackage: 'agents/run-runtime-package',
+});
+
+export const codeboxRuntimeBackend = Object.freeze({
+	provider: 'codebox',
+	workspaceCaptureAbility: 'wp-codebox/runner-workspace-capture',
+	workspaceCommandAbility: 'wp-codebox/runner-workspace-command',
+	workspacePublishAbility: 'wp-codebox/runner-workspace-publish',
+	toolCallTranscriptRecordAbility: 'wp-codebox/record-tool-call-transcript',
+	artifactHandoffAbility: 'wp-codebox/handoff-artifacts',
+});
+
 export const runtimeAbilityNames = Object.freeze({
-	workspaceCapture: 'wp-codebox/runner-workspace-capture',
-	workspaceCommand: 'wp-codebox/runner-workspace-command',
-	workspacePublish: 'wp-codebox/runner-workspace-publish',
-	toolCallTranscriptRecord: 'wp-codebox/record-tool-call-transcript',
-	artifactHandoff: 'wp-codebox/handoff-artifacts',
+	workspaceCapture: codeboxRuntimeBackend.workspaceCaptureAbility,
+	workspaceCommand: codeboxRuntimeBackend.workspaceCommandAbility,
+	workspacePublish: codeboxRuntimeBackend.workspacePublishAbility,
+	toolCallTranscriptRecord: codeboxRuntimeBackend.toolCallTranscriptRecordAbility,
+	artifactHandoff: codeboxRuntimeBackend.artifactHandoffAbility,
 });
 
 export const runtimePackageProfile = Object.freeze({
 	id: 'wpsg-agent-runtime-package',
 	compatibilityId: 'wpsg-codebox-runtime-package',
-	provider: 'codebox',
-	runtimeTaskAbility: 'agents/run-runtime-package',
-	runtimeBundleAbility: 'agents/run-runtime-package',
-	runtimeWorkflowAbility: 'agents/run-runtime-package',
+	provider: codeboxRuntimeBackend.provider,
+	runtimeTaskAbility: runtimeApiAbilities.runRuntimePackage,
+	runtimeBundleAbility: runtimeApiAbilities.runRuntimePackage,
+	runtimeWorkflowAbility: runtimeApiAbilities.runRuntimePackage,
 });
 
 export const runtimeToolProfiles = Object.freeze({
@@ -23,31 +36,48 @@ export const runtimeToolProfiles = Object.freeze({
 		id: 'workspace-iteration',
 		abilityRequirements: Object.freeze([
 			runtimePackageProfile.runtimeTaskAbility,
-			runtimeAbilityNames.workspaceCommand,
-			runtimeAbilityNames.workspacePublish,
+			codeboxRuntimeBackend.workspaceCommandAbility,
+			codeboxRuntimeBackend.workspacePublishAbility,
 		]),
 		abilityTools: Object.freeze([
-			{ name: 'workspace_clone', ability: runtimeAbilityNames.workspaceCommand },
-			{ name: 'workspace_worktree_add', ability: runtimeAbilityNames.workspaceCommand },
-			{ name: 'workspace_read', ability: runtimeAbilityNames.workspaceCommand },
-			{ name: 'workspace_write', ability: runtimeAbilityNames.workspaceCommand },
-			{ name: 'workspace_edit', ability: runtimeAbilityNames.workspaceCommand },
-			{ name: 'workspace_git_status', ability: runtimeAbilityNames.workspaceCommand },
-			{ name: 'workspace_git_commit', ability: runtimeAbilityNames.workspaceCommand },
-			{ name: 'workspace_git_push', ability: runtimeAbilityNames.workspaceCommand },
-			{ name: 'create_github_pull_request', ability: runtimeAbilityNames.workspacePublish },
-			{ name: 'create_github_issue', ability: runtimeAbilityNames.workspacePublish },
+			{ name: 'workspace_clone', ability: codeboxRuntimeBackend.workspaceCommandAbility },
+			{ name: 'workspace_worktree_add', ability: codeboxRuntimeBackend.workspaceCommandAbility },
+			{ name: 'workspace_read', ability: codeboxRuntimeBackend.workspaceCommandAbility },
+			{ name: 'workspace_write', ability: codeboxRuntimeBackend.workspaceCommandAbility },
+			{ name: 'workspace_edit', ability: codeboxRuntimeBackend.workspaceCommandAbility },
+			{ name: 'workspace_git_status', ability: codeboxRuntimeBackend.workspaceCommandAbility },
+			{ name: 'workspace_git_commit', ability: codeboxRuntimeBackend.workspaceCommandAbility },
+			{ name: 'workspace_git_push', ability: codeboxRuntimeBackend.workspaceCommandAbility },
+			{ name: 'create_github_pull_request', ability: codeboxRuntimeBackend.workspacePublishAbility },
+			{ name: 'create_github_issue', ability: codeboxRuntimeBackend.workspacePublishAbility },
 		]),
 	}),
 	workspacePublication: Object.freeze({
 		id: 'workspace-publication',
 		abilityRequirements: Object.freeze([
 			runtimePackageProfile.runtimeTaskAbility,
-			runtimeAbilityNames.workspacePublish,
+			codeboxRuntimeBackend.workspacePublishAbility,
 		]),
 		abilityTools: Object.freeze([]),
 	}),
 });
+
+export function runtimePackageProfiles() {
+	const profile = {
+		id: runtimePackageProfile.id,
+		runtime_task_ability: runtimePackageProfile.runtimeTaskAbility,
+		runtime_bundle_ability: runtimePackageProfile.runtimeBundleAbility,
+		runtime_workflow_ability: runtimePackageProfile.runtimeWorkflowAbility,
+		ability_requirements: [runtimePackageProfile.runtimeTaskAbility],
+	};
+	return {
+		[runtimePackageProfile.id]: profile,
+		[runtimePackageProfile.compatibilityId]: {
+			...profile,
+			id: runtimePackageProfile.compatibilityId,
+		},
+	};
+}
 
 export function parseArgs(argv) {
 	const parsed = new Map();
