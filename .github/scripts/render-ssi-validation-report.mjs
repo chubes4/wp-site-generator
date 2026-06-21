@@ -204,7 +204,7 @@ function renderBacStatus(metrics, compiler) {
 
 	const sourceDocuments = summary.source_documents && typeof summary.source_documents === 'object' ? summary.source_documents : {};
 	if (Object.keys(sourceDocuments).length > 0) {
-		lines.push('', renderSourceDocumentTable('BAC Source Documents', sourceDocuments));
+		lines.push('', renderSourceDocumentTable('Blocks Engine Source Documents', sourceDocuments));
 	}
 
 	const candidateCounts = summary.candidate_counts && typeof summary.candidate_counts === 'object' ? summary.candidate_counts : {};
@@ -212,7 +212,7 @@ function renderBacStatus(metrics, compiler) {
 		.filter(([, value]) => numericValue(value) !== null)
 		.map(([key, value]) => `| ${labelFromKey(key)} | ${formatCount(numericValue(value))} |`);
 	if (candidateRows.length > 0) {
-		lines.push('', '| BAC Candidate | Count |');
+		lines.push('', '| Blocks Engine Candidate | Count |');
 		lines.push('| --- | ---: |');
 		lines.push(...candidateRows);
 	}

@@ -73,19 +73,19 @@ const output = await runRenderer(renderer, bench);
 
 assert.match(output, /### SSI Signals/, 'existing SSI metrics remain visible');
 assert.match(output, /fallback blocks/, 'existing fallback metric remains visible');
-assert.match(output, /### Block Artifact Compiler/, 'BAC status section remains visible');
-assert.match(output, /\*\*Status:\*\* `success_with_warnings`/, 'BAC compiler status is rendered');
-assert.match(output, /BAC Source Documents/, 'BAC source-document counts are rendered');
-assert.match(output, /\| markdown \| 1 \|/, 'BAC source-document counts include Markdown');
-assert.match(output, /\| mdx \| 1 \|/, 'BAC source-document counts include MDX');
-assert.match(output, /\| component candidate count \| 5 \|/, 'BAC component candidate count is rendered');
-assert.match(output, /\| block candidate count \| 8 \|/, 'BAC block candidate count is rendered');
+assert.match(output, /### Blocks Engine Artifact Compiler/, 'Blocks Engine artifact compiler status section remains visible');
+assert.match(output, /\*\*Status:\*\* `success_with_warnings`/, 'Blocks Engine artifact compiler status is rendered');
+assert.match(output, /Blocks Engine Source Documents/, 'Blocks Engine source-document counts are rendered');
+assert.match(output, /\| markdown \| 1 \|/, 'Blocks Engine source-document counts include Markdown');
+assert.match(output, /\| mdx \| 1 \|/, 'Blocks Engine source-document counts include MDX');
+assert.match(output, /\| component candidate count \| 5 \|/, 'Blocks Engine component candidate count is rendered');
+assert.match(output, /\| block candidate count \| 8 \|/, 'Blocks Engine block candidate count is rendered');
 assert.match(output, /### Source Documents/, 'SSI source-document section is rendered');
 assert.match(output, /Skipped\/Unsupported MDX/, 'MDX diagnostics table is rendered');
 assert.match(output, /docs\/widget\.mdx/, 'MDX diagnostic includes source path');
 assert.match(output, /MDX source documents are not supported and were skipped\./, 'MDX diagnostic includes message');
 
-console.log('render SSI validation BAC source documents smoke passed');
+console.log('render SSI validation Blocks Engine source documents smoke passed');
 
 function runRenderer(scriptPath, payload) {
 	return new Promise((resolve, reject) => {
