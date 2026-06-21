@@ -34,24 +34,24 @@ export function codeboxRuntimeProfileId() {
 	return runtimePackageProfile.id;
 }
 
-export function codeboxRuntimePackageProfiles(contract = readAgentRuntimeContract({
-	HOMEBOY_AGENT_RUNTIME_PROVIDER: 'wp-codebox',
-})) {
+export function codeboxAgentRuntimeContract(env = process.env) {
+	return readAgentRuntimeContract({
+		...env,
+		HOMEBOY_AGENT_RUNTIME_PROVIDER: env.HOMEBOY_AGENT_RUNTIME_PROVIDER || 'wp-codebox',
+		HOMEBOY_AGENT_RUNTIME_WORKSPACE_COMMAND_ABILITY: env.HOMEBOY_AGENT_RUNTIME_WORKSPACE_COMMAND_ABILITY || 'wp-codebox/runner-workspace-command',
+		HOMEBOY_AGENT_RUNTIME_WORKSPACE_PUBLISH_ABILITY: env.HOMEBOY_AGENT_RUNTIME_WORKSPACE_PUBLISH_ABILITY || 'wp-codebox/runner-workspace-publish',
+	});
+}
+
+export function codeboxRuntimePackageProfiles(contract = codeboxAgentRuntimeContract({})) {
 	return runtimePackageProfiles(contract);
 }
 
-export function codeboxRuntimeToolProfileInputs(profileId, contract = readAgentRuntimeContract({
-	HOMEBOY_AGENT_RUNTIME_WORKSPACE_COMMAND_ABILITY: 'wp-codebox/runner-workspace-command',
-	HOMEBOY_AGENT_RUNTIME_WORKSPACE_PUBLISH_ABILITY: 'wp-codebox/runner-workspace-publish',
-})) {
+export function codeboxRuntimeToolProfileInputs(profileId, contract = codeboxAgentRuntimeContract({})) {
 	return runtimeToolProfileInputs(profileId, contract);
 }
 
-export function codeboxRuntimeWorkflowInputs(profileId, contract = readAgentRuntimeContract({
-	HOMEBOY_AGENT_RUNTIME_PROVIDER: 'wp-codebox',
-	HOMEBOY_AGENT_RUNTIME_WORKSPACE_COMMAND_ABILITY: 'wp-codebox/runner-workspace-command',
-	HOMEBOY_AGENT_RUNTIME_WORKSPACE_PUBLISH_ABILITY: 'wp-codebox/runner-workspace-publish',
-})) {
+export function codeboxRuntimeWorkflowInputs(profileId, contract = codeboxAgentRuntimeContract({})) {
 	return runtimeWorkflowInputs(profileId, contract);
 }
 

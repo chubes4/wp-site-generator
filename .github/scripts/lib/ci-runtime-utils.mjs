@@ -12,6 +12,7 @@ export {
 } from './agent-runtime-api.mjs';
 
 export {
+	codeboxAgentRuntimeContract,
 	codeboxPluginMountTarget,
 	codeboxRuntimeApi,
 	codeboxRuntimePackageAbility,

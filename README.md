@@ -258,12 +258,12 @@ That's the loop. Generate. Design. Build. Validate. Review. Decide. Repeat.
 
 The primary loop runs in GitHub Actions through Homeboy's durable controller primitives. The workflow stamps WPSG-owned run inputs onto `.github/homeboy/controllers/static-site-generation-loop.controller.json`, initializes Homeboy with `homeboy agent-task controller from-spec`, resumes execution with `homeboy agent-task controller resume`, and records GitHub Actions lineage through `homeboy agent-task controller events`. Homeboy owns controller state, action scheduling, event application, and runtime/provider selection.
 
-Required GitHub secrets depend on the selected Homeboy runtime and AI provider. For the current hosted configuration, configure them outside WPSG through repository/environment secrets and variables such as:
+Required GitHub secrets depend on the selected Homeboy runtime and AI provider. For the current hosted Codebox configuration, configure provider credentials outside WPSG through repository/environment secrets and variables such as:
 
 1. Runtime provider/model credentials, for example `OPENAI_API_KEY` when the selected provider uses OpenAI.
-2. Runtime workspace abilities, for example `HOMEBOY_AGENT_RUNTIME_WORKSPACE_COMMAND_ABILITY` and `HOMEBOY_AGENT_RUNTIME_WORKSPACE_PUBLISH_ABILITY` when the selected runtime exposes workspace tools through named abilities.
+2. Runtime selection hints such as `runtime_backend`, `runtime_provider_id`, or `runtime_selector` when the hosted Codebox profile needs a specific backend/provider route.
 
-The reusable `.github/workflows/wpsg-runtime-agent-ci.yml` seam also accepts `runtime_provider`, `runtime_backend`, `runtime_provider_id`, `runtime_selector`, `runtime_profile`, and `runtime_profiles` inputs. A non-Codebox runtime plugs in by supplying those Homeboy runtime inputs plus compatible bundle execution and workspace/publication abilities; WPSG does not select the backend in controller specs or production loop code.
+The reusable `.github/workflows/wpsg-runtime-agent-ci.yml` seam accepts a `codebox_workload_profile` such as `workspace-iteration` or `workspace-publication`, then renders WP Codebox runtime profile/workspace wrapper requirements through `.github/scripts/render-homeboy-runtime-workflow-inputs.mjs`. `agents/run-runtime-package` remains in runtime execution descriptors because WP Codebox has not yet exposed a canonical package-execution wrapper for that Agents API entry point; WPSG should not add a local shim for it.
 
 Useful workflow entry points:
 
