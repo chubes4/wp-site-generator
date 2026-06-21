@@ -21,6 +21,9 @@ const codeboxRuntimeContract = Object.freeze({
 	runtimeSchemas: Object.freeze({
 		workspaceRecipe: 'wp-codebox/workspace-recipe/v1',
 	}),
+	preview: Object.freeze({
+		playgroundUrl: 'https://playground.wordpress.net/',
+	}),
 });
 
 const codeboxRuntimePackageProfile = Object.freeze({
@@ -128,4 +131,8 @@ export function codeboxPluginMountTarget() {
 
 export function codeboxWorkspaceRecipeSchema() {
 	return codeboxRuntimeContract.runtimeSchemas.workspaceRecipe;
+}
+
+export function buildCodeboxPlaygroundPreviewUrl(blueprint) {
+	return `${codeboxRuntimeContract.preview.playgroundUrl}#${encodeURIComponent(JSON.stringify(blueprint))}`;
 }
