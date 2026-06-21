@@ -38,8 +38,9 @@ async function materializeControllerSpec({ outputPath, env }) {
 	});
 	assert.equal(materializeResult.status, 0, materializeResult.stderr || materializeResult.stdout);
 	const materialization = JSON.parse(await readFile(materializationPath, 'utf8'));
-	await writeFile(outputPath, JSON.stringify(materialization.spec, null, 2) + '\n');
-	return materialization.spec;
+	const spec = materialization.data?.spec || materialization.value?.spec || materialization.spec;
+	await writeFile(outputPath, JSON.stringify(spec, null, 2) + '\n');
+	return spec;
 }
 
 try {
