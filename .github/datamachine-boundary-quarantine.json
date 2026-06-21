@@ -21,10 +21,6 @@
     "tests/scripts/test-datamachine-boundary.mjs": {
       "category": "boundary_enforcement",
       "reason": "The enforcement test necessarily names the prohibited boundary terms."
-    },
-    "tests/scripts/test-homeboy-site-generation-plan.mjs": {
-      "category": "boundary_enforcement",
-      "reason": "Existing negative assertions ensure WPSG plugin shims do not know Data Machine projection internals."
     }
   }
 }

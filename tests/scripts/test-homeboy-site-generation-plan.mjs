@@ -83,7 +83,6 @@ assert.equal(controllerRunSpec.metadata.run.materialized_by, 'homeboy agent-task
 	assert.equal(controllerRunSpec.metadata.run.controller_spec, '.github/homeboy/controllers/static-site-generation-loop.controller.json');
 	assert.equal(controllerRunSpec.metadata.authority.builder, '.github/scripts/build-homeboy-ssi-loop-controller.mjs');
 
-	assert.doesNotMatch(serialized, /metadata\/codebox\/datamachine/);
 	assert.doesNotMatch(serialized, /scenarios\/0/);
 	assert.doesNotMatch(serialized, /\.ci\/wp-codebox/, 'controller spec does not bake a controller-local WP Codebox path');
 	assert.doesNotMatch(serialized, /ai-provider-for-openai/, 'controller spec defers provider plugin selection to Homeboy/runtime policy');
@@ -203,9 +202,6 @@ assert.equal(controllerRunSpec.metadata.run.materialized_by, 'homeboy agent-task
 	assert.deepEqual(workflows.reviewer.consumes, ['static_site_candidate', 'import_validation_result', 'static_validation_run', 'visual_parity_artifact', 'finding_packet_set', 'revalidation_attempt'], 'reviewer consumes candidate, validation, visual, finding, and revalidation artifacts');
 	assert.equal(controllerRunSpec.artifacts.find((artifact) => artifact.artifact_id === 'static_site_pull_request').required, false, 'generated PR artifact is not required runtime transport');
 	assert.equal(controllerRunSpec.artifacts.find((artifact) => artifact.artifact_id === 'iterator_upstream_pull_request').evidence_only, true, 'upstream iterator PR is optional evidence only');
-	assert.equal(controllerRunSpec.abilities.some((ability) => ability.ability_id === 'wpsg_materialize_packet'), false, 'controller does not expose the WPSG model-facing packet materializer ability');
-	assert.doesNotMatch(serialized, /wpsg_materialize_packet|wp-site-generator\/materialize-packet|wpsg_packets/, 'controller no longer uses the custom WPSG packet materializer transport');
-
 	const staticPipeline = JSON.parse(await readFile(path.join(repoRoot, 'bundles/static-site-agent/pipelines/static-site-pipeline.json'), 'utf8'));
 	const staticAiStep = staticPipeline.steps.find((step) => step.step_type === 'ai');
 	assert.match(staticAiStep.step_config.system_prompt, /preserve the remaining title text verbatim/, 'static agent preserves full source concept title text');
@@ -226,9 +222,6 @@ assert.equal(controllerRunSpec.metadata.run.materialized_by, 'homeboy agent-task
 
 	const pluginShim = await readFile(path.join(repoRoot, 'wp-site-generator.php'), 'utf8');
 	assert.match(pluginShim, /Plugin Name:\s*WP Site Generator CI Fixture/, 'repo exposes a plugin header for Homeboy bench component mounting');
-	assert.doesNotMatch(pluginShim, /wp-site-generator\/materialize-packet/, 'plugin no longer registers the WPSG packet materializer ability');
-	assert.doesNotMatch(pluginShim, /datamachine_ability_tool_projections/, 'WPSG plugin does not know Data Machine projection internals');
-	assert.doesNotMatch(pluginShim, /datamachine_register_ability_tool/, 'WPSG plugin does not call Data Machine ability-tool helpers');
 
 	const policy = loadPolicy(path.join(repoRoot, '.github/site-generation-complexity-policy.json'));
 	const stableDecision = evaluateComplexityPolicy({

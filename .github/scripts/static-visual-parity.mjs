@@ -8,7 +8,8 @@ import path from 'node:path';
 import { buildSsiImportWebsiteArtifactPhp, requiresCommerceStack } from './lib/ssi-stack-profile.mjs';
 import { buildWebsiteArtifactFromSource, resolveStaticSiteCandidateSource } from './lib/static-site-candidate.mjs';
 import { buildSsiRuntimeBlueprint, loadSsiStackManifest } from './lib/ssi-stack-runtime.mjs';
-import { codeboxPluginMountTarget, resolveCodeboxCliPath, resolveCodeboxVisualParityOutputRoot } from './lib/codebox-runtime-api.mjs';
+import { resolveVisualParityOutputRoot } from './lib/codebox-runtime-api.mjs';
+import { wordpressRuntimePluginMountTarget } from './lib/wordpress-runtime-api.mjs';
 
 const require = createRequire(import.meta.url);
 const { runStaticVisualParity } = require('homeboy-extension-wordpress/static-visual-parity');
@@ -17,10 +18,9 @@ const repoRoot = process.cwd();
 const requestedSite = process.env.SITE || process.argv[2] || '';
 const lane = process.env.TARGET_LANE || process.env.LANE || 'wordpress';
 const manifestPath = process.env.SSI_STACK_MANIFEST_PATH || '';
-const outputRoot = resolveCodeboxVisualParityOutputRoot();
+const outputRoot = resolveVisualParityOutputRoot();
 const sourcePort = Number(process.env.SOURCE_PORT || 4173);
-const wpCodeboxCli = resolveCodeboxCliPath(repoRoot);
-const pluginMountTarget = codeboxPluginMountTarget();
+const pluginMountTarget = wordpressRuntimePluginMountTarget();
 const viewport = {
 	width: Number(process.env.VISUAL_PARITY_WIDTH || 1280),
 	height: Number(process.env.VISUAL_PARITY_HEIGHT || 1600),
@@ -52,9 +52,6 @@ const importViaAbilityPhp = buildSsiImportWebsiteArtifactPhp({
 if (!existsSync(indexPath)) {
 	throw new Error(`Missing source static storefront: ${indexPath}`);
 }
-if (!existsSync(wpCodeboxCli)) {
-	throw new Error(`Missing WP Codebox CLI build: ${wpCodeboxCli}`);
-}
 
 await mkdir(outputDir, { recursive: true });
 await rm(importReadyPath, { force: true });
@@ -83,7 +80,6 @@ try {
 		viewport,
 		maxMismatchRatio,
 		extraVisualArgs: ['max-regions=8'],
-		wpCodeboxBin: wpCodeboxCli,
 		cwd: repoRoot,
 		blueprint,
 		mounts: [
