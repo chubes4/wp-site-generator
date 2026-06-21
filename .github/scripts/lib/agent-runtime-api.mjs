@@ -111,6 +111,44 @@ export function runtimeWorkflowInputs(profileId, contract = readAgentRuntimeCont
 	};
 }
 
+export function runtimeBundleExecution({ packageSource, packageSlug, workflowId, input = {}, options = {}, ability = runtimeApiAbilities.runRuntimePackage } = {}) {
+	if (!packageSource || !packageSlug || !workflowId) {
+		throw new Error('packageSource, packageSlug, and workflowId are required for runtime bundle execution.');
+	}
+
+	return {
+		runtime_execution: {
+			kind: 'bundle',
+			ability,
+			input: {
+				package: {
+					source: packageSource,
+					slug: packageSlug,
+				},
+				workflow: {
+					id: workflowId,
+				},
+				input,
+				...(Object.keys(options).length > 0 ? { options } : {}),
+			},
+		},
+	};
+}
+
+export function runtimeWorkflowBuilderExecution({ kind, workflowBuilder, ...metadata } = {}) {
+	if (!kind || !workflowBuilder) {
+		throw new Error('kind and workflowBuilder are required for runtime workflow-builder execution.');
+	}
+
+	return {
+		runtime_execution: {
+			kind,
+			workflow_builder: workflowBuilder,
+			...metadata,
+		},
+	};
+}
+
 export function runtimePackageAbility() {
 	return runtimeApiAbilities.runRuntimePackage;
 }

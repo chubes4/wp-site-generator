@@ -2,7 +2,7 @@
 
 import { mkdir, writeFile } from 'node:fs/promises';
 import path from 'node:path';
-import { parseArgs, runtimePackageAbility } from './lib/ci-runtime-utils.mjs';
+import { parseArgs, runtimeBundleExecution, runtimePackageAbility } from './lib/ci-runtime-utils.mjs';
 
 const args = parseArgs(process.argv.slice(2));
 const root = process.env.GITHUB_WORKSPACE || process.cwd();
@@ -79,25 +79,16 @@ function handoff({ consumes = [], emits = [] } = {}) {
 
 function bundleInputs(agent_id, extra = {}) {
 	const bundle = agentBundles[agent_id];
-	return {
-		runtime_execution: {
-			kind: 'bundle',
-			ability: runtimePackageAbilityId,
-			input: {
-				package: {
-					source: bundle.bundle,
-					slug: bundle.slug,
-				},
-				workflow: {
-					id: bundle.flow,
-				},
-				input: {
-					wait_for_completion: true,
-					...extra,
-				},
-			},
+	return runtimeBundleExecution({
+		packageSource: bundle.bundle,
+		packageSlug: bundle.slug,
+		workflowId: bundle.flow,
+		ability: runtimePackageAbilityId,
+		input: {
+			wait_for_completion: true,
+			...extra,
 		},
-	};
+	});
 }
 
 const controller = {

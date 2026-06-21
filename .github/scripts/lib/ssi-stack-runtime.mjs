@@ -1,17 +1,10 @@
-import { codeboxWorkspaceRecipeSchema, readJsonFile } from './ci-runtime-utils.mjs';
+import { codeboxWorkspaceRecipeSchema, readJsonFile, wordpressRuntimeSettingsDescriptor, wordpressRuntimeSettingsFields } from './ci-runtime-utils.mjs';
 import { buildSsiStackManifest } from './ssi-stack-manifest.mjs';
 import { buildBlocksEnginePhpTransformerProbePhp, buildSsiImportAbilityPhp, buildSsiImportWorkload, buildSsiStackBlueprint, buildSsiStackProfile } from './ssi-stack-profile.mjs';
 
 export const defaultWordPressRuntimeSettingsDescriptorPath = '.github/homeboy/wordpress-runtime/ssi-validation-settings.descriptor.json';
 
-const fallbackWordPressRuntimeSettingsDescriptor = Object.freeze({
-	schema: 'wpsg/wordpress-runtime-settings-descriptor/v1',
-	id: 'ssi-validation-wordpress-runtime',
-	settings_fields: {
-		blueprint: 'wordpress_runtime_blueprint',
-		workloads: 'wordpress_runtime_workloads',
-	},
-});
+const fallbackWordPressRuntimeSettingsDescriptor = wordpressRuntimeSettingsDescriptor();
 
 export async function loadSsiStackManifest(manifestPath = '') {
 	return manifestPath ? await readJsonFile(manifestPath) : buildSsiStackManifest();
@@ -30,9 +23,10 @@ export function buildSsiRuntimeBlueprint(options = {}, manifest = buildSsiStackM
 }
 
 export function buildWordPressRuntimeSettings({ blueprint, workloads = [], descriptor = fallbackWordPressRuntimeSettingsDescriptor } = {}) {
+	const fields = wordpressRuntimeSettingsFields(descriptor);
 	const settings = {
-		[descriptor.settings_fields.blueprint]: blueprint,
-		[descriptor.settings_fields.workloads]: workloads,
+		[fields.blueprint]: blueprint,
+		[fields.workloads]: workloads,
 	};
 
 	return settings;

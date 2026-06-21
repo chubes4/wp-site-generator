@@ -3,6 +3,8 @@
 import { mkdir, readFile, writeFile } from 'node:fs/promises';
 import path from 'node:path';
 
+import { runtimeWorkflowBuilderExecution } from './lib/ci-runtime-utils.mjs';
+
 const inputPath = process.env.FINDING_GROUPS_PATH || process.argv[2] || 'homeboy-ci-results/grouped-finding-packets.json';
 const outputPath = process.env.FANOUT_CONFIG_PATH || process.argv[3] || 'homeboy-ci-results/php-transformer-iterator-fanout-config.json';
 
@@ -34,11 +36,11 @@ const config = {
 		},
 		instructions: 'Run the PHP transformer iterator for {{group.key}} with {{group.item_count}} grouped finding artifact(s).',
 	},
-	runtime_execution: {
+	...runtimeWorkflowBuilderExecution({
 		kind: 'wpsg-php-transformer-iterator',
-		workflow_builder: 'bundles/php-transformer-iterator-agent/scripts/build-agent-iterator-workflow.mjs',
+		workflowBuilder: 'bundles/php-transformer-iterator-agent/scripts/build-agent-iterator-workflow.mjs',
 		visual_artifact_dir: '.ci/visual-parity',
-	},
+	}),
 	summary: {
 		source_schema_version: grouped?.schema_version || null,
 		packet_count: grouped?.packet_count || 0,

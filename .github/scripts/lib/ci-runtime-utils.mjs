@@ -3,14 +3,27 @@ import path from 'node:path';
 
 export {
 	runtimeApiAbilities,
+	runtimeBundleExecution,
 	runtimePackageProfile,
 	runtimePackageProfiles,
 	runtimePackageAbility,
 	readAgentRuntimeContract,
 	runtimeToolProfileInputs,
 	runtimeToolProfiles,
+	runtimeWorkflowBuilderExecution,
 	runtimeWorkflowInputs,
 } from './agent-runtime-api.mjs';
+
+export {
+	wordpressRuntimeAbilityId,
+	wordpressRuntimeApi,
+	wordpressRuntimeBlueprintSchema,
+	wordpressRuntimePhpFileStep,
+	wordpressRuntimePhpStep,
+	wordpressRuntimeRequireWpLoadPhp,
+	wordpressRuntimeSettingsDescriptor,
+	wordpressRuntimeSettingsFields,
+} from './wordpress-runtime-api.mjs';
 
 export {
 	buildCodeboxPlaygroundPreviewUrl,
