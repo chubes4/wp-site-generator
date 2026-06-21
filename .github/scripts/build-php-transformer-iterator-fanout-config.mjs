@@ -12,7 +12,8 @@ const grouped = JSON.parse(await readFile(inputPath, 'utf8'));
 const groups = Array.isArray(grouped?.groups) ? grouped.groups : [];
 
 const config = {
-	schema: 'homeboy/generic-fanout-reconcile-config/v1',
+	schema: 'wp-site-generator/php-transformer-iterator-fanout-input/v1',
+	fanout_id: 'wp-site-generator-php-transformer-iterator',
 	orchestrator: {
 		id: 'wp-site-generator-php-transformer-iterator',
 		source_repo: process.env.SOURCE_REPO || '',
@@ -22,20 +23,19 @@ const config = {
 		artifact_name: process.env.ARTIFACT_NAME || '',
 		visual_artifact_name: process.env.VISUAL_ARTIFACT_NAME || '',
 	},
-	groups: groups.map((group, index) => ({
-		key: group.group_id || group.owner_repo || group.candidate_repo || `finding-group-${index + 1}`,
-		items: [group],
-	})),
-	task_request_template: {
-		id: 'php-transformer-iterator-{{group.key}}',
-		group_key: '{{group.key}}',
-		item_ids: '{{group.item_ids}}',
-		finding_group: '{{group.items.0}}',
-		inputs: {
-			finding_group: '{{group.items.0}}',
-		},
-		instructions: 'Run the PHP transformer iterator for {{group.key}} with {{group.item_count}} grouped finding artifact(s).',
-	},
+	packets: groups.map((group, index) => {
+		const key = group.group_id || group.owner_repo || group.candidate_repo || `finding-group-${index + 1}`;
+		return {
+			task_id: `php-transformer-iterator-${key}`,
+			group_key: key,
+			inputs: { finding_group: group },
+			metadata: {
+				item_ids: Array.isArray(group.item_ids) ? group.item_ids : [],
+				finding_group: group,
+			},
+			instructions: `Run the PHP transformer iterator for ${key} with ${group.count || 1} grouped finding artifact(s).`,
+		};
+	}),
 	...runtimeWorkflowBuilderExecution({
 		kind: 'wpsg-php-transformer-iterator',
 		workflowBuilder: 'bundles/php-transformer-iterator-agent/scripts/build-agent-iterator-workflow.mjs',

@@ -17,8 +17,8 @@ assert.match(workflow, /visual_artifact_name:/, 'iterator accepts the visual par
 assert.match(workflow, /"name":"\$\{\{ inputs\.visual_artifact_name \}\}"/, 'iterator downloads the visual parity artifact in the reusable runner');
 assert.match(workflow, /"dir":"\.ci\/visual-parity"/, 'iterator stores visual parity artifacts in a stable local directory');
 assert.match(workflow, /app_token_repos.*Automattic\/blocks-engine/, 'iterator token routing includes Blocks Engine');
-assert.match(workflow, /execute_workflow_builder_command.*group-ssi-finding-packets\.mjs .*run-homeboy-fanout-reconcile\.mjs .*bundles\/php-transformer-iterator-agent\/scripts\/build-agent-iterator-workflow\.mjs/, 'iterator runtime task delegates fanout planning through the replaceable Homeboy adapter before building the WPSG finding workflow');
-assert.doesNotMatch(workflow, /git clone .*homeboy-extensions|homeboy-generic-fanout-reconcile\.cjs/, 'iterator workflow does not clone HBE or call its internal script directly');
+assert.match(workflow, /execute_workflow_builder_command.*group-ssi-finding-packets\.mjs .*homeboy agent-task fanout plan --input @\.ci\/finding-packets\/php-transformer-iterator-fanout-config\.json .*bundles\/php-transformer-iterator-agent\/scripts\/build-agent-iterator-workflow\.mjs/, 'iterator runtime task delegates fanout planning to the Homeboy public primitive before building the WPSG finding workflow');
+assert.doesNotMatch(workflow, /run-homeboy-fanout-reconcile|git clone .*homeboy-extensions|homeboy-generic-fanout-reconcile\.cjs/, 'iterator workflow does not use the old adapter, clone HBE, or call its internal script directly');
 assert.match(workflow, /build-php-transformer-iterator-fanout-config\.mjs/, 'iterator keeps WPSG finding-group fanout config in the repo');
 assert.match(workflow, /execute_workflow_path":"\.ci\/agent-iterator-workflow\.json"/, 'iterator runtime task receives the generated workflow path');
 assert.match(runtimeWorkflow, /runtime_workload_profile:[\s\S]*default: workspace-iteration/, 'WPSG seam exposes generic workload profile selection');

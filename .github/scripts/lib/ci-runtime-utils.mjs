@@ -8,6 +8,8 @@ export {
 	runtimePackageProfiles,
 	runtimePackageAbility,
 	readAgentRuntimeContract,
+	runtimeProviderProfile,
+	runtimeProviderProfiles,
 	runtimeToolProfileInputs,
 	runtimeToolProfiles,
 	runtimeWorkflowBuilderExecution,
@@ -30,6 +32,10 @@ export {
 	buildCodeboxPlaygroundPreviewUrl,
 	codeboxRuntimeApi,
 	codeboxRuntimeWorkspaceRecipeSchema,
+	codeboxRunnerWorkspaceCommandAbility,
+	codeboxRunnerWorkspacePublishAbility,
+	codeboxValidationArtifactEnvelopeSchema,
+	codeboxWorkspaceRecipeSchema,
 	resolveVisualParityOutputRoot,
 } from './codebox-runtime-api.mjs';
 

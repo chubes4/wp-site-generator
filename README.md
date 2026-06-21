@@ -267,6 +267,8 @@ The reusable `.github/workflows/wpsg-runtime-agent-ci.yml` seam accepts a `runti
 
 For headless contract validation without GitHub workflow-to-workflow dispatch, run `.github/scripts/validate-headless-site-generation-loop.mjs`. It drives `homeboy agent-task controller materialize`, `validate-proof`, `from-spec`, `resume`, and `events` directly, then asserts WPSG artifact evidence with `.github/scripts/assert-site-generation-loop-proof.mjs`. With `--fixture-artifacts` it is deterministic contract proof; with `--artifact-root` it validates artifacts from a real Homeboy run.
 
+The PHP transformer iterator supplies WPSG-owned finding grouping and fanout packet input, then calls Homeboy's public `homeboy agent-task fanout plan` primitive. WPSG does not clone Homeboy Extensions or call HBE internal helper paths for fanout planning.
+
 Useful workflow entry points:
 
 1. **`store-idea-agent.yml`** — manually generate one commerce concept issue from a prompt.

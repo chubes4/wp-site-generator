@@ -15,6 +15,7 @@ export function buildSiteGenerationLoopRunContext({ env = process.env, root = en
 	const repository = env.GITHUB_REPOSITORY || 'chubes4/wp-site-generator';
 	const source = resolveImmutableSourceRef({ env, root, repository });
 	const dependencyRefs = resolveDependencyRefs({ env, root });
+	validateRefPolicy({ policy: env.WPSG_REF_POLICY || 'branch-defaults', dependencyRefs });
 	const controllerSpecPath = env.HOMEBOY_CONTROLLER_SPEC_PATH || '.github/homeboy/controllers/static-site-generation-loop.controller.json';
 	const outputPath = env.HOMEBOY_CONTROLLER_RUN_INPUTS_PATH || path.join(root, '.ci', 'site-generation-loop.controller-run-inputs.json');
 	const policyResultPath = env.HOMEBOY_POLICY_RESULT_PATH || outputPath.replace(/\.json$/, '.complexity-policy-result.json');
@@ -56,6 +57,21 @@ export function resolveDependencyRefs({ env = process.env, root = env.GITHUB_WOR
 	});
 }
 
+export function validateRefPolicy({ policy = 'branch-defaults', dependencyRefs = {} } = {}) {
+	if (policy === 'branch-defaults') {
+		return;
+	}
+	if (policy !== 'production') {
+		throw new Error(`Unknown WPSG ref policy: ${policy}`);
+	}
+
+	const mutableRefs = Object.values(dependencyRefs).filter((dependency) => dependency.ref_type !== 'commit' || !isFullSha(dependency.input_ref || dependency.sha));
+	if (mutableRefs.length > 0) {
+		const labels = mutableRefs.map((dependency) => `${dependency.id}:${dependency.input_ref || dependency.ref_type || 'unresolved'}`).join(', ');
+		throw new Error(`WPSG production ref policy requires immutable dependency refs. Mutable or unresolved refs: ${labels}`);
+	}
+}
+
 function dependencyRef({ id, repository, inputRef, checkoutPath }) {
 	const sha = gitRev(checkoutPath);
 	if (!sha && !inputRef) {
@@ -77,6 +93,10 @@ function gitRev(cwd) {
 	} catch {
 		return '';
 	}
+}
+
+function isFullSha(value) {
+	return /^[0-9a-f]{40}$/i.test(String(value || ''));
 }
 
 function compactObject(object) {

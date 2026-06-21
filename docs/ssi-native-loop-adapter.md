@@ -139,7 +139,7 @@ Homeboy remains the controller, executor, scheduler, and loop-spec materializer.
 
 ## Upstream Contract
 
-Extra-Chill/homeboy#5152 is the upstream runtime dependency for the generic `agent-task controller from-spec`, `resume`, and `events` primitives. Extra-Chill/homeboy#5186 is the upstream dependency for `agent-task controller materialize`, which expands WPSG's run-input payload into workflow inputs without WPSG assembling the full controller run spec locally. A stable public Homeboy fanout reconcile primitive remains an upstream dependency for replacing `.github/scripts/run-homeboy-fanout-reconcile.mjs`; until that exists, the adapter is the only allowed seam for the HBE bridge script. If a backend-specific WordPress or WP Codebox mapping is needed, it belongs behind generic Homeboy executor/provider contracts in `homeboy-extensions/wordpress`, not in this WPSG spec.
+Extra-Chill/homeboy#5152 is the upstream runtime dependency for the generic `agent-task controller from-spec`, `resume`, and `events` primitives. Extra-Chill/homeboy#5186 is the upstream dependency for `agent-task controller materialize`, which expands WPSG's run-input payload into workflow inputs without WPSG assembling the full controller run spec locally. Extra-Chill/homeboy#5691 is the upstream dependency for the public `agent-task fanout plan` primitive used by the PHP transformer iterator. If a backend-specific WordPress or WP Codebox mapping is needed, it belongs behind generic Homeboy executor/provider contracts in `homeboy-extensions/wordpress`, not in this WPSG spec.
 
 ## Headless Contract Validation
 

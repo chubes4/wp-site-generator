@@ -16,7 +16,7 @@ The older Playground proof scripts, workloads, workflow, and transitional adapte
 
 - Controller specs and workflow callers use `runtime_execution.kind = "bundle"` with a runtime-package `package`, `workflow`, `input`, and `options` envelope.
 - Runtime profiles set `runtime_task_ability`, `runtime_bundle_ability`, and `runtime_workflow_ability` to `agents/run-runtime-package` until Homeboy/WP Codebox exposes a canonical package-execution wrapper for that Agents API entry point.
-- Iterator fanout reconcile is isolated behind `.github/scripts/run-homeboy-fanout-reconcile.mjs`. The adapter prefers `HOMEBOY_FANOUT_RECONCILE_COMMAND` when Homeboy exposes a stable public primitive. Until then, CI may point `HOMEBOY_EXTENSIONS_PATH` or `HOMEBOY_EXTENSIONS_FANOUT_RECONCILE_SCRIPT` at the HBE bridge script; WPSG does not clone HBE or call that internal script directly from workflow payloads.
+- Iterator fanout planning uses Homeboy's public `homeboy agent-task fanout plan` primitive with WPSG-owned packet input. WPSG does not clone HBE or call HBE internal fanout scripts from workflow payloads.
 - WPSG workflows check out Agents API and Homeboy Extensions, and no longer check out concrete runtime implementation repositories.
 - Iterator callback publication uses generic `runtime_output_projections` over semantic `outputs.*` values populated by `evidence_projections`, not legacy engine-data helper functions or config keys.
 
