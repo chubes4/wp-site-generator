@@ -19,6 +19,7 @@ const controllerRunSpecPath = args.get('--controller-run-spec') || '';
 const controllerResumePath = args.get('--controller-resume') || '';
 const controllerEventPath = args.get('--controller-event') || '';
 const artifactRoot = args.get('--artifact-root') || process.env.HOMEBOY_ARTIFACT_ROOT || repoPath('.ci', 'homeboy-agent-task-artifacts');
+const proofMode = args.get('--proof-mode') || process.env.WPSG_LOOP_PROOF_MODE || 'production';
 
 const upstreamDependencies = {
 	runtimeArtifacts: 'https://github.com/Extra-Chill/homeboy-extensions/pull/1645',
@@ -52,6 +53,27 @@ function assertDurableUrl(value, label) {
 	const url = String(value || '').trim();
 	assert.match(url, /^https?:\/\//, `${label} is an HTTP URL`);
 	assert.doesNotMatch(url, /localhost|127\.0\.0\.1|\/Users\//, `${label} is not local-only evidence`);
+	if (proofMode !== 'fixture') {
+		assert.doesNotMatch(url, /^https?:\/\/(?:[^/]+\.)?example\.(?:com|net|org|test)(?:[/:?#]|$)/i, `${label} is not placeholder evidence`);
+	}
+}
+
+function assertRealArtifactUrl(value, label) {
+	assertDurableUrl(value, label);
+}
+
+function assertRealPreviewUrl(value, label) {
+	assertDurableUrl(value, label);
+}
+
+function assertProductionArtifact(artifact, artifactId) {
+	if (proofMode === 'fixture') {
+		return;
+	}
+	const fixtureMarker = firstValue(artifact, ['fixture', 'fixture_artifact', 'fixture_mode', 'site_kind', 'site.kind', 'source']);
+	if (String(fixtureMarker || '').toLowerCase().includes('fixture')) {
+		fail(`${artifactId} is fixture evidence; rerun with real Homeboy/WP Codebox artifacts or pass --proof-mode fixture for fixture-only tests`);
+	}
 }
 
 function unwrapArtifact(value) {
@@ -180,57 +202,76 @@ async function assertControllerEventProof(controllerRunSpec, loopId) {
 }
 
 async function assertControllerArtifactProof(controllerRunSpec) {
+	assert.ok(['production', 'fixture'].includes(proofMode), 'proof mode is production or fixture');
 	const artifactSchemas = new Map((controllerRunSpec.artifacts || []).map((artifact) => [artifact.artifact_id, artifact.kind || artifact.schema]));
 	const artifacts = await readArtifactJsonFiles(artifactRoot);
+	if (proofMode !== 'fixture' && findArtifact(artifacts, artifactSchemas, 'tiny_fixture_site_run')) {
+		fail('artifact root contains fixture-only tiny_fixture_site_run; production proof requires Homeboy-emitted real loop artifacts');
+	}
 
-	const fixtureRun = requireArtifact(artifacts, artifactSchemas, 'tiny_fixture_site_run');
-	assert.equal(String(firstValue(fixtureRun, ['fixture', 'site_kind', 'site.kind']) || '').toLowerCase(), 'tiny', 'fixture site run records the tiny fixture site');
-	assertDurableUrl(firstValue(fixtureRun, ['artifact_url', 'url', 'report_url']), 'tiny fixture site run artifact URL');
+	if (proofMode === 'fixture') {
+		const fixtureRun = requireArtifact(artifacts, artifactSchemas, 'tiny_fixture_site_run');
+		assert.equal(String(firstValue(fixtureRun, ['fixture', 'site_kind', 'site.kind']) || '').toLowerCase(), 'tiny', 'fixture site run records the tiny fixture site');
+		assertDurableUrl(firstValue(fixtureRun, ['artifact_url', 'url', 'report_url']), 'tiny fixture site run artifact URL');
+	}
 
 	const candidate = requireArtifact(artifacts, artifactSchemas, 'static_site_candidate');
-	assertDurableUrl(firstValue(candidate, ['preview_url', 'playground_url', 'urls.preview', 'urls.playground', 'preview.url', 'playground.url']), 'preview/playground URL');
+	assertProductionArtifact(candidate, 'static_site_candidate');
+	assertRealPreviewUrl(firstValue(candidate, ['playground_url', 'preview_url', 'urls.playground', 'urls.preview', 'playground.url', 'preview.url']), 'preview/playground URL');
+	assertRealArtifactUrl(firstValue(candidate, ['artifact_url', 'url', 'report_url']), 'static site candidate artifact URL');
 
 	const importValidation = requireArtifact(artifacts, artifactSchemas, 'import_validation_result');
+	assertProductionArtifact(importValidation, 'import_validation_result');
 	numberEqualsZero(firstValue(importValidation, ['metrics.fallback_blocks', 'metrics.fallback_block_count', 'metrics.ssi_fallback_count', 'fallback_blocks', 'fallback_block_count']), 'fallback block metric');
 	numberEqualsZero(firstValue(importValidation, ['metrics.conversion_findings', 'conversion_findings']), 'conversion finding metric');
-	assertDurableUrl(firstValue(importValidation, ['artifact_url', 'url', 'report_url']), 'import validation artifact URL');
+	assertRealArtifactUrl(firstValue(importValidation, ['artifact_url', 'url', 'report_url']), 'import validation artifact URL');
 	assert.ok(firstValue(importValidation, ['import_report', 'report', 'metrics']) !== undefined, 'import validation includes an import report payload or metrics');
 
 	const validationRun = requireArtifact(artifacts, artifactSchemas, 'static_validation_run');
-	assertDurableUrl(firstValue(validationRun, ['artifact_url', 'url', 'report_url']), 'static validation run artifact URL');
+	assertProductionArtifact(validationRun, 'static_validation_run');
+	assertRealArtifactUrl(firstValue(validationRun, ['artifact_url', 'url', 'report_url']), 'static validation run artifact URL');
 
 	const visual = requireArtifact(artifacts, artifactSchemas, 'visual_parity_artifact');
+	assertProductionArtifact(visual, 'visual_parity_artifact');
 	const visualStatus = String(firstValue(visual, ['summary.status', 'status']) || '').toLowerCase();
 	assert.ok(visualStatus === 'pass' || firstValue(visual, ['summary.pass', 'pass']) === true, 'visual parity artifact records pass status');
 	numberEqualsZero(firstValue(visual, ['summary.mismatch_count', 'mismatch_count', 'metrics.mismatch_count']), 'visual mismatch count');
 	numberEqualsZero(firstValue(visual, ['summary.max_delta_ratio', 'max_delta_ratio', 'metrics.max_delta_ratio']), 'visual max delta ratio');
-	assertDurableUrl(firstValue(visual, ['artifact_url', 'url', 'summary_url']), 'visual parity artifact URL');
+	assertRealArtifactUrl(firstValue(visual, ['artifact_url', 'url', 'summary_url']), 'visual parity artifact URL');
 
 	const findings = requireArtifact(artifacts, artifactSchemas, 'finding_packet_set');
+	assertProductionArtifact(findings, 'finding_packet_set');
 	assert.ok(Array.isArray(findings.packets || findings.findings || findings.groups) || Number(findings.actionable_conversion_count ?? 0) === 0, 'finding packet evidence is present');
-	assertDurableUrl(firstValue(findings, ['artifact_url', 'url']), 'finding packet artifact URL');
+	assertRealArtifactUrl(firstValue(findings, ['artifact_url', 'url']), 'finding packet artifact URL');
 	const findingGroup = requireArtifact(artifacts, artifactSchemas, 'finding_group', upstreamDependencies.fanout);
-	assertDurableUrl(firstValue(findingGroup, ['artifact_url', 'url', 'report_url']), 'iterator finding group artifact URL');
+	assertProductionArtifact(findingGroup, 'finding_group');
+	assertRealArtifactUrl(firstValue(findingGroup, ['artifact_url', 'url', 'report_url']), 'iterator finding group artifact URL');
 	const iteratorIssue = requireArtifact(artifacts, artifactSchemas, 'iterator_upstream_issue', upstreamDependencies.fanout);
-	assertDurableUrl(firstValue(iteratorIssue, ['url', 'html_url', 'issue_url']), 'iterator upstream issue URL');
+	assertProductionArtifact(iteratorIssue, 'iterator_upstream_issue');
+	assertRealArtifactUrl(firstValue(iteratorIssue, ['url', 'html_url', 'issue_url']), 'iterator upstream issue URL');
 	const iteratorPr = requireArtifact(artifacts, artifactSchemas, 'iterator_upstream_pull_request', upstreamDependencies.fanout);
-	assertDurableUrl(firstValue(iteratorPr, ['url', 'html_url', 'pr_url', 'pull_request.url']), 'iterator upstream PR URL');
+	assertProductionArtifact(iteratorPr, 'iterator_upstream_pull_request');
+	assertRealArtifactUrl(firstValue(iteratorPr, ['url', 'html_url', 'pr_url', 'pull_request.url']), 'iterator upstream PR URL');
 
 	const revalidation = requireArtifact(artifacts, artifactSchemas, 'revalidation_attempt');
+	assertProductionArtifact(revalidation, 'revalidation_attempt');
 	assert.ok(['pass', 'passed', 'succeeded', 'success'].includes(String(firstValue(revalidation, ['status', 'decision', 'result']) || '').toLowerCase()) || firstValue(revalidation, ['passed', 'success']) === true, 'revalidation evidence records success');
-	assertDurableUrl(firstValue(revalidation, ['artifact_url', 'url', 'report_url']), 'revalidation artifact URL');
+	assertRealArtifactUrl(firstValue(revalidation, ['artifact_url', 'url', 'report_url']), 'revalidation artifact URL');
 
 	const reviewer = requireArtifact(artifacts, artifactSchemas, 'reviewer_gate_outcome');
+	assertProductionArtifact(reviewer, 'reviewer_gate_outcome');
 	assert.equal(String(firstValue(reviewer, ['decision', 'status']) || '').toUpperCase(), 'PASS', 'reviewer gate passes');
-	assertDurableUrl(firstValue(reviewer, ['artifact_url', 'url', 'report_url']), 'reviewer gate artifact URL');
+	assertRealArtifactUrl(firstValue(reviewer, ['artifact_url', 'url', 'report_url']), 'reviewer gate artifact URL');
 
 	const publishGate = requireArtifact(artifacts, artifactSchemas, 'static_site_publish_gate');
-	assertDurableUrl(firstValue(publishGate, ['artifact_url', 'url', 'report_url']), 'publication gate artifact URL');
+	assertProductionArtifact(publishGate, 'static_site_publish_gate');
+	assertRealArtifactUrl(firstValue(publishGate, ['artifact_url', 'url', 'report_url']), 'publication gate artifact URL');
 	for (const gateId of ['fallback_blocks', 'conversion_findings', 'visual_parity']) {
 		assert.equal(publishGate.gates?.[gateId]?.passed, true, `publish gate ${gateId} passed`);
 	}
 	const pr = requireArtifact(artifacts, artifactSchemas, 'static_site_pull_request', upstreamDependencies.controllerEvents);
-	assertDurableUrl(firstValue(pr, ['url', 'html_url', 'pr_url', 'pull_request.url']), 'publication PR URL');
+	assertProductionArtifact(pr, 'static_site_pull_request');
+	assertRealArtifactUrl(firstValue(pr, ['url', 'html_url', 'pr_url', 'pull_request.url']), 'publication PR URL');
 }
 
 if (controllerResultPath || controllerRunSpecPath) {

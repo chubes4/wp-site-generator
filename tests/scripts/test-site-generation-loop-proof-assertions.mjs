@@ -107,7 +107,7 @@ try {
     }
   );
   assert.notEqual(missingArtifactProof.status, 0, 'controller proof fails without real artifacts');
-  assert.match(missingArtifactProof.stderr || missingArtifactProof.stdout, /artifact root is missing Homeboy-emitted tiny_fixture_site_run/);
+  assert.match(missingArtifactProof.stderr || missingArtifactProof.stdout, /artifact root is missing Homeboy-emitted static_site_candidate/);
   assert.match(missingArtifactProof.stderr || missingArtifactProof.stdout, /dependency: https:\/\/github.com\/Extra-Chill\/homeboy-extensions\/pull\/1645/);
 
   const placeholderControllerResultPath = path.join(tempDir, 'site-generation-loop.controller-placeholder-result.json');
@@ -224,6 +224,118 @@ try {
   await writeArtifact('static_site_publish_gate', {
     schema: 'wp-site-generator/StaticSitePublishGate/v1',
     artifact_url: 'https://artifacts.example.test/publish-gate.json',
+    publish_allowed: true,
+    gates: {
+      fallback_blocks: { passed: true },
+      conversion_findings: { passed: true },
+      visual_parity: { passed: true },
+    },
+  });
+  await writeArtifact('static_site_pull_request', {
+    schema: 'github/PullRequest/v1',
+    url: 'https://github.com/chubes4/wp-site-generator/pull/123',
+  });
+
+  const fixtureControllerProof = spawnSync(
+    process.execPath,
+    [
+      '.github/scripts/assert-site-generation-loop-proof.mjs',
+      '--proof-mode',
+      'fixture',
+      '--controller-result',
+      controllerResultPath,
+      '--controller-run-spec',
+      controllerRunSpecPath,
+      '--controller-resume',
+      controllerResumePath,
+      '--controller-event',
+      controllerEventPath,
+      '--artifact-root',
+      artifactRoot,
+    ],
+    {
+      cwd: repoRoot,
+      encoding: 'utf8',
+    }
+  );
+  assert.equal(fixtureControllerProof.status, 0, fixtureControllerProof.stderr || fixtureControllerProof.stdout);
+
+  const fixtureAsProductionProof = spawnSync(
+    process.execPath,
+    [
+      '.github/scripts/assert-site-generation-loop-proof.mjs',
+      '--controller-result',
+      controllerResultPath,
+      '--controller-run-spec',
+      controllerRunSpecPath,
+      '--controller-resume',
+      controllerResumePath,
+      '--controller-event',
+      controllerEventPath,
+      '--artifact-root',
+      artifactRoot,
+    ],
+    {
+      cwd: repoRoot,
+      encoding: 'utf8',
+    }
+  );
+  assert.notEqual(fixtureAsProductionProof.status, 0, 'production controller proof rejects fixture artifacts');
+  assert.match(fixtureAsProductionProof.stderr || fixtureAsProductionProof.stdout, /fixture-only tiny_fixture_site_run/);
+
+  await rm(artifactRoot, { recursive: true, force: true });
+
+  await writeArtifact('static_site_candidate', {
+    schema: 'wp-site-generator/StaticSiteCandidate/v1',
+    playground_url: 'https://playground.wordpress.net/?blueprint-url=https%3A%2F%2Fgithub.com%2Fchubes4%2Fwp-site-generator%2Factions%2Fruns%2F123%2Fartifacts%2F456',
+    artifact_url: 'https://github.com/chubes4/wp-site-generator/actions/runs/123/artifacts/static-site-candidate',
+  });
+  await writeArtifact('import_validation_result', {
+    schema: 'wp-site-generator/ImportValidationResult/v1',
+    artifact_url: 'https://github.com/chubes4/wp-site-generator/actions/runs/123/artifacts/import-validation',
+    metrics: { fallback_blocks: 0, conversion_findings: 0 },
+    import_report: { pages_imported: 1 },
+  });
+  await writeArtifact('static_validation_run', {
+    schema: 'homeboy/Run/v1',
+    artifact_url: 'https://github.com/chubes4/wp-site-generator/actions/runs/123/artifacts/static-validation-run',
+  });
+  await writeArtifact('visual_parity_artifact', {
+    schema: 'wp-site-generator/VisualParityArtifact/v1',
+    artifact_url: 'https://github.com/chubes4/wp-site-generator/actions/runs/123/artifacts/visual-parity',
+    summary: { status: 'pass', mismatch_count: 0, max_delta_ratio: 0 },
+  });
+  await writeArtifact('finding_packet_set', {
+    schema: 'wp-site-generator/FindingPacketSet/v1',
+    artifact_url: 'https://github.com/chubes4/wp-site-generator/actions/runs/123/artifacts/finding-packets',
+    packets: [],
+    actionable_conversion_count: 0,
+  });
+  await writeArtifact('finding_group', {
+    schema: 'wp-site-generator/FindingGroup/v1',
+    artifact_url: 'https://github.com/chubes4/wp-site-generator/actions/runs/123/artifacts/finding-group',
+  });
+  await writeArtifact('iterator_upstream_issue', {
+    schema: 'github/Issue/v1',
+    url: 'https://github.com/chubes4/wp-site-generator/issues/123',
+  });
+  await writeArtifact('iterator_upstream_pull_request', {
+    schema: 'github/PullRequest/v1',
+    url: 'https://github.com/chubes4/wp-site-generator/pull/124',
+  });
+  await writeArtifact('revalidation_attempt', {
+    schema: 'wp-site-generator/RevalidationAttempt/v1',
+    artifact_url: 'https://github.com/chubes4/wp-site-generator/actions/runs/123/artifacts/revalidation',
+    status: 'passed',
+  });
+  await writeArtifact('reviewer_gate_outcome', {
+    schema: 'wp-site-generator/SsiStackReviewerGate/v1',
+    artifact_url: 'https://github.com/chubes4/wp-site-generator/actions/runs/123/artifacts/reviewer-gate',
+    decision: 'PASS',
+  });
+  await writeArtifact('static_site_publish_gate', {
+    schema: 'wp-site-generator/StaticSitePublishGate/v1',
+    artifact_url: 'https://github.com/chubes4/wp-site-generator/actions/runs/123/artifacts/publish-gate',
     publish_allowed: true,
     gates: {
       fallback_blocks: { passed: true },
