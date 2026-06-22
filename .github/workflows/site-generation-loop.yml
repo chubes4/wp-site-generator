@@ -3,8 +3,8 @@ name: Site Generation Loop
 on:
   workflow_dispatch:
     inputs:
-      openai_model:
-        description: OpenAI model to use for imported agent flows.
+      model:
+        description: Model to use for imported agent flows.
         required: true
         default: gpt-5.5
       homeboy_ref:
@@ -83,9 +83,8 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 90
     env:
-      OPENAI_MODEL: ${{ inputs.openai_model }}
       GITHUB_TOKEN: ${{ github.token }}
-      OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+      HOMEBOY_AGENT_RUNTIME_MODEL: ${{ inputs.model }}
       HOMEBOY_REF: ${{ inputs.homeboy_ref }}
       HOMEBOY_EXTENSIONS_REF: ${{ inputs.homeboy_extensions_ref }}
       WPSG_REF_POLICY: ${{ inputs.ref_policy }}

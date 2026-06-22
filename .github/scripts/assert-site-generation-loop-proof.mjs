@@ -192,9 +192,9 @@ function optionalArtifact(artifacts, artifactSchemas, artifactId) {
 
 function runtimePreviewUrl(candidate) {
 	if (proofMode === 'fixture') {
-		return firstValue(candidate, ['runtime_preview.url', 'preview_evidence.preview_url', 'preview_evidence.url', 'preview_url', 'urls.preview', 'preview.url']);
+		return firstValue(candidate, ['runtime_preview.url', 'runtime_preview.access.url', 'preview_evidence.preview_url', 'preview_evidence.url', 'preview_url', 'urls.preview', 'preview.url', 'preview.access.url']);
 	}
-	return firstValue(candidate, ['runtime_preview.url', 'preview_evidence.preview_url', 'preview_evidence.url', 'evidence.preview_url', 'preview.url']);
+	return firstValue(candidate, ['runtime_preview.url', 'runtime_preview.access.url', 'preview_evidence.preview_url', 'preview_evidence.url', 'evidence.preview_url', 'preview.url', 'preview.access.url']);
 }
 
 function runtimePreviewEnvelope(candidate) {
@@ -207,8 +207,8 @@ function assertProductionRuntimePreviewEnvelope(candidate) {
 		return;
 	}
 	assert.ok(envelope && typeof envelope === 'object' && !Array.isArray(envelope), 'runtime preview evidence is a structured envelope');
-	const serialized = JSON.stringify(envelope).toLowerCase();
-	assert.ok(/wp[-_ ]?codebox|playground\.wordpress\.net|wordpress[-_ ]?playground|\bplayground\b/.test(serialized), 'runtime preview envelope records WP Codebox or WordPress Playground provenance');
+	const envelopeType = firstValue(envelope, ['schema', 'artifact_type', 'type', 'kind', 'access.schema', 'access.type', 'access.kind']);
+	assert.ok(envelopeType && /preview|access|runtime/i.test(String(envelopeType)), 'runtime preview evidence is a typed preview/access envelope');
 }
 
 async function assertControllerEventProof(controllerRunSpec, loopId) {

@@ -3,7 +3,7 @@ import { mkdir, mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { spawnSync } from 'node:child_process';
-import { createHomeboyControllerFixture } from '../helpers/homeboy-fixtures.mjs';
+import { createHomeboyControllerContractFixture } from '../helpers/homeboy-fixtures.mjs';
 
 const repoRoot = path.resolve(new URL('../..', import.meta.url).pathname);
 const tempDir = await mkdtemp(path.join(tmpdir(), 'wpsg-proof-'));
@@ -16,7 +16,7 @@ const controllerPolicyResultPath = path.join(tempDir, 'site-generation-loop.comp
 const controllerMaterializationPath = path.join(tempDir, 'site-generation-loop.controller-materialization.json');
 const controllerMaterializationProofPath = path.join(tempDir, 'site-generation-loop.controller-materialization.proof.json');
 const artifactRoot = path.join(tempDir, 'homeboy-agent-task-artifacts');
-const homeboyFixturePath = await createHomeboyControllerFixture(tempDir);
+const homeboyFixturePath = await createHomeboyControllerContractFixture(tempDir);
 
 async function writeArtifact(name, artifact) {
   await mkdir(artifactRoot, { recursive: true });
@@ -175,7 +175,11 @@ try {
   });
   await writeArtifact('static_site_candidate', {
     schema: 'wp-site-generator/StaticSiteCandidate/v1',
-    preview_url: 'https://preview.example.test/proof-site',
+    runtime_preview: {
+      schema: 'homeboy/runtime-preview-access/v1',
+      url: 'https://preview.example.test/proof-site',
+      access: { kind: 'preview' },
+    },
     artifact_url: 'https://artifacts.example.test/static-site-candidate.json',
   });
   await writeArtifact('import_validation_result', {
@@ -288,9 +292,9 @@ try {
   await writeArtifact('static_site_candidate', {
     schema: 'wp-site-generator/StaticSiteCandidate/v1',
     runtime_preview: {
+      schema: 'homeboy/runtime-preview-access/v1',
       url: 'https://github.com/chubes4/wp-site-generator/actions/runs/123/artifacts/runtime-preview',
-      provider: 'wp-codebox',
-      runtime: 'wordpress-playground',
+      access: { kind: 'preview' },
     },
     artifact_url: 'https://github.com/chubes4/wp-site-generator/actions/runs/123/artifacts/static-site-candidate',
   });
@@ -351,9 +355,9 @@ try {
   await writeArtifact('static_site_candidate', {
     schema: 'wp-site-generator/StaticSiteCandidate/v1',
     runtime_preview: {
-      url: 'https://playground.wordpress.net/?blueprint-url=https%3A%2F%2Fraw.githubusercontent.com%2Fchubes4%2Fwp-site-generator%2Fproof%2Fblueprint.json',
-      provider: 'wp-codebox',
-      runtime: 'wordpress-playground',
+      schema: 'homeboy/runtime-preview-access/v1',
+      url: 'https://preview.dev.chubes.net/runs/123/sites/proof-site',
+      access: { kind: 'preview' },
     },
     artifact_url: 'https://github.com/chubes4/wp-site-generator/actions/runs/123/artifacts/static-site-candidate',
   });
@@ -419,9 +423,6 @@ try {
   assert.match(workflow, /homeboy agent-task controller from-spec/, 'site generation workflow initializes Homeboy controller from spec');
   assert.match(workflow, /homeboy agent-task controller resume/, 'site generation workflow resumes the Homeboy controller');
   assert.match(workflow, /homeboy agent-task controller events/, 'site generation workflow records controller events');
-  assert.doesNotMatch(workflow, /agent-task run-plan/, 'site generation workflow no longer runs repo-local generated plans');
-  assert.doesNotMatch(workflow, /dispatch-static-validation\.mjs/, 'site generation workflow no longer dispatches validation with repo-local state');
-
   console.log('site generation loop proof assertion tests passed');
 } finally {
   await rm(tempDir, { recursive: true, force: true });

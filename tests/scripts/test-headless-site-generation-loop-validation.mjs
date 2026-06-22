@@ -4,11 +4,11 @@ import { mkdir, mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 
-import { createHomeboyControllerFixture } from '../helpers/homeboy-fixtures.mjs';
+import { createHomeboyControllerContractFixture } from '../helpers/homeboy-fixtures.mjs';
 
 const repoRoot = path.resolve(new URL('../..', import.meta.url).pathname);
 const tempDir = await mkdtemp(path.join(tmpdir(), 'wpsg-headless-loop-test-'));
-const homeboyFixturePath = await createHomeboyControllerFixture(tempDir);
+const homeboyFixturePath = await createHomeboyControllerContractFixture(tempDir);
 const evidencePath = path.join(tempDir, 'headless-evidence.json');
 const artifactRoot = path.join(tempDir, 'homeboy-agent-task-artifacts');
 
@@ -21,9 +21,9 @@ async function writeRealEvidenceArtifacts() {
 	await writeArtifact('static_site_candidate', {
 		schema: 'wp-site-generator/StaticSiteCandidate/v1',
 		runtime_preview: {
-			url: 'https://playground.wordpress.net/?blueprint-url=https%3A%2F%2Fraw.githubusercontent.com%2Fchubes4%2Fwp-site-generator%2Fproof%2Fblueprint.json',
-			provider: 'wp-codebox',
-			runtime: 'wordpress-playground',
+			schema: 'homeboy/runtime-preview-access/v1',
+			url: 'https://preview.dev.chubes.net/runs/123/sites/proof-site',
+			access: { kind: 'preview' },
 		},
 		artifact_url: 'https://github.com/chubes4/wp-site-generator/actions/runs/123/artifacts/static-site-candidate',
 	});

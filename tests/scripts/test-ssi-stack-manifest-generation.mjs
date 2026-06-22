@@ -42,7 +42,8 @@ assert.equal(settingsResult.status, 0, settingsResult.stderr || settingsResult.s
 const previewResult = spawnSync(process.execPath, [
 	path.join(repoRoot, '.github/scripts/build-static-preview-blueprint.mjs'),
 	'--site', site,
-	'--branch', `static/${site}`,
+	'--source-head-sha', 'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa',
+	'--preview-evidence-refs', JSON.stringify([{ schema: 'homeboy/runtime-preview-access/v1', url: 'https://preview.dev.chubes.net/runs/manifest-fixture/sites/issue-test-ref-manifest' }]),
 	'--manifest', manifestPath,
 	'--output', previewPath,
 ], { cwd: repoRoot, encoding: 'utf8' });
