@@ -106,8 +106,9 @@ const result = spawnSync(process.execPath, [path.join(repoRoot, '.github/scripts
 		HOMEBOY_POLICY_RESULT_PATH: policyResultPath,
 		HOMEBOY_AGENT_RUNTIME_COMPONENTS: JSON.stringify([
 			{
-				id: 'agents-api',
-				plugin_path: '/operator/workspace/agents-api/agents-api.php',
+				slug: 'agents-api',
+				path: '/operator/workspace/agents-api',
+				activate: true,
 			},
 		]),
 	},
@@ -126,8 +127,9 @@ assert.equal(runInputs.inputs.runtime_input_contract, 'homeboy-agent-runtime-env
 assert.equal(runInputs.inputs.runtime_config.source, 'homeboy-agent-runtime-env');
 assert.deepEqual(runInputs.inputs.runtime_config.component_contracts, [
 	{
-		id: 'agents-api',
-		plugin_path: '/operator/workspace/agents-api/agents-api.php',
+		slug: 'agents-api',
+		path: '/operator/workspace/agents-api',
+		activate: true,
 	},
 ]);
 assert.equal(runInputs.metadata.run.loop_id, 'wp-site-generator/static-site-generation-loop/local-replay-123');
