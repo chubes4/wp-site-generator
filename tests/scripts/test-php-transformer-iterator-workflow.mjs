@@ -9,8 +9,9 @@ const iteratorFlow = await readFile(path.join(repoRoot, 'bundles/php-transformer
 
 assert.match(workflow, /\.\/\.github\/workflows\/wpsg-runtime-agent-ci\.yml/, 'iterator uses the WPSG runtime seam workflow');
 assert.match(runtimeWorkflow, /runtime-agent-ci\.yml@main/, 'WPSG seam delegates to the generic Homeboy Extensions runtime agent workflow');
-assert.match(workflow, /runtime_execution:[\s\S]*actions_artifact_downloads/, 'iterator passes validation artifact downloads through the runtime execution payload');
-assert.match(workflow, /agents\/run-runtime-package/, 'iterator uses the generic Agents API runtime package ability');
+assert.match(workflow, /RUNTIME_EXECUTION_INPUT:[\s\S]*actions_artifact_downloads/, 'iterator passes validation artifact downloads through the runtime execution payload');
+assert.match(workflow, /render-runtime-bundle-execution\.mjs/, 'iterator renders runtime execution through the shared runtime facade');
+assert.doesNotMatch(workflow, /agents\/run-runtime-package/, 'iterator workflow does not hard-code runtime package internals');
 assert.match(workflow, /runtime_workload_profile: workspace-iteration/, 'iterator selects a generic workspace iteration workload profile');
 assert.doesNotMatch(workflow, /runtime_provider: codebox|wpsg-codebox-runtime-package|wp-codebox\//, 'iterator workflow keeps runtime selection profile-driven');
 assert.match(workflow, /visual_artifact_name:/, 'iterator accepts the visual parity artifact name from validation');
