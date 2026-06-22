@@ -21,30 +21,6 @@ export const runtimePackageProfile = Object.freeze({
 	runtimeWorkflowAbility: '',
 });
 
-export const runtimeToolProfiles = Object.freeze({
-	workspaceIteration: Object.freeze({
-		id: 'workspace-iteration',
-		requirements: Object.freeze(['command', 'publish']),
-		tools: Object.freeze([
-			['workspace_clone', 'command'],
-			['workspace_worktree_add', 'command'],
-			['workspace_read', 'command'],
-			['workspace_write', 'command'],
-			['workspace_edit', 'command'],
-			['workspace_git_status', 'command'],
-			['workspace_git_commit', 'command'],
-			['workspace_git_push', 'command'],
-			['create_github_pull_request', 'publish'],
-			['create_github_issue', 'publish'],
-		]),
-	}),
-	workspacePublication: Object.freeze({
-		id: 'workspace-publication',
-		requirements: Object.freeze(['publish']),
-		tools: Object.freeze([]),
-	}),
-});
-
 export function readAgentRuntimeContract(env = process.env) {
 	const manifest = readRuntimeManifest(env);
 	const profileManifest = profileFromManifest(manifest, env.HOMEBOY_AGENT_RUNTIME_PROFILE);
@@ -110,40 +86,6 @@ export function runtimePackageProfiles(contract = readAgentRuntimeContract()) {
 	}
 
 	return { [contract.profile]: profile };
-}
-
-export function runtimeToolProfileInputs(profileId, contract = null) {
-	const profile = runtimeToolProfiles[profileId] || Object.values(runtimeToolProfiles).find((candidate) => candidate.id === profileId);
-	if (!profile) {
-		throw new Error(`Unknown WPSG runtime tool profile: ${profileId}`);
-	}
-	const runtimeContract = contract || readAgentRuntimeContract();
-
-	const abilityByKind = {
-		command: runtimeContract.workspaceCommandAbility,
-		publish: runtimeContract.workspacePublishAbility,
-	};
-	const abilityRequirements = unique([
-		runtimeContract.runtimeTaskAbility,
-		...profile.requirements.map((kind) => abilityByKind[kind]),
-	]);
-	const abilityTools = profile.tools
-		.map(([name, kind]) => ({ name, ability: abilityByKind[kind] }))
-		.filter((tool) => tool.ability);
-
-	return {
-		ability_requirements: JSON.stringify(abilityRequirements),
-		ability_tools: JSON.stringify(abilityTools),
-	};
-}
-
-export function runtimeWorkflowInputs(profileId, contract = readAgentRuntimeContract()) {
-	return {
-		runtime_provider: contract.provider,
-		runtime_profile: contract.profile,
-		runtime_profiles: contract.profiles || JSON.stringify(runtimePackageProfiles(contract)),
-		...runtimeToolProfileInputs(profileId, contract),
-	};
 }
 
 export function runtimeBundleExecution({ packageSource, packageSlug, workflowId, input = {}, options = {}, ability = runtimeApiAbilities.runRuntimePackage } = {}) {

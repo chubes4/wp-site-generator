@@ -12,13 +12,17 @@ export {
 	readAgentRuntimeContract,
 	runtimeProviderProfile,
 	runtimeProviderProfiles,
-	runtimeToolProfileInputs,
-	runtimeToolProfiles,
 	runtimeValidationArtifactEnvelopeSchema,
 	runtimeWorkspaceRecipeSchema,
 	runtimeWorkflowBuilderExecution,
-	runtimeWorkflowInputs,
 } from './agent-runtime-api.mjs';
+
+export {
+	renderRuntimeWorkflowInputs,
+	runtimeToolProfileInputs,
+	runtimeToolProfiles,
+	runtimeWorkflowInputs,
+} from './runtime-workflow-inputs.mjs';
 
 export {
 	wordpressRuntimeAbilityId,
