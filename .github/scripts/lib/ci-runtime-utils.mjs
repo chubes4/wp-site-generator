@@ -196,6 +196,38 @@ export function applyHomeboyAgentRuntimeOverrides(config, runtimeTaskInput, runt
 	}
 }
 
+export function buildHomeboyAgentRuntimeConfig(runtimeOverrides) {
+	return compactObject({
+		source: runtimeOverrides.source,
+		runtime_id: runtimeOverrides.runtimeId,
+		runtime_bin: runtimeOverrides.runtimeBin,
+		provider: runtimeOverrides.provider,
+		model: runtimeOverrides.model,
+		provider_plugin_paths: runtimeOverrides.providerPluginPaths,
+		provider_plugins: runtimeOverrides.providerPlugins,
+		component_contracts: runtimeOverrides.componentContracts,
+		secret_env: runtimeOverrides.secretEnv,
+		runtime_env: runtimeOverrides.runtimeEnv,
+		runtime_config_mounts: runtimeOverrides.runtimeConfigMounts,
+		runtime_state_mounts: runtimeOverrides.runtimeStateMounts,
+	});
+}
+
+function compactObject(object) {
+	return Object.fromEntries(Object.entries(object).filter(([, value]) => {
+		if (value === undefined || value === null || value === '') {
+			return false;
+		}
+		if (Array.isArray(value)) {
+			return value.length > 0;
+		}
+		if (typeof value === 'object') {
+			return Object.keys(value).length > 0;
+		}
+		return true;
+	}));
+}
+
 function splitList(value) {
 	return String(value || '')
 		.split(',')
