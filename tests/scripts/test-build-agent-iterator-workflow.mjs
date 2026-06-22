@@ -59,10 +59,12 @@ const fanoutConfig = JSON.parse(await readFile(fanoutConfigPath, 'utf8'));
 assert.equal(fanoutConfig.schema, 'wp-site-generator/php-transformer-iterator-fanout-input/v1', 'iterator emits Homeboy-compatible fanout packet input');
 assert.deepEqual(fanoutConfig.primitive, {
 	provider: 'homeboy',
-	command: 'agent-task fanout plan',
+	command: 'agent-task fanout submit-batch',
 	input_contract: 'homeboy/agent-task-fanout-input/v1',
+	status_command: 'agent-task fanout status',
+	artifacts_command: 'agent-task fanout artifacts',
 	controller_workflow: 'iterator',
-}, 'iterator fanout config declares the Homeboy primitive contract');
+}, 'iterator fanout config declares the Homeboy batch primitive contract');
 assert.equal(fanoutConfig.packets.length, 8, 'iterator passes WPSG-owned grouped findings as caller-provided Homeboy packets');
 assert.equal(fanoutConfig.packets[0].inputs.finding_group.count, 1, 'each Homeboy packet preserves one WPSG finding group');
 assert.equal(fanoutConfig.packets[0].metadata.finding_group.group_id, fanoutConfig.packets[0].inputs.finding_group.group_id, 'packet metadata preserves the typed WPSG finding group');
