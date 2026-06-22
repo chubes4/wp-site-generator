@@ -64,15 +64,18 @@ function assertRealArtifactUrl(value, label) {
 
 function assertRealPreviewUrl(value, label) {
 	assertDurableUrl(value, label);
+	if (proofMode !== 'fixture') {
+		assert.doesNotMatch(String(value || ''), /^https?:\/\/github\.com\/[^/]+\/[^/]+\/actions\/runs\/[^/]+\/artifacts(?:[/:?#]|$)/i, `${label} is not a GitHub Actions artifact URL`);
+	}
 }
 
 function assertProductionArtifact(artifact, artifactId) {
 	if (proofMode === 'fixture') {
 		return;
 	}
-	const fixtureMarker = firstValue(artifact, ['fixture', 'fixture_artifact', 'fixture_mode', 'site_kind', 'site.kind', 'source']);
-	if (String(fixtureMarker || '').toLowerCase().includes('fixture')) {
-		fail(`${artifactId} is fixture evidence; rerun with real Homeboy/WP Codebox artifacts or pass --proof-mode fixture for fixture-only tests`);
+	const evidenceText = JSON.stringify(artifact).toLowerCase();
+	if (/\b(fixture|synthetic|placeholder|mock)\b/.test(evidenceText)) {
+		fail(`${artifactId} is fixture or synthetic evidence; rerun with real Homeboy/WP Codebox artifacts or pass --proof-mode fixture for fixture-only tests`);
 	}
 }
 
@@ -194,6 +197,20 @@ function runtimePreviewUrl(candidate) {
 	return firstValue(candidate, ['runtime_preview.url', 'preview_evidence.preview_url', 'preview_evidence.url', 'evidence.preview_url', 'preview.url']);
 }
 
+function runtimePreviewEnvelope(candidate) {
+	return firstValue(candidate, ['runtime_preview', 'preview_evidence', 'evidence.preview', 'preview']);
+}
+
+function assertProductionRuntimePreviewEnvelope(candidate) {
+	const envelope = runtimePreviewEnvelope(candidate);
+	if (proofMode === 'fixture') {
+		return;
+	}
+	assert.ok(envelope && typeof envelope === 'object' && !Array.isArray(envelope), 'runtime preview evidence is a structured envelope');
+	const serialized = JSON.stringify(envelope).toLowerCase();
+	assert.ok(/wp[-_ ]?codebox|playground\.wordpress\.net|wordpress[-_ ]?playground|\bplayground\b/.test(serialized), 'runtime preview envelope records WP Codebox or WordPress Playground provenance');
+}
+
 async function assertControllerEventProof(controllerRunSpec, loopId) {
 	if (!controllerResumePath) {
 		failDependency('missing controller resume result evidence', upstreamDependencies.controllerEvents);
@@ -228,6 +245,7 @@ async function assertControllerArtifactProof(controllerRunSpec) {
 
 	const candidate = requireArtifact(artifacts, artifactSchemas, 'static_site_candidate');
 	assertProductionArtifact(candidate, 'static_site_candidate');
+	assertProductionRuntimePreviewEnvelope(candidate);
 	assertRealPreviewUrl(runtimePreviewUrl(candidate), 'runtime preview URL');
 	assertRealArtifactUrl(firstValue(candidate, ['artifact_url', 'url', 'report_url']), 'static site candidate artifact URL');
 
@@ -266,11 +284,15 @@ async function assertControllerArtifactProof(controllerRunSpec) {
 	if (iteratorIssue) {
 		assertProductionArtifact(iteratorIssue, 'iterator_upstream_issue');
 		assertRealArtifactUrl(firstValue(iteratorIssue, ['url', 'html_url', 'issue_url']), 'iterator upstream issue URL');
+	} else if (actionableFindingCount > 0) {
+		failDependency('artifact root is missing iterator upstream issue evidence for actionable findings', upstreamDependencies.fanout);
 	}
 	const iteratorPr = optionalArtifact(artifacts, artifactSchemas, 'iterator_upstream_pull_request');
 	if (iteratorPr) {
 		assertProductionArtifact(iteratorPr, 'iterator_upstream_pull_request');
 		assertRealArtifactUrl(firstValue(iteratorPr, ['url', 'html_url', 'pr_url', 'pull_request.url']), 'iterator upstream PR URL');
+	} else if (actionableFindingCount > 0) {
+		failDependency('artifact root is missing iterator upstream PR evidence for actionable findings', upstreamDependencies.fanout);
 	}
 
 	const revalidation = optionalArtifact(artifacts, artifactSchemas, 'revalidation_attempt');
@@ -278,6 +300,8 @@ async function assertControllerArtifactProof(controllerRunSpec) {
 		assertProductionArtifact(revalidation, 'revalidation_attempt');
 		assert.ok(['pass', 'passed', 'succeeded', 'success'].includes(String(firstValue(revalidation, ['status', 'decision', 'result']) || '').toLowerCase()) || firstValue(revalidation, ['passed', 'success']) === true, 'revalidation evidence records success');
 		assertRealArtifactUrl(firstValue(revalidation, ['artifact_url', 'url', 'report_url']), 'revalidation artifact URL');
+	} else if (actionableFindingCount > 0 || iteratorPr) {
+		failDependency('artifact root is missing revalidation evidence after iterator changes', upstreamDependencies.fanout);
 	}
 
 	const reviewer = optionalArtifact(artifacts, artifactSchemas, 'reviewer_gate_outcome');
@@ -297,6 +321,9 @@ async function assertControllerArtifactProof(controllerRunSpec) {
 	if (pr) {
 		assertProductionArtifact(pr, 'static_site_pull_request');
 		assertRealArtifactUrl(firstValue(pr, ['url', 'html_url', 'pr_url', 'pull_request.url']), 'publication PR URL');
+		if (!revalidation) {
+			failDependency('artifact root is missing revalidation evidence for publication PR', upstreamDependencies.fanout);
+		}
 	}
 }
 
@@ -318,6 +345,10 @@ if (controllerResultPath || controllerRunSpecPath) {
 	await assertControllerArtifactProof(controllerRunSpec);
 	console.log('site generation loop semantic proof passed');
 	process.exit(0);
+}
+
+if (proofMode !== 'fixture') {
+	fail('legacy aggregate/plan proof is fixture-only; production proof requires controller-result, controller-run-spec, controller event, and Homeboy artifact evidence');
 }
 
 const aggregate = await readJsonFile(aggregatePath);

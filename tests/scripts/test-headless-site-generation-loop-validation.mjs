@@ -20,7 +20,11 @@ async function writeArtifact(name, artifact) {
 async function writeRealEvidenceArtifacts() {
 	await writeArtifact('static_site_candidate', {
 		schema: 'wp-site-generator/StaticSiteCandidate/v1',
-		runtime_preview: { url: 'https://github.com/chubes4/wp-site-generator/actions/runs/123/artifacts/runtime-preview' },
+		runtime_preview: {
+			url: 'https://playground.wordpress.net/?blueprint-url=https%3A%2F%2Fraw.githubusercontent.com%2Fchubes4%2Fwp-site-generator%2Fproof%2Fblueprint.json',
+			provider: 'wp-codebox',
+			runtime: 'wordpress-playground',
+		},
 		artifact_url: 'https://github.com/chubes4/wp-site-generator/actions/runs/123/artifacts/static-site-candidate',
 	});
 	await writeArtifact('import_validation_result', {

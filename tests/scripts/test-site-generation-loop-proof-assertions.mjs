@@ -287,7 +287,11 @@ try {
 
   await writeArtifact('static_site_candidate', {
     schema: 'wp-site-generator/StaticSiteCandidate/v1',
-    runtime_preview: { url: 'https://github.com/chubes4/wp-site-generator/actions/runs/123/artifacts/runtime-preview' },
+    runtime_preview: {
+      url: 'https://github.com/chubes4/wp-site-generator/actions/runs/123/artifacts/runtime-preview',
+      provider: 'wp-codebox',
+      runtime: 'wordpress-playground',
+    },
     artifact_url: 'https://github.com/chubes4/wp-site-generator/actions/runs/123/artifacts/static-site-candidate',
   });
   await writeArtifact('import_validation_result', {
@@ -320,6 +324,38 @@ try {
       conversion_findings: { passed: true },
       visual_parity: { passed: true },
     },
+  });
+  const githubArtifactPreviewProof = spawnSync(
+    process.execPath,
+    [
+      '.github/scripts/assert-site-generation-loop-proof.mjs',
+      '--controller-result',
+      controllerResultPath,
+      '--controller-run-spec',
+      controllerRunSpecPath,
+      '--controller-resume',
+      controllerResumePath,
+      '--controller-event',
+      controllerEventPath,
+      '--artifact-root',
+      artifactRoot,
+    ],
+    {
+      cwd: repoRoot,
+      encoding: 'utf8',
+    }
+  );
+  assert.notEqual(githubArtifactPreviewProof.status, 0, 'production controller proof rejects GitHub artifact URLs as preview evidence');
+  assert.match(githubArtifactPreviewProof.stderr || githubArtifactPreviewProof.stdout, /runtime preview URL is not a GitHub Actions artifact URL/);
+
+  await writeArtifact('static_site_candidate', {
+    schema: 'wp-site-generator/StaticSiteCandidate/v1',
+    runtime_preview: {
+      url: 'https://playground.wordpress.net/?blueprint-url=https%3A%2F%2Fraw.githubusercontent.com%2Fchubes4%2Fwp-site-generator%2Fproof%2Fblueprint.json',
+      provider: 'wp-codebox',
+      runtime: 'wordpress-playground',
+    },
+    artifact_url: 'https://github.com/chubes4/wp-site-generator/actions/runs/123/artifacts/static-site-candidate',
   });
   const controllerProof = spawnSync(
     process.execPath,
@@ -369,7 +405,7 @@ try {
     }
   );
   assert.notEqual(missingUrlProof.status, 0, 'controller proof fails when runtime preview URL evidence is absent');
-  assert.match(missingUrlProof.stderr || missingUrlProof.stdout, /runtime preview URL is an HTTP URL/);
+  assert.match(missingUrlProof.stderr || missingUrlProof.stdout, /runtime preview evidence is a structured envelope/);
 
   const workflow = await readFile(path.join(repoRoot, '.github/workflows/site-generation-loop.yml'), 'utf8');
   assert.match(workflow, /node \.github\/scripts\/build-homeboy-ssi-loop-controller\.mjs/, 'site generation workflow generates the repo-owned controller spec before materialization');
