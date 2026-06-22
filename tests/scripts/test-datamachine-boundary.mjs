@@ -72,10 +72,6 @@ const runtimeGlueFiles = candidateFiles.filter((file) => [
   '.github/scripts/lib/agent-runtime-api.mjs',
   '.github/scripts/lib/codebox-runtime-api.mjs',
   '.github/scripts/build-homeboy-ssi-loop-controller.mjs',
-].includes(file)).filter((file) => ![
-  '.github/scripts/lib/agent-runtime-api.mjs',
-  '.github/scripts/lib/codebox-runtime-api.mjs',
-  '.github/scripts/build-homeboy-ssi-loop-controller.mjs',
 ].includes(file));
 const runtimeBoundaryTerms = [
   ['agents', 'run-runtime-package'].join('/'),
@@ -84,18 +80,46 @@ const runtimeBoundaryTerms = [
   'data-machine',
   'datamachine',
   'DMC',
+  'artifact-handoff',
+  'evidence-artifact-envelope',
+  'wp-codebox',
   'playground.wordpress.net',
+  'provider-runtime-invocation-contract',
+  'record-tool-call-transcript',
+  'result_schemas',
+  'runner-workspace-capture',
+  'runner-workspace-capture-result',
+  'runner-workspace-command-result',
+  'runner-workspace-publication-result',
+  'tool-call-transcript',
 ];
-const runtimeBoundaryPattern = new RegExp(runtimeBoundaryTerms.map(escapeRegExp).join('|'), 'i');
+const publicCodeboxRuntimeAllowlist = {
+  '.github/scripts/lib/codebox-runtime-api.mjs': [
+    'wp-codebox/run-runtime-package',
+    'wp-codebox/runner-workspace-command',
+    'wp-codebox/runner-workspace-publish',
+    'wp-codebox/workspace-recipe/v1',
+    'wp-codebox/validation-artifact-envelope/v1',
+    'https://playground.wordpress.net/',
+    'wp-codebox',
+  ],
+  '.github/scripts/lib/agent-runtime-api.mjs': [
+    'wpCodebox',
+  ],
+};
 const runtimeBoundaryLeaks = [];
 for (const file of runtimeGlueFiles) {
-  const body = await readFile(path.join(repoRoot, file), 'utf8');
-  if (runtimeBoundaryPattern.test(body)) {
-    runtimeBoundaryLeaks.push(file);
+  let body = await readFile(path.join(repoRoot, file), 'utf8');
+  for (const allowed of publicCodeboxRuntimeAllowlist[file] || []) {
+    body = body.replaceAll(allowed, '');
+  }
+  const leakedTerms = runtimeBoundaryTerms.filter((term) => new RegExp(escapeRegExp(term), 'i').test(body));
+  if (leakedTerms.length > 0) {
+    runtimeBoundaryLeaks.push(`${file}: ${leakedTerms.join(', ')}`);
   }
 }
 
-assert.deepEqual(runtimeBoundaryLeaks, [], 'runtime glue must consume WPSG/Codebox facades instead of hard-coding Agents API, Data Machine, DMC, or Playground internals');
+assert.deepEqual(runtimeBoundaryLeaks, [], 'runtime glue must consume WPSG/Codebox public facades instead of hard-coding Agents API, Data Machine, DMC, Playground, or private Codebox internals');
 
 const manifestFiles = candidateFiles.filter((file) => file.startsWith('bundles/') && file.endsWith('/manifest.json'));
 for (const file of manifestFiles) {

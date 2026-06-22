@@ -3,31 +3,10 @@ export const codeboxRuntimeApi = Object.freeze({
 		id: 'wp-codebox',
 		provider: 'wp-codebox',
 	}),
-	providerRuntimeInvocation: Object.freeze({
-		schema: 'wp-codebox/provider-runtime-invocation-contract/v1',
-		version: 1,
-		runtimePackageAbility: 'wp-codebox/run-runtime-package',
-		tasks: Object.freeze({
-			workspaceCapture: 'wp-codebox.runner-workspace.capture',
-			workspaceCommand: 'wp-codebox.runner-workspace.command',
-			workspacePublish: 'wp-codebox.runner-workspace.publish',
-			toolCallTranscriptRecord: 'wp-codebox.tool-call-transcript.record',
-			artifactHandoff: 'wp-codebox.artifact-handoff',
-		}),
-		abilities: Object.freeze({
-			workspaceCapture: 'wp-codebox/runner-workspace-capture',
-			workspaceCommand: 'wp-codebox/runner-workspace-command',
-			workspacePublish: 'wp-codebox/runner-workspace-publish',
-			toolCallTranscriptRecord: 'wp-codebox/record-tool-call-transcript',
-			artifactHandoff: 'wp-codebox/handoff-artifacts',
-		}),
-		result_schemas: Object.freeze({
-			workspace_capture: 'wp-codebox/runner-workspace-capture-result/v1',
-			workspace_command: 'wp-codebox/runner-workspace-command-result/v1',
-			workspace_publication: 'wp-codebox/runner-workspace-publication-result/v1',
-			tool_call_transcript: 'wp-codebox/tool-call-transcript/v1',
-			evidence_artifact_envelope: 'wp-codebox/evidence-artifact-envelope/v1',
-		}),
+	publicAbilities: Object.freeze({
+		runRuntimePackage: 'wp-codebox/run-runtime-package',
+		workspaceCommand: 'wp-codebox/runner-workspace-command',
+		workspacePublish: 'wp-codebox/runner-workspace-publish',
 	}),
 	visualParity: Object.freeze({
 		outputRoot: 'visual-parity-artifacts',
@@ -40,10 +19,6 @@ export const codeboxRuntimeApi = Object.freeze({
 		playgroundUrl: 'https://playground.wordpress.net/',
 	}),
 });
-
-export function codeboxProviderRuntimeInvocationContract() {
-	return JSON.parse(JSON.stringify(codeboxRuntimeApi.providerRuntimeInvocation));
-}
 
 export function resolveVisualParityOutputRoot(env = process.env) {
 	return env.VISUAL_PARITY_OUTPUT || codeboxRuntimeApi.visualParity.outputRoot;
@@ -62,15 +37,15 @@ export function codeboxValidationArtifactEnvelopeSchema() {
 }
 
 export function codeboxRunRuntimePackageAbility() {
-	return codeboxRuntimeApi.providerRuntimeInvocation.runtimePackageAbility;
+	return codeboxRuntimeApi.publicAbilities.runRuntimePackage;
 }
 
 export function codeboxRunnerWorkspaceCommandAbility() {
-	return codeboxRuntimeApi.providerRuntimeInvocation.abilities.workspaceCommand;
+	return codeboxRuntimeApi.publicAbilities.workspaceCommand;
 }
 
 export function codeboxRunnerWorkspacePublishAbility() {
-	return codeboxRuntimeApi.providerRuntimeInvocation.abilities.workspacePublish;
+	return codeboxRuntimeApi.publicAbilities.workspacePublish;
 }
 
 export function codeboxRuntimeProviderProfile() {
