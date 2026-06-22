@@ -69,7 +69,7 @@ const runtimeGlueFiles = candidateFiles.filter((file) => [
   '.github/scripts/render-runtime-bundle-execution.mjs',
   '.github/scripts/lib/ci-runtime-utils.mjs',
   '.github/scripts/lib/agent-runtime-api.mjs',
-  '.github/scripts/lib/codebox-runtime-api.mjs',
+  '.github/scripts/lib/homeboy-runtime-api.mjs',
   '.github/scripts/build-homeboy-ssi-loop-controller.mjs',
 ].includes(file));
 const runtimeBoundaryTerms = [
@@ -106,7 +106,7 @@ for (const file of runtimeGlueFiles) {
   }
 }
 
-assert.deepEqual(runtimeBoundaryLeaks, [], 'runtime glue must consume WPSG/Codebox public facades instead of hard-coding Agents API, Data Machine, DMC, Playground, or private Codebox internals');
+assert.deepEqual(runtimeBoundaryLeaks, [], 'runtime glue must consume Homeboy runtime facades instead of hard-coding Agents API, Data Machine, DMC, Playground, or private provider internals');
 
 const manifestFiles = candidateFiles.filter((file) => file.startsWith('bundles/') && file.endsWith('/manifest.json'));
 for (const file of manifestFiles) {

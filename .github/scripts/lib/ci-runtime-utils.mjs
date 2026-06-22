@@ -30,16 +30,15 @@ export {
 
 export {
 	buildRuntimePreviewUrl,
-	codeboxProviderRuntimeInvocationContract,
-	codeboxRuntimeProviderProfile,
-	codeboxRuntimeApi,
-	codeboxRuntimeWorkspaceRecipeSchema,
-	codeboxRunnerWorkspaceCommandAbility,
-	codeboxRunnerWorkspacePublishAbility,
-	codeboxValidationArtifactEnvelopeSchema,
-	codeboxWorkspaceRecipeSchema,
+	homeboyRuntimeApi,
+	homeboyRuntimeProviderProfile,
 	resolveVisualParityOutputRoot,
-} from './codebox-runtime-api.mjs';
+	runtimeProviderInvocationContract,
+	runtimeValidationArtifactEnvelopeSchema,
+	runtimeWorkspaceCommandAbility,
+	runtimeWorkspacePublishAbility,
+	runtimeWorkspaceRecipeSchema,
+} from './homeboy-runtime-api.mjs';
 
 export function parseArgs(argv) {
 	const parsed = new Map();

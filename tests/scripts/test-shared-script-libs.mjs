@@ -5,15 +5,9 @@ import path from 'node:path';
 
 import { buildSingleAiWorkflow, buildSingleAiWorkflowStep } from '../../bundles/php-transformer-iterator-agent/scripts/lib/agent-ai-workflow.mjs';
 import {
-	codeboxProviderRuntimeInvocationContract,
-	codeboxRuntimeProviderProfile,
-	codeboxRuntimeWorkspaceRecipeSchema,
-	codeboxRunnerWorkspaceCommandAbility,
-	codeboxRunnerWorkspacePublishAbility,
-	codeboxValidationArtifactEnvelopeSchema,
-	codeboxWorkspaceRecipeSchema,
 	buildRuntimePreviewUrl,
 	envOrArg,
+	homeboyRuntimeProviderProfile,
 	numberValue,
 	parseArgs,
 	readAgentRuntimeContract,
@@ -25,6 +19,11 @@ import {
 	runtimePackageAbility,
 	runtimePackageProfile,
 	runtimePackageProfiles,
+	runtimeProviderInvocationContract,
+	runtimeValidationArtifactEnvelopeSchema,
+	runtimeWorkspaceCommandAbility,
+	runtimeWorkspacePublishAbility,
+	runtimeWorkspaceRecipeSchema,
 	runtimeToolProfileInputs,
 	runtimeToolProfiles,
 	runtimeWorkflowBuilderExecution,
@@ -67,16 +66,16 @@ assert.equal(numberValue('4'), 4);
 assert.equal(numberValue('bad', 9), 9);
 assert.equal(wordpressRuntimeApi.paths.wpLoadPhp, '/wordpress/wp-load.php', 'WordPress runtime path constants are centralized');
 assert.equal(wordpressRuntimePluginMountTarget(), '/wordpress/wp-content/plugins/wp-site-generator', 'WordPress plugin mount target is centralized');
-assert.equal(codeboxValidationArtifactEnvelopeSchema(codeboxFixtureEnv), codeboxFixtureEnv.HOMEBOY_AGENT_RUNTIME_VALIDATION_ARTIFACT_ENVELOPE_SCHEMA, 'validation artifact schema is consumed from the runtime contract');
-assert.deepEqual(codeboxProviderRuntimeInvocationContract(codeboxFixtureEnv), codeboxContractFixture, 'Codebox provider runtime invocation contract matches the upstream fixture');
-assert.equal(codeboxRunnerWorkspaceCommandAbility(codeboxFixtureEnv), codeboxContractFixture.abilities.workspaceCommand, 'Codebox workspace command ability is read from the provider runtime contract');
-assert.equal(codeboxRunnerWorkspacePublishAbility(codeboxFixtureEnv), codeboxContractFixture.abilities.workspacePublish, 'Codebox workspace publish ability is read from the provider runtime contract');
-assert.deepEqual(codeboxRuntimeProviderProfile(codeboxFixtureEnv), {
+assert.equal(runtimeValidationArtifactEnvelopeSchema(codeboxFixtureEnv), codeboxFixtureEnv.HOMEBOY_AGENT_RUNTIME_VALIDATION_ARTIFACT_ENVELOPE_SCHEMA, 'validation artifact schema is consumed from the runtime contract');
+assert.deepEqual(runtimeProviderInvocationContract(codeboxFixtureEnv), codeboxContractFixture, 'provider runtime invocation contract matches the upstream fixture');
+assert.equal(runtimeWorkspaceCommandAbility(codeboxFixtureEnv), codeboxContractFixture.abilities.workspaceCommand, 'workspace command ability is read from the provider runtime contract');
+assert.equal(runtimeWorkspacePublishAbility(codeboxFixtureEnv), codeboxContractFixture.abilities.workspacePublish, 'workspace publish ability is read from the provider runtime contract');
+assert.deepEqual(homeboyRuntimeProviderProfile(codeboxFixtureEnv), {
 	id: codeboxProvider,
 	provider: codeboxProvider,
 	workspaceCommandAbility: codeboxContractFixture.abilities.workspaceCommand,
 	workspacePublishAbility: codeboxContractFixture.abilities.workspacePublish,
-}, 'Codebox provider profile vocabulary is supplied by the runtime contract');
+}, 'provider profile vocabulary is supplied by the runtime contract');
 assert.equal(wordpressRuntimeBlueprintSchema(), 'https://playground.wordpress.net/blueprint-schema.json');
 assert.equal(wordpressRuntimeSettingsDescriptor().settings_fields.blueprint, 'wordpress_runtime_blueprint');
 assert.deepEqual(wordpressRuntimeSettingsFields(), { blueprint: 'wordpress_runtime_blueprint', workloads: 'wordpress_runtime_workloads' });
@@ -91,8 +90,7 @@ assert.equal(runtimePackageProfile.runtimeTaskAbility, '', 'runtime package prof
 assert.equal(runtimePackageAbilityId, genericRuntimeEnv.HOMEBOY_AGENT_RUNTIME_TASK_ABILITY, 'runtime package ability is read from the runtime env contract');
 assert.equal(resolveVisualParityOutputRoot({}), 'visual-parity-artifacts');
 assert.equal(resolveVisualParityOutputRoot({ VISUAL_PARITY_OUTPUT: 'custom-artifacts' }), 'custom-artifacts');
-assert.equal(codeboxRuntimeWorkspaceRecipeSchema(codeboxFixtureEnv), codeboxFixtureEnv.HOMEBOY_AGENT_RUNTIME_WORKSPACE_RECIPE_SCHEMA);
-assert.equal(codeboxWorkspaceRecipeSchema(codeboxFixtureEnv), codeboxFixtureEnv.HOMEBOY_AGENT_RUNTIME_WORKSPACE_RECIPE_SCHEMA);
+assert.equal(runtimeWorkspaceRecipeSchema(codeboxFixtureEnv), codeboxFixtureEnv.HOMEBOY_AGENT_RUNTIME_WORKSPACE_RECIPE_SCHEMA);
 assert.equal(buildRuntimePreviewUrl({ evidenceRefs: [{ preview_url: 'https://example.com/preview' }] }), 'https://example.com/preview');
 assert.equal(buildRuntimePreviewUrl({ evidenceRefs: { preview_url: 'https://example.com/single-preview' } }), 'https://example.com/single-preview');
 assert.equal(buildRuntimePreviewUrl({ env: { HOMEBOY_RUNTIME_PREVIEW_URL: 'https://example.com/runtime-preview' } }), 'https://example.com/runtime-preview');
@@ -112,8 +110,8 @@ assert.deepEqual(runtimePackageProfiles(defaultRuntimeContract), {
 }, 'runtime package profiles derive from the generic runtime package API');
 const workspaceIterationInputs = runtimeToolProfileInputs('workspace-iteration', readAgentRuntimeContract({
 	...genericRuntimeEnv,
-	HOMEBOY_AGENT_RUNTIME_WORKSPACE_COMMAND_ABILITY: codeboxRunnerWorkspaceCommandAbility(codeboxFixtureEnv),
-	HOMEBOY_AGENT_RUNTIME_WORKSPACE_PUBLISH_ABILITY: codeboxRunnerWorkspacePublishAbility(codeboxFixtureEnv),
+	HOMEBOY_AGENT_RUNTIME_WORKSPACE_COMMAND_ABILITY: runtimeWorkspaceCommandAbility(codeboxFixtureEnv),
+	HOMEBOY_AGENT_RUNTIME_WORKSPACE_PUBLISH_ABILITY: runtimeWorkspacePublishAbility(codeboxFixtureEnv),
 }));
 const workspaceIterationTools = JSON.parse(workspaceIterationInputs.ability_tools);
 const workspaceIterationRequirements = JSON.parse(workspaceIterationInputs.ability_requirements);
@@ -131,16 +129,16 @@ assert.deepEqual(runtimeToolProfiles.workspaceIteration.tools.map(([name]) => na
 	'create_github_issue',
 ]);
 assert.deepEqual(workspaceIterationTools.map((tool) => tool.name), runtimeToolProfiles.workspaceIteration.tools.map(([name]) => name));
-assert.deepEqual(workspaceIterationRequirements, [runtimePackageAbilityId, codeboxRunnerWorkspaceCommandAbility(codeboxFixtureEnv), codeboxRunnerWorkspacePublishAbility(codeboxFixtureEnv)]);
-assert.deepEqual(runtimeToolProfileInputs('workspace-publication', readAgentRuntimeContract({ ...genericRuntimeEnv, HOMEBOY_AGENT_RUNTIME_WORKSPACE_PUBLISH_ABILITY: codeboxRunnerWorkspacePublishAbility(codeboxFixtureEnv) })), {
-	ability_requirements: JSON.stringify([runtimePackageAbilityId, codeboxRunnerWorkspacePublishAbility(codeboxFixtureEnv)]),
+assert.deepEqual(workspaceIterationRequirements, [runtimePackageAbilityId, runtimeWorkspaceCommandAbility(codeboxFixtureEnv), runtimeWorkspacePublishAbility(codeboxFixtureEnv)]);
+assert.deepEqual(runtimeToolProfileInputs('workspace-publication', readAgentRuntimeContract({ ...genericRuntimeEnv, HOMEBOY_AGENT_RUNTIME_WORKSPACE_PUBLISH_ABILITY: runtimeWorkspacePublishAbility(codeboxFixtureEnv) })), {
+	ability_requirements: JSON.stringify([runtimePackageAbilityId, runtimeWorkspacePublishAbility(codeboxFixtureEnv)]),
 	ability_tools: '[]',
 });
 assert.deepEqual(runtimeWorkflowInputs('workspace-iteration', readAgentRuntimeContract({
 	...genericRuntimeEnv,
 	HOMEBOY_AGENT_RUNTIME_PROVIDER: codeboxProvider,
-	HOMEBOY_AGENT_RUNTIME_WORKSPACE_COMMAND_ABILITY: codeboxRunnerWorkspaceCommandAbility(codeboxFixtureEnv),
-	HOMEBOY_AGENT_RUNTIME_WORKSPACE_PUBLISH_ABILITY: codeboxRunnerWorkspacePublishAbility(codeboxFixtureEnv),
+	HOMEBOY_AGENT_RUNTIME_WORKSPACE_COMMAND_ABILITY: runtimeWorkspaceCommandAbility(codeboxFixtureEnv),
+	HOMEBOY_AGENT_RUNTIME_WORKSPACE_PUBLISH_ABILITY: runtimeWorkspacePublishAbility(codeboxFixtureEnv),
 })), {
 	runtime_provider: codeboxProvider,
 	runtime_profile: 'wpsg-agent-runtime-package',
@@ -151,12 +149,12 @@ assert.deepEqual(runtimeWorkflowInputs('workspace-iteration', readAgentRuntimeCo
 assert.deepEqual(runtimeWorkflowInputs('workspace-publication', readAgentRuntimeContract({
 	...genericRuntimeEnv,
 	HOMEBOY_AGENT_RUNTIME_PROVIDER: codeboxProvider,
-	HOMEBOY_AGENT_RUNTIME_WORKSPACE_PUBLISH_ABILITY: codeboxRunnerWorkspacePublishAbility(codeboxFixtureEnv),
+	HOMEBOY_AGENT_RUNTIME_WORKSPACE_PUBLISH_ABILITY: runtimeWorkspacePublishAbility(codeboxFixtureEnv),
 })), {
 	runtime_provider: codeboxProvider,
 	runtime_profile: 'wpsg-agent-runtime-package',
 	runtime_profiles: JSON.stringify(runtimePackageProfiles(readAgentRuntimeContract({ ...genericRuntimeEnv, HOMEBOY_AGENT_RUNTIME_PROVIDER: codeboxProvider }))),
-	ability_requirements: JSON.stringify([runtimePackageAbilityId, codeboxRunnerWorkspacePublishAbility(codeboxFixtureEnv)]),
+	ability_requirements: JSON.stringify([runtimePackageAbilityId, runtimeWorkspacePublishAbility(codeboxFixtureEnv)]),
 	ability_tools: '[]',
 }, 'publication workload profile can consume externally supplied publish wrappers');
 assert.deepEqual(runtimeToolProfiles.workspacePublication.tools, []);
@@ -209,8 +207,8 @@ const configuredRuntimeContract = readAgentRuntimeContract({
 	HOMEBOY_AGENT_RUNTIME_BACKEND: 'codebox',
 	HOMEBOY_AGENT_RUNTIME_PROVIDER_ID: 'openai',
 	HOMEBOY_AGENT_RUNTIME_SELECTOR: 'sandbox',
-	HOMEBOY_AGENT_RUNTIME_WORKSPACE_COMMAND_ABILITY: codeboxRunnerWorkspaceCommandAbility(codeboxFixtureEnv),
-	HOMEBOY_AGENT_RUNTIME_WORKSPACE_PUBLISH_ABILITY: codeboxRunnerWorkspacePublishAbility(codeboxFixtureEnv),
+	HOMEBOY_AGENT_RUNTIME_WORKSPACE_COMMAND_ABILITY: runtimeWorkspaceCommandAbility(codeboxFixtureEnv),
+	HOMEBOY_AGENT_RUNTIME_WORKSPACE_PUBLISH_ABILITY: runtimeWorkspacePublishAbility(codeboxFixtureEnv),
 });
 assert.deepEqual(runtimePackageProfiles(configuredRuntimeContract)['wpsg-agent-runtime-package'].runtime_selection, {
 	backend: 'codebox',
@@ -218,9 +216,9 @@ assert.deepEqual(runtimePackageProfiles(configuredRuntimeContract)['wpsg-agent-r
 	selector: 'sandbox',
 }, 'runtime backend/provider/selector are config inputs, not WPSG constants');
 assert.deepEqual(runtimeToolProfileInputs('workspace-publication', configuredRuntimeContract), {
-	ability_requirements: JSON.stringify([runtimePackageAbilityId, codeboxRunnerWorkspacePublishAbility(codeboxFixtureEnv)]),
+	ability_requirements: JSON.stringify([runtimePackageAbilityId, runtimeWorkspacePublishAbility(codeboxFixtureEnv)]),
 	ability_tools: '[]',
-}, 'Codebox-compatible abilities can still be supplied externally');
+}, 'provider-compatible abilities can still be supplied externally');
 
 const workflow = buildSingleAiWorkflow({
 	step: buildSingleAiWorkflowStep({

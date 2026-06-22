@@ -5,7 +5,7 @@ import { spawn } from 'node:child_process';
 import { readFile } from 'node:fs/promises';
 import path from 'node:path';
 
-import { codeboxValidationArtifactEnvelopeSchema } from '../../.github/scripts/lib/ci-runtime-utils.mjs';
+import { runtimeValidationArtifactEnvelopeSchema } from '../../.github/scripts/lib/ci-runtime-utils.mjs';
 
 const repoRoot = path.resolve(import.meta.dirname, '../..');
 const renderer = path.join(repoRoot, '.github/scripts/render-ssi-validation-report.mjs');
@@ -57,7 +57,7 @@ const bench = {
 								},
 							},
 							validation_artifact_envelope: {
-								schema: codeboxValidationArtifactEnvelopeSchema({ HOMEBOY_AGENT_RUNTIME_VALIDATION_ARTIFACT_ENVELOPE_SCHEMA: validationArtifactSchema }),
+								schema: runtimeValidationArtifactEnvelopeSchema({ HOMEBOY_AGENT_RUNTIME_VALIDATION_ARTIFACT_ENVELOPE_SCHEMA: validationArtifactSchema }),
 								status: 'passed',
 								validation_hash: 'codebox-validation-fixture',
 								artifacts: [{ name: 'import-report.json' }, { name: 'visual-summary.json' }],

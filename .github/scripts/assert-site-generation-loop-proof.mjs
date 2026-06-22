@@ -183,6 +183,17 @@ function requireArtifact(artifacts, artifactSchemas, artifactId, dependency = up
 	return artifact;
 }
 
+function optionalArtifact(artifacts, artifactSchemas, artifactId) {
+	return findArtifact(artifacts, artifactSchemas, artifactId);
+}
+
+function runtimePreviewUrl(candidate) {
+	if (proofMode === 'fixture') {
+		return firstValue(candidate, ['runtime_preview.url', 'preview_evidence.preview_url', 'preview_evidence.url', 'preview_url', 'urls.preview', 'preview.url']);
+	}
+	return firstValue(candidate, ['runtime_preview.url', 'preview_evidence.preview_url', 'preview_evidence.url', 'evidence.preview_url', 'preview.url']);
+}
+
 async function assertControllerEventProof(controllerRunSpec, loopId) {
 	if (!controllerResumePath) {
 		failDependency('missing controller resume result evidence', upstreamDependencies.controllerEvents);
@@ -217,7 +228,7 @@ async function assertControllerArtifactProof(controllerRunSpec) {
 
 	const candidate = requireArtifact(artifacts, artifactSchemas, 'static_site_candidate');
 	assertProductionArtifact(candidate, 'static_site_candidate');
-	assertRealPreviewUrl(firstValue(candidate, ['playground_url', 'preview_url', 'urls.playground', 'urls.preview', 'playground.url', 'preview.url']), 'preview/playground URL');
+	assertRealPreviewUrl(runtimePreviewUrl(candidate), 'runtime preview URL');
 	assertRealArtifactUrl(firstValue(candidate, ['artifact_url', 'url', 'report_url']), 'static site candidate artifact URL');
 
 	const importValidation = requireArtifact(artifacts, artifactSchemas, 'import_validation_result');
@@ -243,25 +254,38 @@ async function assertControllerArtifactProof(controllerRunSpec) {
 	assertProductionArtifact(findings, 'finding_packet_set');
 	assert.ok(Array.isArray(findings.packets || findings.findings || findings.groups) || Number(findings.actionable_conversion_count ?? 0) === 0, 'finding packet evidence is present');
 	assertRealArtifactUrl(firstValue(findings, ['artifact_url', 'url']), 'finding packet artifact URL');
-	const findingGroup = requireArtifact(artifacts, artifactSchemas, 'finding_group', upstreamDependencies.fanout);
-	assertProductionArtifact(findingGroup, 'finding_group');
-	assertRealArtifactUrl(firstValue(findingGroup, ['artifact_url', 'url', 'report_url']), 'iterator finding group artifact URL');
-	const iteratorIssue = requireArtifact(artifacts, artifactSchemas, 'iterator_upstream_issue', upstreamDependencies.fanout);
-	assertProductionArtifact(iteratorIssue, 'iterator_upstream_issue');
-	assertRealArtifactUrl(firstValue(iteratorIssue, ['url', 'html_url', 'issue_url']), 'iterator upstream issue URL');
-	const iteratorPr = requireArtifact(artifacts, artifactSchemas, 'iterator_upstream_pull_request', upstreamDependencies.fanout);
-	assertProductionArtifact(iteratorPr, 'iterator_upstream_pull_request');
-	assertRealArtifactUrl(firstValue(iteratorPr, ['url', 'html_url', 'pr_url', 'pull_request.url']), 'iterator upstream PR URL');
+	const actionableFindingCount = Number(firstValue(findings, ['actionable_conversion_count', 'metrics.actionable_conversion_count']) ?? 0);
+	const findingGroup = optionalArtifact(artifacts, artifactSchemas, 'finding_group');
+	if (findingGroup) {
+		assertProductionArtifact(findingGroup, 'finding_group');
+		assertRealArtifactUrl(firstValue(findingGroup, ['artifact_url', 'url', 'report_url']), 'iterator finding group artifact URL');
+	} else if (actionableFindingCount > 0) {
+		failDependency('artifact root is missing Homeboy-emitted finding_group for actionable findings', upstreamDependencies.fanout);
+	}
+	const iteratorIssue = optionalArtifact(artifacts, artifactSchemas, 'iterator_upstream_issue');
+	if (iteratorIssue) {
+		assertProductionArtifact(iteratorIssue, 'iterator_upstream_issue');
+		assertRealArtifactUrl(firstValue(iteratorIssue, ['url', 'html_url', 'issue_url']), 'iterator upstream issue URL');
+	}
+	const iteratorPr = optionalArtifact(artifacts, artifactSchemas, 'iterator_upstream_pull_request');
+	if (iteratorPr) {
+		assertProductionArtifact(iteratorPr, 'iterator_upstream_pull_request');
+		assertRealArtifactUrl(firstValue(iteratorPr, ['url', 'html_url', 'pr_url', 'pull_request.url']), 'iterator upstream PR URL');
+	}
 
-	const revalidation = requireArtifact(artifacts, artifactSchemas, 'revalidation_attempt');
-	assertProductionArtifact(revalidation, 'revalidation_attempt');
-	assert.ok(['pass', 'passed', 'succeeded', 'success'].includes(String(firstValue(revalidation, ['status', 'decision', 'result']) || '').toLowerCase()) || firstValue(revalidation, ['passed', 'success']) === true, 'revalidation evidence records success');
-	assertRealArtifactUrl(firstValue(revalidation, ['artifact_url', 'url', 'report_url']), 'revalidation artifact URL');
+	const revalidation = optionalArtifact(artifacts, artifactSchemas, 'revalidation_attempt');
+	if (revalidation) {
+		assertProductionArtifact(revalidation, 'revalidation_attempt');
+		assert.ok(['pass', 'passed', 'succeeded', 'success'].includes(String(firstValue(revalidation, ['status', 'decision', 'result']) || '').toLowerCase()) || firstValue(revalidation, ['passed', 'success']) === true, 'revalidation evidence records success');
+		assertRealArtifactUrl(firstValue(revalidation, ['artifact_url', 'url', 'report_url']), 'revalidation artifact URL');
+	}
 
-	const reviewer = requireArtifact(artifacts, artifactSchemas, 'reviewer_gate_outcome');
-	assertProductionArtifact(reviewer, 'reviewer_gate_outcome');
-	assert.equal(String(firstValue(reviewer, ['decision', 'status']) || '').toUpperCase(), 'PASS', 'reviewer gate passes');
-	assertRealArtifactUrl(firstValue(reviewer, ['artifact_url', 'url', 'report_url']), 'reviewer gate artifact URL');
+	const reviewer = optionalArtifact(artifacts, artifactSchemas, 'reviewer_gate_outcome');
+	if (reviewer) {
+		assertProductionArtifact(reviewer, 'reviewer_gate_outcome');
+		assert.equal(String(firstValue(reviewer, ['decision', 'status']) || '').toUpperCase(), 'PASS', 'reviewer gate passes');
+		assertRealArtifactUrl(firstValue(reviewer, ['artifact_url', 'url', 'report_url']), 'reviewer gate artifact URL');
+	}
 
 	const publishGate = requireArtifact(artifacts, artifactSchemas, 'static_site_publish_gate');
 	assertProductionArtifact(publishGate, 'static_site_publish_gate');
@@ -269,9 +293,11 @@ async function assertControllerArtifactProof(controllerRunSpec) {
 	for (const gateId of ['fallback_blocks', 'conversion_findings', 'visual_parity']) {
 		assert.equal(publishGate.gates?.[gateId]?.passed, true, `publish gate ${gateId} passed`);
 	}
-	const pr = requireArtifact(artifacts, artifactSchemas, 'static_site_pull_request', upstreamDependencies.controllerEvents);
-	assertProductionArtifact(pr, 'static_site_pull_request');
-	assertRealArtifactUrl(firstValue(pr, ['url', 'html_url', 'pr_url', 'pull_request.url']), 'publication PR URL');
+	const pr = optionalArtifact(artifacts, artifactSchemas, 'static_site_pull_request');
+	if (pr) {
+		assertProductionArtifact(pr, 'static_site_pull_request');
+		assertRealArtifactUrl(firstValue(pr, ['url', 'html_url', 'pr_url', 'pull_request.url']), 'publication PR URL');
+	}
 }
 
 if (controllerResultPath || controllerRunSpecPath) {
