@@ -70,6 +70,10 @@ on:
       runtime_task_ability:
         description: Runtime package task ability supplied by the upstream runtime contract.
         required: true
+      runtime_backend:
+        description: Homeboy runtime backend used for controller dispatch defaults.
+        required: true
+        default: wp-codebox
 
 permissions:
   contents: write
@@ -96,6 +100,7 @@ jobs:
       WEBSITE_FLOW_SLUG: ${{ inputs.website_flow_slug }}
       HOMEBOY_AGENT_RUNTIME_MODEL: ${{ inputs.model }}
       HOMEBOY_AGENT_RUNTIME_PROVIDER_PROFILE: ${{ inputs.runtime_provider_profile }}
+      HOMEBOY_AGENT_RUNTIME_BACKEND: ${{ inputs.runtime_backend }}
       HOMEBOY_AGENT_RUNTIME_TASK_ABILITY: ${{ inputs.runtime_task_ability }}
       HOMEBOY_AGENT_RUNTIME_COMPONENTS: ${{ inputs.runtime_components }}
       HOMEBOY_AGENT_RUNTIME_PROVIDER_PLUGINS: ${{ inputs.runtime_provider_plugins }}
@@ -139,7 +144,7 @@ jobs:
         run: |
           set -euo pipefail
           inputs_path="$(node .github/scripts/build-homeboy-controller-run-inputs.mjs)"
-          homeboy agent-task controller run-from-spec "@$HOMEBOY_CONTROLLER_SPEC_PATH" --inputs "@$inputs_path" --policy-result "@$HOMEBOY_POLICY_RESULT_PATH" --max-actions 100 > "$HOMEBOY_CONTROLLER_RUN_FROM_SPEC_RESULT_PATH"
+          homeboy agent-task controller run-from-spec "@$HOMEBOY_CONTROLLER_SPEC_PATH" --inputs "@$inputs_path" --policy-result "@$HOMEBOY_POLICY_RESULT_PATH" --max-actions 100 --dispatch-backend "$HOMEBOY_AGENT_RUNTIME_BACKEND" > "$HOMEBOY_CONTROLLER_RUN_FROM_SPEC_RESULT_PATH"
           jq '.materialization // .data.materialization // .value.materialization' "$HOMEBOY_CONTROLLER_RUN_FROM_SPEC_RESULT_PATH" > "$HOMEBOY_CONTROLLER_MATERIALIZATION_RESULT_PATH"
           jq '.data.spec // .value.spec // .spec' "$HOMEBOY_CONTROLLER_MATERIALIZATION_RESULT_PATH" > "$HOMEBOY_CONTROLLER_RUN_SPEC_PATH"
           jq empty "$HOMEBOY_CONTROLLER_RUN_SPEC_PATH"
