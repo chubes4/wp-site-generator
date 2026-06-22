@@ -107,9 +107,9 @@ export function buildSsiPreviewBlueprint({ site, source, lane = 'wordpress', man
 	}, manifest);
 }
 
-export function buildWpCodeboxRecipe({ blueprint, mounts = [], workflowSteps = [], artifactsDirectory = '' } = {}) {
+export function buildWpCodeboxRecipe({ blueprint, mounts = [], workflowSteps = [], artifactsDirectory = '', env = process.env } = {}) {
 	return {
-		schema: codeboxWorkspaceRecipeSchema(),
+		schema: codeboxWorkspaceRecipeSchema(env),
 		runtime: {
 			wp: 'latest',
 			blueprint,

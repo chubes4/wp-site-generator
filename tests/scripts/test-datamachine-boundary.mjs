@@ -94,18 +94,6 @@ const runtimeBoundaryTerms = [
   'tool-call-transcript',
 ];
 const publicCodeboxRuntimeAllowlist = {
-  '.github/scripts/lib/codebox-runtime-api.mjs': [
-    'wp-codebox/run-runtime-package',
-    'wp-codebox/runner-workspace-command',
-    'wp-codebox/runner-workspace-publish',
-    'wp-codebox/workspace-recipe/v1',
-    'wp-codebox/validation-artifact-envelope/v1',
-    'https://playground.wordpress.net/',
-    'wp-codebox',
-  ],
-  '.github/scripts/lib/agent-runtime-api.mjs': [
-    'wpCodebox',
-  ],
 };
 const runtimeBoundaryLeaks = [];
 for (const file of runtimeGlueFiles) {

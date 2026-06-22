@@ -6,7 +6,8 @@ import { spawnSync } from 'node:child_process';
 import { runtimePackageAbility } from '../../.github/scripts/lib/ci-runtime-utils.mjs';
 
 const repoRoot = path.resolve(new URL('../..', import.meta.url).pathname);
-const runtimePackageAbilityId = runtimePackageAbility();
+const runtimeContractEnv = { HOMEBOY_AGENT_RUNTIME_TASK_ABILITY: 'runtime-package/run' };
+const runtimePackageAbilityId = runtimePackageAbility(runtimeContractEnv);
 const tempDir = await mkdtemp(path.join(tmpdir(), 'wpsg-ssi-native-loop-'));
 const settingsPath = path.join(tempDir, 'settings.json');
 const sourceStaticSiteDir = path.join(tempDir, 'issue-123-native-loop');
@@ -21,6 +22,7 @@ const controllerPath = path.join(tempDir, 'controller.json');
 const controllerResult = spawnSync(process.execPath, ['.github/scripts/build-homeboy-ssi-loop-controller.mjs', '--output', controllerPath], {
 	cwd: repoRoot,
 	encoding: 'utf8',
+	env: { ...process.env, ...runtimeContractEnv },
 });
 assert.equal(controllerResult.status, 0, controllerResult.stderr || controllerResult.stdout);
 
@@ -114,6 +116,7 @@ const previewPath = path.join(tempDir, 'preview.json');
 const previewResult = spawnSync(process.execPath, ['.github/scripts/build-static-preview-blueprint.mjs', '--site', 'issue-123-native-loop', '--source-repo', 'chubes4/wp-site-generator', '--source-head-sha', 'a'.repeat(40), '--output', previewPath], {
 	cwd: repoRoot,
 	encoding: 'utf8',
+	env: { ...process.env, HOMEBOY_PREVIEW_EVIDENCE_REFS: JSON.stringify([{ preview_url: 'https://preview.example.test/issue-123-native-loop' }]) },
 });
 assert.equal(previewResult.status, 0, previewResult.stderr || previewResult.stdout);
 const previewPayload = JSON.parse(await readFile(previewPath, 'utf8'));
@@ -121,6 +124,7 @@ const previewSourceStep = previewPayload.blueprint.steps.find((step) => step.ste
 assert.equal(previewSourceStep.filesTree.ref, 'a'.repeat(40), 'preview blueprint consumes immutable head SHA when available');
 assert.equal(previewSourceStep.filesTree.refType, 'commit', 'preview blueprint records commit ref type for immutable previews');
 assert.equal(previewPayload.source.provenance, 'immutable-head-sha', 'preview output records immutable provenance');
+assert.equal(previewPayload.url, 'https://preview.example.test/issue-123-native-loop', 'preview output consumes runtime preview evidence refs');
 
 const fallbackPreviewResult = spawnSync(process.execPath, ['.github/scripts/build-static-preview-blueprint.mjs', '--site', 'issue-123-native-loop', '--output', path.join(tempDir, 'preview-fallback.json')], {
 	cwd: repoRoot,
