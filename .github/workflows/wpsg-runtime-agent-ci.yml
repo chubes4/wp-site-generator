@@ -82,7 +82,7 @@ jobs:
   workspace-iteration:
     needs: runtime-contracts
     if: inputs.runtime_workload_profile == 'workspace-iteration'
-    uses: Extra-Chill/homeboy-extensions/.github/workflows/runtime-agent-ci.yml@main
+    uses: Extra-Chill/homeboy-extensions/.github/workflows/runtime-agent-ci.yml@dc02521a3505e100b9a9c91ce3944c0891c090f3
     with:
       runtime_provider: ${{ inputs.runtime_provider || needs.runtime-contracts.outputs.runtime_provider }}
       model: ${{ inputs.model }}
@@ -98,7 +98,7 @@ jobs:
   workspace-publication:
     needs: runtime-contracts
     if: inputs.runtime_workload_profile == 'workspace-publication'
-    uses: Extra-Chill/homeboy-extensions/.github/workflows/runtime-agent-ci.yml@main
+    uses: Extra-Chill/homeboy-extensions/.github/workflows/runtime-agent-ci.yml@dc02521a3505e100b9a9c91ce3944c0891c090f3
     with:
       runtime_provider: ${{ inputs.runtime_provider || needs.runtime-contracts.outputs.runtime_provider }}
       model: ${{ inputs.model }}

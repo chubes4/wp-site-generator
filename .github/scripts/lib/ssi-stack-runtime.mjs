@@ -42,7 +42,7 @@ export function buildSsiValidationSettings({ site, lane = 'wordpress', manifest 
 	};
 }
 
-export function buildSsiPreviewSource({ repo = 'chubes4/wp-site-generator', sha = '', branch = 'main' } = {}) {
+export function buildSsiPreviewSource({ repo = 'chubes4/wp-site-generator', sha = '', tag = '', artifactSource = '' } = {}) {
 	if (sha) {
 		return {
 			repo,
@@ -51,14 +51,24 @@ export function buildSsiPreviewSource({ repo = 'chubes4/wp-site-generator', sha 
 			provenance: 'immutable-head-sha',
 		};
 	}
+	if (tag) {
+		return {
+			repo,
+			ref: tag,
+			refType: 'tag',
+			provenance: 'immutable-tag',
+		};
+	}
+	if (artifactSource) {
+		return {
+			repo,
+			artifactSource,
+			refType: 'artifact',
+			provenance: 'immutable-artifact-source',
+		};
+	}
 
-	return {
-		repo,
-		ref: branch,
-		refType: 'branch',
-		provenance: 'mutable-branch-fallback',
-		fallback_reason: 'SOURCE_HEAD_SHA was not provided, so Playground preview must use SOURCE_BRANCH/BRANCH.',
-	};
+	throw new Error('SOURCE_HEAD_SHA, SOURCE_TAG, or SOURCE_ARTIFACT_SOURCE is required for deterministic Playground preview provenance.');
 }
 
 export function buildSsiPreviewBlueprint({ site, source, lane = 'wordpress', manifest = buildSsiStackManifest() } = {}) {
@@ -69,7 +79,10 @@ export function buildSsiPreviewBlueprint({ site, source, lane = 'wordpress', man
 			{
 				step: 'writeFiles',
 				writeToPath: '/tmp/static-site',
-				filesTree: {
+				filesTree: source.artifactSource ? {
+					resource: 'url',
+					url: source.artifactSource,
+				} : {
 					resource: 'git:directory',
 					url: `https://github.com/${source.repo}`,
 					ref: source.ref,
