@@ -190,7 +190,7 @@ This whole loop runs **without a hosted WordPress site**. PHP runs as WebAssembl
 
 The PR target label gates validation. `target:wordpress` marks content-shaped WordPress imports; `target:woocommerce` marks commerce-shaped imports and enables the WooCommerce stack. The build agent still emits static source files; CI owns the WordPress import context.
 
-Playground preview links use the PR head SHA and source repository when that immutable provenance is available. If a SHA is unavailable, the generated preview payload records the branch fallback and why it was used.
+Playground preview links require immutable provenance from the PR head SHA, a source tag, or an artifact source. Preview generation fails closed instead of falling back to a mutable branch ref.
 
 The Homeboy WordPress extension capability that makes this possible (`wordpress_runtime_workloads`) is generic. SSI is just one consumer; any WordPress plugin can be exercised the same way in CI. The validation workflow refreshes the reusable harness scripts from `origin/main` before running, so older generated-site branches get the current validation behavior without rebasing their source files.
 

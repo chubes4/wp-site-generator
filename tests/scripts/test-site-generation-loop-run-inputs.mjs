@@ -48,12 +48,43 @@ assert.throws(() => validateRefPolicy({
 		homeboy: { id: 'homeboy', input_ref: 'main', sha: 'a'.repeat(40), ref_type: 'commit' },
 	},
 }), /production ref policy requires immutable dependency refs/, 'production mode rejects mutable dependency inputs');
+assert.throws(() => validateRefPolicy({
+	policy: 'production',
+	dependencyRefs: {
+		homeboy: { id: 'homeboy', input_ref: 'a'.repeat(40), sha: 'a'.repeat(40), ref_type: 'commit' },
+	},
+	source: { ref_type: 'commit', sha: 'a'.repeat(40), provenance: 'git-head' },
+}), /requires SOURCE_HEAD_SHA/, 'production mode rejects source provenance without SOURCE_HEAD_SHA');
 assert.doesNotThrow(() => validateRefPolicy({
 	policy: 'production',
 	dependencyRefs: {
 		homeboy: { id: 'homeboy', input_ref: 'a'.repeat(40), sha: 'a'.repeat(40), ref_type: 'commit' },
 	},
-}), 'production mode accepts immutable dependency inputs');
+}), 'production mode accepts immutable dependency inputs without source policy context');
+for (const source of [
+	{ ref_type: 'commit', sha: 'a'.repeat(40), provenance: 'source-head-sha' },
+	{ ref_type: 'tag', ref: 'v1.2.3', provenance: 'source-tag' },
+	{ ref_type: 'artifact', artifact_source: 'https://example.com/static-site-candidate.json', provenance: 'source-artifact' },
+]) {
+	assert.doesNotThrow(() => validateRefPolicy({
+		policy: 'production',
+		dependencyRefs: {
+			homeboy: { id: 'homeboy', input_ref: 'v1.2.3', sha: 'a'.repeat(40), ref_type: 'tag' },
+		},
+		source,
+	}), `production mode accepts pinned ${source.ref_type} source`);
+}
+assert.throws(() => buildSiteGenerationLoopRunContext({
+	env: {
+		WPSG_REF_POLICY: 'production',
+		WPSG_REPLAY_ID: 'local-replay-123',
+		WPSG_RANDOMNESS_SEED: 'seed-123',
+		GITHUB_REPOSITORY: 'chubes4/wp-site-generator',
+		HOMEBOY_REF: 'main',
+		HOMEBOY_EXTENSIONS_REF: 'main',
+	},
+	root: repoRoot,
+}), /production ref policy requires immutable dependency refs/, 'production loop inputs fail closed on mutable runtime refs');
 
 const result = spawnSync(process.execPath, [path.join(repoRoot, '.github/scripts/build-homeboy-controller-run-inputs.mjs')], {
 	cwd: repoRoot,

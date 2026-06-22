@@ -111,27 +111,23 @@ assert.deepEqual(
 );
 
 const previewPath = path.join(tempDir, 'preview.json');
-const previewResult = spawnSync(process.execPath, ['.github/scripts/build-static-preview-blueprint.mjs', '--site', 'issue-123-native-loop', '--source-repo', 'chubes4/wp-site-generator', '--source-head-sha', 'abc1234', '--branch', 'feature/site', '--output', previewPath], {
+const previewResult = spawnSync(process.execPath, ['.github/scripts/build-static-preview-blueprint.mjs', '--site', 'issue-123-native-loop', '--source-repo', 'chubes4/wp-site-generator', '--source-head-sha', 'a'.repeat(40), '--output', previewPath], {
 	cwd: repoRoot,
 	encoding: 'utf8',
 });
 assert.equal(previewResult.status, 0, previewResult.stderr || previewResult.stdout);
 const previewPayload = JSON.parse(await readFile(previewPath, 'utf8'));
 const previewSourceStep = previewPayload.blueprint.steps.find((step) => step.step === 'writeFiles');
-assert.equal(previewSourceStep.filesTree.ref, 'abc1234', 'preview blueprint consumes immutable head SHA when available');
+assert.equal(previewSourceStep.filesTree.ref, 'a'.repeat(40), 'preview blueprint consumes immutable head SHA when available');
 assert.equal(previewSourceStep.filesTree.refType, 'commit', 'preview blueprint records commit ref type for immutable previews');
 assert.equal(previewPayload.source.provenance, 'immutable-head-sha', 'preview output records immutable provenance');
 
-const fallbackPreviewPath = path.join(tempDir, 'preview-fallback.json');
-const fallbackPreviewResult = spawnSync(process.execPath, ['.github/scripts/build-static-preview-blueprint.mjs', '--site', 'issue-123-native-loop', '--branch', 'feature/site', '--output', fallbackPreviewPath], {
+const fallbackPreviewResult = spawnSync(process.execPath, ['.github/scripts/build-static-preview-blueprint.mjs', '--site', 'issue-123-native-loop', '--output', path.join(tempDir, 'preview-fallback.json')], {
 	cwd: repoRoot,
 	encoding: 'utf8',
 });
-assert.equal(fallbackPreviewResult.status, 0, fallbackPreviewResult.stderr || fallbackPreviewResult.stdout);
-const fallbackPreviewPayload = JSON.parse(await readFile(fallbackPreviewPath, 'utf8'));
-assert.equal(fallbackPreviewPayload.source.refType, 'branch', 'preview fallback uses branch ref when SHA is unavailable');
-assert.equal(fallbackPreviewPayload.source.provenance, 'mutable-branch-fallback', 'preview fallback records explicit mutable provenance');
-assert.match(fallbackPreviewPayload.source.fallback_reason, /SOURCE_HEAD_SHA/, 'preview fallback records why immutable SHA was unavailable');
+assert.notEqual(fallbackPreviewResult.status, 0, 'preview generation fails closed without immutable source provenance');
+assert.match(fallbackPreviewResult.stderr, /SOURCE_HEAD_SHA, SOURCE_TAG, or SOURCE_ARTIFACT_SOURCE/, 'preview failure explains required immutable source inputs');
 
 const groupResult = spawnSync(process.execPath, ['.github/scripts/group-ssi-finding-packets.mjs', 'tests/fixtures/ssi-finding-packets.json'], {
 	cwd: repoRoot,

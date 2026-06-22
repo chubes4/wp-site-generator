@@ -15,7 +15,7 @@ export function buildSiteGenerationLoopRunContext({ env = process.env, root = en
 	const repository = env.GITHUB_REPOSITORY || 'chubes4/wp-site-generator';
 	const source = resolveImmutableSourceRef({ env, root, repository });
 	const dependencyRefs = resolveDependencyRefs({ env, root });
-	validateRefPolicy({ policy: env.WPSG_REF_POLICY || 'branch-defaults', dependencyRefs });
+	validateRefPolicy({ policy: env.WPSG_REF_POLICY || 'branch-defaults', dependencyRefs, source });
 	const controllerSpecPath = env.HOMEBOY_CONTROLLER_SPEC_PATH || '.github/homeboy/controllers/static-site-generation-loop.controller.json';
 	const outputPath = env.HOMEBOY_CONTROLLER_RUN_INPUTS_PATH || path.join(root, '.ci', 'site-generation-loop.controller-run-inputs.json');
 	const policyResultPath = env.HOMEBOY_POLICY_RESULT_PATH || outputPath.replace(/\.json$/, '.complexity-policy-result.json');
@@ -35,16 +35,36 @@ export function buildSiteGenerationLoopRunContext({ env = process.env, root = en
 }
 
 export function resolveImmutableSourceRef({ env = process.env, root = env.GITHUB_WORKSPACE || process.cwd(), repository = env.GITHUB_REPOSITORY || 'chubes4/wp-site-generator' } = {}) {
-	const sha = env.GITHUB_SHA || gitRev(root) || '';
+	const artifactSource = env.SOURCE_ARTIFACT_SOURCE || env.STATIC_SITE_CANDIDATE || env.CONCEPT_PACKET || '';
+	if (artifactSource) {
+		return {
+			repository,
+			artifact_source: artifactSource,
+			ref_type: 'artifact',
+			provenance: 'source-artifact',
+		};
+	}
+
+	const tag = env.SOURCE_TAG || '';
+	if (tag) {
+		return {
+			repository,
+			ref: tag,
+			ref_type: 'tag',
+			provenance: 'source-tag',
+		};
+	}
+
+	const sha = env.SOURCE_HEAD_SHA || env.GITHUB_SHA || gitRev(root) || '';
 	if (!sha) {
-		throw new Error('GITHUB_SHA or a git HEAD commit is required for deterministic site generation loop inputs.');
+		throw new Error('SOURCE_HEAD_SHA, SOURCE_TAG, SOURCE_ARTIFACT_SOURCE, GITHUB_SHA, or a git HEAD commit is required for deterministic site generation loop inputs.');
 	}
 	return {
 		repository,
 		sha,
 		ref: env.GITHUB_REF_NAME || env.GITHUB_REF || '',
 		ref_type: 'commit',
-		provenance: env.GITHUB_SHA ? 'github-sha' : 'git-head',
+		provenance: env.SOURCE_HEAD_SHA ? 'source-head-sha' : (env.GITHUB_SHA ? 'github-sha' : 'git-head'),
 	};
 }
 
@@ -55,7 +75,7 @@ export function resolveDependencyRefs({ env = process.env, root = env.GITHUB_WOR
 	});
 }
 
-export function validateRefPolicy({ policy = 'branch-defaults', dependencyRefs = {} } = {}) {
+export function validateRefPolicy({ policy = 'branch-defaults', dependencyRefs = {}, source = null } = {}) {
 	if (policy === 'branch-defaults') {
 		return;
 	}
@@ -63,10 +83,14 @@ export function validateRefPolicy({ policy = 'branch-defaults', dependencyRefs =
 		throw new Error(`Unknown WPSG ref policy: ${policy}`);
 	}
 
-	const mutableRefs = Object.values(dependencyRefs).filter((dependency) => dependency.ref_type !== 'commit' || !isFullSha(dependency.input_ref || dependency.sha));
+	const mutableRefs = Object.values(dependencyRefs).filter((dependency) => !isImmutableDependencyRef(dependency));
 	if (mutableRefs.length > 0) {
 		const labels = mutableRefs.map((dependency) => `${dependency.id}:${dependency.input_ref || dependency.ref_type || 'unresolved'}`).join(', ');
 		throw new Error(`WPSG production ref policy requires immutable dependency refs. Mutable or unresolved refs: ${labels}`);
+	}
+
+	if (source && !isImmutableSourceRef(source)) {
+		throw new Error('WPSG production ref policy requires SOURCE_HEAD_SHA, SOURCE_TAG, or SOURCE_ARTIFACT_SOURCE for source provenance.');
 	}
 }
 
@@ -80,9 +104,40 @@ function dependencyRef({ id, repository, inputRef, checkoutPath }) {
 		repository,
 		input_ref: inputRef,
 		sha,
-		ref_type: sha ? 'commit' : 'mutable-ref-unresolved',
+		ref_type: sha ? dependencyRefType(inputRef) : 'mutable-ref-unresolved',
 		provenance: sha ? 'checkout-head' : 'workflow-input-ref',
 	});
+}
+
+export function isImmutableDependencyRef(dependency = {}) {
+	const inputRef = dependency.input_ref || '';
+	if (inputRef) {
+		return isFullSha(inputRef) || isPinnedTagRef(inputRef);
+	}
+	if (isFullSha(dependency.sha)) {
+		return true;
+	}
+	return false;
+}
+
+export function isImmutableSourceRef(source = {}) {
+	if (source.ref_type === 'artifact' && source.artifact_source) {
+		return true;
+	}
+	if (source.ref_type === 'tag' && isPinnedTagRef(source.ref)) {
+		return true;
+	}
+	return source.ref_type === 'commit' && source.provenance === 'source-head-sha' && isFullSha(source.sha);
+}
+
+function dependencyRefType(inputRef) {
+	if (isFullSha(inputRef)) {
+		return 'commit';
+	}
+	if (isPinnedTagRef(inputRef)) {
+		return 'tag';
+	}
+	return 'branch';
 }
 
 function gitRev(cwd) {
@@ -95,6 +150,10 @@ function gitRev(cwd) {
 
 function isFullSha(value) {
 	return /^[0-9a-f]{40}$/i.test(String(value || ''));
+}
+
+function isPinnedTagRef(value) {
+	return /^refs\/tags\/.+/.test(String(value || '')) || /^v?\d+\.\d+\.\d+(?:[-+][0-9A-Za-z.-]+)?$/.test(String(value || ''));
 }
 
 function compactObject(object) {
