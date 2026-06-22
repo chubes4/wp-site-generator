@@ -23,6 +23,7 @@ const source = buildSsiPreviewSource({ repo: sourceRepo, sha: sourceHeadSha, tag
 const manifest = await loadSsiStackManifest(manifestPath);
 const blueprint = buildSsiPreviewBlueprint({ site, source, lane, manifest });
 const url = buildRuntimePreviewUrl({
+	blueprint,
 	evidenceRefs: previewEvidenceRefs ? JSON.parse(previewEvidenceRefs) : [],
 });
 
