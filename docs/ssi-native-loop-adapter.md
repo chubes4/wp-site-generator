@@ -150,7 +150,7 @@ HOMEBOY_BIN=homeboy node .github/scripts/validate-headless-site-generation-loop.
   --run-id headless-contract \
   --randomness-seed headless-contract-seed \
   --runtime-id wp-codebox \
-  --fixture-artifacts \
+  --artifact-root .ci/homeboy-agent-task-artifacts \
   --evidence .ci/headless-site-generation-loop-evidence.json
 ```
 
@@ -164,15 +164,16 @@ node .github/scripts/write-materialized-controller-run-spec.mjs <materialization
 homeboy agent-task controller from-spec @<controller-run-spec> --output <controller-result> --artifact-root <artifact-root>
 homeboy agent-task controller resume <loop-id> --output <resume-result> --artifact-root <artifact-root>
 homeboy agent-task controller events <loop-id> --event-type headless.validation.completed --event-key <run-id> --payload '{...}' --output <event-result>
-node .github/scripts/assert-site-generation-loop-proof.mjs --controller-result <controller-result> --controller-run-spec <controller-run-spec> --artifact-root <artifact-root>
+node .github/scripts/assert-site-generation-loop-proof.mjs --controller-result <controller-result> --controller-run-spec <controller-run-spec> --controller-resume <resume-result> --controller-event <event-result> --artifact-root <artifact-root>
 ```
 
-`--fixture-artifacts` writes deterministic passing artifacts for the WPSG artifact proof. Omit it and pass `--artifact-root <artifact-root>` when validating artifacts emitted by a real Homeboy run. Runtime selection remains outside the controller spec through `HOMEBOY_AGENT_RUNTIME_*`; `--runtime-id wp-codebox` is one backend selection, not a WPSG-owned contract.
+The proof requires artifacts emitted by Homeboy/runtime execution under `--artifact-root`. It fails closed when the artifact root does not include real evidence for a tiny fixture site run, import report, zero fallback/conversion findings, visual parity gates, preview/playground URL, iterator fanout issue/PR evidence, publication PR evidence, and controller resume/event evidence. `--fixture-artifacts` is disabled and is not reviewer-facing proof. Runtime selection remains outside the controller spec through `HOMEBOY_AGENT_RUNTIME_*`; `--runtime-id wp-codebox` is one backend selection, not a WPSG-owned contract.
 
 Current upstream dependencies before this can be treated as full runtime proof instead of deterministic contract proof:
 
 - Extra-Chill/homeboy#5152: durable controller `from-spec`, `resume`, and `events` primitives.
 - Extra-Chill/homeboy#5186: controller `materialize` primitive.
+- Extra-Chill/homeboy#5691: public `agent-task fanout plan` primitive for iterator fanout evidence.
 - Extra-Chill/homeboy-extensions#1644: generic runtime execution contracts.
-- Extra-Chill/homeboy-extensions#1645: headless deterministic loop runner.
+- Extra-Chill/homeboy-extensions#1645: headless loop runner that emits real tiny fixture site artifacts.
 - Extra-Chill/homeboy-extensions#1646: WP Codebox runtime contract manifest consumption.

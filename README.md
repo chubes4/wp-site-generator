@@ -190,7 +190,7 @@ This whole loop runs **without a hosted WordPress site**. PHP runs as WebAssembl
 
 The PR target label gates validation. `target:wordpress` marks content-shaped WordPress imports; `target:woocommerce` marks commerce-shaped imports and enables the WooCommerce stack. The build agent still emits static source files; CI owns the WordPress import context.
 
-Playground preview links use the PR head SHA and source repository when that immutable provenance is available. If a SHA is unavailable, the generated preview payload records the branch fallback and why it was used.
+Playground preview links require immutable provenance from the PR head SHA, a source tag, or an artifact source. Preview generation fails closed instead of falling back to a mutable branch ref.
 
 The Homeboy WordPress extension capability that makes this possible (`wordpress_runtime_workloads`) is generic. SSI is just one consumer; any WordPress plugin can be exercised the same way in CI. The validation workflow refreshes the reusable harness scripts from `origin/main` before running, so older generated-site branches get the current validation behavior without rebasing their source files.
 
@@ -265,7 +265,7 @@ Required GitHub secrets depend on the selected Homeboy runtime and AI provider. 
 
 The reusable `.github/workflows/wpsg-runtime-agent-ci.yml` seam accepts a `runtime_workload_profile` such as `workspace-iteration` or `workspace-publication`, then renders Homeboy runtime profile/tool requirements through `.github/scripts/render-homeboy-runtime-workflow-inputs.mjs`. Runtime execution descriptors are rendered through `.github/scripts/render-runtime-bundle-execution.mjs` so workflows consume the shared runtime facade instead of embedding provider internals.
 
-For headless contract validation without GitHub workflow-to-workflow dispatch, run `.github/scripts/validate-headless-site-generation-loop.mjs`. It drives `homeboy agent-task controller materialize`, `validate-proof`, `from-spec`, `resume`, and `events` directly, then asserts WPSG artifact evidence with `.github/scripts/assert-site-generation-loop-proof.mjs`. With `--fixture-artifacts` it is deterministic contract proof; with `--artifact-root` it validates artifacts from a real Homeboy run.
+For headless contract validation without GitHub workflow-to-workflow dispatch, run `.github/scripts/validate-headless-site-generation-loop.mjs`. It drives `homeboy agent-task controller materialize`, `validate-proof`, `from-spec`, `resume`, and `events` directly, then asserts WPSG artifact evidence with `.github/scripts/assert-site-generation-loop-proof.mjs`. The validator requires `--artifact-root` evidence emitted by a real Homeboy run and fails closed when runtime, iterator/fanout, preview, import, visual, or PR evidence is absent.
 
 The PHP transformer iterator supplies WPSG-owned finding grouping and fanout packet input, then calls Homeboy's public `homeboy agent-task fanout plan` primitive for fanout planning.
 

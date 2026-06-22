@@ -67,6 +67,9 @@ on:
         description: JSON array of provider plugin contracts supplied to the runtime.
         required: false
         default: ''
+      runtime_task_ability:
+        description: Runtime package task ability supplied by the upstream runtime contract.
+        required: true
 
 permissions:
   contents: write
@@ -93,6 +96,7 @@ jobs:
       WEBSITE_FLOW_SLUG: ${{ inputs.website_flow_slug }}
       OPENAI_MODEL: ${{ inputs.openai_model }}
       HOMEBOY_AGENT_RUNTIME_PROVIDER_PROFILE: ${{ inputs.runtime_provider_profile }}
+      HOMEBOY_AGENT_RUNTIME_TASK_ABILITY: ${{ inputs.runtime_task_ability }}
       HOMEBOY_AGENT_RUNTIME_COMPONENTS: ${{ inputs.runtime_components }}
       HOMEBOY_AGENT_RUNTIME_PROVIDER_PLUGINS: ${{ inputs.runtime_provider_plugins }}
       GITHUB_TOKEN: ${{ github.token }}
@@ -109,6 +113,9 @@ jobs:
     steps:
       - name: Check out wp-site-generator
         uses: actions/checkout@v4
+
+      - name: Render runtime controller spec
+        run: node .github/scripts/build-homeboy-ssi-loop-controller.mjs --output "$HOMEBOY_CONTROLLER_SPEC_PATH"
 
       - name: Check out Homeboy
         uses: actions/checkout@v4

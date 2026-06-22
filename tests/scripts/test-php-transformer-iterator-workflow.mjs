@@ -8,7 +8,8 @@ const runtimeWorkflow = await readFile(path.join(repoRoot, '.github/workflows/wp
 const iteratorFlow = await readFile(path.join(repoRoot, 'bundles/php-transformer-iterator-agent/flows/php-transformer-iterator-manual-flow.json'), 'utf8');
 
 assert.match(workflow, /\.\/\.github\/workflows\/wpsg-runtime-agent-ci\.yml/, 'iterator uses the WPSG runtime seam workflow');
-assert.match(runtimeWorkflow, /runtime-agent-ci\.yml@main/, 'WPSG seam delegates to the generic Homeboy Extensions runtime agent workflow');
+assert.doesNotMatch(runtimeWorkflow, /runtime-agent-ci\.yml@main/, 'WPSG seam pins the generic Homeboy Extensions runtime agent workflow');
+assert.match(runtimeWorkflow, /runtime-agent-ci\.yml@[0-9a-f]{40}/, 'WPSG seam delegates to an immutable Homeboy Extensions runtime workflow ref');
 assert.match(workflow, /RUNTIME_EXECUTION_INPUT:[\s\S]*actions_artifact_downloads/, 'iterator passes validation artifact downloads through the runtime execution payload');
 assert.match(workflow, /render-runtime-bundle-execution\.mjs/, 'iterator renders runtime execution through the shared runtime facade');
 assert.doesNotMatch(workflow, /agents\/run-runtime-package/, 'iterator workflow does not hard-code runtime package internals');

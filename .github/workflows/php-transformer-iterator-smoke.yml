@@ -22,6 +22,9 @@ on:
         description: OpenAI model to use for the imported agent flow.
         required: true
         default: gpt-5.5
+      runtime_task_ability:
+        description: Runtime package task ability supplied by the upstream runtime contract.
+        required: true
 
 permissions:
   actions: read
@@ -109,6 +112,7 @@ jobs:
           RUNTIME_EXECUTION_INPUT: >-
             {"target_repo":"${{ inputs.source_repo }}","prompt":${{ toJSON(needs.prepare.outputs.prompt) }},"run_agent":${{ fromJSON(needs.prepare.outputs.should_run_iterator) }},"app_token_repos":"chubes4/wp-site-generator,chubes4/static-site-importer,Automattic/blocks-engine","success_requires_pr":false,"success_completion_outcomes":["pull_request_path","issue_path"],"max_turns":24,"step_budget":20,"time_budget_ms":600000,"runtime_output_projections":{"upstream_action_url":"outputs.upstream_action_url","source_callback_url":"outputs.source_callback_url"},"evidence_projections":[{"operation":"create_github_issue","outputs":{"upstream_action_url":"data.issue_url"}},{"operation":"create_github_pull_request","outputs":{"upstream_action_url":"data.html_url"}},{"operation":"comment_github_pull_request","outputs":{"source_callback_url":"data.html_url"}}],"transcript_artifact_name":"php-transformer-iterator-transcript-${{ github.run_id }}"}
           RUNTIME_EXECUTION_OPTIONS: '{"pipeline_slug":"php-transformer-iterator-pipeline"}'
+          HOMEBOY_AGENT_RUNTIME_TASK_ABILITY: ${{ inputs.runtime_task_ability }}
         run: >-
           node .github/scripts/render-runtime-bundle-execution.mjs
           --package-source bundles/php-transformer-iterator-agent
@@ -123,6 +127,7 @@ jobs:
       model: ${{ inputs.openai_model }}
       runtime_workload_profile: workspace-iteration
       runtime_execution: ${{ needs.runtime-execution.outputs.runtime_execution }}
+      runtime_task_ability: ${{ inputs.runtime_task_ability }}
       transcript_slots: '[{"name":"php-transformer-iterator-transcript","artifact_name":"php-transformer-iterator-transcript-${{ github.run_id }}"}]'
       task_timeout_seconds: 900
     secrets: inherit

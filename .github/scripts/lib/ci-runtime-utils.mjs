@@ -30,8 +30,8 @@ export {
 
 export {
 	buildRuntimePreviewUrl,
-	codeboxRuntimeProviderProfile,
 	codeboxProviderRuntimeInvocationContract,
+	codeboxRuntimeProviderProfile,
 	codeboxRuntimeApi,
 	codeboxRuntimeWorkspaceRecipeSchema,
 	codeboxRunnerWorkspaceCommandAbility,

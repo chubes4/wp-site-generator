@@ -22,7 +22,7 @@
       "role": "store-idea-agent",
       "instructions": "Run the store-idea-agent bundle for the WPSG SSI loop when Homeboy selects this workflow.",
       "abilities": [
-        "agents/run-runtime-package"
+        "runtime-package/run"
       ],
       "metadata": {
         "bundle": "bundles/store-idea-agent",
@@ -38,7 +38,7 @@
       "role": "website-idea-agent",
       "instructions": "Run the website-idea-agent bundle for the WPSG SSI loop when Homeboy selects this workflow.",
       "abilities": [
-        "agents/run-runtime-package"
+        "runtime-package/run"
       ],
       "metadata": {
         "bundle": "bundles/website-idea-agent",
@@ -54,7 +54,7 @@
       "role": "design-agent",
       "instructions": "Run the design-agent bundle for the WPSG SSI loop when Homeboy selects this workflow.",
       "abilities": [
-        "agents/run-runtime-package"
+        "runtime-package/run"
       ],
       "metadata": {
         "bundle": "bundles/design-agent",
@@ -73,7 +73,7 @@
       "role": "design-agent",
       "instructions": "Run the design-agent bundle for the WPSG SSI loop when Homeboy selects this workflow.",
       "abilities": [
-        "agents/run-runtime-package"
+        "runtime-package/run"
       ],
       "metadata": {
         "bundle": "bundles/design-agent",
@@ -92,7 +92,7 @@
       "role": "static-site-agent",
       "instructions": "Run the static-site-agent bundle for the WPSG SSI loop when Homeboy selects this workflow.",
       "abilities": [
-        "agents/run-runtime-package"
+        "runtime-package/run"
       ],
       "metadata": {
         "bundle": "bundles/static-site-agent",
@@ -112,7 +112,7 @@
       "role": "static-site-agent",
       "instructions": "Run the static-site-agent bundle for the WPSG SSI loop when Homeboy selects this workflow.",
       "abilities": [
-        "agents/run-runtime-package"
+        "runtime-package/run"
       ],
       "metadata": {
         "bundle": "bundles/static-site-agent",
@@ -132,7 +132,7 @@
       "role": "php-transformer-iterator-agent",
       "instructions": "Run the php-transformer-iterator-agent bundle for the WPSG SSI loop when Homeboy selects this workflow.",
       "abilities": [
-        "agents/run-runtime-package"
+        "runtime-package/run"
       ],
       "metadata": {
         "bundle": "bundles/php-transformer-iterator-agent",
@@ -151,7 +151,7 @@
       "role": "ssi-stack-reviewer-agent",
       "instructions": "Run the ssi-stack-reviewer-agent bundle for the WPSG SSI loop when Homeboy selects this workflow.",
       "abilities": [
-        "agents/run-runtime-package"
+        "runtime-package/run"
       ],
       "metadata": {
         "bundle": "bundles/ssi-stack-reviewer-agent",
@@ -172,7 +172,7 @@
   ],
   "abilities": [
     {
-      "ability_id": "agents/run-runtime-package"
+      "ability_id": "runtime-package/run"
     },
     {
       "ability_id": "github_issue_publish"
@@ -190,11 +190,11 @@
       "agent_id": "store_idea",
       "prompt": "Produce a commerce concept packet for the WPSG static-site generation loop.",
       "abilities": [
-        "agents/run-runtime-package"
+        "runtime-package/run"
       ],
       "runtime_execution": {
         "kind": "bundle",
-        "ability": "agents/run-runtime-package",
+        "ability": "runtime-package/run",
         "input": {
           "package": {
             "source": "bundles/store-idea-agent",
@@ -221,11 +221,11 @@
       "agent_id": "website_idea",
       "prompt": "Produce a content-site concept packet for the WPSG static-site generation loop.",
       "abilities": [
-        "agents/run-runtime-package"
+        "runtime-package/run"
       ],
       "runtime_execution": {
         "kind": "bundle",
-        "ability": "agents/run-runtime-package",
+        "ability": "runtime-package/run",
         "input": {
           "package": {
             "source": "bundles/website-idea-agent",
@@ -252,11 +252,11 @@
       "agent_id": "design_store",
       "prompt": "Produce a design packet from a commerce concept packet for the WPSG static-site generation loop.",
       "abilities": [
-        "agents/run-runtime-package"
+        "runtime-package/run"
       ],
       "runtime_execution": {
         "kind": "bundle",
-        "ability": "agents/run-runtime-package",
+        "ability": "runtime-package/run",
         "input": {
           "package": {
             "source": "bundles/design-agent",
@@ -287,11 +287,11 @@
       "agent_id": "design_website",
       "prompt": "Produce a design packet from a content-site concept packet for the WPSG static-site generation loop.",
       "abilities": [
-        "agents/run-runtime-package"
+        "runtime-package/run"
       ],
       "runtime_execution": {
         "kind": "bundle",
-        "ability": "agents/run-runtime-package",
+        "ability": "runtime-package/run",
         "input": {
           "package": {
             "source": "bundles/design-agent",
@@ -322,11 +322,11 @@
       "agent_id": "static_store",
       "prompt": "Produce a commerce static-site candidate artifact from a WPSG design packet.",
       "abilities": [
-        "agents/run-runtime-package"
+        "runtime-package/run"
       ],
       "runtime_execution": {
         "kind": "bundle",
-        "ability": "agents/run-runtime-package",
+        "ability": "runtime-package/run",
         "input": {
           "package": {
             "source": "bundles/static-site-agent",
@@ -362,11 +362,11 @@
       "agent_id": "static_site",
       "prompt": "Produce a content static-site candidate artifact from a WPSG design packet.",
       "abilities": [
-        "agents/run-runtime-package"
+        "runtime-package/run"
       ],
       "runtime_execution": {
         "kind": "bundle",
-        "ability": "agents/run-runtime-package",
+        "ability": "runtime-package/run",
         "input": {
           "package": {
             "source": "bundles/static-site-agent",
@@ -550,7 +550,7 @@
       "agent_id": "php_transformer_iterator",
       "prompt": "Route each finding group to the owning SSI stack repository and open the focused upstream issue or pull request described by the packet evidence.",
       "abilities": [
-        "agents/run-runtime-package",
+        "runtime-package/run",
         "github_issue_publish",
         "github_pull_request_publish",
         "comment_github_pull_request"
@@ -633,7 +633,7 @@
       "agent_id": "ssi_stack_reviewer",
       "prompt": "Review candidate, validation, visual parity, finding, and revalidation artifacts before promotion. Treat generated-site and upstream GitHub issue/PR URLs as optional publication evidence only.",
       "abilities": [
-        "agents/run-runtime-package",
+        "runtime-package/run",
         "comment_github_pull_request"
       ],
       "consumes": [

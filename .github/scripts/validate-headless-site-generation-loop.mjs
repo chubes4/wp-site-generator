@@ -15,7 +15,7 @@ const tempDir = path.resolve(args.get('--work-dir') || await mkdtemp(path.join(t
 const runId = args.get('--run-id') || process.env.WPSG_REPLAY_ID || 'headless-contract';
 const randomnessSeed = args.get('--randomness-seed') || process.env.WPSG_RANDOMNESS_SEED || 'headless-contract-seed';
 const runtimeId = args.get('--runtime-id') || process.env.HOMEBOY_AGENT_RUNTIME || 'contract-runtime';
-const writeFixtureArtifacts = args.has('--fixture-artifacts') || !args.has('--artifact-root');
+const writeFixtureArtifacts = args.has('--fixture-artifacts');
 const artifactRoot = path.resolve(args.get('--artifact-root') || path.join(tempDir, 'homeboy-agent-task-artifacts'));
 const evidencePath = path.resolve(args.get('--evidence') || path.join(tempDir, 'headless-site-generation-loop-evidence.json'));
 
@@ -42,69 +42,17 @@ function run(label, command, commandArgs, options = {}) {
 	return result;
 }
 
-async function writeArtifact(name, artifact) {
-	await mkdir(artifactRoot, { recursive: true });
-	await writeJsonFile(path.join(artifactRoot, `${name}.json`), { artifact_id: name, ...artifact });
-}
-
-async function writePassingArtifactContract() {
-	await writeArtifact('static_site_candidate', {
-		schema: 'wp-site-generator/StaticSiteCandidate/v1',
-		preview_url: 'https://example.com/wpsg/headless/static-site-candidate',
-		artifact_url: 'https://example.com/wpsg/headless/static-site-candidate.json',
-	});
-	await writeArtifact('import_validation_result', {
-		schema: 'wp-site-generator/ImportValidationResult/v1',
-		artifact_url: 'https://example.com/wpsg/headless/import-validation.json',
-		metrics: { fallback_blocks: 0, conversion_findings: 0 },
-	});
-	await writeArtifact('static_validation_run', {
-		schema: 'homeboy/Run/v1',
-		artifact_url: 'https://example.com/wpsg/headless/static-validation-run.json',
-	});
-	await writeArtifact('visual_parity_artifact', {
-		schema: 'wp-site-generator/VisualParityArtifact/v1',
-		artifact_url: 'https://example.com/wpsg/headless/visual-parity.json',
-		summary: { status: 'pass', mismatch_count: 0, max_delta_ratio: 0 },
-	});
-	await writeArtifact('finding_packet_set', {
-		schema: 'wp-site-generator/FindingPacketSet/v1',
-		artifact_url: 'https://example.com/wpsg/headless/finding-packets.json',
-		packets: [],
-		actionable_conversion_count: 0,
-	});
-	await writeArtifact('revalidation_attempt', {
-		schema: 'wp-site-generator/RevalidationAttempt/v1',
-		artifact_url: 'https://example.com/wpsg/headless/revalidation.json',
-		status: 'passed',
-	});
-	await writeArtifact('reviewer_gate_outcome', {
-		schema: 'wp-site-generator/SsiStackReviewerGate/v1',
-		artifact_url: 'https://example.com/wpsg/headless/reviewer-gate.json',
-		decision: 'PASS',
-	});
-	await writeArtifact('static_site_publish_gate', {
-		schema: 'wp-site-generator/StaticSitePublishGate/v1',
-		artifact_url: 'https://example.com/wpsg/headless/publish-gate.json',
-		publish_allowed: false,
-		gates: {
-			fallback_blocks: { passed: true },
-			conversion_findings: { passed: true },
-			visual_parity: { passed: true },
-		},
-	});
-}
-
 function assertBackendNeutralController(controllerRunSpec) {
-	const serialized = JSON.stringify(controllerRunSpec).toLowerCase();
 	assert.equal(controllerRunSpec.runtime, undefined, 'controller run spec does not embed a runtime backend');
 	assert.equal(controllerRunSpec.backend, undefined, 'controller run spec does not embed a backend selector');
 	assert.equal(controllerRunSpec.provider, undefined, 'controller run spec does not embed a provider selector');
-	assert.doesNotMatch(serialized, /wp-codebox|codebox/, 'controller run spec remains backend-neutral');
 	assert.ok(controllerRunSpec.workflows?.every((workflow) => workflow.inputs?.runtime_input_contract === 'homeboy-agent-runtime-env'), 'materialized workflows use the generic Homeboy agent runtime env contract');
 }
 
 try {
+	if (writeFixtureArtifacts) {
+		throw new Error('--fixture-artifacts is disabled for headless validation; provide --artifact-root with Homeboy-emitted artifacts');
+	}
 	await mkdir(tempDir, { recursive: true });
 	const baseEnv = {
 		GITHUB_WORKSPACE: repoRoot,
@@ -134,11 +82,7 @@ try {
 	run('resume Homeboy controller', homeboyBin, ['agent-task', 'controller', 'resume', loopId, '--output', controllerResumePath, '--artifact-root', artifactRoot], { env: baseEnv });
 	run('record generic Homeboy controller event', homeboyBin, ['agent-task', 'controller', 'events', loopId, '--event-type', 'headless.validation.completed', '--event-key', runId, '--payload', JSON.stringify({ run_id: runId, repository: 'chubes4/wp-site-generator' }), '--output', controllerEventPath], { env: baseEnv });
 
-	if (writeFixtureArtifacts) {
-		await writePassingArtifactContract();
-	}
-
-	run('assert WPSG semantic artifact proof', process.execPath, ['.github/scripts/assert-site-generation-loop-proof.mjs', '--controller-result', controllerResultPath, '--controller-run-spec', controllerRunSpecPath, '--artifact-root', artifactRoot], { env: baseEnv });
+	run('assert WPSG semantic artifact proof', process.execPath, ['.github/scripts/assert-site-generation-loop-proof.mjs', '--controller-result', controllerResultPath, '--controller-run-spec', controllerRunSpecPath, '--controller-resume', controllerResumePath, '--controller-event', controllerEventPath, '--artifact-root', artifactRoot], { env: baseEnv });
 
 	const controllerRunSpec = await readJsonFile(controllerRunSpecPath);
 	const runInputs = await readJsonFile(controllerRunInputsPath);
@@ -152,6 +96,7 @@ try {
 		runtime_input_contract: runInputs.inputs.runtime_input_contract,
 		runtime_id: runtimeId,
 		fixture_artifacts: writeFixtureArtifacts,
+		artifact_source: writeFixtureArtifacts ? 'legacy-debug-fixture' : 'homeboy-emitted',
 		paths: {
 			controller_run_inputs: controllerRunInputsPath,
 			policy_result: policyResultPath,

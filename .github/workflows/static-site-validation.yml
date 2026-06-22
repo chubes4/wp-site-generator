@@ -32,7 +32,7 @@ jobs:
       github.event.action != 'labeled' ||
       (github.event.action == 'labeled' && github.event.label.name == 'target:wordpress') ||
       (github.event.action == 'labeled' && github.event.label.name == 'target:woocommerce')
-    uses: Extra-Chill/homeboy-extensions/.github/workflows/actions-run-once.yml@main
+    uses: Extra-Chill/homeboy-extensions/.github/workflows/actions-run-once.yml@dc02521a3505e100b9a9c91ce3944c0891c090f3
     with:
       mode: check
       idempotency_key: static-site-validation/${{ github.repository }}/${{ github.event.pull_request.number || inputs.pr_number }}/${{ github.event.pull_request.head.sha || github.run_id }}
@@ -342,7 +342,7 @@ jobs:
       always() &&
       needs.validation-preflight.outputs.should_run == 'true' &&
       needs.detect-changed-sites.outputs.has_sites == 'true'
-    uses: Extra-Chill/homeboy-extensions/.github/workflows/actions-run-once.yml@main
+    uses: Extra-Chill/homeboy-extensions/.github/workflows/actions-run-once.yml@dc02521a3505e100b9a9c91ce3944c0891c090f3
     with:
       mode: mark
       idempotency_key: static-site-validation/${{ github.repository }}/${{ needs.detect-changed-sites.outputs.pr_number }}/${{ needs.detect-changed-sites.outputs.head_sha }}

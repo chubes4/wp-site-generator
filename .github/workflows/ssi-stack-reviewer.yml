@@ -21,6 +21,9 @@ on:
         description: Agent model to use for the imported agent flow.
         required: true
         default: gpt-5.5
+      runtime_task_ability:
+        description: Runtime package task ability supplied by the upstream runtime contract.
+        required: true
 
 permissions:
   contents: read
@@ -40,6 +43,7 @@ jobs:
           RUNTIME_EXECUTION_INPUT: >-
             {"target_repo":"chubes4/wp-site-generator","prompt":"Review the upstream SSI stack iterator PR from the supplied workflow input and leave exactly one gate comment.","app_token_repos":"chubes4/wp-site-generator,chubes4/static-site-importer,Automattic/blocks-engine","success_requires_pr":false,"success_completion_outcomes":["review_comment_path"],"max_turns":8,"step_budget":8,"time_budget_ms":300000,"execute_workflow_builder_command":"export UPSTREAM_PR_URL SOURCE_PR_URL FINDING_PACKET_CONTEXT REVIEWER_CONTEXT\nUPSTREAM_PR_URL=$(cat <<'SSI_STACK_REVIEWER_INPUT'\n${{ inputs.upstream_pr_url }}\nSSI_STACK_REVIEWER_INPUT\n)\nSOURCE_PR_URL=$(cat <<'SSI_STACK_REVIEWER_INPUT'\n${{ inputs.source_pr_url }}\nSSI_STACK_REVIEWER_INPUT\n)\nFINDING_PACKET_CONTEXT=$(cat <<'SSI_STACK_REVIEWER_INPUT'\n${{ inputs.finding_packet_context }}\nSSI_STACK_REVIEWER_INPUT\n)\nREVIEWER_CONTEXT=$(cat <<'SSI_STACK_REVIEWER_INPUT'\n${{ inputs.reviewer_context }}\nSSI_STACK_REVIEWER_INPUT\n)\nnode bundles/ssi-stack-reviewer-agent/scripts/build-ssi-stack-reviewer-workflow.mjs .ci/ssi-stack-reviewer-workflow.json","execute_workflow_path":".ci/ssi-stack-reviewer-workflow.json","transcript_artifact_name":"ssi-stack-reviewer-transcript-${{ github.run_id }}"}
           RUNTIME_EXECUTION_OPTIONS: '{"pipeline_slug":"ssi-stack-reviewer-pipeline"}'
+          HOMEBOY_AGENT_RUNTIME_TASK_ABILITY: ${{ inputs.runtime_task_ability }}
         run: >-
           node .github/scripts/render-runtime-bundle-execution.mjs
           --package-source bundles/ssi-stack-reviewer-agent
@@ -54,6 +58,7 @@ jobs:
       model: ${{ inputs.openai_model }}
       runtime_workload_profile: workspace-publication
       runtime_execution: ${{ needs.runtime-execution.outputs.runtime_execution }}
+      runtime_task_ability: ${{ inputs.runtime_task_ability }}
       transcript_slots: '[{"name":"ssi-stack-reviewer-transcript","artifact_name":"ssi-stack-reviewer-transcript-${{ github.run_id }}"}]'
       task_timeout_seconds: 900
     secrets: inherit

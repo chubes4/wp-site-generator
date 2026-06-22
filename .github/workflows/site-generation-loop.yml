@@ -27,6 +27,9 @@ on:
         description: JSON array of provider plugin contracts supplied to the runtime.
         required: false
         default: ''
+      runtime_task_ability:
+        description: Runtime package task ability supplied by the upstream runtime contract.
+        required: true
       ref_policy:
         description: Dependency ref policy. Use branch-defaults for staging; production requires immutable dependency refs.
         required: true
@@ -75,6 +78,7 @@ jobs:
       HOMEBOY_EXTENSIONS_REF: ${{ inputs.homeboy_extensions_ref }}
       WPSG_REF_POLICY: ${{ inputs.ref_policy }}
       HOMEBOY_AGENT_RUNTIME_PROVIDER_PROFILE: ${{ inputs.runtime_provider_profile }}
+      HOMEBOY_AGENT_RUNTIME_TASK_ABILITY: ${{ inputs.runtime_task_ability }}
       HOMEBOY_AGENT_RUNTIME_COMPONENTS: ${{ inputs.runtime_components }}
       HOMEBOY_AGENT_RUNTIME_PROVIDER_PLUGINS: ${{ inputs.runtime_provider_plugins }}
       HOMEBOY_CONTROLLER_RUN_INPUTS_PATH: ${{ github.workspace }}/.ci/site-generation-loop.controller-run-inputs.json
@@ -93,6 +97,12 @@ jobs:
     steps:
       - name: Check out wp-site-generator
         uses: actions/checkout@v4
+
+      - name: Render runtime controller spec
+        run: node .github/scripts/build-homeboy-ssi-loop-controller.mjs --output "$HOMEBOY_CONTROLLER_SPEC_PATH"
+
+      - name: Validate production ref policy
+        run: node .github/scripts/validate-production-ref-policy.mjs
 
       - name: Check out Homeboy
         uses: actions/checkout@v4
@@ -152,6 +162,8 @@ jobs:
           node .github/scripts/assert-site-generation-loop-proof.mjs
           --controller-result "$HOMEBOY_CONTROLLER_FROM_SPEC_RESULT_PATH"
           --controller-run-spec "$HOMEBOY_CONTROLLER_RUN_SPEC_PATH"
+          --controller-resume "$HOMEBOY_CONTROLLER_RESUME_RESULT_PATH"
+          --controller-event "$HOMEBOY_CONTROLLER_EVENT_RESULT_PATH"
           --artifact-root "$HOMEBOY_ARTIFACT_ROOT"
 
       - name: Upload Homeboy artifacts
