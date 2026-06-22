@@ -2,7 +2,7 @@
 
 import assert from 'node:assert/strict';
 import { spawnSync } from 'node:child_process';
-import { mkdtemp, readFile } from 'node:fs/promises';
+import { access, copyFile, mkdir, mkdtemp, readFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 
@@ -13,6 +13,9 @@ const workflowPath = path.join(repoRoot, '.github/workflows/site-generation-loop
 const tempDir = await mkdtemp(path.join(tmpdir(), 'wp-site-generator-loop-run-inputs-'));
 const outputPath = path.join(tempDir, 'controller-run-inputs.json');
 const policyResultPath = path.join(tempDir, 'complexity-policy-result.json');
+const cleanCheckoutRoot = path.join(tempDir, 'clean-checkout');
+const cleanCheckoutOutputPath = path.join(cleanCheckoutRoot, '.ci', 'site-generation-loop.controller-run-inputs.json');
+const cleanCheckoutPolicyResultPath = path.join(cleanCheckoutRoot, '.ci', 'site-generation-loop.complexity-policy-result.json');
 
 assert.throws(
 	() => buildSiteGenerationLoopRunContext({ env: {}, root: repoRoot }),
@@ -115,8 +118,29 @@ const result = spawnSync(process.execPath, [path.join(repoRoot, '.github/scripts
 });
 assert.equal(result.status, 0, result.stderr || result.stdout);
 
+await mkdir(path.join(cleanCheckoutRoot, '.github'), { recursive: true });
+await copyFile(path.join(repoRoot, '.github/site-generation-complexity-policy.json'), path.join(cleanCheckoutRoot, '.github/site-generation-complexity-policy.json'));
+await assert.rejects(access(path.join(cleanCheckoutRoot, '.ci')), /ENOENT/, 'clean checkout fixture starts without a .ci directory');
+const cleanCheckoutResult = spawnSync(process.execPath, [path.join(repoRoot, '.github/scripts/build-homeboy-controller-run-inputs.mjs')], {
+	cwd: cleanCheckoutRoot,
+	encoding: 'utf8',
+	env: {
+		...process.env,
+		GITHUB_WORKSPACE: cleanCheckoutRoot,
+		GITHUB_REPOSITORY: 'chubes4/wp-site-generator',
+		GITHUB_SHA: 'a'.repeat(40),
+		WPSG_REPLAY_ID: 'local-replay-clean-checkout',
+		WPSG_RANDOMNESS_SEED: 'seed-clean-checkout',
+		HOMEBOY_CONTROLLER_RUN_INPUTS_PATH: cleanCheckoutOutputPath,
+		HOMEBOY_POLICY_RESULT_PATH: cleanCheckoutPolicyResultPath,
+	},
+});
+assert.equal(cleanCheckoutResult.status, 0, cleanCheckoutResult.stderr || cleanCheckoutResult.stdout);
+
 const runInputs = JSON.parse(await readFile(outputPath, 'utf8'));
 const policyResult = JSON.parse(await readFile(policyResultPath, 'utf8'));
+const cleanCheckoutRunInputs = JSON.parse(await readFile(cleanCheckoutOutputPath, 'utf8'));
+const cleanCheckoutPolicyResult = JSON.parse(await readFile(cleanCheckoutPolicyResultPath, 'utf8'));
 assert.equal(runInputs.inputs.run_id, 'local-replay-123');
 assert.equal(runInputs.inputs.loop_id, 'wp-site-generator/static-site-generation-loop/local-replay-123');
 assert.equal(runInputs.inputs.randomness_seed, 'seed-123');
@@ -138,5 +162,8 @@ assert.equal(runInputs.metadata.run.source.sha, runInputs.inputs.source.sha);
 assert.deepEqual(runInputs.metadata.run.runtime_config, runInputs.inputs.runtime_config);
 assert.equal(runInputs.metadata.run.generated_by, '.github/scripts/build-homeboy-controller-run-inputs.mjs');
 assert.equal(policyResult.provenance.run_id, 'local-replay-123');
+assert.equal(cleanCheckoutRunInputs.inputs.run_id, 'local-replay-clean-checkout');
+assert.equal(cleanCheckoutRunInputs.metadata.run.complexity_policy_result, path.relative(cleanCheckoutRoot, cleanCheckoutPolicyResultPath));
+assert.equal(cleanCheckoutPolicyResult.provenance.run_id, 'local-replay-clean-checkout');
 
 console.log('site generation loop run input tests passed');
