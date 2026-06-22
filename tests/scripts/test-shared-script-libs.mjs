@@ -13,6 +13,7 @@ import {
 	readAgentRuntimeContract,
 	readJsonOrNull,
 	repoPathResolver,
+	renderRuntimeWorkflowInputs,
 	resolveVisualParityOutputRoot,
 	runtimeApiAbilities,
 	runtimeBundleExecution,
@@ -147,6 +148,17 @@ assert.deepEqual(runtimeWorkflowInputs('workspace-iteration', readAgentRuntimeCo
 	ability_requirements: workspaceIterationInputs.ability_requirements,
 	ability_tools: workspaceIterationInputs.ability_tools,
 });
+const renderedWorkspaceWorkflowInputs = renderRuntimeWorkflowInputs({
+	runtime_provider: codeboxProvider,
+	runtime_profile: 'wpsg-agent-runtime-package',
+	runtime_profiles: runtimePackageProfiles(readAgentRuntimeContract({ ...genericRuntimeEnv, HOMEBOY_AGENT_RUNTIME_PROVIDER: codeboxProvider })),
+	tool_profile: runtimeToolProfiles.workspaceIteration,
+}, {});
+assert.equal(renderedWorkspaceWorkflowInputs.schema, 'homeboy/runtime-workflow-inputs/v1');
+assert.equal(renderedWorkspaceWorkflowInputs.workflow_inputs.runtime, codeboxProvider);
+assert.equal(renderedWorkspaceWorkflowInputs.workflow_inputs.profile, 'wpsg-agent-runtime-package');
+assert.deepEqual(renderedWorkspaceWorkflowInputs.workflow_inputs.runtime_profiles, runtimePackageProfiles(readAgentRuntimeContract({ ...genericRuntimeEnv, HOMEBOY_AGENT_RUNTIME_PROVIDER: codeboxProvider })));
+assert.deepEqual(renderedWorkspaceWorkflowInputs.tool_profile.tools.map(([name]) => name), runtimeToolProfiles.workspaceIteration.tools.map(([name]) => name));
 assert.deepEqual(runtimeWorkflowInputs('workspace-publication', readAgentRuntimeContract({
 	...genericRuntimeEnv,
 	HOMEBOY_AGENT_RUNTIME_PROVIDER: codeboxProvider,
@@ -271,6 +283,29 @@ assert.deepEqual(workflow, {
 });
 
 const tempDir = await mkdtemp(path.join(tmpdir(), 'wp-site-generator-shared-libs-'));
+const hbeRendererPath = path.join(tempDir, 'runtime-workflow-inputs.cjs');
+await writeFile(hbeRendererPath, `
+'use strict';
+exports.renderRuntimeWorkflowInputs = (options) => ({
+  schema: 'homeboy/runtime-workflow-inputs/v1',
+  runtime_id: 'hbe-runtime',
+  runtime_profile: options.runtime_profile,
+  runtime_profiles: options.runtime_profiles,
+  runtime_requirements: options.runtime_profiles[options.runtime_profile],
+  workflow_inputs: {
+    runtime: 'hbe-runtime',
+    profile: options.runtime_profile,
+    runtime_profiles: options.runtime_profiles,
+  },
+});
+`);
+assert.deepEqual(runtimeWorkflowInputs('workspace-publication', readAgentRuntimeContract(genericRuntimeEnv), { HOMEBOY_EXTENSIONS_RUNTIME_WORKFLOW_INPUTS: hbeRendererPath }), {
+	runtime_provider: 'hbe-runtime',
+	runtime_profile: 'wpsg-agent-runtime-package',
+	runtime_profiles: JSON.stringify(runtimePackageProfiles(defaultRuntimeContract)),
+	ability_requirements: JSON.stringify([runtimePackageAbilityId]),
+	ability_tools: '[]',
+}, 'WPSG delegates Homeboy runtime workflow input rendering while keeping domain ability inputs local');
 const recoveredPath = path.join(tempDir, 'summary.json');
 await mkdir(path.dirname(recoveredPath), { recursive: true });
 await writeFile(recoveredPath, `${JSON.stringify({
