@@ -68,7 +68,7 @@ export function buildSsiPreviewSource({ repo = 'chubes4/wp-site-generator', sha 
 		};
 	}
 
-	throw new Error('SOURCE_HEAD_SHA, SOURCE_TAG, or SOURCE_ARTIFACT_SOURCE is required for deterministic Playground preview provenance.');
+	throw new Error('SOURCE_HEAD_SHA, SOURCE_TAG, or SOURCE_ARTIFACT_SOURCE is required for deterministic runtime preview provenance.');
 }
 
 export function buildSsiPreviewBlueprint({ site, source, lane = 'wordpress', manifest = buildSsiStackManifest() } = {}) {

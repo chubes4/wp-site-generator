@@ -17,7 +17,7 @@ on:
         description: Optional PR diff/test summary or maintainer notes for the reviewer gate.
         required: false
         default: ''
-      openai_model:
+      model:
         description: Agent model to use for the imported agent flow.
         required: true
         default: gpt-5.5
@@ -55,7 +55,7 @@ jobs:
     needs: runtime-execution
     uses: ./.github/workflows/wpsg-runtime-agent-ci.yml
     with:
-      model: ${{ inputs.openai_model }}
+      model: ${{ inputs.model }}
       runtime_workload_profile: workspace-publication
       runtime_execution: ${{ needs.runtime-execution.outputs.runtime_execution }}
       runtime_task_ability: ${{ inputs.runtime_task_ability }}

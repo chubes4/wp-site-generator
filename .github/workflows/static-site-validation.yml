@@ -278,7 +278,6 @@ jobs:
           SOURCE_REPO: ${{ needs.detect-changed-sites.outputs.source_repo }}
           SOURCE_HEAD_SHA: ${{ needs.detect-changed-sites.outputs.head_sha }}
           SSI_STACK_MANIFEST_PATH: homeboy-ci-results/ssi-stack-manifest.json
-          HOMEBOY_AGENT_RUNTIME_PREVIEW_URL_BASE: https://playground.wordpress.net/
         run: |
           set -euo pipefail
           node .github/scripts/build-static-preview-blueprint.mjs --github-output "$GITHUB_OUTPUT"

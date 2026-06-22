@@ -258,10 +258,10 @@ That's the loop. Generate. Design. Build. Validate. Review. Decide. Repeat.
 
 The primary loop runs in GitHub Actions through Homeboy's durable controller primitives. The workflow stamps WPSG-owned run inputs onto `.github/homeboy/controllers/static-site-generation-loop.controller.json`, initializes Homeboy with `homeboy agent-task controller from-spec`, resumes execution with `homeboy agent-task controller resume`, and records GitHub Actions lineage through `homeboy agent-task controller events`. Homeboy owns controller state, action scheduling, event application, and runtime/provider selection.
 
-Required GitHub secrets depend on the selected Homeboy runtime and AI provider. For the current hosted Codebox configuration, configure provider credentials outside WPSG through repository/environment secrets and variables such as:
+Required GitHub secrets depend on the selected Homeboy runtime and AI provider. Configure provider credentials in the Homeboy/runtime contract rather than in WPSG workflows.
 
-1. Runtime provider/model credentials, for example `OPENAI_API_KEY` when the selected provider uses OpenAI.
-2. Runtime selection hints such as `runtime_backend`, `runtime_provider_id`, or `runtime_selector` when the hosted Codebox profile needs a specific backend/provider route.
+1. Runtime provider/model credentials supplied by the selected runtime profile.
+2. Runtime selection hints such as `runtime_backend`, `runtime_provider_id`, or `runtime_selector` when the runtime profile needs a specific backend/provider route.
 
 The reusable `.github/workflows/wpsg-runtime-agent-ci.yml` seam accepts a `runtime_workload_profile` such as `workspace-iteration` or `workspace-publication`, then renders Homeboy runtime profile/tool requirements through `.github/scripts/render-homeboy-runtime-workflow-inputs.mjs`. Runtime execution descriptors are rendered through `.github/scripts/render-runtime-bundle-execution.mjs` so workflows consume the shared runtime facade instead of embedding provider internals.
 

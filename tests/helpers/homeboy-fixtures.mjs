@@ -1,7 +1,7 @@
 import { chmod, writeFile } from 'node:fs/promises';
 import path from 'node:path';
 
-export async function createHomeboyControllerFixture(tempDir) {
+export async function createHomeboyControllerContractFixture(tempDir) {
 	const homeboyFixturePath = path.join(tempDir, 'homeboy-controller-fixture.mjs');
 	await writeFile(homeboyFixturePath, `#!/usr/bin/env node
 import { readFileSync } from 'node:fs';

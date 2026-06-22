@@ -43,8 +43,8 @@ on:
         options:
           - website-idea-artifact-flow
         default: website-idea-artifact-flow
-      openai_model:
-        description: OpenAI model to use for imported agent flows.
+      model:
+        description: Model to use for imported agent flows.
         required: true
         default: gpt-5.5
       homeboy_ref:
@@ -94,13 +94,12 @@ jobs:
       IMPORT_VALIDATION_RESULT: ${{ inputs.import_validation_result }}
       CONCEPT_PROMPT: ${{ inputs.concept_prompt }}
       WEBSITE_FLOW_SLUG: ${{ inputs.website_flow_slug }}
-      OPENAI_MODEL: ${{ inputs.openai_model }}
+      HOMEBOY_AGENT_RUNTIME_MODEL: ${{ inputs.model }}
       HOMEBOY_AGENT_RUNTIME_PROVIDER_PROFILE: ${{ inputs.runtime_provider_profile }}
       HOMEBOY_AGENT_RUNTIME_TASK_ABILITY: ${{ inputs.runtime_task_ability }}
       HOMEBOY_AGENT_RUNTIME_COMPONENTS: ${{ inputs.runtime_components }}
       HOMEBOY_AGENT_RUNTIME_PROVIDER_PLUGINS: ${{ inputs.runtime_provider_plugins }}
       GITHUB_TOKEN: ${{ github.token }}
-      OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
       HOMEBOY_CONTROLLER_RUN_INPUTS_PATH: ${{ github.workspace }}/.ci/homeboy-agent-task.controller-run-inputs.json
       HOMEBOY_POLICY_RESULT_PATH: ${{ github.workspace }}/.ci/homeboy-agent-task.complexity-policy-result.json
       HOMEBOY_CONTROLLER_RUN_SPEC_PATH: ${{ github.workspace }}/.ci/homeboy-agent-task.controller-run-spec.json

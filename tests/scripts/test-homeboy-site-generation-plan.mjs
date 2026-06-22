@@ -5,12 +5,12 @@ import path from 'node:path';
 import { spawnSync } from 'node:child_process';
 
 import { evaluateComplexityPolicy, loadPolicy } from '../../.github/scripts/site-generation-complexity-policy.mjs';
-import { createHomeboyControllerFixture } from '../helpers/homeboy-fixtures.mjs';
+import { createHomeboyControllerContractFixture } from '../helpers/homeboy-fixtures.mjs';
 const repoRoot = path.resolve(new URL('../..', import.meta.url).pathname);
 const tempDir = await mkdtemp(path.join(tmpdir(), 'wpsg-homeboy-controller-'));
 const controllerRunSpecPath = path.join(tempDir, 'controller-run-spec.json');
 const qualitySignalsPath = path.join(tempDir, 'quality-signals.json');
-const homeboyFixturePath = await createHomeboyControllerFixture(tempDir);
+const homeboyFixturePath = await createHomeboyControllerContractFixture(tempDir);
 
 const controllerBuilderEnv = (overrides = {}) => ({
 	...process.env,
