@@ -6,6 +6,7 @@ export const codeboxRuntimeApi = Object.freeze({
 	providerRuntimeInvocation: Object.freeze({
 		schema: 'wp-codebox/provider-runtime-invocation-contract/v1',
 		version: 1,
+		runtimePackageAbility: 'wp-codebox/run-runtime-package',
 		tasks: Object.freeze({
 			workspaceCapture: 'wp-codebox.runner-workspace.capture',
 			workspaceCommand: 'wp-codebox.runner-workspace.command',
@@ -58,6 +59,10 @@ export function codeboxRuntimeWorkspaceRecipeSchema() {
 
 export function codeboxValidationArtifactEnvelopeSchema() {
 	return codeboxRuntimeApi.runtimeSchemas.validationArtifactEnvelope;
+}
+
+export function codeboxRunRuntimePackageAbility() {
+	return codeboxRuntimeApi.providerRuntimeInvocation.runtimePackageAbility;
 }
 
 export function codeboxRunnerWorkspaceCommandAbility() {

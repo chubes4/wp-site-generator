@@ -6,6 +6,7 @@ import path from 'node:path';
 import { buildSingleAiWorkflow, buildSingleAiWorkflowStep } from '../../bundles/php-transformer-iterator-agent/scripts/lib/agent-ai-workflow.mjs';
 import {
 	buildCodeboxPlaygroundPreviewUrl,
+	codeboxRunRuntimePackageAbility,
 	codeboxProviderRuntimeInvocationContract,
 	codeboxRuntimeProviderProfile,
 	codeboxRuntimeApi,
@@ -61,6 +62,7 @@ assert.equal(wordpressRuntimeApi.paths.wpLoadPhp, '/wordpress/wp-load.php', 'Wor
 assert.equal(wordpressRuntimePluginMountTarget(), '/wordpress/wp-content/plugins/wp-site-generator', 'WordPress plugin mount target is centralized');
 assert.equal(codeboxValidationArtifactEnvelopeSchema(), 'wp-codebox/validation-artifact-envelope/v1', 'validation artifact schema is centralized');
 assert.deepEqual(codeboxProviderRuntimeInvocationContract(), codeboxContractFixture, 'Codebox provider runtime invocation contract matches the upstream fixture');
+assert.equal(codeboxRunRuntimePackageAbility(), 'wp-codebox/run-runtime-package', 'runtime package execution uses the Codebox public ability');
 assert.equal(codeboxRunnerWorkspaceCommandAbility(), codeboxContractFixture.abilities.workspaceCommand, 'Codebox workspace command ability is read from the provider runtime contract');
 assert.equal(codeboxRunnerWorkspacePublishAbility(), codeboxContractFixture.abilities.workspacePublish, 'Codebox workspace publish ability is read from the provider runtime contract');
 assert.deepEqual(codeboxRuntimeProviderProfile(), {

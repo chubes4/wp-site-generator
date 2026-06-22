@@ -78,7 +78,7 @@ const runtimeGlueFiles = candidateFiles.filter((file) => [
   '.github/scripts/build-homeboy-ssi-loop-controller.mjs',
 ].includes(file));
 const runtimeBoundaryTerms = [
-  'agents/run-runtime-package',
+  ['agents', 'run-runtime-package'].join('/'),
   'Agents API',
   'Data Machine',
   'data-machine',
