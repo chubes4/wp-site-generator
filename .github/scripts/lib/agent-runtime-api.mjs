@@ -1,6 +1,14 @@
+import { readFileSync } from 'node:fs';
+
 const runtimePackageProfileId = 'wpsg-agent-runtime-package';
 
-export const runtimeProviderProfiles = Object.freeze({});
+const defaultRuntimePackageAbility = 'homeboy/run-runtime-package';
+const defaultRuntimeWorkspaceRecipeSchema = 'homeboy/runtime-workspace-recipe/v1';
+const defaultValidationArtifactEnvelopeSchema = 'homeboy/validation-artifact-envelope/v1';
+const defaultVisualParityOutputRoot = 'visual-parity-artifacts';
+
+export const runtimeProviderProfiles = Object.freeze({
+});
 
 export const runtimeApiAbilities = Object.freeze({
 	runRuntimePackage: '',
@@ -38,20 +46,26 @@ export const runtimeToolProfiles = Object.freeze({
 });
 
 export function readAgentRuntimeContract(env = process.env) {
+	const manifest = readRuntimeManifest(env);
+	const profileManifest = profileFromManifest(manifest, env.HOMEBOY_AGENT_RUNTIME_PROFILE);
 	const providerProfile = runtimeProviderProfile(env.HOMEBOY_AGENT_RUNTIME_PROVIDER_PROFILE, env);
-	const runtimeTaskAbility = requiredRuntimeContractValue('HOMEBOY_AGENT_RUNTIME_TASK_ABILITY', text(env.HOMEBOY_AGENT_RUNTIME_TASK_ABILITY) || text(env.HOMEBOY_AGENT_RUNTIME_PACKAGE_ABILITY));
+	const runtimeTaskAbility = text(env.HOMEBOY_AGENT_RUNTIME_TASK_ABILITY) || text(env.HOMEBOY_AGENT_RUNTIME_PACKAGE_ABILITY) || text(profileManifest.runtime_task_ability) || runtimePackageProfile.runtimeTaskAbility;
 	return {
-		provider: text(env.HOMEBOY_AGENT_RUNTIME_PROVIDER) || providerProfile.provider || '',
-		profile: text(env.HOMEBOY_AGENT_RUNTIME_PROFILE) || runtimePackageProfileId,
-		profiles: text(env.HOMEBOY_AGENT_RUNTIME_PROFILES),
-		backend: text(env.HOMEBOY_AGENT_RUNTIME_BACKEND),
-		providerId: text(env.HOMEBOY_AGENT_RUNTIME_PROVIDER_ID),
-		selector: text(env.HOMEBOY_AGENT_RUNTIME_SELECTOR),
+		provider: text(env.HOMEBOY_AGENT_RUNTIME_PROVIDER) || text(profileManifest.provider) || providerProfile.provider || '',
+		profile: text(env.HOMEBOY_AGENT_RUNTIME_PROFILE) || text(profileManifest.id) || runtimePackageProfile.id,
+		profiles: text(env.HOMEBOY_AGENT_RUNTIME_PROFILES) || runtimeProfilesJsonFromManifest(manifest),
+		backend: text(env.HOMEBOY_AGENT_RUNTIME_BACKEND) || text(profileManifest.backend),
+		providerId: text(env.HOMEBOY_AGENT_RUNTIME_PROVIDER_ID) || text(profileManifest.provider_id),
+		selector: text(env.HOMEBOY_AGENT_RUNTIME_SELECTOR) || text(profileManifest.selector),
 		runtimeTaskAbility,
-		runtimeBundleAbility: text(env.HOMEBOY_AGENT_RUNTIME_BUNDLE_ABILITY) || runtimeTaskAbility,
-		runtimeWorkflowAbility: text(env.HOMEBOY_AGENT_RUNTIME_WORKFLOW_ABILITY) || runtimeTaskAbility,
-		workspaceCommandAbility: text(env.HOMEBOY_AGENT_RUNTIME_WORKSPACE_COMMAND_ABILITY) || providerProfile.workspaceCommandAbility || '',
-		workspacePublishAbility: text(env.HOMEBOY_AGENT_RUNTIME_WORKSPACE_PUBLISH_ABILITY) || providerProfile.workspacePublishAbility || '',
+		runtimeBundleAbility: text(env.HOMEBOY_AGENT_RUNTIME_BUNDLE_ABILITY) || text(profileManifest.runtime_bundle_ability) || runtimeTaskAbility || runtimePackageProfile.runtimeBundleAbility,
+		runtimeWorkflowAbility: text(env.HOMEBOY_AGENT_RUNTIME_WORKFLOW_ABILITY) || text(profileManifest.runtime_workflow_ability) || runtimeTaskAbility || runtimePackageProfile.runtimeWorkflowAbility,
+		workspaceCommandAbility: text(env.HOMEBOY_AGENT_RUNTIME_WORKSPACE_COMMAND_ABILITY) || text(profileManifest.workspace_command_ability) || text(profileManifest.workspaceCommandAbility) || providerProfile.workspaceCommandAbility || '',
+		workspacePublishAbility: text(env.HOMEBOY_AGENT_RUNTIME_WORKSPACE_PUBLISH_ABILITY) || text(profileManifest.workspace_publish_ability) || text(profileManifest.workspacePublishAbility) || providerProfile.workspacePublishAbility || '',
+		previewUrlBase: text(env.HOMEBOY_AGENT_RUNTIME_PREVIEW_URL_BASE) || text(profileManifest.preview_url_base) || text(manifest?.preview_url_base),
+		workspaceRecipeSchema: text(env.HOMEBOY_AGENT_RUNTIME_WORKSPACE_RECIPE_SCHEMA) || text(profileManifest.workspace_recipe_schema) || text(manifest?.workspace_recipe_schema) || defaultRuntimeWorkspaceRecipeSchema,
+		validationArtifactEnvelopeSchema: text(env.HOMEBOY_AGENT_RUNTIME_VALIDATION_ARTIFACT_ENVELOPE_SCHEMA) || text(profileManifest.validation_artifact_envelope_schema) || text(manifest?.validation_artifact_envelope_schema) || defaultValidationArtifactEnvelopeSchema,
+		visualParityOutputRoot: text(env.VISUAL_PARITY_OUTPUT) || text(env.HOMEBOY_AGENT_RUNTIME_VISUAL_PARITY_OUTPUT) || text(profileManifest.visual_parity_output_root) || text(manifest?.visual_parity_output_root) || defaultVisualParityOutputRoot,
 	};
 }
 
@@ -171,8 +185,91 @@ export function runtimeWorkflowBuilderExecution({ kind, workflowBuilder, ...meta
 	};
 }
 
-export function runtimePackageAbility(env = process.env) {
-	return requiredRuntimeContractValue('HOMEBOY_AGENT_RUNTIME_TASK_ABILITY', text(env.HOMEBOY_AGENT_RUNTIME_TASK_ABILITY) || text(env.HOMEBOY_AGENT_RUNTIME_PACKAGE_ABILITY));
+export function runtimePackageAbility(contract = readAgentRuntimeContract()) {
+	if (!contract || contract === process.env || contract.HOMEBOY_AGENT_RUNTIME_TASK_ABILITY || contract.HOMEBOY_AGENT_RUNTIME_PACKAGE_ABILITY || contract.HOMEBOY_AGENT_RUNTIME_MANIFEST || contract.HOMEBOY_AGENT_RUNTIME_MANIFEST_PATH || contract.HOMEBOY_RUNTIME_PROFILE_MANIFEST || contract.HOMEBOY_RUNTIME_PROFILE_MANIFEST_PATH) {
+		contract = readAgentRuntimeContract(contract);
+	}
+	return contract.runtimeBundleAbility || runtimeApiAbilities.runRuntimePackage;
+}
+
+export function runtimeWorkspaceRecipeSchema(contract = readAgentRuntimeContract()) {
+	return contract.workspaceRecipeSchema;
+}
+
+export function runtimeValidationArtifactEnvelopeSchema(contract = readAgentRuntimeContract()) {
+	return contract.validationArtifactEnvelopeSchema;
+}
+
+export function resolveVisualParityOutputRoot(env = process.env) {
+	return readAgentRuntimeContract(env).visualParityOutputRoot;
+}
+
+export function buildRuntimePreviewUrl(options = {}, contract = null) {
+	const isOptionsObject = Object.hasOwn(options, 'blueprint') || Object.hasOwn(options, 'evidenceRefs') || Object.hasOwn(options, 'env') || Object.hasOwn(options, 'allowPlaygroundFallback');
+	const { blueprint, evidenceRefs = [], env = process.env } = isOptionsObject ? options : { blueprint: options };
+	contract = contract || readAgentRuntimeContract(env);
+	const evidenceUrl = previewUrlFromEvidenceRefs(Array.isArray(evidenceRefs) ? evidenceRefs : [evidenceRefs]);
+	if (evidenceUrl) {
+		return evidenceUrl;
+	}
+	if (env.HOMEBOY_RUNTIME_PREVIEW_URL) {
+		return env.HOMEBOY_RUNTIME_PREVIEW_URL;
+	}
+	if (!contract.previewUrlBase) {
+		throw new Error('HOMEBOY_AGENT_RUNTIME_PREVIEW_URL_BASE, runtime manifest preview_url_base, or preview evidence refs are required for runtime preview URLs.');
+	}
+	return `${contract.previewUrlBase}#${encodeURIComponent(JSON.stringify(blueprint))}`;
+}
+
+export function buildRuntimeBlueprintPreviewUrl(blueprint, contract = readAgentRuntimeContract()) {
+	return buildRuntimePreviewUrl({ blueprint }, contract);
+}
+
+function readRuntimeManifest(env) {
+	const inline = text(env.HOMEBOY_AGENT_RUNTIME_MANIFEST || env.HOMEBOY_RUNTIME_PROFILE_MANIFEST);
+	if (inline) {
+		return JSON.parse(inline);
+	}
+	const manifestPath = text(env.HOMEBOY_AGENT_RUNTIME_MANIFEST_PATH || env.HOMEBOY_RUNTIME_PROFILE_MANIFEST_PATH);
+	if (manifestPath) {
+		return JSON.parse(readFileSync(manifestPath, 'utf8'));
+	}
+	return null;
+}
+
+function profileFromManifest(manifest, requestedProfileId) {
+	if (!manifest || typeof manifest !== 'object') {
+		return {};
+	}
+	const profiles = Array.isArray(manifest.profiles) ? manifest.profiles : Object.values(manifest.profiles || {});
+	const requested = text(requestedProfileId) || text(manifest.default_profile) || text(manifest.defaultProfile);
+	return profiles.find((profile) => profile && (profile.id === requested || !requested)) || {};
+}
+
+function runtimeProfilesJsonFromManifest(manifest) {
+	if (!manifest || typeof manifest !== 'object' || !manifest.profiles) {
+		return '';
+	}
+	if (!Array.isArray(manifest.profiles)) {
+		return JSON.stringify(manifest.profiles);
+	}
+	return JSON.stringify(Object.fromEntries(manifest.profiles.filter((profile) => profile?.id).map((profile) => [profile.id, profile])));
+}
+
+function previewUrlFromEvidenceRefs(refs) {
+	for (const ref of refs) {
+		if (typeof ref === 'string' && /^https?:\/\//.test(ref)) {
+			return ref;
+		}
+		if (!ref || typeof ref !== 'object') {
+			continue;
+		}
+		const candidate = ref.preview_url || ref.url || ref.urls?.preview || ref.preview?.url || ref.evidence?.preview_url;
+		if (candidate) {
+			return candidate;
+		}
+	}
+	return '';
 }
 
 function text(value) {
@@ -181,13 +278,6 @@ function text(value) {
 
 function unique(values) {
 	return [...new Set(values.filter(Boolean))];
-}
-
-function requiredRuntimeContractValue(name, value) {
-	if (!value) {
-		throw new Error(`WPSG requires ${name} from the upstream runtime contract.`);
-	}
-	return value;
 }
 
 function parseJsonObject(value, name) {

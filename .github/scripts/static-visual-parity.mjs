@@ -8,7 +8,7 @@ import path from 'node:path';
 import { buildSsiImportWebsiteArtifactPhp, requiresCommerceStack } from './lib/ssi-stack-profile.mjs';
 import { buildWebsiteArtifactFromSource, resolveStaticSiteCandidateSource } from './lib/static-site-candidate.mjs';
 import { buildSsiRuntimeBlueprint, loadSsiStackManifest } from './lib/ssi-stack-runtime.mjs';
-import { resolveVisualParityOutputRoot } from './lib/codebox-runtime-api.mjs';
+import { resolveVisualParityOutputRoot } from './lib/ci-runtime-utils.mjs';
 import { wordpressRuntimePluginMountTarget } from './lib/wordpress-runtime-api.mjs';
 
 const require = createRequire(import.meta.url);
