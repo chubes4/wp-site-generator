@@ -1,6 +1,6 @@
-import { codeboxRuntimeProviderProfile } from './codebox-runtime-api.mjs';
+import { codeboxRunRuntimePackageAbility, codeboxRuntimeProviderProfile } from './codebox-runtime-api.mjs';
 
-const defaultRuntimePackageAbility = 'agents/run-runtime-package';
+const defaultRuntimePackageAbility = codeboxRunRuntimePackageAbility();
 
 export const runtimeProviderProfiles = Object.freeze({
 	wpCodebox: Object.freeze(codeboxRuntimeProviderProfile()),

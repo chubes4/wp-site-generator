@@ -1,6 +1,7 @@
 {
   "schema": "wp-codebox/provider-runtime-invocation-contract/v1",
   "version": 1,
+  "runtimePackageAbility": "wp-codebox/run-runtime-package",
   "tasks": {
     "workspaceCapture": "wp-codebox.runner-workspace.capture",
     "workspaceCommand": "wp-codebox.runner-workspace.command",
