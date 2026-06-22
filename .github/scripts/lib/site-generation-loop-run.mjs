@@ -52,8 +52,6 @@ export function resolveDependencyRefs({ env = process.env, root = env.GITHUB_WOR
 	return compactObject({
 		homeboy: dependencyRef({ id: 'homeboy', repository: 'Extra-Chill/homeboy', inputRef: env.HOMEBOY_REF || '', checkoutPath: path.join(root, '.ci/homeboy') }),
 		homeboy_extensions: dependencyRef({ id: 'homeboy_extensions', repository: 'Extra-Chill/homeboy-extensions', inputRef: env.HOMEBOY_EXTENSIONS_REF || '', checkoutPath: path.join(root, '.ci/homeboy-extensions') }),
-		agents_api: dependencyRef({ id: 'agents_api', repository: 'Automattic/agents-api', inputRef: env.AGENTS_API_REF || '', checkoutPath: path.join(root, '.ci/agents-api') }),
-		ai_provider_for_openai: dependencyRef({ id: 'ai_provider_for_openai', repository: 'WordPress/ai-provider-for-openai', inputRef: env.AI_PROVIDER_OPENAI_REF || '', checkoutPath: path.join(root, '.ci/ai-provider-for-openai') }),
 	});
 }
 

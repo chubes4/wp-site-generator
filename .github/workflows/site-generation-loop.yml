@@ -15,14 +15,18 @@ on:
         description: Homeboy Extensions ref with generic runtime package agent-task support.
         required: true
         default: main
-      agents_api_ref:
-        description: Agents API ref used by the selected runtime profile.
+      runtime_provider_profile:
+        description: Codebox runtime provider profile id.
         required: true
-        default: main
-      ai_provider_openai_ref:
-        description: OpenAI provider ref used by the selected runtime profile.
-        required: true
-        default: trunk
+        default: wp-codebox
+      runtime_components:
+        description: JSON array of Codebox component contracts supplied to the runtime.
+        required: false
+        default: ''
+      runtime_provider_plugins:
+        description: JSON array of Codebox provider plugin contracts supplied to the runtime.
+        required: false
+        default: ''
       ref_policy:
         description: Dependency ref policy. Use branch-defaults for staging; production requires immutable dependency refs.
         required: true
@@ -70,8 +74,9 @@ jobs:
       HOMEBOY_REF: ${{ inputs.homeboy_ref }}
       HOMEBOY_EXTENSIONS_REF: ${{ inputs.homeboy_extensions_ref }}
       WPSG_REF_POLICY: ${{ inputs.ref_policy }}
-      AGENTS_API_REF: ${{ inputs.agents_api_ref }}
-      AI_PROVIDER_OPENAI_REF: ${{ inputs.ai_provider_openai_ref }}
+      HOMEBOY_AGENT_RUNTIME_PROVIDER_PROFILE: ${{ inputs.runtime_provider_profile }}
+      HOMEBOY_AGENT_RUNTIME_COMPONENTS: ${{ inputs.runtime_components }}
+      HOMEBOY_AGENT_RUNTIME_PROVIDER_PLUGINS: ${{ inputs.runtime_provider_plugins }}
       HOMEBOY_CONTROLLER_RUN_INPUTS_PATH: ${{ github.workspace }}/.ci/site-generation-loop.controller-run-inputs.json
       HOMEBOY_POLICY_RESULT_PATH: ${{ github.workspace }}/.ci/site-generation-loop.complexity-policy-result.json
       HOMEBOY_CONTROLLER_RUN_SPEC_PATH: ${{ github.workspace }}/.ci/site-generation-loop.controller-run-spec.json
@@ -102,20 +107,6 @@ jobs:
           repository: Extra-Chill/homeboy-extensions
           ref: ${{ env.HOMEBOY_EXTENSIONS_REF }}
           path: .ci/homeboy-extensions
-
-      - name: Check out Agents API
-        uses: actions/checkout@v4
-        with:
-          repository: Automattic/agents-api
-          ref: ${{ env.AGENTS_API_REF }}
-          path: .ci/agents-api
-
-      - name: Check out OpenAI provider
-        uses: actions/checkout@v4
-        with:
-          repository: WordPress/ai-provider-for-openai
-          ref: ${{ env.AI_PROVIDER_OPENAI_REF }}
-          path: .ci/ai-provider-for-openai
 
       - name: Build Homeboy
         run: cargo install --path .ci/homeboy --locked

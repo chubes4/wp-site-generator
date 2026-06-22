@@ -31,6 +31,7 @@ export {
 export {
 	buildCodeboxPlaygroundPreviewUrl,
 	codeboxRuntimeProviderProfile,
+	codeboxProviderRuntimeInvocationContract,
 	codeboxRuntimeApi,
 	codeboxRuntimeWorkspaceRecipeSchema,
 	codeboxRunnerWorkspaceCommandAbility,
@@ -150,6 +151,8 @@ export function readHomeboyAgentRuntimeOverrides(env) {
 		provider: env.HOMEBOY_AGENT_RUNTIME_PROVIDER || '',
 		model: env.HOMEBOY_AGENT_RUNTIME_MODEL || '',
 		providerPluginPaths: splitList(env.HOMEBOY_AGENT_RUNTIME_PROVIDER_PLUGIN_PATHS || ''),
+		providerPlugins: parseJsonArray(env.HOMEBOY_AGENT_RUNTIME_PROVIDER_PLUGINS || ''),
+		componentContracts: parseJsonArray(env.HOMEBOY_AGENT_RUNTIME_COMPONENTS || ''),
 		secretEnv: splitList(env.HOMEBOY_AGENT_RUNTIME_SECRET_ENV || ''),
 		runtimeEnv: parseJsonObject(env.HOMEBOY_AGENT_RUNTIME_ENV || ''),
 		runtimeConfigMounts: parseJsonArray(env.HOMEBOY_AGENT_RUNTIME_CONFIG_MOUNTS || ''),
@@ -168,6 +171,12 @@ export function applyHomeboyAgentRuntimeOverrides(config, runtimeTaskInput, runt
 	}
 	if (runtimeOverrides.providerPluginPaths.length > 0) {
 		config.provider_plugin_paths = runtimeOverrides.providerPluginPaths;
+	}
+	if (runtimeOverrides.providerPlugins) {
+		config.provider_plugins = runtimeOverrides.providerPlugins;
+	}
+	if (runtimeOverrides.componentContracts) {
+		config.component_contracts = runtimeOverrides.componentContracts;
 	}
 	if (runtimeOverrides.secretEnv.length > 0) {
 		config.secret_env = runtimeOverrides.secretEnv;
