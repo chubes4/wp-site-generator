@@ -311,6 +311,22 @@ jobs:
           )
           gh pr comment "$PR" --body "$body"
 
+      - name: Build PHP transformer iterator fanout declaration
+        if: always() && needs.detect-changed-sites.outputs.pr_number != '' && steps.finding-packets.outputs.actionable_count != '' && steps.finding-packets.outputs.actionable_count != '0'
+        env:
+          SOURCE_REPO: ${{ github.repository }}
+          SOURCE_PR: ${{ needs.detect-changed-sites.outputs.pr_number }}
+          SOURCE_HEAD_SHA: ${{ needs.detect-changed-sites.outputs.head_sha }}
+          VALIDATION_RUN_ID: ${{ github.run_id }}
+          ARTIFACT_NAME: ssi-validation-${{ matrix.site }}
+          VISUAL_ARTIFACT_NAME: visual-parity-${{ matrix.site }}
+        run: |
+          set -euo pipefail
+          FINDING_GROUPS_PATH=homeboy-ci-results/grouped-finding-packets.json \
+            node .github/scripts/group-ssi-finding-packets.mjs homeboy-ci-results/finding-packets.json
+          FANOUT_CONFIG_PATH=homeboy-ci-results/php-transformer-iterator-fanout-config.json \
+            node .github/scripts/build-php-transformer-iterator-fanout-config.mjs homeboy-ci-results/grouped-finding-packets.json
+
       - name: Upload bench artifact
         id: upload-ssi-validation
         if: always()
@@ -319,22 +335,6 @@ jobs:
           name: ssi-validation-${{ matrix.site }}
           path: homeboy-ci-results/
           if-no-files-found: ignore
-
-      - name: Dispatch PHP transformer iterator
-        if: always() && needs.detect-changed-sites.outputs.pr_number != '' && steps.finding-packets.outputs.actionable_count != '' && steps.finding-packets.outputs.actionable_count != '0'
-        env:
-          GH_TOKEN: ${{ github.token }}
-        run: |
-          set -euo pipefail
-          gh workflow run php-transformer-iterator.yml \
-            --repo "$GITHUB_REPOSITORY" \
-            --ref main \
-            -f source_repo="$GITHUB_REPOSITORY" \
-            -f source_pr="${{ needs.detect-changed-sites.outputs.pr_number }}" \
-            -f source_head_sha="${{ needs.detect-changed-sites.outputs.head_sha }}" \
-            -f validation_run_id="$GITHUB_RUN_ID" \
-            -f artifact_name="ssi-validation-${{ matrix.site }}" \
-            -f visual_artifact_name="visual-parity-${{ matrix.site }}"
 
   mark-validation-processed:
     name: Mark validation processed

@@ -92,7 +92,7 @@ This repo is the only place all of them meet. The Homeboy controller spec is the
 
 This repository is the orchestration and generated-site source repo. The working system spans these repos:
 
-- [`chubes4/wp-site-generator`](https://github.com/chubes4/wp-site-generator) — concept issues, runtime bundles, generated static-site PRs, validation workflows, and iterator dispatch.
+- [`chubes4/wp-site-generator`](https://github.com/chubes4/wp-site-generator) — concept issues, runtime bundles, generated static-site PRs, validation workflows, and iterator fanout declarations.
 - [`Extra-Chill/homeboy`](https://github.com/Extra-Chill/homeboy) — local and CI quality runner used to execute repo checks and WordPress benches.
 - [`Extra-Chill/homeboy-action`](https://github.com/Extra-Chill/homeboy-action) — GitHub Action wrapper that runs Homeboy in repository workflows.
 - [`Extra-Chill/homeboy-extensions`](https://github.com/Extra-Chill/homeboy-extensions) — reusable WordPress Playground workloads, current agent CI workflow, validation reporting, and iterator plumbing.
@@ -184,7 +184,7 @@ The validation workflow:
 5. Reads the resulting `import-report.json` and emits importer metrics + the report itself as a Homeboy bench artifact.
 6. Builds `finding-packets.json` for actionable importer, block, and visual parity failures.
 7. Posts a PR comment with the metrics, visual parity status, and a Playground preview link that re-imports the site live in the reviewer's browser.
-8. Dispatches the PHP transformer iterator when actionable finding packets exist.
+8. Emits a Homeboy fanout declaration for the PHP transformer iterator when actionable finding packets exist.
 
 This whole loop runs **without a hosted WordPress site**. PHP runs as WebAssembly in CI; the database is SQLite. The Playground preview link the reviewer clicks does the same import in their browser.
 
@@ -214,7 +214,7 @@ wp-site-generator/
   homeboy.json                       Homeboy config: WordPress extension + base wordpress_runtime_blueprint
   .github/
     workflows/
-      static-site-validation.yml     SSI import, visual parity, findings, iterator dispatch
+      static-site-validation.yml     SSI import, visual parity, findings, iterator fanout declaration
       site-generation-loop.yml       end-to-end idea -> design -> static-site PR loop
       playground-stage-5.yml         legacy agent-runtime proof in Playground CI
       php-transformer-iterator.yml   upstream transformer repair loop from findings

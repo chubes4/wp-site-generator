@@ -217,6 +217,7 @@ const controller = {
 			abilities: [runtimePackageAbilityId, 'github_issue_publish', 'github_pull_request_publish', 'comment_github_pull_request'],
 			...handoff({ consumes: ['finding_group'], emits: ['iterator_upstream_issue', 'iterator_upstream_pull_request'] }),
 			fan_out: {
+				primitive: 'homeboy.agent-task.fanout.plan',
 				mode: 'per_artifact',
 				artifact: 'finding_group',
 				group_by: ['owner_repo', 'root_cause', 'group_id'],
@@ -250,6 +251,7 @@ const controller = {
 	artifact_flow: artifactFlow,
 	iterator_groups: {
 		artifact: 'finding_group',
+		primitive: 'homeboy.agent-task.fanout.plan',
 		group_by: ['owner_repo', 'root_cause', 'group_id'],
 		fan_out_workflow: 'iterator',
 		join_workflows: ['revalidation', 'reviewer'],

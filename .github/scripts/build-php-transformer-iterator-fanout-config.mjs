@@ -14,6 +14,12 @@ const groups = Array.isArray(grouped?.groups) ? grouped.groups : [];
 const config = {
 	schema: 'wp-site-generator/php-transformer-iterator-fanout-input/v1',
 	fanout_id: 'wp-site-generator-php-transformer-iterator',
+	primitive: {
+		provider: 'homeboy',
+		command: 'agent-task fanout plan',
+		input_contract: 'homeboy/agent-task-fanout-input/v1',
+		controller_workflow: 'iterator',
+	},
 	orchestrator: {
 		id: 'wp-site-generator-php-transformer-iterator',
 		source_repo: process.env.SOURCE_REPO || '',
