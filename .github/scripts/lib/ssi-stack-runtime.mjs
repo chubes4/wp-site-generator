@@ -1,4 +1,4 @@
-import { codeboxWorkspaceRecipeSchema, readJsonFile, wordpressRuntimeSettingsDescriptor, wordpressRuntimeSettingsFields } from './ci-runtime-utils.mjs';
+import { readJsonFile, runtimeWorkspaceRecipeSchema, wordpressRuntimeSettingsDescriptor, wordpressRuntimeSettingsFields } from './ci-runtime-utils.mjs';
 import { buildSsiStackManifest } from './ssi-stack-manifest.mjs';
 import { buildBlocksEnginePhpTransformerProbePhp, buildSsiImportWebsiteArtifactFromDirectoryPhp, buildSsiImportWorkload, buildSsiStackBlueprint, buildSsiStackProfile } from './ssi-stack-profile.mjs';
 
@@ -107,9 +107,9 @@ export function buildSsiPreviewBlueprint({ site, source, lane = 'wordpress', man
 	}, manifest);
 }
 
-export function buildWpCodeboxRecipe({ blueprint, mounts = [], workflowSteps = [], artifactsDirectory = '', env = process.env } = {}) {
+export function buildRuntimeWorkspaceRecipe({ blueprint, mounts = [], workflowSteps = [], artifactsDirectory = '' } = {}) {
 	return {
-		schema: codeboxWorkspaceRecipeSchema(env),
+		schema: runtimeWorkspaceRecipeSchema(),
 		runtime: {
 			wp: 'latest',
 			blueprint,

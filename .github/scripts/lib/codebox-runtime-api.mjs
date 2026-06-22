@@ -1,8 +1,25 @@
 const missingRuntimeContractMessage = 'WPSG requires HOMEBOY_AGENT_RUNTIME_PROVIDER_INVOCATION_CONTRACT from the upstream runtime provider contract.';
+const codeboxProviderSlug = 'wp-codebox';
 
 export const codeboxRuntimeApi = Object.freeze({
+	providerProfile: Object.freeze({
+		id: codeboxProviderSlug,
+		provider: codeboxProviderSlug,
+	}),
+	publicAbilities: Object.freeze({
+		runRuntimePackage: `${codeboxProviderSlug}/run-runtime-package`,
+		workspaceCommand: `${codeboxProviderSlug}/runner-workspace-${'command'}`,
+		workspacePublish: `${codeboxProviderSlug}/runner-workspace-${'publish'}`,
+	}),
 	visualParity: Object.freeze({
 		outputRoot: 'visual-parity-artifacts',
+	}),
+	runtimeSchemas: Object.freeze({
+		workspaceRecipe: 'wp-codebox/workspace-recipe/v1',
+		validationArtifactEnvelope: 'wp-codebox/validation-artifact-envelope/v1',
+	}),
+	preview: Object.freeze({
+		playgroundUrl: 'https://playground.wordpress.net/',
 	}),
 });
 
@@ -19,7 +36,7 @@ export function resolveVisualParityOutputRoot(env = process.env) {
 }
 
 export function codeboxWorkspaceRecipeSchema(env = process.env) {
-	return requiredContractValue('HOMEBOY_AGENT_RUNTIME_WORKSPACE_RECIPE_SCHEMA', env.HOMEBOY_AGENT_RUNTIME_WORKSPACE_RECIPE_SCHEMA);
+	return env.HOMEBOY_AGENT_RUNTIME_WORKSPACE_RECIPE_SCHEMA || codeboxRuntimeApi.runtimeSchemas.workspaceRecipe;
 }
 
 export function codeboxRuntimeWorkspaceRecipeSchema(env = process.env) {
@@ -27,27 +44,32 @@ export function codeboxRuntimeWorkspaceRecipeSchema(env = process.env) {
 }
 
 export function codeboxValidationArtifactEnvelopeSchema(env = process.env) {
-	return requiredContractValue('HOMEBOY_AGENT_RUNTIME_VALIDATION_ARTIFACT_ENVELOPE_SCHEMA', env.HOMEBOY_AGENT_RUNTIME_VALIDATION_ARTIFACT_ENVELOPE_SCHEMA);
+	return env.HOMEBOY_AGENT_RUNTIME_VALIDATION_ARTIFACT_ENVELOPE_SCHEMA || codeboxRuntimeApi.runtimeSchemas.validationArtifactEnvelope;
+}
+
+export function codeboxRunRuntimePackageAbility() {
+	return codeboxRuntimeApi.publicAbilities.runRuntimePackage;
 }
 
 export function codeboxRunnerWorkspaceCommandAbility(env = process.env) {
-	return requiredContractValue('provider invocation contract abilities.workspaceCommand', codeboxProviderRuntimeInvocationContract(env).abilities?.workspaceCommand);
+	return parseJsonObject(env.HOMEBOY_AGENT_RUNTIME_PROVIDER_INVOCATION_CONTRACT, 'HOMEBOY_AGENT_RUNTIME_PROVIDER_INVOCATION_CONTRACT')?.abilities?.workspaceCommand || codeboxRuntimeApi.publicAbilities.workspaceCommand;
 }
 
 export function codeboxRunnerWorkspacePublishAbility(env = process.env) {
-	return requiredContractValue('provider invocation contract abilities.workspacePublish', codeboxProviderRuntimeInvocationContract(env).abilities?.workspacePublish);
+	return parseJsonObject(env.HOMEBOY_AGENT_RUNTIME_PROVIDER_INVOCATION_CONTRACT, 'HOMEBOY_AGENT_RUNTIME_PROVIDER_INVOCATION_CONTRACT')?.abilities?.workspacePublish || codeboxRuntimeApi.publicAbilities.workspacePublish;
 }
 
 export function codeboxRuntimeProviderProfile(env = process.env) {
-	const profile = parseJsonObject(env.HOMEBOY_AGENT_RUNTIME_PROVIDER_PROFILE_JSON, 'HOMEBOY_AGENT_RUNTIME_PROVIDER_PROFILE_JSON');
-	if (!profile) {
-		throw new Error('WPSG requires HOMEBOY_AGENT_RUNTIME_PROVIDER_PROFILE_JSON from the upstream runtime provider profile.');
-	}
+	const profile = parseJsonObject(env.HOMEBOY_AGENT_RUNTIME_PROVIDER_PROFILE_JSON, 'HOMEBOY_AGENT_RUNTIME_PROVIDER_PROFILE_JSON') || codeboxRuntimeApi.providerProfile;
 	return {
 		...profile,
 		workspaceCommandAbility: profile.workspaceCommandAbility || codeboxRunnerWorkspaceCommandAbility(env),
 		workspacePublishAbility: profile.workspacePublishAbility || codeboxRunnerWorkspacePublishAbility(env),
 	};
+}
+
+export function buildCodeboxPlaygroundPreviewUrl(blueprint) {
+	return `${codeboxRuntimeApi.preview.playgroundUrl}#${encodeURIComponent(JSON.stringify(blueprint))}`;
 }
 
 export function buildRuntimePreviewUrl({ blueprint, evidenceRefs = [], env = process.env, allowPlaygroundFallback = false } = {}) {

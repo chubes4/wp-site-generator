@@ -5,7 +5,7 @@ import { mkdir, mkdtemp, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 
-import { parseArgs, readJsonFile, writeJsonFile } from './lib/ci-runtime-utils.mjs';
+import { parseArgs, readAgentRuntimeContract, readJsonFile, writeJsonFile } from './lib/ci-runtime-utils.mjs';
 
 const args = parseArgs(process.argv.slice(2));
 const repoRoot = path.resolve(args.get('--repo-root') || process.env.GITHUB_WORKSPACE || process.cwd());
@@ -14,7 +14,8 @@ const keepTemp = args.has('--keep-temp');
 const tempDir = path.resolve(args.get('--work-dir') || await mkdtemp(path.join(tmpdir(), 'wpsg-headless-loop-')));
 const runId = args.get('--run-id') || process.env.WPSG_REPLAY_ID || 'headless-contract';
 const randomnessSeed = args.get('--randomness-seed') || process.env.WPSG_RANDOMNESS_SEED || 'headless-contract-seed';
-const runtimeId = args.get('--runtime-id') || process.env.HOMEBOY_AGENT_RUNTIME || 'contract-runtime';
+const runtimeContract = readAgentRuntimeContract(process.env);
+const runtimeId = args.get('--runtime-id') || process.env.HOMEBOY_AGENT_RUNTIME || runtimeContract.provider || runtimeContract.profile;
 const writeFixtureArtifacts = args.has('--fixture-artifacts');
 const artifactRoot = path.resolve(args.get('--artifact-root') || path.join(tempDir, 'homeboy-agent-task-artifacts'));
 const evidencePath = path.resolve(args.get('--evidence') || path.join(tempDir, 'headless-site-generation-loop-evidence.json'));

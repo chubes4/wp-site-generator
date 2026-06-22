@@ -5,13 +5,6 @@ import path from 'node:path';
 
 import { buildSingleAiWorkflow, buildSingleAiWorkflowStep } from '../../bundles/php-transformer-iterator-agent/scripts/lib/agent-ai-workflow.mjs';
 import {
-	codeboxProviderRuntimeInvocationContract,
-	codeboxRuntimeProviderProfile,
-	codeboxRuntimeWorkspaceRecipeSchema,
-	codeboxRunnerWorkspaceCommandAbility,
-	codeboxRunnerWorkspacePublishAbility,
-	codeboxValidationArtifactEnvelopeSchema,
-	codeboxWorkspaceRecipeSchema,
 	buildRuntimePreviewUrl,
 	envOrArg,
 	numberValue,
@@ -27,6 +20,8 @@ import {
 	runtimePackageProfiles,
 	runtimeToolProfileInputs,
 	runtimeToolProfiles,
+	runtimeValidationArtifactEnvelopeSchema,
+	runtimeWorkspaceRecipeSchema,
 	runtimeWorkflowBuilderExecution,
 	runtimeWorkflowInputs,
 	textValue,
@@ -40,6 +35,18 @@ import {
 	wordpressRuntimeSettingsDescriptor,
 	wordpressRuntimeSettingsFields,
 } from '../../.github/scripts/lib/ci-runtime-utils.mjs';
+import {
+	buildCodeboxPlaygroundPreviewUrl,
+	codeboxProviderRuntimeInvocationContract,
+	codeboxRunRuntimePackageAbility,
+	codeboxRuntimeProviderProfile,
+	codeboxRuntimeApi,
+	codeboxRuntimeWorkspaceRecipeSchema,
+	codeboxRunnerWorkspaceCommandAbility,
+	codeboxRunnerWorkspacePublishAbility,
+	codeboxValidationArtifactEnvelopeSchema,
+	codeboxWorkspaceRecipeSchema,
+} from '../../.github/scripts/lib/codebox-runtime-api.mjs';
 import { loadRecoveredSsiImportSummary, recoveredSsiScenarioFromImportSummary } from '../../.github/scripts/lib/ssi-import-summary.mjs';
 import { ssiPrBodyMetrics, validationMetricValue } from '../../.github/scripts/lib/ssi-metrics.mjs';
 
@@ -96,9 +103,13 @@ assert.equal(codeboxWorkspaceRecipeSchema(codeboxFixtureEnv), codeboxFixtureEnv.
 assert.equal(buildRuntimePreviewUrl({ evidenceRefs: [{ preview_url: 'https://example.com/preview' }] }), 'https://example.com/preview');
 assert.equal(buildRuntimePreviewUrl({ evidenceRefs: { preview_url: 'https://example.com/single-preview' } }), 'https://example.com/single-preview');
 assert.equal(buildRuntimePreviewUrl({ env: { HOMEBOY_RUNTIME_PREVIEW_URL: 'https://example.com/runtime-preview' } }), 'https://example.com/runtime-preview');
-assert.throws(() => buildRuntimePreviewUrl({ blueprint: { steps: [] } }), /preview evidence refs/);
-assert.throws(() => readAgentRuntimeContract({}), /HOMEBOY_AGENT_RUNTIME_TASK_ABILITY/, 'runtime contract fails closed without the upstream task ability');
+assert.throws(() => buildRuntimePreviewUrl({ blueprint: { steps: [] } }), /preview evidence refs|preview_url_base|runtime preview URLs/);
 const defaultRuntimeContract = readAgentRuntimeContract(genericRuntimeEnv);
+assert.equal(runtimeWorkspaceRecipeSchema(defaultRuntimeContract), 'homeboy/runtime-workspace-recipe/v1', 'runtime workspace recipe schema defaults to the generic Homeboy contract');
+assert.equal(runtimeValidationArtifactEnvelopeSchema(defaultRuntimeContract), 'homeboy/validation-artifact-envelope/v1', 'validation artifact envelope schema defaults to the generic Homeboy contract');
+assert.equal(codeboxRuntimeWorkspaceRecipeSchema(), 'wp-codebox/workspace-recipe/v1');
+assert.equal(codeboxWorkspaceRecipeSchema(), 'wp-codebox/workspace-recipe/v1');
+assert.equal(buildCodeboxPlaygroundPreviewUrl({ steps: [{ step: 'login' }] }), 'https://playground.wordpress.net/#%7B%22steps%22%3A%5B%7B%22step%22%3A%22login%22%7D%5D%7D');
 assert.equal(defaultRuntimeContract.provider, '', 'WPSG does not select a runtime provider by default');
 assert.deepEqual(runtimePackageProfiles(defaultRuntimeContract), {
 	'wpsg-agent-runtime-package': {
@@ -221,6 +232,25 @@ assert.deepEqual(runtimeToolProfileInputs('workspace-publication', configuredRun
 	ability_requirements: JSON.stringify([runtimePackageAbilityId, codeboxRunnerWorkspacePublishAbility(codeboxFixtureEnv)]),
 	ability_tools: '[]',
 }, 'Codebox-compatible abilities can still be supplied externally');
+const codeboxProfileManifest = {
+	profiles: [
+		{
+			id: 'codebox-runtime-package',
+			provider: 'wp-codebox',
+			runtime_task_ability: codeboxRunRuntimePackageAbility(),
+			workspace_command_ability: codeboxRunnerWorkspaceCommandAbility(codeboxFixtureEnv),
+			workspace_publish_ability: codeboxRunnerWorkspacePublishAbility(codeboxFixtureEnv),
+			workspace_recipe_schema: codeboxWorkspaceRecipeSchema(codeboxFixtureEnv),
+			validation_artifact_envelope_schema: codeboxValidationArtifactEnvelopeSchema(codeboxFixtureEnv),
+			preview_url_base: 'https://playground.wordpress.net/',
+		},
+	],
+};
+const manifestRuntimeContract = readAgentRuntimeContract({ HOMEBOY_AGENT_RUNTIME_MANIFEST: JSON.stringify(codeboxProfileManifest) });
+assert.equal(runtimePackageAbility(manifestRuntimeContract), codeboxRunRuntimePackageAbility(), 'runtime package ability can be supplied by a Homeboy runtime manifest');
+assert.equal(runtimeWorkspaceRecipeSchema(manifestRuntimeContract), codeboxWorkspaceRecipeSchema(codeboxFixtureEnv), 'Codebox-compatible recipe schemas come from the runtime manifest');
+assert.equal(runtimeValidationArtifactEnvelopeSchema(manifestRuntimeContract), codeboxValidationArtifactEnvelopeSchema(codeboxFixtureEnv), 'Codebox-compatible validation schemas come from the runtime manifest');
+assert.equal(buildRuntimePreviewUrl({ steps: [{ step: 'login' }] }, manifestRuntimeContract), buildCodeboxPlaygroundPreviewUrl({ steps: [{ step: 'login' }] }), 'preview URL shape is supplied by the runtime contract');
 
 const workflow = buildSingleAiWorkflow({
 	step: buildSingleAiWorkflowStep({
