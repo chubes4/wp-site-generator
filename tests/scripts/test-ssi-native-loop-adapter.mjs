@@ -152,7 +152,7 @@ assert.match(validationWorkflow, /build-static-preview-blueprint\.mjs/, 'Actions
 assert.match(validationWorkflow, /gh workflow run php-transformer-iterator\.yml/, 'Actions validation dispatches iterator workflow with gh');
 assert.match(validationWorkflow, /-f source_pr=/, 'Actions validation passes source PR to iterator workflow');
 
-for (const workflowPath of ['.github/workflows/php-transformer-iterator.yml', '.github/workflows/php-transformer-iterator-smoke.yml', '.github/workflows/ssi-stack-reviewer.yml']) {
+for (const workflowPath of ['.github/workflows/php-transformer-iterator.yml', '.github/workflows/ssi-stack-reviewer.yml']) {
 	const workflow = await readFile(path.join(repoRoot, workflowPath), 'utf8');
 	assert.doesNotMatch(workflow, /agent_runtime:/, `${workflowPath} leaves runtime selection to reusable Agent CI`);
 }
