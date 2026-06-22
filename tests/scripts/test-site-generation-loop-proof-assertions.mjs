@@ -94,6 +94,10 @@ try {
       controllerResultPath,
       '--controller-run-spec',
       controllerRunSpecPath,
+      '--controller-resume',
+      controllerResumePath,
+      '--controller-event',
+      controllerEventPath,
       '--artifact-root',
       artifactRoot,
     ],
@@ -103,7 +107,8 @@ try {
     }
   );
   assert.notEqual(missingArtifactProof.status, 0, 'controller proof fails without real artifacts');
-  assert.match(missingArtifactProof.stderr || missingArtifactProof.stdout, /artifact root contains static_site_candidate/);
+  assert.match(missingArtifactProof.stderr || missingArtifactProof.stdout, /artifact root is missing Homeboy-emitted tiny_fixture_site_run/);
+  assert.match(missingArtifactProof.stderr || missingArtifactProof.stdout, /dependency: https:\/\/github.com\/Extra-Chill\/homeboy-extensions\/pull\/1645/);
 
   const placeholderControllerResultPath = path.join(tempDir, 'site-generation-loop.controller-placeholder-result.json');
   await writeFile(placeholderControllerResultPath, JSON.stringify({
@@ -148,6 +153,10 @@ try {
       placeholderControllerResultPath,
       '--controller-run-spec',
       controllerRunSpecPath,
+      '--controller-resume',
+      controllerResumePath,
+      '--controller-event',
+      controllerEventPath,
       '--artifact-root',
       artifactRoot,
     ],
@@ -159,6 +168,11 @@ try {
   assert.notEqual(placeholderProof.status, 0, 'controller proof fails when typed artifacts contain tool-call placeholders');
   assert.match(placeholderProof.stderr || placeholderProof.stdout, /concept_packet contains an unexecuted workspace tool-call placeholder/);
 
+  await writeArtifact('tiny_fixture_site_run', {
+    schema: 'homeboy/Run/v1',
+    fixture: 'tiny',
+    artifact_url: 'https://artifacts.example.test/tiny-fixture-site-run.json',
+  });
   await writeArtifact('static_site_candidate', {
     schema: 'wp-site-generator/StaticSiteCandidate/v1',
     preview_url: 'https://preview.example.test/proof-site',
@@ -168,6 +182,7 @@ try {
     schema: 'wp-site-generator/ImportValidationResult/v1',
     artifact_url: 'https://artifacts.example.test/import-validation.json',
     metrics: { fallback_blocks: 0, conversion_findings: 0 },
+    import_report: { pages_imported: 1 },
   });
   await writeArtifact('static_validation_run', {
     schema: 'homeboy/Run/v1',
@@ -183,6 +198,18 @@ try {
     artifact_url: 'https://artifacts.example.test/finding-packets.json',
     packets: [],
     actionable_conversion_count: 0,
+  });
+  await writeArtifact('finding_group', {
+    schema: 'wp-site-generator/FindingGroup/v1',
+    artifact_url: 'https://artifacts.example.test/finding-group.json',
+  });
+  await writeArtifact('iterator_upstream_issue', {
+    schema: 'github/Issue/v1',
+    url: 'https://github.com/chubes4/wp-site-generator/issues/123',
+  });
+  await writeArtifact('iterator_upstream_pull_request', {
+    schema: 'github/PullRequest/v1',
+    url: 'https://github.com/chubes4/wp-site-generator/pull/124',
   });
   await writeArtifact('revalidation_attempt', {
     schema: 'wp-site-generator/RevalidationAttempt/v1',
@@ -217,6 +244,10 @@ try {
       controllerResultPath,
       '--controller-run-spec',
       controllerRunSpecPath,
+      '--controller-resume',
+      controllerResumePath,
+      '--controller-event',
+      controllerEventPath,
       '--artifact-root',
       artifactRoot,
     ],
@@ -227,6 +258,33 @@ try {
   );
   assert.equal(controllerProof.status, 0, controllerProof.stderr || controllerProof.stdout);
   assert.match(controllerProof.stdout, /semantic proof passed/);
+
+  await writeArtifact('static_site_candidate', {
+    schema: 'wp-site-generator/StaticSiteCandidate/v1',
+    artifact_url: 'https://artifacts.example.test/static-site-candidate.json',
+  });
+  const missingUrlProof = spawnSync(
+    process.execPath,
+    [
+      '.github/scripts/assert-site-generation-loop-proof.mjs',
+      '--controller-result',
+      controllerResultPath,
+      '--controller-run-spec',
+      controllerRunSpecPath,
+      '--controller-resume',
+      controllerResumePath,
+      '--controller-event',
+      controllerEventPath,
+      '--artifact-root',
+      artifactRoot,
+    ],
+    {
+      cwd: repoRoot,
+      encoding: 'utf8',
+    }
+  );
+  assert.notEqual(missingUrlProof.status, 0, 'controller proof fails when preview/playground URL evidence is absent');
+  assert.match(missingUrlProof.stderr || missingUrlProof.stdout, /preview\/playground URL is an HTTP URL/);
 
   const workflow = await readFile(path.join(repoRoot, '.github/workflows/site-generation-loop.yml'), 'utf8');
   assert.match(workflow, /homeboy agent-task controller materialize/, 'site generation workflow materializes specs through Homeboy');
