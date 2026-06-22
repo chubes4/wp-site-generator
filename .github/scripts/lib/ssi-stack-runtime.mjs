@@ -57,7 +57,7 @@ export function buildSsiPreviewSource({ repo = 'chubes4/wp-site-generator', sha 
 		ref: branch,
 		refType: 'branch',
 		provenance: 'mutable-branch-fallback',
-		fallback_reason: 'SOURCE_HEAD_SHA was not provided, so Playground preview must use SOURCE_BRANCH/BRANCH.',
+		fallback_reason: 'SOURCE_HEAD_SHA was not provided, so the preview blueprint must use SOURCE_BRANCH/BRANCH.',
 	};
 }
 
@@ -94,9 +94,9 @@ export function buildSsiPreviewBlueprint({ site, source, lane = 'wordpress', man
 	}, manifest);
 }
 
-export function buildWpCodeboxRecipe({ blueprint, mounts = [], workflowSteps = [], artifactsDirectory = '' } = {}) {
+export function buildWpCodeboxRecipe({ blueprint, mounts = [], workflowSteps = [], artifactsDirectory = '', env = process.env } = {}) {
 	return {
-		schema: codeboxWorkspaceRecipeSchema(),
+		schema: codeboxWorkspaceRecipeSchema(env),
 		runtime: {
 			wp: 'latest',
 			blueprint,

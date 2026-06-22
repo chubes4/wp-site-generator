@@ -1,10 +1,6 @@
-import { codeboxRuntimeProviderProfile } from './codebox-runtime-api.mjs';
-
 const defaultRuntimePackageAbility = 'agents/run-runtime-package';
 
-export const runtimeProviderProfiles = Object.freeze({
-	wpCodebox: Object.freeze(codeboxRuntimeProviderProfile()),
-});
+export const runtimeProviderProfiles = Object.freeze({});
 
 export const runtimeApiAbilities = Object.freeze({
 	runRuntimePackage: defaultRuntimePackageAbility,
@@ -42,7 +38,7 @@ export const runtimeToolProfiles = Object.freeze({
 });
 
 export function readAgentRuntimeContract(env = process.env) {
-	const providerProfile = runtimeProviderProfile(env.HOMEBOY_AGENT_RUNTIME_PROVIDER_PROFILE);
+	const providerProfile = runtimeProviderProfile(env.HOMEBOY_AGENT_RUNTIME_PROVIDER_PROFILE, env);
 	return {
 		provider: text(env.HOMEBOY_AGENT_RUNTIME_PROVIDER) || providerProfile.provider || '',
 		profile: text(env.HOMEBOY_AGENT_RUNTIME_PROFILE) || runtimePackageProfile.id,
@@ -58,7 +54,11 @@ export function readAgentRuntimeContract(env = process.env) {
 	};
 }
 
-export function runtimeProviderProfile(profileId) {
+export function runtimeProviderProfile(profileId, env = process.env) {
+	const profileJson = text(env.HOMEBOY_AGENT_RUNTIME_PROVIDER_PROFILE_JSON);
+	if (profileJson) {
+		return parseJsonObject(profileJson, 'HOMEBOY_AGENT_RUNTIME_PROVIDER_PROFILE_JSON');
+	}
 	const id = text(profileId);
 	if (!id) {
 		return {};
@@ -178,4 +178,12 @@ function text(value) {
 
 function unique(values) {
 	return [...new Set(values.filter(Boolean))];
+}
+
+function parseJsonObject(value, name) {
+	const parsed = JSON.parse(value);
+	if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) {
+		throw new Error(`${name} must be a JSON object.`);
+	}
+	return parsed;
 }

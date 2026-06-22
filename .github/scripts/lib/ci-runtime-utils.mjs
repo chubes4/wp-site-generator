@@ -29,7 +29,7 @@ export {
 } from './wordpress-runtime-api.mjs';
 
 export {
-	buildCodeboxPlaygroundPreviewUrl,
+	buildRuntimePreviewUrl,
 	codeboxRuntimeProviderProfile,
 	codeboxProviderRuntimeInvocationContract,
 	codeboxRuntimeApi,

@@ -16,15 +16,15 @@ on:
         required: true
         default: main
       runtime_provider_profile:
-        description: Codebox runtime provider profile id.
-        required: true
-        default: wp-codebox
+        description: Optional runtime provider profile id supplied by the runtime contract.
+        required: false
+        default: ''
       runtime_components:
-        description: JSON array of Codebox component contracts supplied to the runtime.
+        description: JSON array of component contracts supplied to the runtime.
         required: false
         default: ''
       runtime_provider_plugins:
-        description: JSON array of Codebox provider plugin contracts supplied to the runtime.
+        description: JSON array of provider plugin contracts supplied to the runtime.
         required: false
         default: ''
       ref_policy:

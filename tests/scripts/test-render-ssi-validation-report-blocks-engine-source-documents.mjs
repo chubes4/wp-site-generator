@@ -2,12 +2,15 @@
 
 import assert from 'node:assert/strict';
 import { spawn } from 'node:child_process';
+import { readFile } from 'node:fs/promises';
 import path from 'node:path';
 
 import { codeboxValidationArtifactEnvelopeSchema } from '../../.github/scripts/lib/ci-runtime-utils.mjs';
 
 const repoRoot = path.resolve(import.meta.dirname, '../..');
 const renderer = path.join(repoRoot, '.github/scripts/render-ssi-validation-report.mjs');
+const codeboxContractFixture = JSON.parse(await readFile(path.join(repoRoot, 'tests/fixtures/codebox-provider-runtime-contract.json'), 'utf8'));
+const validationArtifactSchema = codeboxContractFixture.result_schemas.evidence_artifact_envelope.replace('evidence', 'validation');
 
 const bench = {
 	data: {
@@ -54,7 +57,7 @@ const bench = {
 								},
 							},
 							validation_artifact_envelope: {
-								schema: codeboxValidationArtifactEnvelopeSchema(),
+								schema: codeboxValidationArtifactEnvelopeSchema({ HOMEBOY_AGENT_RUNTIME_VALIDATION_ARTIFACT_ENVELOPE_SCHEMA: validationArtifactSchema }),
 								status: 'passed',
 								validation_hash: 'codebox-validation-fixture',
 								artifacts: [{ name: 'import-report.json' }, { name: 'visual-summary.json' }],
@@ -89,7 +92,7 @@ assert.match(output, /\| mdx \| 1 \|/, 'Blocks Engine source-document counts inc
 assert.match(output, /\| component candidate count \| 5 \|/, 'Blocks Engine component candidate count is rendered');
 assert.match(output, /\| block candidate count \| 8 \|/, 'Blocks Engine block candidate count is rendered');
 assert.match(output, /### Codebox Validation Artifact Envelope/, 'optional Codebox validation artifact envelope is rendered');
-assert.match(output, /wp-codebox\/validation-artifact-envelope\/v1/, 'validation artifact envelope schema is rendered');
+assert.match(output, new RegExp(validationArtifactSchema.replaceAll('/', '\\/')), 'validation artifact envelope schema is rendered');
 assert.match(output, /codebox-validation-fixture/, 'validation artifact envelope hash is rendered');
 assert.match(output, /### Source Documents/, 'SSI source-document section is rendered');
 assert.match(output, /Skipped\/Unsupported MDX/, 'MDX diagnostics table is rendered');
