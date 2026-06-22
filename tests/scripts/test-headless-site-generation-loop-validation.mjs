@@ -121,6 +121,16 @@ try {
 	], {
 		cwd: repoRoot,
 		encoding: 'utf8',
+		env: {
+			...process.env,
+			HOMEBOY_AGENT_RUNTIME_COMPONENTS: JSON.stringify([
+				{
+					slug: 'agents-api',
+					path: '/operator/workspace/agents-api',
+					activate: true,
+				},
+			]),
+		},
 	});
 	assert.equal(result.status, 0, result.stderr || result.stdout);
 	assert.match(result.stdout, /Headless site generation loop contract passed/);
@@ -144,6 +154,8 @@ try {
 	assert.equal(controllerRunSpec.backend, undefined, 'materialized controller spec does not embed a backend selector');
 	assert.equal(controllerRunSpec.provider, undefined, 'materialized controller spec does not embed a provider selector');
 	assert.ok(controllerRunSpec.workflows.every((workflow) => workflow.inputs?.runtime_input_contract === 'homeboy-agent-runtime-env'), 'all workflows carry the generic runtime env contract');
+	assert.ok(controllerRunSpec.workflows.every((workflow) => workflow.inputs?.runtime_config?.source === 'homeboy-agent-runtime-env'), 'all workflows carry the generic runtime config');
+	assert.ok(controllerRunSpec.workflows.every((workflow) => workflow.inputs?.runtime_config?.component_contracts?.[0]?.slug === 'agents-api'), 'all workflows carry runtime component contracts');
 
 	console.log('headless site generation loop validation tests passed');
 } finally {

@@ -48,6 +48,7 @@ function assertBackendNeutralController(controllerRunSpec) {
 	assert.equal(controllerRunSpec.backend, undefined, 'controller run spec does not embed a backend selector');
 	assert.equal(controllerRunSpec.provider, undefined, 'controller run spec does not embed a provider selector');
 	assert.ok(controllerRunSpec.workflows?.every((workflow) => workflow.inputs?.runtime_input_contract === 'homeboy-agent-runtime-env'), 'materialized workflows use the generic Homeboy agent runtime env contract');
+	assert.ok(controllerRunSpec.workflows?.every((workflow) => workflow.inputs?.runtime_config?.source === 'homeboy-agent-runtime-env'), 'materialized workflows carry the generic runtime config');
 }
 
 try {

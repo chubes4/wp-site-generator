@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 import path from 'node:path';
 
-import { writeJsonFile } from './lib/ci-runtime-utils.mjs';
+import { buildHomeboyAgentRuntimeConfig, writeJsonFile } from './lib/ci-runtime-utils.mjs';
 import { buildSiteGenerationLoopRunContext } from './lib/site-generation-loop-run.mjs';
 import {
 	evaluateComplexityPolicy,
@@ -12,6 +12,7 @@ import {
 
 const root = process.env.GITHUB_WORKSPACE || process.cwd();
 const { runId, loopId, repository, controllerSpecPath, outputPath, policyResultPath, runtimeOverrides, source, dependencyRefs } = buildSiteGenerationLoopRunContext({ env: process.env, root });
+const runtimeConfig = buildHomeboyAgentRuntimeConfig(runtimeOverrides);
 const policyInputs = resolvePolicyInputs({ root });
 const complexityPolicy = loadPolicy(policyInputs.policyPath);
 const qualitySignals = loadQualitySignals(policyInputs.qualitySignalsPath);
@@ -53,6 +54,7 @@ await writeJsonFile(outputPath, {
 		concept_prompt: process.env.CONCEPT_PROMPT || '',
 		website_flow_slug: process.env.WEBSITE_FLOW_SLUG || 'website-idea-artifact-flow',
 		runtime_input_contract: runtimeOverrides.source,
+		runtime_config: runtimeConfig,
 		artifact_root: process.env.HOMEBOY_ARTIFACT_ROOT || '.ci/homeboy-agent-task-artifacts',
 		randomness_seed: complexityDecision.randomness_seed,
 		randomness_profile: complexityDecision.randomness_profile.id,
@@ -71,6 +73,7 @@ await writeJsonFile(outputPath, {
 			controller_spec: controllerSpecPath,
 			complexity_policy_result: path.relative(root, policyResultPath),
 			runtime_input_contract: runtimeOverrides.source,
+			runtime_config: runtimeConfig,
 			generated_by: '.github/scripts/build-homeboy-controller-run-inputs.mjs',
 			materialized_by: 'homeboy agent-task controller materialize',
 		},
