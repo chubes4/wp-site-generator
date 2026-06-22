@@ -1,6 +1,6 @@
 # SSI Native Loop Adapter
 
-This repo owns the Static Site Importer-specific domain declaration for the continuous site-generation loop. GitHub Actions remains a supported trigger, but the reusable contract is the generated Homeboy from-spec loop declaration at `.github/homeboy/controllers/static-site-generation-loop.controller.json` so Homeboy can consume the same repo-domain terms without using Actions as the orchestrator.
+This repo owns the Static Site Importer-specific domain declaration for the continuous site-generation loop. The reusable contract is the generated Homeboy from-spec loop declaration at `.github/homeboy/controllers/static-site-generation-loop.controller.json`. GitHub Actions can trigger that contract, but Homeboy owns orchestration and proof.
 
 The controller builder is `.github/scripts/build-homeboy-ssi-loop-controller.mjs`. It emits only the WPSG-owned domain contract: agents, abilities, workflows, artifact schemas, SSI stack dependencies, and quality gate metric definitions.
 
@@ -40,7 +40,7 @@ The generated spec declares these groups directly:
 
 Homeboy maps these declarations to durable controller policy/actions through `agent-task controller run-from-spec`. Homeboy Extensions WordPress supplies WordPress runtime details behind generic Homeboy executor/provider contracts when Homeboy selects an implementation.
 
-## Runtime Input Migration
+## Runtime Inputs
 
 WPSG keeps its controller and domain specs backend-agnostic. Reusable Homeboy Agent CI selects the concrete runtime behind its own contract, so WPSG callers pass domain inputs only. Controller run specs use clean `HOMEBOY_AGENT_RUNTIME_*` environment variables as a visible input contract. Runtime-specific fields stay in the Homeboy runtime contract.
 
@@ -120,9 +120,9 @@ The default policy has three tiers:
 
 Stable quality raises at most one tier for the next run. Regressions lower at most one tier. The floor and ceiling hold when the policy cannot move farther. This keeps prompt complexity reproducible and prevents a single good or bad run from skipping the configured ladder.
 
-### Overrides
+### Optional Workflow Overrides
 
-GitHub Actions exposes these optional inputs, which map directly to environment variables:
+The optional GitHub Actions trigger exposes these inputs, which map directly to environment variables:
 
 - `complexity_tier` -> `WPSG_COMPLEXITY_TIER`
 - `randomness_profile` -> `WPSG_RANDOMNESS_PROFILE`
@@ -137,13 +137,9 @@ Additional WPSG policy inputs are available for local controller run-input gener
 
 Homeboy remains the controller, executor, scheduler, and loop-spec materializer. It receives WPSG domain declarations, artifact contracts, task inputs, workload settings, and metadata that WPSG has computed.
 
-## Upstream Contract
-
-Extra-Chill/homeboy#5764 is the upstream runtime dependency for the generic `agent-task controller run-from-spec` primitive. Extra-Chill/homeboy#5691 is the upstream dependency for the public `agent-task fanout plan`, `submit-batch`, `status`, and `artifacts` primitives used by the PHP transformer iterator. If a backend-specific WordPress or WP Codebox mapping is needed, it belongs behind generic Homeboy executor/provider contracts in `homeboy-extensions/wordpress`, not in this WPSG spec.
-
 ## Headless Contract Validation
 
-The deterministic headless validation path is `.github/scripts/validate-headless-site-generation-loop.mjs`. It proves WPSG can exercise the production loop contract through Homeboy controller primitives without `gh workflow run` or workflow-to-workflow dispatch:
+The deterministic headless validation path is `.github/scripts/validate-headless-site-generation-loop.mjs`. It proves WPSG can exercise the production loop contract through Homeboy controller primitives:
 
 ```bash
 HOMEBOY_BIN=homeboy node .github/scripts/validate-headless-site-generation-loop.mjs \
@@ -165,11 +161,3 @@ node .github/scripts/assert-site-generation-loop-proof.mjs --controller-result <
 ```
 
 The proof requires artifacts emitted by Homeboy/runtime execution under `--artifact-root`. It fails closed when the artifact root does not include real evidence for a tiny fixture site run, import report, zero fallback/conversion findings, visual parity gates, typed runtime preview/access URL, required iterator fanout evidence for actionable findings, and controller run-from-spec evidence. Iterator issue/PR artifacts and publication PR artifacts are optional for a clean candidate-only run, but are validated when emitted. `--fixture-artifacts` is disabled and is not reviewer-facing proof. Runtime selection remains outside the controller spec through `HOMEBOY_AGENT_RUNTIME_*`; `--runtime-id wp-codebox` is one backend selection, not a WPSG-owned contract.
-
-Current upstream dependencies before this can be treated as full runtime proof instead of deterministic contract proof:
-
-- Extra-Chill/homeboy#5764: durable controller `run-from-spec` primitive.
-- Extra-Chill/homeboy#5691: public `agent-task fanout plan`, `submit-batch`, `status`, and `artifacts` primitives for iterator fanout evidence.
-- Extra-Chill/homeboy-extensions#1644: generic runtime execution contracts.
-- Extra-Chill/homeboy-extensions#1645: headless loop runner that emits real tiny fixture site artifacts.
-- Extra-Chill/homeboy-extensions#1646: WP Codebox runtime contract manifest consumption.
