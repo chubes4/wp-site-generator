@@ -3,8 +3,10 @@ import { mkdir, mkdtemp, readFile, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { spawnSync } from 'node:child_process';
+import { runtimePackageAbility } from '../../.github/scripts/lib/ci-runtime-utils.mjs';
 
 const repoRoot = path.resolve(new URL('../..', import.meta.url).pathname);
+const runtimePackageAbilityId = runtimePackageAbility();
 const tempDir = await mkdtemp(path.join(tmpdir(), 'wpsg-ssi-native-loop-'));
 const settingsPath = path.join(tempDir, 'settings.json');
 const sourceStaticSiteDir = path.join(tempDir, 'issue-123-native-loop');
@@ -45,7 +47,7 @@ assert.equal(controller.policy, undefined, 'controller spec does not encode Home
 assert.equal(controller.actions, undefined, 'controller spec does not enqueue Homeboy actions directly');
 assert.equal(controller.initial_event, undefined, 'controller spec does not seed Homeboy events');
 assert.equal(controller.agents.find((agent) => agent.agent_id === 'static_site').metadata.slug, 'static-site-agent', 'controller declares WPSG agents in repo-domain terms');
-assert.ok(controller.abilities.some((ability) => ability.ability_id === 'agents/run-runtime-package'), 'controller declares required generic runtime package ability contracts');
+assert.ok(controller.abilities.some((ability) => ability.ability_id === runtimePackageAbilityId), 'controller declares required generic runtime package ability contracts');
 assert.ok(controller.workflows.every((workflow) => workflow.prompt || workflow.tasks?.length), 'each workflow is ingestible by Homeboy from-spec dispatch');
 assert.deepEqual(controller.workflows.filter((workflow) => workflow.agent_id).map((workflow) => workflow.agent_id), ['store_idea', 'website_idea', 'design_store', 'design_website', 'static_store', 'static_site', 'php_transformer_iterator', 'ssi_stack_reviewer'], 'agent-backed workflows declare agent participation');
 assert.equal(controller.agents.find((agent) => agent.agent_id === 'design_store').metadata.bundle, 'bundles/design-agent', 'design-store uses the checked-in design bundle');

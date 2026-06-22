@@ -61,6 +61,42 @@ if (stale.length > 0) {
 assert.deepEqual(unclassified, [], 'new Data Machine references must be removed or explicitly classified in .github/datamachine-boundary-quarantine.json');
 assert.deepEqual(stale, [], 'remove stale Data Machine quarantine entries when references are cleaned up');
 
+const runtimeGlueFiles = candidateFiles.filter((file) => [
+  '.github/workflows/php-transformer-iterator-smoke.yml',
+  '.github/workflows/php-transformer-iterator.yml',
+  '.github/workflows/ssi-stack-reviewer.yml',
+  '.github/workflows/wpsg-runtime-agent-ci.yml',
+  '.github/scripts/render-homeboy-runtime-workflow-inputs.mjs',
+  '.github/scripts/render-runtime-bundle-execution.mjs',
+  '.github/scripts/lib/ci-runtime-utils.mjs',
+  '.github/scripts/lib/agent-runtime-api.mjs',
+  '.github/scripts/lib/codebox-runtime-api.mjs',
+  '.github/scripts/build-homeboy-ssi-loop-controller.mjs',
+].includes(file)).filter((file) => ![
+  '.github/scripts/lib/agent-runtime-api.mjs',
+  '.github/scripts/lib/codebox-runtime-api.mjs',
+  '.github/scripts/build-homeboy-ssi-loop-controller.mjs',
+].includes(file));
+const runtimeBoundaryTerms = [
+  'agents/run-runtime-package',
+  'Agents API',
+  'Data Machine',
+  'data-machine',
+  'datamachine',
+  'DMC',
+  'playground.wordpress.net',
+];
+const runtimeBoundaryPattern = new RegExp(runtimeBoundaryTerms.map(escapeRegExp).join('|'), 'i');
+const runtimeBoundaryLeaks = [];
+for (const file of runtimeGlueFiles) {
+  const body = await readFile(path.join(repoRoot, file), 'utf8');
+  if (runtimeBoundaryPattern.test(body)) {
+    runtimeBoundaryLeaks.push(file);
+  }
+}
+
+assert.deepEqual(runtimeBoundaryLeaks, [], 'runtime glue must consume WPSG/Codebox facades instead of hard-coding Agents API, Data Machine, DMC, or Playground internals');
+
 const manifestFiles = candidateFiles.filter((file) => file.startsWith('bundles/') && file.endsWith('/manifest.json'));
 for (const file of manifestFiles) {
   const manifest = JSON.parse(await readFile(path.join(repoRoot, file), 'utf8'));

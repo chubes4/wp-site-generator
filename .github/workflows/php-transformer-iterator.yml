@@ -35,14 +35,32 @@ permissions:
   pull-requests: write
 
 jobs:
+  runtime-execution:
+    name: Render runtime execution
+    runs-on: ubuntu-latest
+    outputs:
+      runtime_execution: ${{ steps.render.outputs.runtime_execution }}
+    steps:
+      - uses: actions/checkout@v4
+      - id: render
+        env:
+          RUNTIME_EXECUTION_INPUT: >-
+            {"target_repo":"${{ inputs.source_repo }}","prompt":"Run the static-site validation iterator now. The fetch step supplies one Homeboy fanout task request per WPSG grouped finding. Process the embedded finding group as the source of truth.","app_token_repos":"chubes4/wp-site-generator,chubes4/static-site-importer,Automattic/blocks-engine","success_requires_pr":false,"success_completion_outcomes":["pull_request_path","issue_path"],"max_turns":24,"step_budget":20,"time_budget_ms":600000,"runtime_output_projections":{"upstream_action_url":"outputs.upstream_action_url","source_callback_url":"outputs.source_callback_url"},"evidence_projections":[{"operation":"create_github_issue","outputs":{"upstream_action_url":"data.issue_url"}},{"operation":"create_github_pull_request","outputs":{"upstream_action_url":"data.html_url"}},{"operation":"comment_github_pull_request","outputs":{"source_callback_url":"data.html_url"}}],"actions_artifact_downloads":[{"repo":"${{ inputs.source_repo }}","run_id":"${{ inputs.validation_run_id }}","name":"${{ inputs.artifact_name }}","dir":".ci/finding-packets"},{"repo":"${{ inputs.source_repo }}","run_id":"${{ inputs.validation_run_id }}","name":"${{ inputs.visual_artifact_name }}","dir":".ci/visual-parity"}],"execute_workflow_builder_command":"FINDING_GROUPS_PATH=.ci/finding-packets/grouped-finding-packets.json node .github/scripts/group-ssi-finding-packets.mjs .ci/finding-packets/finding-packets.json && FANOUT_CONFIG_PATH=.ci/finding-packets/php-transformer-iterator-fanout-config.json node .github/scripts/build-php-transformer-iterator-fanout-config.mjs .ci/finding-packets/grouped-finding-packets.json && homeboy agent-task fanout plan --input @.ci/finding-packets/php-transformer-iterator-fanout-config.json > .ci/finding-packets/php-transformer-iterator-fanout-plan.json && node bundles/php-transformer-iterator-agent/scripts/build-agent-iterator-workflow.mjs .ci/finding-packets/php-transformer-iterator-fanout-plan.json .ci/agent-iterator-workflow.json","execute_workflow_path":".ci/agent-iterator-workflow.json","transcript_artifact_name":"php-transformer-iterator-transcript-${{ github.run_id }}"}
+          RUNTIME_EXECUTION_OPTIONS: '{"pipeline_slug":"php-transformer-iterator-pipeline"}'
+        run: >-
+          node .github/scripts/render-runtime-bundle-execution.mjs
+          --package-source bundles/php-transformer-iterator-agent
+          --package-slug php-transformer-iterator-agent
+          --workflow-id php-transformer-iterator-manual-flow
+
   iterator:
     name: Run PR-first validation iterator
+    needs: runtime-execution
     uses: ./.github/workflows/wpsg-runtime-agent-ci.yml
     with:
       model: ${{ inputs.openai_model }}
       runtime_workload_profile: workspace-iteration
-      runtime_execution: >-
-        {"kind":"bundle","ability":"agents/run-runtime-package","input":{"package":{"source":"bundles/php-transformer-iterator-agent","slug":"php-transformer-iterator-agent"},"workflow":{"id":"php-transformer-iterator-manual-flow"},"input":{"target_repo":"${{ inputs.source_repo }}","prompt":"Run the static-site validation iterator now. The fetch step supplies one Homeboy fanout task request per WPSG grouped finding. Process the embedded finding group as the source of truth.","app_token_repos":"chubes4/wp-site-generator,chubes4/static-site-importer,Automattic/blocks-engine","success_requires_pr":false,"success_completion_outcomes":["pull_request_path","issue_path"],"max_turns":24,"step_budget":20,"time_budget_ms":600000,"runtime_output_projections":{"upstream_action_url":"outputs.upstream_action_url","source_callback_url":"outputs.source_callback_url"},"evidence_projections":[{"operation":"create_github_issue","outputs":{"upstream_action_url":"data.issue_url"}},{"operation":"create_github_pull_request","outputs":{"upstream_action_url":"data.html_url"}},{"operation":"comment_github_pull_request","outputs":{"source_callback_url":"data.html_url"}}],"actions_artifact_downloads":[{"repo":"${{ inputs.source_repo }}","run_id":"${{ inputs.validation_run_id }}","name":"${{ inputs.artifact_name }}","dir":".ci/finding-packets"},{"repo":"${{ inputs.source_repo }}","run_id":"${{ inputs.validation_run_id }}","name":"${{ inputs.visual_artifact_name }}","dir":".ci/visual-parity"}],"execute_workflow_builder_command":"FINDING_GROUPS_PATH=.ci/finding-packets/grouped-finding-packets.json node .github/scripts/group-ssi-finding-packets.mjs .ci/finding-packets/finding-packets.json && FANOUT_CONFIG_PATH=.ci/finding-packets/php-transformer-iterator-fanout-config.json node .github/scripts/build-php-transformer-iterator-fanout-config.mjs .ci/finding-packets/grouped-finding-packets.json && homeboy agent-task fanout plan --input @.ci/finding-packets/php-transformer-iterator-fanout-config.json > .ci/finding-packets/php-transformer-iterator-fanout-plan.json && node bundles/php-transformer-iterator-agent/scripts/build-agent-iterator-workflow.mjs .ci/finding-packets/php-transformer-iterator-fanout-plan.json .ci/agent-iterator-workflow.json","execute_workflow_path":".ci/agent-iterator-workflow.json","transcript_artifact_name":"php-transformer-iterator-transcript-${{ github.run_id }}"},"options":{"pipeline_slug":"php-transformer-iterator-pipeline"}}}
+      runtime_execution: ${{ needs.runtime-execution.outputs.runtime_execution }}
       transcript_slots: '[{"name":"php-transformer-iterator-transcript","artifact_name":"php-transformer-iterator-transcript-${{ github.run_id }}"}]'
       task_timeout_seconds: 900
     secrets: inherit

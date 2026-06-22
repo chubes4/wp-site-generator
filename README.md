@@ -263,7 +263,7 @@ Required GitHub secrets depend on the selected Homeboy runtime and AI provider. 
 1. Runtime provider/model credentials, for example `OPENAI_API_KEY` when the selected provider uses OpenAI.
 2. Runtime selection hints such as `runtime_backend`, `runtime_provider_id`, or `runtime_selector` when the hosted Codebox profile needs a specific backend/provider route.
 
-The reusable `.github/workflows/wpsg-runtime-agent-ci.yml` seam accepts a `runtime_workload_profile` such as `workspace-iteration` or `workspace-publication`, then renders Homeboy runtime profile/tool requirements through `.github/scripts/render-homeboy-runtime-workflow-inputs.mjs`. Runtime execution descriptors use the Agents API `agents/run-runtime-package` entry point for Codebox package execution.
+The reusable `.github/workflows/wpsg-runtime-agent-ci.yml` seam accepts a `runtime_workload_profile` such as `workspace-iteration` or `workspace-publication`, then renders Homeboy runtime profile/tool requirements through `.github/scripts/render-homeboy-runtime-workflow-inputs.mjs`. Runtime execution descriptors are rendered through `.github/scripts/render-runtime-bundle-execution.mjs` so workflows consume the shared runtime facade instead of embedding provider internals.
 
 For headless contract validation without GitHub workflow-to-workflow dispatch, run `.github/scripts/validate-headless-site-generation-loop.mjs`. It drives `homeboy agent-task controller materialize`, `validate-proof`, `from-spec`, `resume`, and `events` directly, then asserts WPSG artifact evidence with `.github/scripts/assert-site-generation-loop-proof.mjs`. With `--fixture-artifacts` it is deterministic contract proof; with `--artifact-root` it validates artifacts from a real Homeboy run.
 
