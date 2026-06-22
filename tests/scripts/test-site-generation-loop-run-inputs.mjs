@@ -9,6 +9,7 @@ import path from 'node:path';
 import { buildSiteGenerationLoopRunContext, validateRefPolicy } from '../../.github/scripts/lib/site-generation-loop-run.mjs';
 
 const repoRoot = path.resolve(import.meta.dirname, '../..');
+const workflowPath = path.join(repoRoot, '.github/workflows/site-generation-loop.yml');
 const tempDir = await mkdtemp(path.join(tmpdir(), 'wp-site-generator-loop-run-inputs-'));
 const outputPath = path.join(tempDir, 'controller-run-inputs.json');
 const policyResultPath = path.join(tempDir, 'complexity-policy-result.json');
@@ -85,6 +86,12 @@ assert.throws(() => buildSiteGenerationLoopRunContext({
 	},
 	root: repoRoot,
 }), /production ref policy requires immutable dependency refs/, 'production loop inputs fail closed on mutable runtime refs');
+
+const workflow = await readFile(workflowPath, 'utf8');
+assert.match(workflow, /source_head_sha:/, 'site generation workflow exposes source_head_sha provenance input');
+assert.match(workflow, /SOURCE_HEAD_SHA: \$\{\{ inputs\.source_head_sha \|\| github\.sha \}\}/, 'site generation workflow defaults production source provenance to the dispatched SHA');
+assert.match(workflow, /SOURCE_TAG: \$\{\{ inputs\.source_tag \}\}/, 'site generation workflow forwards source tag provenance');
+assert.match(workflow, /SOURCE_ARTIFACT_SOURCE: \$\{\{ inputs\.source_artifact_source \}\}/, 'site generation workflow forwards source artifact provenance');
 
 const result = spawnSync(process.execPath, [path.join(repoRoot, '.github/scripts/build-homeboy-controller-run-inputs.mjs')], {
 	cwd: repoRoot,

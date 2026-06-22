@@ -54,6 +54,18 @@ on:
         description: Optional repo-relative JSON file with recent validation quality signals.
         required: false
         default: ''
+      source_head_sha:
+        description: Immutable source commit for production provenance. Defaults to the dispatched workflow SHA.
+        required: false
+        default: ''
+      source_tag:
+        description: Optional immutable source tag for production provenance.
+        required: false
+        default: ''
+      source_artifact_source:
+        description: Optional source artifact URI for production provenance.
+        required: false
+        default: ''
 
 permissions:
   actions: write
@@ -94,6 +106,9 @@ jobs:
       WPSG_RANDOMNESS_PROFILE: ${{ inputs.randomness_profile }}
       WPSG_RANDOMNESS_SEED: ${{ inputs.randomness_seed }}
       WPSG_QUALITY_SIGNALS_PATH: ${{ inputs.quality_signals_path }}
+      SOURCE_HEAD_SHA: ${{ inputs.source_head_sha || github.sha }}
+      SOURCE_TAG: ${{ inputs.source_tag }}
+      SOURCE_ARTIFACT_SOURCE: ${{ inputs.source_artifact_source }}
     steps:
       - name: Check out wp-site-generator
         uses: actions/checkout@v4
