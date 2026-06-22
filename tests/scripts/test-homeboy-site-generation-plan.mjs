@@ -21,6 +21,13 @@ async function materializeControllerSpec({ outputPath, env }) {
 	const inputsPath = outputPath.replace(/\.json$/, '.inputs.json');
 	const policyResultPath = outputPath.replace(/\.json$/, '.complexity-policy-result.json');
 	const materializationPath = outputPath.replace(/\.json$/, '.materialization.json');
+	const controllerSpecPath = path.join(tempDir, `${path.basename(outputPath, '.json')}.controller.json`);
+	const controllerSpecResult = spawnSync(process.execPath, ['.github/scripts/build-homeboy-ssi-loop-controller.mjs', '--output', controllerSpecPath], {
+		cwd: repoRoot,
+		encoding: 'utf8',
+		env: controllerBuilderEnv(env),
+	});
+	assert.equal(controllerSpecResult.status, 0, controllerSpecResult.stderr || controllerSpecResult.stdout);
 	const inputsResult = spawnSync(process.execPath, ['.github/scripts/build-homeboy-controller-run-inputs.mjs'], {
 		cwd: repoRoot,
 		encoding: 'utf8',
@@ -31,7 +38,7 @@ async function materializeControllerSpec({ outputPath, env }) {
 		}),
 	});
 	assert.equal(inputsResult.status, 0, inputsResult.stderr || inputsResult.stdout);
-	const materializeResult = spawnSync(homeboyFixturePath, ['agent-task', 'controller', 'materialize', '@.github/homeboy/controllers/static-site-generation-loop.controller.json', '--inputs', `@${inputsPath}`, '--policy-result', `@${policyResultPath}`, '--output', materializationPath], {
+	const materializeResult = spawnSync(homeboyFixturePath, ['agent-task', 'controller', 'materialize', `@${controllerSpecPath}`, '--inputs', `@${inputsPath}`, '--policy-result', `@${policyResultPath}`, '--output', materializationPath], {
 		cwd: repoRoot,
 		encoding: 'utf8',
 	});
