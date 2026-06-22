@@ -568,6 +568,7 @@
         "iterator_upstream_pull_request"
       ],
       "fan_out": {
+        "primitive": "homeboy.agent-task.fanout.plan",
         "mode": "per_artifact",
         "artifact": "finding_group",
         "group_by": [
@@ -968,6 +969,7 @@
   ],
   "iterator_groups": {
     "artifact": "finding_group",
+    "primitive": "homeboy.agent-task.fanout.plan",
     "group_by": [
       "owner_repo",
       "root_cause",

@@ -459,7 +459,8 @@ async function assertImportAndIteratorWorkflow() {
   assert.doesNotMatch(validationWorkloadJson, /static-site-importer import-theme/, 'static validation settings do not depend on the SSI WP-CLI command');
   assert.match(validationWorkloadJson, /base64_decode/, 'static validation embeds a website artifact payload for the ability bridge');
   assert.match(workflow, /Build SSI finding packets/, 'static validation builds SSI finding packets');
-  assert.match(workflow, /gh workflow run php-transformer-iterator\.yml/, 'static validation dispatches the transformer iterator through the Actions trigger boundary');
+  assert.match(workflow, /Build PHP transformer iterator fanout declaration/, 'static validation declares iterator fanout for Homeboy controller primitives');
+  assert.doesNotMatch(workflow, /gh workflow run php-transformer-iterator\.yml/, 'static validation does not dispatch the iterator through a workflow-run boundary');
 }
 
 assertGeneratedContracts();
