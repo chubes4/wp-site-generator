@@ -26,9 +26,7 @@ const policyResultPath = path.join(tempDir, 'site-generation-loop.complexity-pol
 const materializationPath = path.join(tempDir, 'site-generation-loop.controller-materialization.json');
 const materializationProofPath = path.join(tempDir, 'site-generation-loop.controller-materialization.proof.json');
 const controllerRunSpecPath = path.join(tempDir, 'site-generation-loop.controller-run-spec.json');
-const controllerResultPath = path.join(tempDir, 'site-generation-loop.controller-from-spec.json');
-const controllerResumePath = path.join(tempDir, 'site-generation-loop.controller-resume.json');
-const controllerEventPath = path.join(tempDir, 'site-generation-loop.controller-event.json');
+const controllerResultPath = path.join(tempDir, 'site-generation-loop.controller-run-from-spec.json');
 
 const commandEvidence = [];
 
@@ -69,22 +67,16 @@ try {
 	};
 
 	run('build WPSG controller run inputs', process.execPath, ['.github/scripts/build-homeboy-controller-run-inputs.mjs'], { env: baseEnv });
-	run('materialize Homeboy controller run spec', homeboyBin, ['agent-task', 'controller', 'materialize', `@${controllerSpecPath}`, '--inputs', `@${controllerRunInputsPath}`, '--policy-result', `@${policyResultPath}`, '--output', materializationPath], { env: baseEnv });
-
+	const runFromSpecResult = run('run Homeboy controller from spec', homeboyBin, ['agent-task', 'controller', 'run-from-spec', `@${controllerSpecPath}`, '--inputs', `@${controllerRunInputsPath}`, '--policy-result', `@${policyResultPath}`, '--max-actions', '100'], { env: baseEnv });
+	await writeJsonFile(controllerResultPath, JSON.parse(runFromSpecResult.stdout));
+	const controllerResult = await readJsonFile(controllerResultPath);
+	await writeJsonFile(materializationPath, controllerResult.materialization || controllerResult.data?.materialization || controllerResult.value?.materialization);
 	const materialization = await readJsonFile(materializationPath);
 	await writeJsonFile(materializationProofPath, materialization.data || materialization.value || materialization);
 	run('validate materialized Homeboy proof', homeboyBin, ['agent-task', 'controller', 'validate-proof', `@${materializationProofPath}`], { env: baseEnv });
 	run('write run-scoped controller spec', process.execPath, ['.github/scripts/write-materialized-controller-run-spec.mjs', materializationPath, controllerRunSpecPath], { env: baseEnv });
-	run('initialize Homeboy controller from spec', homeboyBin, ['agent-task', 'controller', 'from-spec', `@${controllerRunSpecPath}`, '--output', controllerResultPath, '--artifact-root', artifactRoot], { env: baseEnv });
 
-	const controllerResult = await readJsonFile(controllerResultPath);
-	const loopId = controllerResult.data?.loop_id || controllerResult.value?.loop_id || controllerResult.loop_id || controllerResult.data?.controller?.loop_id || controllerResult.value?.controller?.loop_id || controllerResult.controller?.loop_id;
-	assert.ok(loopId, 'Homeboy from-spec returns a durable loop id');
-
-	run('resume Homeboy controller', homeboyBin, ['agent-task', 'controller', 'resume', loopId, '--output', controllerResumePath, '--artifact-root', artifactRoot], { env: baseEnv });
-	run('record generic Homeboy controller event', homeboyBin, ['agent-task', 'controller', 'events', loopId, '--event-type', 'headless.validation.completed', '--event-key', runId, '--payload', JSON.stringify({ run_id: runId, repository: 'chubes4/wp-site-generator' }), '--output', controllerEventPath], { env: baseEnv });
-
-	run('assert WPSG semantic artifact proof', process.execPath, ['.github/scripts/assert-site-generation-loop-proof.mjs', '--controller-result', controllerResultPath, '--controller-run-spec', controllerRunSpecPath, '--controller-resume', controllerResumePath, '--controller-event', controllerEventPath, '--artifact-root', artifactRoot], { env: baseEnv });
+	run('assert WPSG semantic artifact proof', process.execPath, ['.github/scripts/assert-site-generation-loop-proof.mjs', '--controller-result', controllerResultPath, '--controller-run-spec', controllerRunSpecPath, '--artifact-root', artifactRoot], { env: baseEnv });
 
 	const controllerRunSpec = await readJsonFile(controllerRunSpecPath);
 	const runInputs = await readJsonFile(controllerRunInputsPath);
@@ -105,8 +97,6 @@ try {
 			materialization: materializationPath,
 			controller_run_spec: controllerRunSpecPath,
 			controller_result: controllerResultPath,
-			controller_resume: controllerResumePath,
-			controller_event: controllerEventPath,
 			artifact_root: artifactRoot,
 		},
 		commands: commandEvidence,

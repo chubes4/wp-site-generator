@@ -23,7 +23,7 @@ const proofMode = args.get('--proof-mode') || process.env.WPSG_LOOP_PROOF_MODE |
 
 const upstreamDependencies = {
 	runtimeArtifacts: 'https://github.com/Extra-Chill/homeboy-extensions/pull/1645',
-	controllerEvents: 'https://github.com/Extra-Chill/homeboy/pull/5152',
+	controllerRunFromSpec: 'https://github.com/Extra-Chill/homeboy/pull/5764',
 	fanout: 'https://github.com/Extra-Chill/homeboy/pull/5691',
 };
 
@@ -192,13 +192,13 @@ function optionalArtifact(artifacts, artifactSchemas, artifactId) {
 
 function runtimePreviewUrl(candidate) {
 	if (proofMode === 'fixture') {
-		return firstValue(candidate, ['runtime_preview.url', 'runtime_preview.access.url', 'preview_evidence.preview_url', 'preview_evidence.url', 'preview_url', 'urls.preview', 'preview.url', 'preview.access.url']);
+		return firstValue(candidate, ['runtime_access.url', 'runtime_access.access.url', 'runtime_preview.url', 'runtime_preview.access.url', 'preview_evidence.preview_url', 'preview_evidence.url', 'preview_url', 'urls.preview', 'preview.url', 'preview.access.url']);
 	}
-	return firstValue(candidate, ['runtime_preview.url', 'runtime_preview.access.url', 'preview_evidence.preview_url', 'preview_evidence.url', 'evidence.preview_url', 'preview.url', 'preview.access.url']);
+	return firstValue(candidate, ['runtime_access.url', 'runtime_access.access.url', 'runtime_preview.url', 'runtime_preview.access.url', 'preview_evidence.preview_url', 'preview_evidence.url', 'evidence.preview_url', 'preview.url', 'preview.access.url']);
 }
 
 function runtimePreviewEnvelope(candidate) {
-	return firstValue(candidate, ['runtime_preview', 'preview_evidence', 'evidence.preview', 'preview']);
+	return firstValue(candidate, ['runtime_access', 'runtime_preview', 'preview_evidence', 'evidence.preview', 'preview']);
 }
 
 function assertProductionRuntimePreviewEnvelope(candidate) {
@@ -212,11 +212,20 @@ function assertProductionRuntimePreviewEnvelope(candidate) {
 }
 
 async function assertControllerEventProof(controllerRunSpec, loopId) {
+	const controllerResult = await readJsonFile(controllerResultPath);
+	const schema = controllerResult.schema || controllerResult.data?.schema || controllerResult.value?.schema;
+	if (schema === 'homeboy/agent-task-loop-controller-run-from-spec-result/v1') {
+		assert.equal(controllerResult.loop_id || controllerResult.data?.loop_id || controllerResult.value?.loop_id, loopId, 'run-from-spec evidence records the durable loop id');
+		assert.ok(controllerResult.materialization || controllerResult.data?.materialization || controllerResult.value?.materialization, 'run-from-spec evidence records materialization proof');
+		assert.ok(controllerResult.from_spec || controllerResult.data?.from_spec || controllerResult.value?.from_spec, 'run-from-spec evidence records controller initialization proof');
+		assert.ok(controllerResult.status || controllerResult.data?.status || controllerResult.value?.status, 'run-from-spec evidence records final controller status');
+		return;
+	}
 	if (!controllerResumePath) {
-		failDependency('missing controller resume result evidence', upstreamDependencies.controllerEvents);
+		failDependency('missing controller resume result evidence', upstreamDependencies.controllerRunFromSpec);
 	}
 	if (!controllerEventPath) {
-		failDependency('missing controller event result evidence', upstreamDependencies.controllerEvents);
+		failDependency('missing controller event result evidence', upstreamDependencies.controllerRunFromSpec);
 	}
 	const resume = await readJsonFile(controllerResumePath);
 	const event = await readJsonFile(controllerEventPath);

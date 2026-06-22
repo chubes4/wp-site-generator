@@ -256,7 +256,7 @@ That's the loop. Generate. Design. Build. Validate. Review. Decide. Repeat.
 
 ## Operating The Loop
 
-The primary loop runs in GitHub Actions through Homeboy's durable controller primitives. The workflow stamps WPSG-owned run inputs onto `.github/homeboy/controllers/static-site-generation-loop.controller.json`, initializes Homeboy with `homeboy agent-task controller from-spec`, resumes execution with `homeboy agent-task controller resume`, and records GitHub Actions lineage through `homeboy agent-task controller events`. Homeboy owns controller state, action scheduling, event application, and runtime/provider selection.
+The primary loop runs in GitHub Actions through Homeboy's durable controller primitive. The workflow stamps WPSG-owned run inputs onto `.github/homeboy/controllers/static-site-generation-loop.controller.json` and calls `homeboy agent-task controller run-from-spec`, which materializes policy inputs, initializes durable state, and executes bounded controller actions. Homeboy owns controller state, action scheduling, event application, and runtime/provider selection.
 
 Required GitHub secrets depend on the selected Homeboy runtime and AI provider. Configure provider credentials in the Homeboy/runtime contract rather than in WPSG workflows.
 
@@ -265,9 +265,9 @@ Required GitHub secrets depend on the selected Homeboy runtime and AI provider. 
 
 The reusable `.github/workflows/wpsg-runtime-agent-ci.yml` seam accepts a `runtime_workload_profile` such as `workspace-iteration` or `workspace-publication`, then renders Homeboy runtime profile/tool requirements through `.github/scripts/render-homeboy-runtime-workflow-inputs.mjs`. Runtime execution descriptors are rendered through `.github/scripts/render-runtime-bundle-execution.mjs` so workflows consume the shared runtime facade instead of embedding provider internals.
 
-For headless contract validation without GitHub workflow-to-workflow dispatch, run `.github/scripts/validate-headless-site-generation-loop.mjs`. It drives `homeboy agent-task controller materialize`, `validate-proof`, `from-spec`, `resume`, and `events` directly, then asserts WPSG artifact evidence with `.github/scripts/assert-site-generation-loop-proof.mjs`. The validator requires `--artifact-root` evidence emitted by a real Homeboy run and fails closed when required runtime, fanout, runtime preview, import, visual, or artifact URL evidence is absent. Iterator issue/PR artifacts and publication PR artifacts are optional for a clean candidate-only run, but are validated when emitted. Fixture assertions must pass `--proof-mode fixture`; production proof is the default and rejects fixture-only artifacts or placeholder `example.*` URLs.
+For headless contract validation without GitHub workflow-to-workflow dispatch, run `.github/scripts/validate-headless-site-generation-loop.mjs`. It drives `homeboy agent-task controller run-from-spec`, validates the returned materialization proof, then asserts WPSG artifact evidence with `.github/scripts/assert-site-generation-loop-proof.mjs`. The validator requires `--artifact-root` evidence emitted by a real Homeboy run and fails closed when required runtime, fanout, typed runtime preview/access, import, visual, or artifact URL evidence is absent. Iterator issue/PR artifacts and publication PR artifacts are optional for a clean candidate-only run, but are validated when emitted. Fixture assertions must pass `--proof-mode fixture`; production proof is the default and rejects fixture-only artifacts or placeholder `example.*` URLs.
 
-The PHP transformer iterator supplies WPSG-owned finding grouping and fanout packet input, then calls Homeboy's public `homeboy agent-task fanout plan` primitive for fanout planning.
+The PHP transformer iterator supplies WPSG-owned finding grouping and fanout packet input, then calls Homeboy's public `homeboy agent-task fanout plan`, `submit-batch`, `status`, and `artifacts` primitives for durable fanout lifecycle evidence.
 
 Useful workflow entry points:
 

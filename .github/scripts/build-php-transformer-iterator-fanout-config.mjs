@@ -16,8 +16,10 @@ const config = {
 	fanout_id: 'wp-site-generator-php-transformer-iterator',
 	primitive: {
 		provider: 'homeboy',
-		command: 'agent-task fanout plan',
+		command: 'agent-task fanout submit-batch',
 		input_contract: 'homeboy/agent-task-fanout-input/v1',
+		status_command: 'agent-task fanout status',
+		artifacts_command: 'agent-task fanout artifacts',
 		controller_workflow: 'iterator',
 	},
 	orchestrator: {

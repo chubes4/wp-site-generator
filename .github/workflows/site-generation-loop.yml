@@ -96,9 +96,7 @@ jobs:
       HOMEBOY_POLICY_RESULT_PATH: ${{ github.workspace }}/.ci/site-generation-loop.complexity-policy-result.json
       HOMEBOY_CONTROLLER_RUN_SPEC_PATH: ${{ github.workspace }}/.ci/site-generation-loop.controller-run-spec.json
       HOMEBOY_CONTROLLER_MATERIALIZATION_RESULT_PATH: ${{ github.workspace }}/.ci/site-generation-loop.controller-materialization.json
-      HOMEBOY_CONTROLLER_FROM_SPEC_RESULT_PATH: ${{ github.workspace }}/.ci/site-generation-loop.controller-from-spec.json
-      HOMEBOY_CONTROLLER_RESUME_RESULT_PATH: ${{ github.workspace }}/.ci/site-generation-loop.controller-resume.json
-      HOMEBOY_CONTROLLER_EVENT_RESULT_PATH: ${{ github.workspace }}/.ci/site-generation-loop.controller-event.json
+      HOMEBOY_CONTROLLER_RUN_FROM_SPEC_RESULT_PATH: ${{ github.workspace }}/.ci/site-generation-loop.controller-run-from-spec.json
       HOMEBOY_CONTROLLER_SPEC_PATH: .github/homeboy/controllers/static-site-generation-loop.controller.json
       HOMEBOY_ARTIFACT_ROOT: ${{ github.workspace }}/.ci/homeboy-agent-task-artifacts
       WPSG_COMPLEXITY_TIER: ${{ inputs.complexity_tier }}
@@ -141,12 +139,13 @@ jobs:
       - name: Generate Homeboy controller spec
         run: node .github/scripts/build-homeboy-ssi-loop-controller.mjs
 
-      - name: Materialize Homeboy controller run spec
+      - name: Run Homeboy controller from spec
         id: controller-spec
         run: |
           set -euo pipefail
           inputs_path="$(node .github/scripts/build-homeboy-controller-run-inputs.mjs)"
-          homeboy agent-task controller materialize "@$HOMEBOY_CONTROLLER_SPEC_PATH" --inputs "@$inputs_path" --policy-result "@$HOMEBOY_POLICY_RESULT_PATH" --output "$HOMEBOY_CONTROLLER_MATERIALIZATION_RESULT_PATH"
+          homeboy agent-task controller run-from-spec "@$HOMEBOY_CONTROLLER_SPEC_PATH" --inputs "@$inputs_path" --policy-result "@$HOMEBOY_POLICY_RESULT_PATH" --max-actions 100 > "$HOMEBOY_CONTROLLER_RUN_FROM_SPEC_RESULT_PATH"
+          jq '.materialization // .data.materialization // .value.materialization' "$HOMEBOY_CONTROLLER_RUN_FROM_SPEC_RESULT_PATH" > "$HOMEBOY_CONTROLLER_MATERIALIZATION_RESULT_PATH"
           materialization_proof_path="${HOMEBOY_CONTROLLER_MATERIALIZATION_RESULT_PATH%.json}.proof.json"
           jq '.data // .value // .' "$HOMEBOY_CONTROLLER_MATERIALIZATION_RESULT_PATH" > "$materialization_proof_path"
           homeboy agent-task controller validate-proof "@$materialization_proof_path"
@@ -154,33 +153,11 @@ jobs:
           jq empty "$HOMEBOY_CONTROLLER_RUN_SPEC_PATH"
           echo "path=$HOMEBOY_CONTROLLER_RUN_SPEC_PATH" >> "$GITHUB_OUTPUT"
 
-      - name: Initialize Homeboy controller from spec
-        id: controller
-        run: |
-          set -euo pipefail
-          homeboy agent-task controller from-spec "@${{ steps.controller-spec.outputs.path }}" --output "$HOMEBOY_CONTROLLER_FROM_SPEC_RESULT_PATH" --artifact-root "$HOMEBOY_ARTIFACT_ROOT"
-          loop_id="$(node -e "const fs=require('fs'); const value=JSON.parse(fs.readFileSync(process.argv[1], 'utf8')); console.log(value.data?.loop_id || value.value?.loop_id || value.loop_id || value.data?.controller?.loop_id || value.value?.controller?.loop_id || value.controller?.loop_id);" "$HOMEBOY_CONTROLLER_FROM_SPEC_RESULT_PATH")"
-          test -n "$loop_id"
-          echo "loop_id=$loop_id" >> "$GITHUB_OUTPUT"
-
-      - name: Resume Homeboy controller
-        run: homeboy agent-task controller resume "${{ steps.controller.outputs.loop_id }}" --output "$HOMEBOY_CONTROLLER_RESUME_RESULT_PATH" --artifact-root "$HOMEBOY_ARTIFACT_ROOT"
-
-      - name: Record GitHub Actions controller event
-        run: >-
-          homeboy agent-task controller events "${{ steps.controller.outputs.loop_id }}"
-          --event-type github.workflow.completed
-          --event-key "site-generation-loop-${{ github.run_id }}"
-          --payload '{"workflow":"site-generation-loop","run_id":"${{ github.run_id }}","repository":"${{ github.repository }}"}'
-          --output "$HOMEBOY_CONTROLLER_EVENT_RESULT_PATH"
-
       - name: Assert semantic proof state
         run: >-
           node .github/scripts/assert-site-generation-loop-proof.mjs
-          --controller-result "$HOMEBOY_CONTROLLER_FROM_SPEC_RESULT_PATH"
+          --controller-result "$HOMEBOY_CONTROLLER_RUN_FROM_SPEC_RESULT_PATH"
           --controller-run-spec "$HOMEBOY_CONTROLLER_RUN_SPEC_PATH"
-          --controller-resume "$HOMEBOY_CONTROLLER_RESUME_RESULT_PATH"
-          --controller-event "$HOMEBOY_CONTROLLER_EVENT_RESULT_PATH"
           --artifact-root "$HOMEBOY_ARTIFACT_ROOT"
 
       - name: Upload Homeboy artifacts
@@ -193,9 +170,7 @@ jobs:
             .ci/site-generation-loop.controller-run-inputs.json
             .ci/site-generation-loop.complexity-policy-result.json
             .ci/site-generation-loop.controller-materialization.json
-            .ci/site-generation-loop.controller-from-spec.json
-            .ci/site-generation-loop.controller-resume.json
-            .ci/site-generation-loop.controller-event.json
+            .ci/site-generation-loop.controller-run-from-spec.json
             .github/site-generation-complexity-policy.json
             .github/homeboy/controllers/static-site-generation-loop.controller.json
             .ci/homeboy-agent-task-artifacts/**

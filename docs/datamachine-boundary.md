@@ -16,7 +16,7 @@ The older Playground proof scripts, workloads, workflow, and transitional adapte
 
 - Controller specs and workflow callers use `runtime_execution.kind = "bundle"` with a runtime-package `package`, `workflow`, `input`, and `options` envelope.
 - Runtime profiles set `runtime_task_ability`, `runtime_bundle_ability`, and `runtime_workflow_ability` through `.github/scripts/lib/agent-runtime-api.mjs`, which is the only WPSG source file allowed to name the runtime package dispatcher directly.
-- Iterator fanout planning uses Homeboy's public `homeboy agent-task fanout plan` primitive with WPSG-owned packet input.
+- Iterator fanout lifecycle uses Homeboy's public `homeboy agent-task fanout plan`, `submit-batch`, `status`, and `artifacts` primitives with WPSG-owned packet input.
 - WPSG workflows check out Agents API and Homeboy Extensions for the current runtime support path.
 - Iterator callback publication uses generic `runtime_output_projections` over semantic `outputs.*` values populated by `evidence_projections`, not legacy engine-data helper functions or config keys.
 

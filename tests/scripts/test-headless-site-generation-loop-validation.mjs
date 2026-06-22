@@ -142,10 +142,10 @@ try {
 	assert.equal(evidence.runtime_id, 'contract-runtime');
 	assert.equal(evidence.fixture_artifacts, false);
 	assert.equal(evidence.artifact_source, 'homeboy-emitted');
-	assert.ok(evidence.commands.some((item) => item.command.includes('agent-task controller materialize')), 'evidence records Homeboy materialize command');
-	assert.ok(evidence.commands.some((item) => item.command.includes('agent-task controller from-spec')), 'evidence records Homeboy from-spec command');
-	assert.ok(evidence.commands.some((item) => item.command.includes('agent-task controller resume')), 'evidence records Homeboy resume command');
-	assert.ok(evidence.commands.some((item) => item.command.includes('agent-task controller events')), 'evidence records Homeboy event command');
+	assert.ok(evidence.commands.some((item) => item.command.includes('agent-task controller run-from-spec')), 'evidence records Homeboy run-from-spec command');
+	assert.ok(evidence.commands.every((item) => !item.command.includes('agent-task controller from-spec')), 'headless path does not manually initialize controllers');
+	assert.ok(evidence.commands.every((item) => !item.command.includes('agent-task controller resume')), 'headless path does not manually resume controllers');
+	assert.ok(evidence.commands.every((item) => !item.command.includes('agent-task controller events')), 'headless path does not manually apply controller events');
 	assert.ok(evidence.commands.every((item) => !item.command.includes('gh workflow run')), 'headless path does not rely on GitHub workflow dispatch');
 	assert.ok(evidence.upstream_dependencies.includes('https://github.com/Extra-Chill/homeboy-extensions/pull/1645'), 'evidence records the headless runner upstream dependency');
 

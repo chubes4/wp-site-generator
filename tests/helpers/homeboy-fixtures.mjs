@@ -16,6 +16,10 @@ if (args.join(' ') === 'agent-task controller from-spec --help') {
   console.log('Initialize or resume a durable loop controller from a repo-authored JSON spec');
   process.exit(0);
 }
+if (args.join(' ') === 'agent-task controller run-from-spec --help') {
+  console.log('Materialize, initialize, and run a bounded controller loop from a repo-authored JSON spec');
+  process.exit(0);
+}
 if (args.join(' ') === 'agent-task controller materialize --help') {
   console.log('Materialize a repo-authored loop spec with explicit run inputs');
   process.exit(0);
@@ -60,6 +64,74 @@ if (args[0] === 'agent-task' && args[1] === 'controller' && args[2] === 'from-sp
   console.log(JSON.stringify(result));
   process.exit(0);
 }
+if (args[0] === 'agent-task' && args[1] === 'controller' && args[2] === 'run-from-spec') {
+  const specPath = args[3].replace(/^@/, '');
+  const inputsIndex = args.indexOf('--inputs');
+  const spec = JSON.parse(readFileSync(specPath, 'utf8'));
+  const runInputs = inputsIndex === -1 ? {} : JSON.parse(readFileSync(args[inputsIndex + 1].replace(/^@/, ''), 'utf8'));
+  const explicitInputs = runInputs.inputs || (runInputs.metadata ? null : runInputs);
+  if (explicitInputs && typeof explicitInputs === 'object') {
+    if (explicitInputs.loop_id) {
+      spec.loop_id = explicitInputs.loop_id;
+    }
+    for (const workflow of spec.workflows || []) {
+      workflow.inputs = { ...(workflow.inputs || {}), ...explicitInputs };
+    }
+  }
+  if (runInputs.metadata && typeof runInputs.metadata === 'object') {
+    spec.metadata = { ...(spec.metadata || {}), ...runInputs.metadata };
+  }
+  for (let index = 0; index < args.length; index += 1) {
+    if (args[index] !== '--policy-result') {
+      continue;
+    }
+    const policyResult = JSON.parse(readFileSync(args[index + 1].replace(/^@/, ''), 'utf8'));
+    const policyId = policyResult.policy_id;
+    for (const workflow of spec.workflows || []) {
+      workflow.inputs = { ...(workflow.inputs || {}) };
+      if (policyResult.policy_inputs) {
+        workflow.inputs.policy_inputs = { ...(workflow.inputs.policy_inputs || {}), [policyId]: policyResult.policy_inputs };
+      }
+      if (policyResult.policy_results) {
+        workflow.inputs.policy_results = { ...(workflow.inputs.policy_results || {}), [policyId]: policyResult.policy_results };
+      }
+    }
+    spec.metadata = { ...(spec.metadata || {}) };
+    spec.metadata.policy_materialization = {
+      ...(spec.metadata.policy_materialization || {}),
+      [policyId]: {
+        policy_inputs: policyResult.policy_inputs || {},
+        policy_results: policyResult.policy_results || {},
+        provenance: policyResult.provenance || {},
+      },
+    };
+  }
+  const loopId = String(spec.loop_id || 'wp-site-generator/static-site-generation-loop').replaceAll('/', '_');
+  const materialization = {
+    schema: 'homeboy/agent-task-loop-spec-materialization/v1',
+    spec,
+  };
+  const result = {
+    schema: 'homeboy/agent-task-loop-controller-run-from-spec-result/v1',
+    loop_id: loopId,
+    max_actions: Number(args[args.indexOf('--max-actions') + 1] || 1),
+    stopped_reason: 'idle',
+    materialization,
+    from_spec: {
+      schema: 'homeboy/agent-task-loop-controller-from-spec-result/v1',
+      loop_id: loopId,
+      initialized: true,
+    },
+    results: [],
+    status: {
+      schema: 'homeboy/agent-task-loop-controller-status/v1',
+      loop_id: loopId,
+      state: 'waiting',
+    },
+  };
+  console.log(JSON.stringify(result));
+  process.exit(0);
+}
 if (args[0] === 'agent-task' && args[1] === 'controller' && args[2] === 'materialize') {
   const specPath = args[3].replace(/^@/, '');
   const inputsIndex = args.indexOf('--inputs');
@@ -68,6 +140,9 @@ if (args[0] === 'agent-task' && args[1] === 'controller' && args[2] === 'materia
   const runInputs = inputsIndex === -1 ? {} : JSON.parse(readFileSync(args[inputsIndex + 1].replace(/^@/, ''), 'utf8'));
   const explicitInputs = runInputs.inputs || (runInputs.metadata ? null : runInputs);
   if (explicitInputs && typeof explicitInputs === 'object') {
+    if (explicitInputs.loop_id) {
+      spec.loop_id = explicitInputs.loop_id;
+    }
     for (const workflow of spec.workflows || []) {
       workflow.inputs = { ...(workflow.inputs || {}), ...explicitInputs };
     }

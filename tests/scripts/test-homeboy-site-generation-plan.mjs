@@ -86,7 +86,7 @@ assert.equal(controllerRunSpec.metadata.run.generated_by, '.github/scripts/build
 assert.equal(controllerRunSpec.metadata.run.loop_id, 'wp-site-generator/static-site-generation-loop/409');
 assert.equal(controllerRunSpec.metadata.run.randomness_seed, complexityPolicy.randomness_seed, 'run metadata persists deterministic replay seed');
 assert.equal(controllerRunSpec.metadata.run.source.sha, storeIdeaInputs.source.sha, 'run metadata persists source commit');
-assert.equal(controllerRunSpec.metadata.run.materialized_by, 'homeboy agent-task controller materialize');
+assert.equal(controllerRunSpec.metadata.run.materialized_by, 'homeboy agent-task controller run-from-spec');
 	assert.equal(controllerRunSpec.metadata.run.controller_spec, '.github/homeboy/controllers/static-site-generation-loop.controller.json');
 	assert.equal(controllerRunSpec.metadata.authority.builder, '.github/scripts/build-homeboy-ssi-loop-controller.mjs');
 

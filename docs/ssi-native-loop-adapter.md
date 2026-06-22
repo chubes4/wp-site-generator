@@ -38,7 +38,7 @@ The generated spec declares these groups directly:
 - `dependencies`: SSI stack repositories and the behavior each owns.
 - `gates` and `metrics`: WPSG metric definitions and pass expressions.
 
-Homeboy maps these declarations to durable controller policy/actions through `agent-task controller from-spec`. Homeboy Extensions WordPress supplies WordPress runtime details behind generic Homeboy executor/provider contracts when Homeboy selects an implementation.
+Homeboy maps these declarations to durable controller policy/actions through `agent-task controller run-from-spec`. Homeboy Extensions WordPress supplies WordPress runtime details behind generic Homeboy executor/provider contracts when Homeboy selects an implementation.
 
 ## Runtime Input Migration
 
@@ -73,7 +73,7 @@ The controller declares workflow artifact dependencies and emissions. Homeboy de
 
 ## Complexity And Randomness Policy
 
-Prompt difficulty is owned by WP Site Generator, not Homeboy. The checked-in policy at `.github/site-generation-complexity-policy.json` is evaluated by `.github/scripts/build-homeboy-controller-run-inputs.mjs` before Homeboy materializes the controller spec with `homeboy agent-task controller materialize --policy-result @<policy-result.json>`.
+Prompt difficulty is owned by WP Site Generator, not Homeboy. The checked-in policy at `.github/site-generation-complexity-policy.json` is evaluated by `.github/scripts/build-homeboy-controller-run-inputs.mjs` before Homeboy runs the controller spec with `homeboy agent-task controller run-from-spec --policy-result @<policy-result.json>`.
 
 The materialized controller run spec records the full decision on each workflow at `workflows[].inputs.policy_results["wpsg-complexity-policy"]`, including:
 
@@ -139,7 +139,7 @@ Homeboy remains the controller, executor, scheduler, and loop-spec materializer.
 
 ## Upstream Contract
 
-Extra-Chill/homeboy#5152 is the upstream runtime dependency for the generic `agent-task controller from-spec`, `resume`, and `events` primitives. Extra-Chill/homeboy#5186 is the upstream dependency for `agent-task controller materialize`, which expands WPSG's run-input payload into workflow inputs without WPSG assembling the full controller run spec locally. Extra-Chill/homeboy#5691 is the upstream dependency for the public `agent-task fanout plan` primitive used by the PHP transformer iterator. If a backend-specific WordPress or WP Codebox mapping is needed, it belongs behind generic Homeboy executor/provider contracts in `homeboy-extensions/wordpress`, not in this WPSG spec.
+Extra-Chill/homeboy#5764 is the upstream runtime dependency for the generic `agent-task controller run-from-spec` primitive. Extra-Chill/homeboy#5691 is the upstream dependency for the public `agent-task fanout plan`, `submit-batch`, `status`, and `artifacts` primitives used by the PHP transformer iterator. If a backend-specific WordPress or WP Codebox mapping is needed, it belongs behind generic Homeboy executor/provider contracts in `homeboy-extensions/wordpress`, not in this WPSG spec.
 
 ## Headless Contract Validation
 
@@ -158,22 +158,18 @@ The command sequence it records is the reviewer-facing contract evidence:
 
 ```bash
 node .github/scripts/build-homeboy-controller-run-inputs.mjs
-homeboy agent-task controller materialize @.github/homeboy/controllers/static-site-generation-loop.controller.json --inputs @<run-inputs> --policy-result @<policy-result> --output <materialization>
+homeboy agent-task controller run-from-spec @.github/homeboy/controllers/static-site-generation-loop.controller.json --inputs @<run-inputs> --policy-result @<policy-result> --max-actions 100 > <controller-result>
 homeboy agent-task controller validate-proof @<materialization-proof>
 node .github/scripts/write-materialized-controller-run-spec.mjs <materialization> <controller-run-spec>
-homeboy agent-task controller from-spec @<controller-run-spec> --output <controller-result> --artifact-root <artifact-root>
-homeboy agent-task controller resume <loop-id> --output <resume-result> --artifact-root <artifact-root>
-homeboy agent-task controller events <loop-id> --event-type headless.validation.completed --event-key <run-id> --payload '{...}' --output <event-result>
-node .github/scripts/assert-site-generation-loop-proof.mjs --controller-result <controller-result> --controller-run-spec <controller-run-spec> --controller-resume <resume-result> --controller-event <event-result> --artifact-root <artifact-root>
+node .github/scripts/assert-site-generation-loop-proof.mjs --controller-result <controller-result> --controller-run-spec <controller-run-spec> --artifact-root <artifact-root>
 ```
 
-The proof requires artifacts emitted by Homeboy/runtime execution under `--artifact-root`. It fails closed when the artifact root does not include real evidence for a tiny fixture site run, import report, zero fallback/conversion findings, visual parity gates, runtime preview URL, required iterator fanout evidence for actionable findings, and controller resume/event evidence. Iterator issue/PR artifacts and publication PR artifacts are optional for a clean candidate-only run, but are validated when emitted. `--fixture-artifacts` is disabled and is not reviewer-facing proof. Runtime selection remains outside the controller spec through `HOMEBOY_AGENT_RUNTIME_*`; `--runtime-id wp-codebox` is one backend selection, not a WPSG-owned contract.
+The proof requires artifacts emitted by Homeboy/runtime execution under `--artifact-root`. It fails closed when the artifact root does not include real evidence for a tiny fixture site run, import report, zero fallback/conversion findings, visual parity gates, typed runtime preview/access URL, required iterator fanout evidence for actionable findings, and controller run-from-spec evidence. Iterator issue/PR artifacts and publication PR artifacts are optional for a clean candidate-only run, but are validated when emitted. `--fixture-artifacts` is disabled and is not reviewer-facing proof. Runtime selection remains outside the controller spec through `HOMEBOY_AGENT_RUNTIME_*`; `--runtime-id wp-codebox` is one backend selection, not a WPSG-owned contract.
 
 Current upstream dependencies before this can be treated as full runtime proof instead of deterministic contract proof:
 
-- Extra-Chill/homeboy#5152: durable controller `from-spec`, `resume`, and `events` primitives.
-- Extra-Chill/homeboy#5186: controller `materialize` primitive.
-- Extra-Chill/homeboy#5691: public `agent-task fanout plan` primitive for iterator fanout evidence.
+- Extra-Chill/homeboy#5764: durable controller `run-from-spec` primitive.
+- Extra-Chill/homeboy#5691: public `agent-task fanout plan`, `submit-batch`, `status`, and `artifacts` primitives for iterator fanout evidence.
 - Extra-Chill/homeboy-extensions#1644: generic runtime execution contracts.
 - Extra-Chill/homeboy-extensions#1645: headless loop runner that emits real tiny fixture site artifacts.
 - Extra-Chill/homeboy-extensions#1646: WP Codebox runtime contract manifest consumption.
