@@ -92,21 +92,16 @@ const runtimeBoundaryTerms = [
   'runner-workspace-publication-result',
   'tool-call-transcript',
 ];
-const publicCodeboxRuntimeAllowlist = {
-};
 const runtimeBoundaryLeaks = [];
 for (const file of runtimeGlueFiles) {
   let body = await readFile(path.join(repoRoot, file), 'utf8');
-  for (const allowed of publicCodeboxRuntimeAllowlist[file] || []) {
-    body = body.replaceAll(allowed, '');
-  }
   const leakedTerms = runtimeBoundaryTerms.filter((term) => new RegExp(escapeRegExp(term), 'i').test(body));
   if (leakedTerms.length > 0) {
     runtimeBoundaryLeaks.push(`${file}: ${leakedTerms.join(', ')}`);
   }
 }
 
-assert.deepEqual(runtimeBoundaryLeaks, [], 'runtime glue must consume Homeboy runtime facades instead of hard-coding Agents API, Data Machine, DMC, Playground, or private provider internals');
+assert.deepEqual(runtimeBoundaryLeaks, [], 'runtime glue must consume generic Homeboy runtime contracts instead of hard-coding Agents API, Data Machine, DMC, Playground, or private runtime internals');
 
 const manifestFiles = candidateFiles.filter((file) => file.startsWith('bundles/') && file.endsWith('/manifest.json'));
 for (const file of manifestFiles) {

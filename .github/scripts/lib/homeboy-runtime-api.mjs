@@ -14,18 +14,6 @@ export function runtimeProviderInvocationContract(env = process.env) {
 	return contract;
 }
 
-export function resolveVisualParityOutputRoot(env = process.env) {
-	return env.VISUAL_PARITY_OUTPUT || homeboyRuntimeApi.visualParity.outputRoot;
-}
-
-export function runtimeWorkspaceRecipeSchema(env = process.env) {
-	return requiredContractValue('HOMEBOY_AGENT_RUNTIME_WORKSPACE_RECIPE_SCHEMA', env.HOMEBOY_AGENT_RUNTIME_WORKSPACE_RECIPE_SCHEMA);
-}
-
-export function runtimeValidationArtifactEnvelopeSchema(env = process.env) {
-	return requiredContractValue('HOMEBOY_AGENT_RUNTIME_VALIDATION_ARTIFACT_ENVELOPE_SCHEMA', env.HOMEBOY_AGENT_RUNTIME_VALIDATION_ARTIFACT_ENVELOPE_SCHEMA);
-}
-
 export function runtimeWorkspaceCommandAbility(env = process.env) {
 	return requiredContractValue('provider invocation contract abilities.workspaceCommand', runtimeProviderInvocationContract(env).abilities?.workspaceCommand);
 }
@@ -44,42 +32,6 @@ export function homeboyRuntimeProviderProfile(env = process.env) {
 		workspaceCommandAbility: profile.workspaceCommandAbility || runtimeWorkspaceCommandAbility(env),
 		workspacePublishAbility: profile.workspacePublishAbility || runtimeWorkspacePublishAbility(env),
 	};
-}
-
-export function buildRuntimePreviewUrl({ evidenceRefs = [], env = process.env } = {}) {
-	const refs = Array.isArray(evidenceRefs) ? evidenceRefs : (evidenceRefs ? [evidenceRefs] : []);
-	const evidenceUrl = previewUrlFromEvidenceRefs(refs.length > 0 ? refs : parseEvidenceRefs(env.HOMEBOY_PREVIEW_EVIDENCE_REFS || env.WPSG_PREVIEW_EVIDENCE_REFS));
-	if (evidenceUrl) {
-		return evidenceUrl;
-	}
-	if (env.HOMEBOY_RUNTIME_PREVIEW_URL) {
-		return env.HOMEBOY_RUNTIME_PREVIEW_URL;
-	}
-	throw new Error('WPSG requires preview evidence refs from HOMEBOY_PREVIEW_EVIDENCE_REFS or HOMEBOY_RUNTIME_PREVIEW_URL.');
-}
-
-function parseEvidenceRefs(value) {
-	if (!value) {
-		return [];
-	}
-	const parsed = JSON.parse(value);
-	return Array.isArray(parsed) ? parsed : [parsed];
-}
-
-function previewUrlFromEvidenceRefs(refs) {
-	for (const ref of refs) {
-		if (typeof ref === 'string' && /^https?:\/\//.test(ref)) {
-			return ref;
-		}
-		if (!ref || typeof ref !== 'object') {
-			continue;
-		}
-		const candidate = ref.preview_url || ref.url || ref.urls?.preview || ref.preview?.url || ref.evidence?.preview_url;
-		if (candidate) {
-			return candidate;
-		}
-	}
-	return '';
 }
 
 function requiredContractValue(name, value) {

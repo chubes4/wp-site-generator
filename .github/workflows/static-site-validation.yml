@@ -267,7 +267,7 @@ jobs:
           path: homeboy-ci-results/design-distribution.json
           if-no-files-found: ignore
 
-      - name: Build Playground preview link
+      - name: Build runtime preview link
         id: preview
         if: always()
         shell: bash
@@ -278,6 +278,7 @@ jobs:
           SOURCE_REPO: ${{ needs.detect-changed-sites.outputs.source_repo }}
           SOURCE_HEAD_SHA: ${{ needs.detect-changed-sites.outputs.head_sha }}
           SSI_STACK_MANIFEST_PATH: homeboy-ci-results/ssi-stack-manifest.json
+          HOMEBOY_AGENT_RUNTIME_PREVIEW_URL_BASE: https://playground.wordpress.net/
         run: |
           set -euo pipefail
           node .github/scripts/build-static-preview-blueprint.mjs --github-output "$GITHUB_OUTPUT"
@@ -300,7 +301,7 @@ jobs:
 
           - **Bench run:** $BENCH_STATUS
           - **Visual parity check:** $VISUAL_STATUS${VISUAL_ARTIFACT_URL:+ ([artifact]($VISUAL_ARTIFACT_URL))}
-          - **Playground preview:** [open imported site]($PREVIEW)
+          - **Runtime preview:** [open imported site]($PREVIEW)
           - **Harness manifest:** captured in `ssi-validation-$SITE` artifact as `ssi-stack-manifest.json`
 
           $METRICS

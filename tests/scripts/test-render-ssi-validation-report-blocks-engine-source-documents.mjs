@@ -59,7 +59,7 @@ const bench = {
 							validation_artifact_envelope: {
 								schema: runtimeValidationArtifactEnvelopeSchema({ HOMEBOY_AGENT_RUNTIME_VALIDATION_ARTIFACT_ENVELOPE_SCHEMA: validationArtifactSchema }),
 								status: 'passed',
-								validation_hash: 'codebox-validation-fixture',
+								validation_hash: 'runtime-validation-fixture',
 								artifacts: [{ name: 'import-report.json' }, { name: 'visual-summary.json' }],
 							},
 							diagnostics: [
@@ -91,9 +91,9 @@ assert.match(output, /\| markdown \| 1 \|/, 'Blocks Engine source-document count
 assert.match(output, /\| mdx \| 1 \|/, 'Blocks Engine source-document counts include MDX');
 assert.match(output, /\| component candidate count \| 5 \|/, 'Blocks Engine component candidate count is rendered');
 assert.match(output, /\| block candidate count \| 8 \|/, 'Blocks Engine block candidate count is rendered');
-assert.match(output, /### Codebox Validation Artifact Envelope/, 'optional Codebox validation artifact envelope is rendered');
-assert.match(output, new RegExp(validationArtifactSchema.replaceAll('/', '\\/')), 'validation artifact envelope schema is rendered');
-assert.match(output, /codebox-validation-fixture/, 'validation artifact envelope hash is rendered');
+assert.match(output, /### Runtime Validation Artifact Envelope/, 'optional runtime validation artifact envelope is rendered');
+assert.match(output, new RegExp(escapeRegExp(validationArtifactSchema)), 'validation artifact envelope schema is rendered from the runtime contract');
+assert.match(output, /runtime-validation-fixture/, 'validation artifact envelope hash is rendered');
 assert.match(output, /### Source Documents/, 'SSI source-document section is rendered');
 assert.match(output, /Skipped\/Unsupported MDX/, 'MDX diagnostics table is rendered');
 assert.match(output, /docs\/widget\.mdx/, 'MDX diagnostic includes source path');
@@ -127,4 +127,8 @@ function runRenderer(scriptPath, payload) {
 		});
 		child.stdin.end(JSON.stringify(payload));
 	});
+}
+
+function escapeRegExp(value) {
+	return String(value).replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 }

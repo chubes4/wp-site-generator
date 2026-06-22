@@ -3,6 +3,8 @@ import path from 'node:path';
 
 export {
 	runtimeApiAbilities,
+	buildRuntimePreviewUrl,
+	resolveVisualParityOutputRoot,
 	runtimeBundleExecution,
 	runtimePackageProfile,
 	runtimePackageProfiles,
@@ -12,6 +14,8 @@ export {
 	runtimeProviderProfiles,
 	runtimeToolProfileInputs,
 	runtimeToolProfiles,
+	runtimeValidationArtifactEnvelopeSchema,
+	runtimeWorkspaceRecipeSchema,
 	runtimeWorkflowBuilderExecution,
 	runtimeWorkflowInputs,
 } from './agent-runtime-api.mjs';
@@ -29,17 +33,12 @@ export {
 } from './wordpress-runtime-api.mjs';
 
 export {
-	buildRuntimePreviewUrl,
 	homeboyRuntimeApi,
 	homeboyRuntimeProviderProfile,
-	resolveVisualParityOutputRoot,
 	runtimeProviderInvocationContract,
-	runtimeValidationArtifactEnvelopeSchema,
 	runtimeWorkspaceCommandAbility,
 	runtimeWorkspacePublishAbility,
-	runtimeWorkspaceRecipeSchema,
 } from './homeboy-runtime-api.mjs';
-
 export function parseArgs(argv) {
 	const parsed = new Map();
 	for (let i = 0; i < argv.length; i += 1) {

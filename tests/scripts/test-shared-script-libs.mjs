@@ -94,9 +94,10 @@ assert.equal(runtimeWorkspaceRecipeSchema(codeboxFixtureEnv), codeboxFixtureEnv.
 assert.equal(buildRuntimePreviewUrl({ evidenceRefs: [{ preview_url: 'https://example.com/preview' }] }), 'https://example.com/preview');
 assert.equal(buildRuntimePreviewUrl({ evidenceRefs: { preview_url: 'https://example.com/single-preview' } }), 'https://example.com/single-preview');
 assert.equal(buildRuntimePreviewUrl({ env: { HOMEBOY_RUNTIME_PREVIEW_URL: 'https://example.com/runtime-preview' } }), 'https://example.com/runtime-preview');
-assert.throws(() => buildRuntimePreviewUrl({ blueprint: { steps: [] } }), /preview evidence refs/);
-assert.throws(() => readAgentRuntimeContract({}), /HOMEBOY_AGENT_RUNTIME_TASK_ABILITY/, 'runtime contract fails closed without the upstream task ability');
+assert.throws(() => buildRuntimePreviewUrl({ blueprint: { steps: [] } }), /preview evidence refs|preview_url_base|runtime preview URLs/);
 const defaultRuntimeContract = readAgentRuntimeContract(genericRuntimeEnv);
+assert.equal(runtimeWorkspaceRecipeSchema(defaultRuntimeContract), 'homeboy/runtime-workspace-recipe/v1', 'runtime workspace recipe schema defaults to the generic Homeboy contract');
+assert.equal(runtimeValidationArtifactEnvelopeSchema(defaultRuntimeContract), 'homeboy/validation-artifact-envelope/v1', 'validation artifact envelope schema defaults to the generic Homeboy contract');
 assert.equal(defaultRuntimeContract.provider, '', 'WPSG does not select a runtime provider by default');
 assert.deepEqual(runtimePackageProfiles(defaultRuntimeContract), {
 	'wpsg-agent-runtime-package': {
@@ -219,6 +220,26 @@ assert.deepEqual(runtimeToolProfileInputs('workspace-publication', configuredRun
 	ability_requirements: JSON.stringify([runtimePackageAbilityId, runtimeWorkspacePublishAbility(codeboxFixtureEnv)]),
 	ability_tools: '[]',
 }, 'provider-compatible abilities can still be supplied externally');
+
+const runtimeProfileManifest = {
+	profiles: [
+		{
+			id: 'example-runtime-package',
+			provider: 'example-runtime',
+			runtime_task_ability: 'example-runtime/run-package',
+			workspace_command_ability: runtimeWorkspaceCommandAbility(codeboxFixtureEnv),
+			workspace_publish_ability: runtimeWorkspacePublishAbility(codeboxFixtureEnv),
+			workspace_recipe_schema: 'example-runtime/workspace-recipe/v1',
+			validation_artifact_envelope_schema: 'example-runtime/validation-artifact-envelope/v1',
+			preview_url_base: 'https://preview.example.com/',
+		},
+	],
+};
+const manifestRuntimeContract = readAgentRuntimeContract({ HOMEBOY_AGENT_RUNTIME_MANIFEST: JSON.stringify(runtimeProfileManifest) });
+assert.equal(runtimePackageAbility(manifestRuntimeContract), 'example-runtime/run-package', 'runtime package ability can be supplied by a Homeboy runtime manifest');
+assert.equal(runtimeWorkspaceRecipeSchema(manifestRuntimeContract), 'example-runtime/workspace-recipe/v1', 'runtime recipe schemas come from the runtime manifest');
+assert.equal(runtimeValidationArtifactEnvelopeSchema(manifestRuntimeContract), 'example-runtime/validation-artifact-envelope/v1', 'runtime validation schemas come from the runtime manifest');
+assert.equal(buildRuntimePreviewUrl({ blueprint: { steps: [{ step: 'login' }] } }, manifestRuntimeContract), 'https://preview.example.com/#%7B%22steps%22%3A%5B%7B%22step%22%3A%22login%22%7D%5D%7D', 'preview URL shape is supplied by the runtime contract');
 
 const workflow = buildSingleAiWorkflow({
 	step: buildSingleAiWorkflowStep({

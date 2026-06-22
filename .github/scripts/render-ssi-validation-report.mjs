@@ -198,7 +198,7 @@ function renderValidationArtifactEnvelope(envelope) {
 		.filter(([, value]) => value !== undefined && value !== null && value !== '')
 		.map(([label, value]) => `| ${escapeCell(label)} | ${escapeCell(formatValue(value))} |`);
 
-	return ['### Codebox Validation Artifact Envelope', '| Field | Value |', '| --- | --- |', ...rows].join('\n');
+	return ['### Runtime Validation Artifact Envelope', '| Field | Value |', '| --- | --- |', ...rows].join('\n');
 }
 
 function renderBlocksEngineStatus(metrics, compiler) {
