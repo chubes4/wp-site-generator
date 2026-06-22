@@ -124,6 +124,9 @@ jobs:
       - name: Install WordPress extension
         run: homeboy extension install .ci/homeboy-extensions/wordpress --id wordpress
 
+      - name: Generate Homeboy controller spec
+        run: node .github/scripts/build-homeboy-ssi-loop-controller.mjs
+
       - name: Materialize Homeboy controller run spec
         id: controller-spec
         run: |
