@@ -32,6 +32,13 @@ export {
 	wordpressRuntimeSettingsFields,
 } from './wordpress-runtime-api.mjs';
 
+export {
+	homeboyRuntimeApi,
+	homeboyRuntimeProviderProfile,
+	runtimeProviderInvocationContract,
+	runtimeWorkspaceCommandAbility,
+	runtimeWorkspacePublishAbility,
+} from './homeboy-runtime-api.mjs';
 export function parseArgs(argv) {
 	const parsed = new Map();
 	for (let i = 0; i < argv.length; i += 1) {

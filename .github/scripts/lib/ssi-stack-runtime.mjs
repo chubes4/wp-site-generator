@@ -107,9 +107,9 @@ export function buildSsiPreviewBlueprint({ site, source, lane = 'wordpress', man
 	}, manifest);
 }
 
-export function buildRuntimeWorkspaceRecipe({ blueprint, mounts = [], workflowSteps = [], artifactsDirectory = '' } = {}) {
+export function buildRuntimeWorkspaceRecipe({ blueprint, mounts = [], workflowSteps = [], artifactsDirectory = '', env = process.env } = {}) {
 	return {
-		schema: runtimeWorkspaceRecipeSchema(),
+		schema: runtimeWorkspaceRecipeSchema(env),
 		runtime: {
 			wp: 'latest',
 			blueprint,

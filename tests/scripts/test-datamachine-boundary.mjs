@@ -69,6 +69,7 @@ const runtimeGlueFiles = candidateFiles.filter((file) => [
   '.github/scripts/render-runtime-bundle-execution.mjs',
   '.github/scripts/lib/ci-runtime-utils.mjs',
   '.github/scripts/lib/agent-runtime-api.mjs',
+  '.github/scripts/lib/homeboy-runtime-api.mjs',
   '.github/scripts/build-homeboy-ssi-loop-controller.mjs',
 ].includes(file));
 const runtimeBoundaryTerms = [

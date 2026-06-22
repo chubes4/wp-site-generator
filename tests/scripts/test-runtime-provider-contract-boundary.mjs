@@ -7,7 +7,7 @@ import path from 'node:path';
 const repoRoot = path.resolve(import.meta.dirname, '../..');
 const fixturePath = path.join(repoRoot, 'tests/fixtures/codebox-provider-runtime-contract.json');
 const fixture = JSON.parse(await readFile(fixturePath, 'utf8'));
-const contractConstants = collectStrings(fixture).filter((value) => value.includes('wp-codebox/') || value.includes('wp-codebox.'));
+const providerConstants = collectStrings(fixture).filter((value) => value.includes('wp-codebox/') || value.includes('wp-codebox.'));
 const violations = [];
 
 for (const filePath of await walk(repoRoot)) {
@@ -15,16 +15,16 @@ for (const filePath of await walk(repoRoot)) {
 		continue;
 	}
 	const content = await readFile(filePath, 'utf8');
-	for (const value of contractConstants) {
+	for (const value of providerConstants) {
 		if (content.includes(value)) {
 			violations.push(`${path.relative(repoRoot, filePath)} duplicates ${value}`);
 		}
 	}
 }
 
-assert.deepEqual(violations, [], 'Codebox ability/schema constants stay isolated to the adapter fixture');
+assert.deepEqual(violations, [], 'provider ability/schema constants stay isolated to provider fixtures');
 
-console.log('Codebox contract constant boundary passed');
+console.log('runtime provider contract boundary passed');
 
 function collectStrings(value) {
 	if (typeof value === 'string') {

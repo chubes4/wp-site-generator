@@ -193,10 +193,16 @@ export function runtimePackageAbility(contract = readAgentRuntimeContract()) {
 }
 
 export function runtimeWorkspaceRecipeSchema(contract = readAgentRuntimeContract()) {
+	if (!contract.workspaceRecipeSchema && (contract.HOMEBOY_AGENT_RUNTIME_TASK_ABILITY || contract.HOMEBOY_AGENT_RUNTIME_WORKSPACE_RECIPE_SCHEMA || contract.HOMEBOY_AGENT_RUNTIME_MANIFEST || contract.HOMEBOY_AGENT_RUNTIME_MANIFEST_PATH || contract.HOMEBOY_RUNTIME_PROFILE_MANIFEST || contract.HOMEBOY_RUNTIME_PROFILE_MANIFEST_PATH)) {
+		contract = readAgentRuntimeContract(contract);
+	}
 	return contract.workspaceRecipeSchema;
 }
 
 export function runtimeValidationArtifactEnvelopeSchema(contract = readAgentRuntimeContract()) {
+	if (!contract.validationArtifactEnvelopeSchema && (contract.HOMEBOY_AGENT_RUNTIME_TASK_ABILITY || contract.HOMEBOY_AGENT_RUNTIME_VALIDATION_ARTIFACT_ENVELOPE_SCHEMA || contract.HOMEBOY_AGENT_RUNTIME_MANIFEST || contract.HOMEBOY_AGENT_RUNTIME_MANIFEST_PATH || contract.HOMEBOY_RUNTIME_PROFILE_MANIFEST || contract.HOMEBOY_RUNTIME_PROFILE_MANIFEST_PATH)) {
+		contract = readAgentRuntimeContract(contract);
+	}
 	return contract.validationArtifactEnvelopeSchema;
 }
 

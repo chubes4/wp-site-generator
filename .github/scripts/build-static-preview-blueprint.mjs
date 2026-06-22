@@ -14,7 +14,6 @@ const outputPath = args.get('--output') || process.env.STATIC_PREVIEW_BLUEPRINT_
 const githubOutput = args.get('--github-output') || process.env.GITHUB_OUTPUT || '';
 const manifestPath = args.get('--manifest') || process.env.SSI_STACK_MANIFEST_PATH || '';
 const previewEvidenceRefs = args.get('--preview-evidence-refs') || process.env.HOMEBOY_PREVIEW_EVIDENCE_REFS || process.env.WPSG_PREVIEW_EVIDENCE_REFS || '';
-const allowPlaygroundFallback = args.has('--allow-playground-url-fallback') || process.env.WPSG_ALLOW_PLAYGROUND_PREVIEW_URL_FALLBACK === '1';
 
 if (!site) {
 	throw new Error('SITE or --site is required.');
@@ -24,9 +23,7 @@ const source = buildSsiPreviewSource({ repo: sourceRepo, sha: sourceHeadSha, tag
 const manifest = await loadSsiStackManifest(manifestPath);
 const blueprint = buildSsiPreviewBlueprint({ site, source, lane, manifest });
 const url = buildRuntimePreviewUrl({
-	blueprint,
 	evidenceRefs: previewEvidenceRefs ? JSON.parse(previewEvidenceRefs) : [],
-	allowPlaygroundFallback,
 });
 
 if (outputPath) {
