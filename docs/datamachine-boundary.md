@@ -10,7 +10,7 @@ The enforced quarantine lives in `.github/datamachine-boundary-quarantine.json`.
 
 - `boundary_enforcement`: the boundary test and guarded assertions that name the classified boundary terms.
 
-The older Playground proof scripts, workloads, workflow, and transitional adapter config for the historical runtime integration have been removed. Current behavior coverage lives in the generic `runtime-agent-ci` workflow wiring, runtime output/evidence projection config, and workspace-preload package contracts.
+Current behavior coverage lives in the generic `runtime-agent-ci` workflow wiring, runtime output/evidence projection config, and workspace-preload package contracts.
 
 ## Generic Runtime Execution
 
@@ -18,7 +18,7 @@ The older Playground proof scripts, workloads, workflow, and transitional adapte
 - Runtime profiles set `runtime_task_ability`, `runtime_bundle_ability`, and `runtime_workflow_ability` through `.github/scripts/lib/agent-runtime-api.mjs`, which is the only WPSG source file allowed to name the runtime package dispatcher directly.
 - Iterator fanout lifecycle uses Homeboy's public `homeboy agent-task fanout plan`, `submit-batch`, `status`, and `artifacts` primitives with WPSG-owned packet input.
 - WPSG workflows check out Agents API and Homeboy Extensions for the current runtime support path.
-- Iterator callback publication uses generic `runtime_output_projections` over semantic `outputs.*` values populated by `evidence_projections`, not legacy engine-data helper functions or config keys.
+- Iterator callback publication uses generic `runtime_output_projections` over semantic `outputs.*` values populated by `evidence_projections`.
 
 Runtime packages materialize `agent-runtime/workspace-preload`, so WPSG declares workspace preload artifacts directly with `agent-runtime/workspace-preload/v1` extension payloads instead of adapter artifact metadata.
 

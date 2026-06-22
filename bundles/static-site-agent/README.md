@@ -51,5 +51,5 @@ This agent is the only one that opens target-lane pull requests.
 
 - Invent concepts (idea agents do that).
 - Pick designs (design agent does that).
-- Validate its output (the CI lane does that).
+- Validate its output (the Homeboy lab loop does that).
 - Reference platforms, frameworks, or build tooling (the agent is platform-blind).
