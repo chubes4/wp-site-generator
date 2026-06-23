@@ -121,6 +121,8 @@ try {
 		'.github/scripts/validate-headless-site-generation-loop.mjs',
 		'--homeboy-bin',
 		homeboyFixturePath,
+		'--homeboy-runner',
+		'homeboy-lab',
 		'--work-dir',
 		tempDir,
 		'--evidence',
@@ -138,6 +140,8 @@ try {
 		encoding: 'utf8',
 		env: {
 			...process.env,
+			HOMEBOY_FIXTURE_EXPECT_RUNNER: 'homeboy-lab',
+			HOMEBOY_FIXTURE_REQUIRE_OUTPUT: '1',
 			HOMEBOY_FIXTURE_GIANT_STDOUT: '1',
 			HOMEBOY_AGENT_RUNTIME_COMPONENTS: JSON.stringify([
 				{
@@ -160,7 +164,10 @@ try {
 	assert.equal(evidence.artifact_source, 'homeboy-emitted');
 	const runFromSpecCommand = evidence.commands.find((item) => item.command.includes('agent-task controller run-from-spec'));
 	assert.ok(runFromSpecCommand, 'evidence records Homeboy run-from-spec command');
+	assert.match(runFromSpecCommand.command, /--runner homeboy-lab .*agent-task controller run-from-spec/, 'validator routes Homeboy through the requested runner before the run-from-spec command');
 	assert.ok(runFromSpecCommand.command.includes('--output'), 'validator asks Homeboy to write structured run-from-spec output');
+	assert.match(runFromSpecCommand.command, /agent-task controller run-from-spec .* --output /, 'run-from-spec output remains a command argument, not a wrapper/global option');
+	assert.equal(runFromSpecCommand.homeboy_runner, 'homeboy-lab', 'evidence records the requested Homeboy runner');
 	assert.equal(runFromSpecCommand.output_path, evidence.paths.controller_result, 'evidence records the exact Homeboy structured output path');
 	assert.equal(runFromSpecCommand.artifact_root, artifactRoot, 'evidence records the Homeboy artifact root');
 	assert.doesNotMatch(await readFile(evidence.paths.controller_result, 'utf8'), /^not-json:/, 'validator reads structured output from the output file instead of stdout');

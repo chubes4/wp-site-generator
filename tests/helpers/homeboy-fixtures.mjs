@@ -7,7 +7,21 @@ export async function createHomeboyControllerContractFixture(tempDir) {
 import { readFileSync } from 'node:fs';
 import { writeFileSync } from 'node:fs';
 
-const args = process.argv.slice(2);
+const rawArgs = process.argv.slice(2);
+let runner = '';
+const args = [];
+for (let index = 0; index < rawArgs.length; index += 1) {
+  if (rawArgs[index] === '--runner') {
+    runner = rawArgs[index + 1] || '';
+    index += 1;
+    continue;
+  }
+  args.push(rawArgs[index]);
+}
+if (process.env.HOMEBOY_FIXTURE_EXPECT_RUNNER && runner !== process.env.HOMEBOY_FIXTURE_EXPECT_RUNNER) {
+  console.error('expected runner ' + process.env.HOMEBOY_FIXTURE_EXPECT_RUNNER + ', got ' + runner);
+  process.exit(64);
+}
 if (args.join(' ') === 'agent-task controller --help') {
   console.log('Create, inspect, and resume durable multi-agent loop controller state');
   process.exit(0);
@@ -68,6 +82,10 @@ if (args[0] === 'agent-task' && args[1] === 'controller' && args[2] === 'run-fro
   const specPath = args[3].replace(/^@/, '');
   const inputsIndex = args.indexOf('--inputs');
   const outputIndex = args.indexOf('--output');
+  if (process.env.HOMEBOY_FIXTURE_REQUIRE_OUTPUT === '1' && outputIndex === -1) {
+    console.error('run-from-spec fixture requires --output');
+    process.exit(64);
+  }
   const spec = JSON.parse(readFileSync(specPath, 'utf8'));
   const runInputs = inputsIndex === -1 ? {} : JSON.parse(readFileSync(args[inputsIndex + 1].replace(/^@/, ''), 'utf8'));
   const explicitInputs = runInputs.inputs || (runInputs.metadata ? null : runInputs);
