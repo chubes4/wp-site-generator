@@ -71,42 +71,17 @@ export function runtimeWorkflowInputs(profileId, contract = readAgentRuntimeCont
 
 export function renderRuntimeWorkflowInputs(options = {}, env = process.env) {
 	const homeboyRenderer = loadHomeboyExtensionsRenderer(env);
-	if (homeboyRenderer) {
-		return homeboyRenderer({
-			runtime: options.runtime_provider || options.runtime || '',
-			runtime_profile: options.runtime_profile,
-			runtime_profiles: options.runtime_profiles,
-			tool_profile: options.tool_profile,
-			runtimeProviderConfig: options.runtime_provider ? { id: options.runtime_provider } : undefined,
-		});
+	if (!homeboyRenderer) {
+		throw new Error('Homeboy Extensions runtime workflow input renderer is required. Install homeboy-runtime-agent-ci/runtime-workflow-inputs or set HOMEBOY_EXTENSIONS_RUNTIME_WORKFLOW_INPUTS/HOMEBOY_EXTENSIONS_PATH.');
 	}
 
-	const runtimeProfile = requiredString(options.runtime_profile, 'runtime_profile');
-	const runtimeProfiles = plainObject(options.runtime_profiles);
-	const selectedProfile = {
-		...(runtimeProfiles[runtimeProfile] || {}),
-		id: runtimeProfiles[runtimeProfile]?.id || runtimeProfile,
-	};
-
-	return {
-		schema: 'homeboy/runtime-workflow-inputs/v1',
-		runtime_id: options.runtime_provider || options.runtime || '',
-		runtime_profile: runtimeProfile,
-		runtime_profiles: {
-			...runtimeProfiles,
-			[runtimeProfile]: selectedProfile,
-		},
-		runtime_requirements: selectedProfile,
+	return homeboyRenderer({
+		runtime: options.runtime_provider || options.runtime || '',
+		runtime_profile: options.runtime_profile,
+		runtime_profiles: options.runtime_profiles,
 		tool_profile: options.tool_profile,
-		workflow_inputs: {
-			runtime: options.runtime_provider || options.runtime || '',
-			profile: runtimeProfile,
-			runtime_profiles: {
-				...runtimeProfiles,
-				[runtimeProfile]: selectedProfile,
-			},
-		},
-	};
+		runtimeProviderConfig: options.runtime_provider ? { id: options.runtime_provider } : undefined,
+	});
 }
 
 function wpsgRuntimeToolProfile(profileId) {
@@ -123,6 +98,7 @@ function loadHomeboyExtensionsRenderer(env) {
 	const candidates = [
 		explicitPath,
 		homeboyExtensionsPath ? path.join(homeboyExtensionsPath, 'runtime-agent-ci/lib/runtime-workflow-inputs.cjs') : '',
+		'homeboy-runtime-agent-ci/runtime-workflow-inputs',
 	].filter(Boolean);
 
 	for (const candidate of candidates) {
@@ -138,17 +114,6 @@ function loadHomeboyExtensionsRenderer(env) {
 		}
 	}
 	return null;
-}
-
-function requiredString(value, name) {
-	if (typeof value !== 'string' || value.trim() === '') {
-		throw new Error(`${name} is required.`);
-	}
-	return value;
-}
-
-function plainObject(value) {
-	return value && typeof value === 'object' && !Array.isArray(value) ? value : {};
 }
 
 function text(value) {

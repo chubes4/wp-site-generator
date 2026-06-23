@@ -96,6 +96,31 @@ assert.equal(buildRuntimePreviewUrl({ evidenceRefs: [{ preview_url: 'https://exa
 assert.equal(buildRuntimePreviewUrl({ evidenceRefs: { preview_url: 'https://example.com/single-preview' } }), 'https://example.com/single-preview');
 assert.equal(buildRuntimePreviewUrl({ env: { HOMEBOY_RUNTIME_PREVIEW_URL: 'https://example.com/runtime-preview' } }), 'https://example.com/runtime-preview');
 assert.throws(() => buildRuntimePreviewUrl({ blueprint: { steps: [] } }), /preview evidence refs|preview_url_base|runtime preview URLs/);
+const tempDir = await mkdtemp(path.join(tmpdir(), 'wp-site-generator-shared-libs-'));
+const defaultRendererPath = path.join(tempDir, 'default-runtime-workflow-inputs.cjs');
+await writeFile(defaultRendererPath, `
+'use strict';
+exports.renderRuntimeWorkflowInputs = (options) => {
+  const runtime = options.runtimeProviderConfig?.id || options.runtime_provider_config?.id || options.runtime || options.runtime_provider || '';
+  const profile = options.runtime_profile || options.runtimeProfile;
+  const profiles = options.runtime_profiles || options.runtimeProfiles || {};
+  const selectedProfile = { ...(profiles[profile] || {}), id: profiles[profile]?.id || profile };
+  return {
+    schema: 'homeboy/runtime-workflow-inputs/v1',
+    runtime_id: runtime,
+    runtime_profile: profile,
+    runtime_profiles: { ...profiles, [profile]: selectedProfile },
+    runtime_requirements: selectedProfile,
+    tool_profile: options.tool_profile,
+    workflow_inputs: {
+      runtime,
+      profile,
+      runtime_profiles: { ...profiles, [profile]: selectedProfile },
+    },
+  };
+};
+`);
+const hbeDefaultRendererEnv = { HOMEBOY_EXTENSIONS_RUNTIME_WORKFLOW_INPUTS: defaultRendererPath };
 const defaultRuntimeContract = readAgentRuntimeContract(genericRuntimeEnv);
 assert.equal(runtimeWorkspaceRecipeSchema(defaultRuntimeContract), 'homeboy/runtime-workspace-recipe/v1', 'runtime workspace recipe schema defaults to the generic Homeboy contract');
 assert.equal(runtimeValidationArtifactEnvelopeSchema(defaultRuntimeContract), 'homeboy/validation-artifact-envelope/v1', 'validation artifact envelope schema defaults to the generic Homeboy contract');
@@ -141,7 +166,7 @@ assert.deepEqual(runtimeWorkflowInputs('workspace-iteration', readAgentRuntimeCo
 	HOMEBOY_AGENT_RUNTIME_PROVIDER: codeboxProvider,
 	HOMEBOY_AGENT_RUNTIME_WORKSPACE_COMMAND_ABILITY: runtimeWorkspaceCommandAbility(codeboxFixtureEnv),
 	HOMEBOY_AGENT_RUNTIME_WORKSPACE_PUBLISH_ABILITY: runtimeWorkspacePublishAbility(codeboxFixtureEnv),
-})), {
+}), hbeDefaultRendererEnv), {
 	runtime_provider: codeboxProvider,
 	runtime_profile: 'wpsg-agent-runtime-package',
 	runtime_profiles: JSON.stringify(runtimePackageProfiles(readAgentRuntimeContract({ ...genericRuntimeEnv, HOMEBOY_AGENT_RUNTIME_PROVIDER: codeboxProvider }))),
@@ -153,7 +178,7 @@ const renderedWorkspaceWorkflowInputs = renderRuntimeWorkflowInputs({
 	runtime_profile: 'wpsg-agent-runtime-package',
 	runtime_profiles: runtimePackageProfiles(readAgentRuntimeContract({ ...genericRuntimeEnv, HOMEBOY_AGENT_RUNTIME_PROVIDER: codeboxProvider })),
 	tool_profile: runtimeToolProfiles.workspaceIteration,
-}, {});
+}, hbeDefaultRendererEnv);
 assert.equal(renderedWorkspaceWorkflowInputs.schema, 'homeboy/runtime-workflow-inputs/v1');
 assert.equal(renderedWorkspaceWorkflowInputs.workflow_inputs.runtime, codeboxProvider);
 assert.equal(renderedWorkspaceWorkflowInputs.workflow_inputs.profile, 'wpsg-agent-runtime-package');
@@ -163,7 +188,7 @@ assert.deepEqual(runtimeWorkflowInputs('workspace-publication', readAgentRuntime
 	...genericRuntimeEnv,
 	HOMEBOY_AGENT_RUNTIME_PROVIDER: codeboxProvider,
 	HOMEBOY_AGENT_RUNTIME_WORKSPACE_PUBLISH_ABILITY: runtimeWorkspacePublishAbility(codeboxFixtureEnv),
-})), {
+}), hbeDefaultRendererEnv), {
 	runtime_provider: codeboxProvider,
 	runtime_profile: 'wpsg-agent-runtime-package',
 	runtime_profiles: JSON.stringify(runtimePackageProfiles(readAgentRuntimeContract({ ...genericRuntimeEnv, HOMEBOY_AGENT_RUNTIME_PROVIDER: codeboxProvider }))),
@@ -175,7 +200,7 @@ assert.deepEqual(runtimeToolProfileInputs('workspace-publication', defaultRuntim
 	ability_requirements: JSON.stringify([runtimePackageAbilityId]),
 	ability_tools: '[]',
 });
-assert.deepEqual(runtimeWorkflowInputs('workspace-iteration', defaultRuntimeContract), {
+assert.deepEqual(runtimeWorkflowInputs('workspace-iteration', defaultRuntimeContract, hbeDefaultRendererEnv), {
 	runtime_provider: '',
 	runtime_profile: 'wpsg-agent-runtime-package',
 	runtime_profiles: JSON.stringify(runtimePackageProfiles(defaultRuntimeContract)),
@@ -183,6 +208,10 @@ assert.deepEqual(runtimeWorkflowInputs('workspace-iteration', defaultRuntimeCont
 	ability_tools: '[]',
 });
 assert.throws(() => runtimeToolProfileInputs('missing-profile'), /Unknown WPSG runtime tool profile/);
+assert.throws(() => renderRuntimeWorkflowInputs({
+	runtime_profile: 'wpsg-agent-runtime-package',
+	runtime_profiles: runtimePackageProfiles(defaultRuntimeContract),
+}, {}), /Homeboy Extensions runtime workflow input renderer is required/);
 assert.deepEqual(runtimeBundleExecution({
 	packageSource: 'bundles/example-agent',
 	packageSlug: 'example-agent',
@@ -282,7 +311,6 @@ assert.deepEqual(workflow, {
 	initial_data: { job_source: 'system' },
 });
 
-const tempDir = await mkdtemp(path.join(tmpdir(), 'wp-site-generator-shared-libs-'));
 const hbeRendererPath = path.join(tempDir, 'runtime-workflow-inputs.cjs');
 await writeFile(hbeRendererPath, `
 'use strict';
