@@ -373,6 +373,7 @@ try {
   const workflow = await readFile(path.join(repoRoot, '.github/workflows/site-generation-loop.yml'), 'utf8');
   assert.match(workflow, /node \.github\/scripts\/build-homeboy-ssi-loop-controller\.mjs/, 'site generation workflow generates the repo-owned controller spec before materialization');
   assert.match(workflow, /homeboy agent-task controller run-from-spec/, 'site generation workflow runs specs through Homeboy');
+  assert.match(workflow, /run-from-spec[\s\S]*--output "\$HOMEBOY_CONTROLLER_RUN_FROM_SPEC_RESULT_PATH"/, 'site generation workflow asks Homeboy to write structured run-from-spec output');
   assert.ok(
     workflow.indexOf('node .github/scripts/build-homeboy-ssi-loop-controller.mjs') < workflow.indexOf('homeboy agent-task controller run-from-spec'),
     'site generation workflow generates the controller spec before Homeboy run-from-spec'
