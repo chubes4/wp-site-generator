@@ -2,15 +2,13 @@
 
 import assert from 'node:assert/strict';
 import { spawn } from 'node:child_process';
-import { readFile } from 'node:fs/promises';
 import path from 'node:path';
 
 import { runtimeValidationArtifactEnvelopeSchema } from '../../.github/scripts/lib/ci-runtime-utils.mjs';
 
 const repoRoot = path.resolve(import.meta.dirname, '../..');
 const renderer = path.join(repoRoot, '.github/scripts/render-ssi-validation-report.mjs');
-const codeboxContractFixture = JSON.parse(await readFile(path.join(repoRoot, 'tests/fixtures/codebox-provider-runtime-contract.json'), 'utf8'));
-const validationArtifactSchema = codeboxContractFixture.result_schemas.evidence_artifact_envelope.replace('evidence', 'validation');
+const validationArtifactSchema = 'homeboy/validation-artifact-envelope/v1';
 
 const bench = {
 	data: {
