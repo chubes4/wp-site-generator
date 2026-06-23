@@ -227,6 +227,7 @@ assert.equal(controllerRunSpec.metadata.run.materialized_by, 'homeboy agent-task
 		assert.equal(assertions.required_artifact_outputs[0].output_key, outputKey, `${pipelinePath} asserts the typed packet output key`);
 		assert.equal(assertions.required_artifact_outputs[0].schema, schema, `${pipelinePath} asserts the typed packet schema`);
 		assert.equal(assertions.required_tool_names, undefined, `${pipelinePath} no longer requires the WPSG tool`);
+		assert.match(packetPipeline.steps[0].step_config.system_prompt, new RegExp(`typed_artifacts\\.${outputKey}`), `${pipelinePath} instructs the model to return the machine-readable typed artifact envelope`);
 	}
 
 	const pluginShim = await readFile(path.join(repoRoot, 'wp-site-generator.php'), 'utf8');
