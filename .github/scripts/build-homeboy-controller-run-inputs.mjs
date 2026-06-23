@@ -9,6 +9,7 @@ import {
 	loadQualitySignals,
 	resolvePolicyInputs,
 } from './site-generation-complexity-policy.mjs';
+import { wpsgLoopConfig } from './lib/wpsg-domain-config.mjs';
 
 const root = process.env.GITHUB_WORKSPACE || process.cwd();
 const { runId, loopId, repository, controllerSpecPath, outputPath, policyResultPath, runtimeOverrides, source, dependencyRefs } = buildSiteGenerationLoopRunContext({ env: process.env, root });
@@ -24,7 +25,7 @@ const complexityDecision = evaluateComplexityPolicy({
 });
 
 await writeJsonFile(policyResultPath, {
-	policy_id: 'wpsg-complexity-policy',
+	policy_id: wpsgLoopConfig.complexityPolicyId,
 	policy_inputs: {
 		policy_path: path.relative(root, policyInputs.policyPath),
 		quality_signals_path: policyInputs.qualitySignalsPath ? path.relative(root, policyInputs.qualitySignalsPath) : '',
@@ -52,10 +53,10 @@ await writeJsonFile(outputPath, {
 		import_validation_result: process.env.IMPORT_VALIDATION_RESULT || '',
 		static_site_publish_gate: process.env.STATIC_SITE_PUBLISH_GATE || '',
 		concept_prompt: process.env.CONCEPT_PROMPT || '',
-		website_flow_slug: process.env.WEBSITE_FLOW_SLUG || 'website-idea-artifact-flow',
+		website_flow_slug: process.env.WEBSITE_FLOW_SLUG || wpsgLoopConfig.defaultWebsiteFlowSlug,
 		runtime_input_contract: runtimeOverrides.source,
 		runtime_config: runtimeConfig,
-		artifact_root: process.env.HOMEBOY_ARTIFACT_ROOT || '.ci/homeboy-agent-task-artifacts',
+		artifact_root: process.env.HOMEBOY_ARTIFACT_ROOT || wpsgLoopConfig.defaultArtifactRoot,
 		randomness_seed: complexityDecision.randomness_seed,
 		randomness_profile: complexityDecision.randomness_profile.id,
 		source,

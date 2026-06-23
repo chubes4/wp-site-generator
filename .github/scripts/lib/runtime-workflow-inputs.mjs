@@ -2,12 +2,13 @@ import { createRequire } from 'node:module';
 import path from 'node:path';
 
 import { readAgentRuntimeContract, runtimePackageProfiles } from './agent-runtime-api.mjs';
+import { wpsgLoopConfig } from './wpsg-domain-config.mjs';
 
 const require = createRequire(import.meta.url);
 
 export const runtimeToolProfiles = Object.freeze({
 	workspaceIteration: Object.freeze({
-		id: 'workspace-iteration',
+		id: wpsgLoopConfig.runtimeWorkloadProfiles.workspaceIteration,
 		requirements: Object.freeze(['command', 'publish']),
 		tools: Object.freeze([
 			['workspace_clone', 'command'],
@@ -23,7 +24,7 @@ export const runtimeToolProfiles = Object.freeze({
 		]),
 	}),
 	workspacePublication: Object.freeze({
-		id: 'workspace-publication',
+		id: wpsgLoopConfig.runtimeWorkloadProfiles.workspacePublication,
 		requirements: Object.freeze(['publish']),
 		tools: Object.freeze([]),
 	}),

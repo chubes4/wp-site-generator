@@ -260,7 +260,7 @@ The primary loop is a Homeboy lab controller run. WPSG stamps domain inputs onto
 Required credentials depend on the selected Homeboy runtime and AI provider. Configure provider credentials in the Homeboy/runtime contract rather than in WPSG workflows.
 
 1. Runtime provider/model credentials supplied by the selected runtime profile.
-2. Runtime selection hints such as `runtime_backend`, `runtime_provider_id`, or `runtime_selector` when the runtime profile needs a specific backend/provider route.
+2. Runtime package ability/profile values supplied by the selected upstream runtime contract.
 
 The reusable `.github/workflows/wpsg-runtime-agent-ci.yml` seam accepts a `runtime_workload_profile` such as `workspace-iteration` or `workspace-publication`, then renders Homeboy runtime profile/tool requirements through `.github/scripts/render-homeboy-runtime-workflow-inputs.mjs`. Runtime execution descriptors are rendered through `.github/scripts/render-runtime-bundle-execution.mjs` so workflows consume the shared runtime facade instead of embedding provider internals.
 

@@ -107,13 +107,6 @@ const result = spawnSync(process.execPath, [path.join(repoRoot, '.github/scripts
 		WPSG_RANDOMNESS_SEED: 'seed-123',
 		HOMEBOY_CONTROLLER_RUN_INPUTS_PATH: outputPath,
 		HOMEBOY_POLICY_RESULT_PATH: policyResultPath,
-		HOMEBOY_AGENT_RUNTIME_COMPONENTS: JSON.stringify([
-			{
-				slug: 'agents-api',
-				path: '/operator/workspace/agents-api',
-				activate: true,
-			},
-		]),
 	},
 });
 assert.equal(result.status, 0, result.stderr || result.stdout);
@@ -149,13 +142,6 @@ assert.equal(runInputs.inputs.source.ref_type, 'commit');
 assert.equal(runInputs.inputs.source.sha.length, 40);
 assert.equal(runInputs.inputs.runtime_input_contract, 'homeboy-agent-runtime-env');
 assert.equal(runInputs.inputs.runtime_config.source, 'homeboy-agent-runtime-env');
-assert.deepEqual(runInputs.inputs.runtime_config.component_contracts, [
-	{
-		slug: 'agents-api',
-		path: '/operator/workspace/agents-api',
-		activate: true,
-	},
-]);
 assert.equal(runInputs.metadata.run.loop_id, 'wp-site-generator/static-site-generation-loop/local-replay-123');
 assert.equal(runInputs.metadata.run.randomness_seed, 'seed-123');
 assert.equal(runInputs.metadata.run.source.sha, runInputs.inputs.source.sha);

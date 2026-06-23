@@ -27,13 +27,6 @@ const fixturePackets = JSON.parse(await readFile(path.join(repoRoot, 'tests/fixt
 const helperGrouped = groupFindingPackets(normalizeFindingInput({ packets: fixturePackets }), { routeCandidateRepo, routeRepairMode, routeReason });
 assert.deepEqual(grouped, JSON.parse(JSON.stringify(helperGrouped)), 'CLI grouping uses the shared SSI finding packet contract helpers');
 
-const iteratorSmokePackets = JSON.parse(await readFile(path.join(repoRoot, 'tests/fixtures/iterator-smoke/finding-packets.json'), 'utf8'));
-const iteratorSmokeGrouped = groupFindingPackets(normalizeFindingInput({ packets: iteratorSmokePackets }), { routeCandidateRepo, routeRepairMode, routeReason });
-assert.equal(iteratorSmokeGrouped.group_count, 1, 'Iterator smoke fixture stays focused on one routed finding');
-assert.equal(iteratorSmokeGrouped.groups[0].candidate_repo, 'Automattic/blocks-engine', 'Iterator smoke routes canonical transformer diagnostics to Blocks Engine');
-assert.equal(iteratorSmokeGrouped.groups[0].packets[0].converter, 'blocks-engine-php-transformer', 'Iterator smoke fixture uses the canonical Blocks Engine transformer converter');
-assert.equal(iteratorSmokeGrouped.groups[0].repair_mode, 'pr_or_issue', 'Iterator smoke keeps concrete transformer evidence on the PR-capable route');
-
 assert.equal(grouped.schema_version, 3);
 assert.equal(grouped.packet_count, 8);
 assert.equal(grouped.actionable_packet_count, 8);

@@ -35,21 +35,6 @@ on:
         description: Runtime package task ability supplied by the upstream runtime contract.
         required: true
         type: string
-      runtime_backend:
-        description: Optional Homeboy runtime backend selector recorded in the rendered profile.
-        required: false
-        default: ''
-        type: string
-      runtime_provider_id:
-        description: Optional provider id recorded in the rendered profile.
-        required: false
-        default: ''
-        type: string
-      runtime_selector:
-        description: Optional runtime selector recorded in the rendered profile.
-        required: false
-        default: ''
-        type: string
       transcript_slots:
         description: Transcript artifact slots for the runtime workflow.
         required: false
@@ -79,9 +64,6 @@ jobs:
           HOMEBOY_AGENT_RUNTIME_PROFILE: ${{ inputs.runtime_profile }}
           HOMEBOY_AGENT_RUNTIME_PROFILES: ${{ inputs.runtime_profiles }}
           HOMEBOY_AGENT_RUNTIME_TASK_ABILITY: ${{ inputs.runtime_task_ability }}
-          HOMEBOY_AGENT_RUNTIME_BACKEND: ${{ inputs.runtime_backend }}
-          HOMEBOY_AGENT_RUNTIME_PROVIDER_ID: ${{ inputs.runtime_provider_id }}
-          HOMEBOY_AGENT_RUNTIME_SELECTOR: ${{ inputs.runtime_selector }}
         run: node .github/scripts/render-homeboy-runtime-workflow-inputs.mjs
 
   workspace-iteration:

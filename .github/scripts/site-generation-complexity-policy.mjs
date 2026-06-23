@@ -2,6 +2,8 @@ import crypto from 'node:crypto';
 import fs from 'node:fs';
 import path from 'node:path';
 
+import { wpsgLoopConfig } from './lib/wpsg-domain-config.mjs';
+
 export function readJsonFile(filePath) {
 	return JSON.parse(fs.readFileSync(filePath, 'utf8'));
 }
@@ -101,7 +103,7 @@ export function loadPolicy(filePath) {
 }
 
 export function resolvePolicyInputs({ root, env = process.env }) {
-	const policyPath = path.resolve(root, env.WPSG_COMPLEXITY_POLICY_PATH || '.github/site-generation-complexity-policy.json');
+	const policyPath = path.resolve(root, env.WPSG_COMPLEXITY_POLICY_PATH || wpsgLoopConfig.complexityPolicyPath);
 	const qualitySignalsPath = env.WPSG_QUALITY_SIGNALS_PATH || env.HOMEBOY_QUALITY_SIGNALS_PATH || '';
 	return {
 		policyPath,
