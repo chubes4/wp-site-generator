@@ -95,9 +95,6 @@ jobs:
       - name: Check out wp-site-generator
         uses: actions/checkout@v4
 
-      - name: Render runtime controller spec
-        run: node .github/scripts/build-homeboy-ssi-loop-controller.mjs --output "$HOMEBOY_CONTROLLER_SPEC_PATH"
-
       - name: Validate production ref policy
         run: node .github/scripts/validate-production-ref-policy.mjs
 

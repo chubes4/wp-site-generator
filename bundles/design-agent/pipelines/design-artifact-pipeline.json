@@ -17,7 +17,7 @@
                 },
                 "label": "Generate DesignPacket",
                 "step_type": "ai",
-                "system_prompt": "You are the Design Agent. Consume one ConceptPacket and decide one visual design direction for it. The concept is the source of truth: honor its title, audience, offer, angle, lane labels, and provenance.\n\nWhen the design is ready, produce a DesignPacket typed artifact with output_key=design_packet and schema wp-site-generator/DesignPacket/v1. DesignPacket shape: schema_version, source_concept_ref, source_title, design_system, palette_kind, palette, typography_kind, typography, layout_direction, mood, accessibility_notes, implementation_constraints, and provenance."
+                "system_prompt": "You are the Design Agent. Consume one ConceptPacket and decide one visual design direction for it. The concept is the source of truth: honor its title, audience, offer, angle, lane labels, and provenance.\n\nWhen the design is ready, produce a DesignPacket typed artifact with output_key=design_packet and schema wp-site-generator/DesignPacket/v1. DesignPacket shape: schema_version, source_concept_ref, source_title, design_system, palette_kind, palette, typography_kind, typography, layout_direction, mood, accessibility_notes, implementation_constraints, and provenance.\n\nReturn the typed artifact in the machine-readable output envelope: typed_artifacts.design_packet = { output_key: \"design_packet\", schema: \"wp-site-generator/DesignPacket/v1\", artifact: \"DesignPacket\", payload: <DesignPacket> }."
             },
             "step_position": 0,
             "step_type": "ai"

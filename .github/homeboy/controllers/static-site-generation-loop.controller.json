@@ -986,19 +986,34 @@
       "artifact_id": "concept_packet",
       "kind": "wp-site-generator/ConceptPacket/v1",
       "description": "concept_packet artifact using wp-site-generator/ConceptPacket/v1",
-      "required": true
+      "required": true,
+      "typed_artifact": {
+        "schema": "homeboy/agent-task-typed-artifact/v1",
+        "output_key": "concept_packet",
+        "payload_schema": "wp-site-generator/ConceptPacket/v1"
+      }
     },
     {
       "artifact_id": "design_packet",
       "kind": "wp-site-generator/DesignPacket/v1",
       "description": "design_packet artifact using wp-site-generator/DesignPacket/v1",
-      "required": true
+      "required": true,
+      "typed_artifact": {
+        "schema": "homeboy/agent-task-typed-artifact/v1",
+        "output_key": "design_packet",
+        "payload_schema": "wp-site-generator/DesignPacket/v1"
+      }
     },
     {
       "artifact_id": "static_site_candidate",
       "kind": "wp-site-generator/StaticSiteCandidate/v1",
       "description": "static_site_candidate artifact using wp-site-generator/StaticSiteCandidate/v1",
-      "required": true
+      "required": true,
+      "typed_artifact": {
+        "schema": "homeboy/agent-task-typed-artifact/v1",
+        "output_key": "static_site_candidate",
+        "payload_schema": "wp-site-generator/StaticSiteCandidate/v1"
+      }
     },
     {
       "artifact_id": "import_validation_result",
