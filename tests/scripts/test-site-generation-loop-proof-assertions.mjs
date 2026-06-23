@@ -154,7 +154,7 @@ try {
   });
   await writeArtifact('static_site_candidate', {
     schema: 'wp-site-generator/StaticSiteCandidate/v1',
-    runtime_preview: {
+    runtime_access: {
       schema: 'homeboy/runtime-preview-access/v1',
       url: 'https://preview.example.test/proof-site',
       access: { kind: 'preview' },
@@ -263,6 +263,67 @@ try {
   await writeArtifact('static_site_candidate', {
     schema: 'wp-site-generator/StaticSiteCandidate/v1',
     runtime_preview: {
+      schema: 'wp-codebox/private-runtime-result/v1',
+      url: 'https://preview.dev.chubes.net/runs/123/sites/proof-site',
+      codebox_result: { id: 'private-adapter-result' },
+    },
+    artifact_url: 'https://github.com/chubes4/wp-site-generator/actions/runs/123/artifacts/static-site-candidate',
+  });
+  await writeArtifact('import_validation_result', {
+    schema: 'wp-site-generator/ImportValidationResult/v1',
+    artifact_url: 'https://github.com/chubes4/wp-site-generator/actions/runs/123/artifacts/import-validation',
+    metrics: { fallback_blocks: 0, conversion_findings: 0 },
+    import_report: { pages_imported: 1 },
+  });
+  await writeArtifact('static_validation_run', {
+    schema: 'homeboy/Run/v1',
+    artifact_url: 'https://github.com/chubes4/wp-site-generator/actions/runs/123/artifacts/static-validation-run',
+  });
+  await writeArtifact('visual_parity_artifact', {
+    schema: 'wp-site-generator/VisualParityArtifact/v1',
+    artifact_url: 'https://github.com/chubes4/wp-site-generator/actions/runs/123/artifacts/visual-parity',
+    summary: { status: 'pass', mismatch_count: 0, max_delta_ratio: 0 },
+  });
+  await writeArtifact('finding_packet_set', {
+    schema: 'wp-site-generator/FindingPacketSet/v1',
+    artifact_url: 'https://github.com/chubes4/wp-site-generator/actions/runs/123/artifacts/finding-packets',
+    packets: [],
+    actionable_conversion_count: 0,
+  });
+  await writeArtifact('static_site_publish_gate', {
+    schema: 'wp-site-generator/StaticSitePublishGate/v1',
+    artifact_url: 'https://github.com/chubes4/wp-site-generator/actions/runs/123/artifacts/publish-gate',
+    publish_allowed: true,
+    gates: {
+      fallback_blocks: { passed: true },
+      conversion_findings: { passed: true },
+      visual_parity: { passed: true },
+    },
+  });
+  const privateRuntimePreviewProof = spawnSync(
+    process.execPath,
+    [
+      '.github/scripts/assert-site-generation-loop-proof.mjs',
+      '--controller-result',
+      controllerResultPath,
+      '--controller-run-spec',
+      controllerRunSpecPath,
+      '--artifact-root',
+      artifactRoot,
+    ],
+    {
+      cwd: repoRoot,
+      encoding: 'utf8',
+    }
+  );
+  assert.notEqual(privateRuntimePreviewProof.status, 0, 'production controller proof rejects private runtime preview result fields');
+  assert.match(privateRuntimePreviewProof.stderr || privateRuntimePreviewProof.stdout, /runtime preview evidence is a structured envelope/);
+
+  await rm(artifactRoot, { recursive: true, force: true });
+
+  await writeArtifact('static_site_candidate', {
+    schema: 'wp-site-generator/StaticSiteCandidate/v1',
+    runtime_access: {
       schema: 'homeboy/runtime-preview-access/v1',
       url: 'https://github.com/chubes4/wp-site-generator/actions/runs/123/artifacts/runtime-preview',
       access: { kind: 'preview' },
@@ -321,7 +382,7 @@ try {
 
   await writeArtifact('static_site_candidate', {
     schema: 'wp-site-generator/StaticSiteCandidate/v1',
-    runtime_preview: {
+    runtime_access: {
       schema: 'homeboy/runtime-preview-access/v1',
       url: 'https://preview.dev.chubes.net/runs/123/sites/proof-site',
       access: { kind: 'preview' },

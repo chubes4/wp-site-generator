@@ -13,6 +13,7 @@ const workflowPath = path.join(repoRoot, '.github/workflows/site-generation-loop
 const tempDir = await mkdtemp(path.join(tmpdir(), 'wp-site-generator-loop-run-inputs-'));
 const outputPath = path.join(tempDir, 'controller-run-inputs.json');
 const policyResultPath = path.join(tempDir, 'complexity-policy-result.json');
+const artifactRoot = path.join(tempDir, 'homeboy-agent-task-artifacts');
 const cleanCheckoutRoot = path.join(tempDir, 'clean-checkout');
 const cleanCheckoutOutputPath = path.join(cleanCheckoutRoot, '.ci', 'site-generation-loop.controller-run-inputs.json');
 const cleanCheckoutPolicyResultPath = path.join(cleanCheckoutRoot, '.ci', 'site-generation-loop.complexity-policy-result.json');
@@ -30,6 +31,11 @@ const context = buildSiteGenerationLoopRunContext({
 		GITHUB_REPOSITORY: 'chubes4/wp-site-generator',
 		HOMEBOY_CONTROLLER_RUN_INPUTS_PATH: outputPath,
 		HOMEBOY_POLICY_RESULT_PATH: policyResultPath,
+		HOMEBOY_ARTIFACT_ROOT: artifactRoot,
+		HOMEBOY_AGENT_RUNTIME: 'generic-runtime-fixture',
+		HOMEBOY_AGENT_RUNTIME_PROVIDER: 'generic-provider-fixture',
+		HOMEBOY_AGENT_RUNTIME_MODEL: 'generic-model-fixture',
+		HOMEBOY_AGENT_RUNTIME_SECRET_ENV: 'GENERIC_PROVIDER_TOKEN',
 	},
 	root: repoRoot,
 });
@@ -107,6 +113,11 @@ const result = spawnSync(process.execPath, [path.join(repoRoot, '.github/scripts
 		WPSG_RANDOMNESS_SEED: 'seed-123',
 		HOMEBOY_CONTROLLER_RUN_INPUTS_PATH: outputPath,
 		HOMEBOY_POLICY_RESULT_PATH: policyResultPath,
+		HOMEBOY_ARTIFACT_ROOT: artifactRoot,
+		HOMEBOY_AGENT_RUNTIME: 'generic-runtime-fixture',
+		HOMEBOY_AGENT_RUNTIME_PROVIDER: 'generic-provider-fixture',
+		HOMEBOY_AGENT_RUNTIME_MODEL: 'generic-model-fixture',
+		HOMEBOY_AGENT_RUNTIME_SECRET_ENV: 'GENERIC_PROVIDER_TOKEN',
 	},
 });
 assert.equal(result.status, 0, result.stderr || result.stdout);
@@ -138,15 +149,21 @@ assert.equal(runInputs.inputs.run_id, 'local-replay-123');
 assert.equal(runInputs.inputs.loop_id, 'wp-site-generator/static-site-generation-loop/local-replay-123');
 assert.equal(runInputs.inputs.randomness_seed, 'seed-123');
 assert.equal(runInputs.inputs.randomness_profile, 'steady');
+assert.equal(runInputs.inputs.artifact_root, artifactRoot);
 assert.equal(runInputs.inputs.source.ref_type, 'commit');
 assert.equal(runInputs.inputs.source.sha.length, 40);
 assert.equal(runInputs.inputs.runtime_input_contract, 'homeboy-agent-runtime-env');
 assert.equal(runInputs.inputs.runtime_config.source, 'homeboy-agent-runtime-env');
+assert.equal(runInputs.inputs.runtime_config.runtime_id, 'generic-runtime-fixture');
+assert.equal(runInputs.inputs.runtime_config.provider, 'generic-provider-fixture');
+assert.equal(runInputs.inputs.runtime_config.model, 'generic-model-fixture');
+assert.deepEqual(runInputs.inputs.runtime_config.secret_env, ['GENERIC_PROVIDER_TOKEN']);
 assert.equal(runInputs.metadata.run.loop_id, 'wp-site-generator/static-site-generation-loop/local-replay-123');
 assert.equal(runInputs.metadata.run.randomness_seed, 'seed-123');
 assert.equal(runInputs.metadata.run.source.sha, runInputs.inputs.source.sha);
 assert.deepEqual(runInputs.metadata.run.runtime_config, runInputs.inputs.runtime_config);
 assert.equal(runInputs.metadata.run.generated_by, '.github/scripts/build-homeboy-controller-run-inputs.mjs');
+assert.doesNotMatch(JSON.stringify(runInputs), /wp[_-]?codebox|codebox_(?:result|envelope|payload)|playground_(?:url|result)/i, 'run inputs do not include private Codebox result fields');
 assert.equal(policyResult.provenance.run_id, 'local-replay-123');
 assert.equal(cleanCheckoutRunInputs.inputs.run_id, 'local-replay-clean-checkout');
 assert.equal(cleanCheckoutRunInputs.metadata.run.complexity_policy_result, path.relative(cleanCheckoutRoot, cleanCheckoutPolicyResultPath));
