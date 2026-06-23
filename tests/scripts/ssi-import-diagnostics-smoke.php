@@ -10,8 +10,7 @@ $repo_root = dirname( __DIR__, 2 );
 $tmp_dir   = sys_get_temp_dir() . '/ssi-import-diagnostics-' . bin2hex( random_bytes( 4 ) );
 $theme_dir = $tmp_dir . '/wp-content/themes/demo-theme';
 
-$codebox_contract_fixture = json_decode( file_get_contents( $repo_root . '/tests/fixtures/codebox-provider-runtime-contract.json' ), true );
-$validation_artifact_envelope_schema = str_replace( 'evidence', 'validation', $codebox_contract_fixture['result_schemas']['evidence_artifact_envelope'] );
+$validation_artifact_envelope_schema = 'homeboy/validation-artifact-envelope/v1';
 
 register_shutdown_function(
 	static function () use ( $tmp_dir ): void {
@@ -86,7 +85,7 @@ $report = array(
 			),
 		),
 	),
-	'codebox_validation_artifact' => array(
+	'runtime_validation_artifact' => array(
 		'schema'          => $validation_artifact_envelope_schema,
 		'status'          => 'passed',
 		'validation_hash' => 'validation-fixture-hash',

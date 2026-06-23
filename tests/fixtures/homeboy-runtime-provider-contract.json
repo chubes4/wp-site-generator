@@ -1,0 +1,16 @@
+{
+  "schema": "homeboy/runtime-provider-invocation-contract/v1",
+  "abilities": {
+    "workspaceCommand": "homeboy.runtime.workspace.command",
+    "workspacePublish": "homeboy.runtime.workspace.publish"
+  },
+  "tool_names": {
+    "workspaceCommand": "homeboy/runtime-workspace-command",
+    "workspacePublish": "homeboy/runtime-workspace-publish"
+  },
+  "result_schemas": {
+    "workspace_command": "homeboy/runtime-workspace-command-result/v1",
+    "workspace_publication": "homeboy/runtime-workspace-publication-result/v1",
+    "validation_artifact_envelope": "homeboy/validation-artifact-envelope/v1"
+  }
+}

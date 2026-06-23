@@ -48,13 +48,13 @@ const args = parseArgs(['--repo', 'owner/repo', '--dry-run']);
 const genericRuntimeEnv = {
 	HOMEBOY_AGENT_RUNTIME_TASK_ABILITY: 'runtime-package/run',
 };
-const codeboxContractFixture = JSON.parse(await readFile(path.join(repoRoot, 'tests/fixtures/codebox-provider-runtime-contract.json'), 'utf8'));
-const codeboxProvider = codeboxContractFixture.schema.split('/')[0];
-const codeboxFixtureEnv = {
-	HOMEBOY_AGENT_RUNTIME_PROVIDER_INVOCATION_CONTRACT: JSON.stringify(codeboxContractFixture),
-	HOMEBOY_AGENT_RUNTIME_PROVIDER_PROFILE_JSON: JSON.stringify({ id: codeboxProvider, provider: codeboxProvider }),
-	HOMEBOY_AGENT_RUNTIME_WORKSPACE_RECIPE_SCHEMA: `${codeboxProvider}/workspace-recipe/v1`,
-	HOMEBOY_AGENT_RUNTIME_VALIDATION_ARTIFACT_ENVELOPE_SCHEMA: codeboxContractFixture.result_schemas.evidence_artifact_envelope.replace('evidence', 'validation'),
+const homeboyRuntimeContractFixture = JSON.parse(await readFile(path.join(repoRoot, 'tests/fixtures/homeboy-runtime-provider-contract.json'), 'utf8'));
+const selectedRuntimeProvider = 'wp-codebox';
+const runtimeFixtureEnv = {
+	HOMEBOY_AGENT_RUNTIME_PROVIDER_INVOCATION_CONTRACT: JSON.stringify(homeboyRuntimeContractFixture),
+	HOMEBOY_AGENT_RUNTIME_PROVIDER_PROFILE_JSON: JSON.stringify({ id: selectedRuntimeProvider, provider: selectedRuntimeProvider }),
+	HOMEBOY_AGENT_RUNTIME_WORKSPACE_RECIPE_SCHEMA: 'homeboy/runtime-workspace-recipe/v1',
+	HOMEBOY_AGENT_RUNTIME_VALIDATION_ARTIFACT_ENVELOPE_SCHEMA: homeboyRuntimeContractFixture.result_schemas.validation_artifact_envelope,
 };
 const runtimePackageAbilityId = runtimePackageAbility(genericRuntimeEnv);
 assert.equal(envOrArg(args, '--repo', { SOURCE_REPO: 'env/repo' }, 'SOURCE_REPO'), 'owner/repo');
@@ -67,15 +67,15 @@ assert.equal(numberValue('4'), 4);
 assert.equal(numberValue('bad', 9), 9);
 assert.equal(wordpressRuntimeApi.paths.wpLoadPhp, '/wordpress/wp-load.php', 'WordPress runtime path constants are centralized');
 assert.equal(wordpressRuntimePluginMountTarget(), '/wordpress/wp-content/plugins/wp-site-generator', 'WordPress plugin mount target is centralized');
-assert.equal(runtimeValidationArtifactEnvelopeSchema(codeboxFixtureEnv), codeboxFixtureEnv.HOMEBOY_AGENT_RUNTIME_VALIDATION_ARTIFACT_ENVELOPE_SCHEMA, 'validation artifact schema is consumed from the runtime contract');
-assert.deepEqual(runtimeProviderInvocationContract(codeboxFixtureEnv), codeboxContractFixture, 'provider runtime invocation contract matches the upstream fixture');
-assert.equal(runtimeWorkspaceCommandAbility(codeboxFixtureEnv), codeboxContractFixture.abilities.workspaceCommand, 'workspace command ability is read from the provider runtime contract');
-assert.equal(runtimeWorkspacePublishAbility(codeboxFixtureEnv), codeboxContractFixture.abilities.workspacePublish, 'workspace publish ability is read from the provider runtime contract');
-assert.deepEqual(homeboyRuntimeProviderProfile(codeboxFixtureEnv), {
-	id: codeboxProvider,
-	provider: codeboxProvider,
-	workspaceCommandAbility: codeboxContractFixture.abilities.workspaceCommand,
-	workspacePublishAbility: codeboxContractFixture.abilities.workspacePublish,
+assert.equal(runtimeValidationArtifactEnvelopeSchema(runtimeFixtureEnv), runtimeFixtureEnv.HOMEBOY_AGENT_RUNTIME_VALIDATION_ARTIFACT_ENVELOPE_SCHEMA, 'validation artifact schema is consumed from the runtime contract');
+assert.deepEqual(runtimeProviderInvocationContract(runtimeFixtureEnv), homeboyRuntimeContractFixture, 'provider runtime invocation contract matches the upstream fixture');
+assert.equal(runtimeWorkspaceCommandAbility(runtimeFixtureEnv), homeboyRuntimeContractFixture.abilities.workspaceCommand, 'workspace command ability is read from the provider runtime contract');
+assert.equal(runtimeWorkspacePublishAbility(runtimeFixtureEnv), homeboyRuntimeContractFixture.abilities.workspacePublish, 'workspace publish ability is read from the provider runtime contract');
+assert.deepEqual(homeboyRuntimeProviderProfile(runtimeFixtureEnv), {
+	id: selectedRuntimeProvider,
+	provider: selectedRuntimeProvider,
+	workspaceCommandAbility: homeboyRuntimeContractFixture.abilities.workspaceCommand,
+	workspacePublishAbility: homeboyRuntimeContractFixture.abilities.workspacePublish,
 }, 'provider profile vocabulary is supplied by the runtime contract');
 assert.equal(wordpressRuntimeBlueprintSchema(), 'https://playground.wordpress.net/blueprint-schema.json');
 assert.equal(wordpressRuntimeSettingsDescriptor().settings_fields.blueprint, 'wordpress_runtime_blueprint');
@@ -91,7 +91,7 @@ assert.equal(runtimePackageProfile.runtimeTaskAbility, '', 'runtime package prof
 assert.equal(runtimePackageAbilityId, genericRuntimeEnv.HOMEBOY_AGENT_RUNTIME_TASK_ABILITY, 'runtime package ability is read from the runtime env contract');
 assert.equal(resolveVisualParityOutputRoot({}), 'visual-parity-artifacts');
 assert.equal(resolveVisualParityOutputRoot({ VISUAL_PARITY_OUTPUT: 'custom-artifacts' }), 'custom-artifacts');
-assert.equal(runtimeWorkspaceRecipeSchema(codeboxFixtureEnv), codeboxFixtureEnv.HOMEBOY_AGENT_RUNTIME_WORKSPACE_RECIPE_SCHEMA);
+assert.equal(runtimeWorkspaceRecipeSchema(runtimeFixtureEnv), runtimeFixtureEnv.HOMEBOY_AGENT_RUNTIME_WORKSPACE_RECIPE_SCHEMA);
 assert.equal(buildRuntimePreviewUrl({ evidenceRefs: [{ preview_url: 'https://example.com/preview' }] }), 'https://example.com/preview');
 assert.equal(buildRuntimePreviewUrl({ evidenceRefs: { preview_url: 'https://example.com/single-preview' } }), 'https://example.com/single-preview');
 assert.equal(buildRuntimePreviewUrl({ env: { HOMEBOY_RUNTIME_PREVIEW_URL: 'https://example.com/runtime-preview' } }), 'https://example.com/runtime-preview');
@@ -137,8 +137,8 @@ assert.deepEqual(runtimePackageProfiles(defaultRuntimeContract), {
 }, 'runtime package profiles derive from the generic runtime package API');
 const workspaceIterationInputs = runtimeToolProfileInputs('workspace-iteration', readAgentRuntimeContract({
 	...genericRuntimeEnv,
-	HOMEBOY_AGENT_RUNTIME_WORKSPACE_COMMAND_ABILITY: runtimeWorkspaceCommandAbility(codeboxFixtureEnv),
-	HOMEBOY_AGENT_RUNTIME_WORKSPACE_PUBLISH_ABILITY: runtimeWorkspacePublishAbility(codeboxFixtureEnv),
+	HOMEBOY_AGENT_RUNTIME_WORKSPACE_COMMAND_ABILITY: runtimeWorkspaceCommandAbility(runtimeFixtureEnv),
+	HOMEBOY_AGENT_RUNTIME_WORKSPACE_PUBLISH_ABILITY: runtimeWorkspacePublishAbility(runtimeFixtureEnv),
 }));
 const workspaceIterationTools = JSON.parse(workspaceIterationInputs.ability_tools);
 const workspaceIterationRequirements = JSON.parse(workspaceIterationInputs.ability_requirements);
@@ -156,43 +156,43 @@ assert.deepEqual(runtimeToolProfiles.workspaceIteration.tools.map(([name]) => na
 	'create_github_issue',
 ]);
 assert.deepEqual(workspaceIterationTools.map((tool) => tool.name), runtimeToolProfiles.workspaceIteration.tools.map(([name]) => name));
-assert.deepEqual(workspaceIterationRequirements, [runtimePackageAbilityId, runtimeWorkspaceCommandAbility(codeboxFixtureEnv), runtimeWorkspacePublishAbility(codeboxFixtureEnv)]);
-assert.deepEqual(runtimeToolProfileInputs('workspace-publication', readAgentRuntimeContract({ ...genericRuntimeEnv, HOMEBOY_AGENT_RUNTIME_WORKSPACE_PUBLISH_ABILITY: runtimeWorkspacePublishAbility(codeboxFixtureEnv) })), {
-	ability_requirements: JSON.stringify([runtimePackageAbilityId, runtimeWorkspacePublishAbility(codeboxFixtureEnv)]),
+assert.deepEqual(workspaceIterationRequirements, [runtimePackageAbilityId, runtimeWorkspaceCommandAbility(runtimeFixtureEnv), runtimeWorkspacePublishAbility(runtimeFixtureEnv)]);
+assert.deepEqual(runtimeToolProfileInputs('workspace-publication', readAgentRuntimeContract({ ...genericRuntimeEnv, HOMEBOY_AGENT_RUNTIME_WORKSPACE_PUBLISH_ABILITY: runtimeWorkspacePublishAbility(runtimeFixtureEnv) })), {
+	ability_requirements: JSON.stringify([runtimePackageAbilityId, runtimeWorkspacePublishAbility(runtimeFixtureEnv)]),
 	ability_tools: '[]',
 });
 assert.deepEqual(runtimeWorkflowInputs('workspace-iteration', readAgentRuntimeContract({
 	...genericRuntimeEnv,
-	HOMEBOY_AGENT_RUNTIME_PROVIDER: codeboxProvider,
-	HOMEBOY_AGENT_RUNTIME_WORKSPACE_COMMAND_ABILITY: runtimeWorkspaceCommandAbility(codeboxFixtureEnv),
-	HOMEBOY_AGENT_RUNTIME_WORKSPACE_PUBLISH_ABILITY: runtimeWorkspacePublishAbility(codeboxFixtureEnv),
+	HOMEBOY_AGENT_RUNTIME_PROVIDER: selectedRuntimeProvider,
+	HOMEBOY_AGENT_RUNTIME_WORKSPACE_COMMAND_ABILITY: runtimeWorkspaceCommandAbility(runtimeFixtureEnv),
+	HOMEBOY_AGENT_RUNTIME_WORKSPACE_PUBLISH_ABILITY: runtimeWorkspacePublishAbility(runtimeFixtureEnv),
 }), hbeDefaultRendererEnv), {
-	runtime_provider: codeboxProvider,
+	runtime_provider: selectedRuntimeProvider,
 	runtime_profile: 'wpsg-agent-runtime-package',
-	runtime_profiles: JSON.stringify(runtimePackageProfiles(readAgentRuntimeContract({ ...genericRuntimeEnv, HOMEBOY_AGENT_RUNTIME_PROVIDER: codeboxProvider }))),
+	runtime_profiles: JSON.stringify(runtimePackageProfiles(readAgentRuntimeContract({ ...genericRuntimeEnv, HOMEBOY_AGENT_RUNTIME_PROVIDER: selectedRuntimeProvider }))),
 	ability_requirements: workspaceIterationInputs.ability_requirements,
 	ability_tools: workspaceIterationInputs.ability_tools,
 });
 const renderedWorkspaceWorkflowInputs = renderRuntimeWorkflowInputs({
-	runtime_provider: codeboxProvider,
+	runtime_provider: selectedRuntimeProvider,
 	runtime_profile: 'wpsg-agent-runtime-package',
-	runtime_profiles: runtimePackageProfiles(readAgentRuntimeContract({ ...genericRuntimeEnv, HOMEBOY_AGENT_RUNTIME_PROVIDER: codeboxProvider })),
+	runtime_profiles: runtimePackageProfiles(readAgentRuntimeContract({ ...genericRuntimeEnv, HOMEBOY_AGENT_RUNTIME_PROVIDER: selectedRuntimeProvider })),
 	tool_profile: runtimeToolProfiles.workspaceIteration,
 }, hbeDefaultRendererEnv);
 assert.equal(renderedWorkspaceWorkflowInputs.schema, 'homeboy/runtime-workflow-inputs/v1');
-assert.equal(renderedWorkspaceWorkflowInputs.workflow_inputs.runtime, codeboxProvider);
+assert.equal(renderedWorkspaceWorkflowInputs.workflow_inputs.runtime, selectedRuntimeProvider);
 assert.equal(renderedWorkspaceWorkflowInputs.workflow_inputs.profile, 'wpsg-agent-runtime-package');
-assert.deepEqual(renderedWorkspaceWorkflowInputs.workflow_inputs.runtime_profiles, runtimePackageProfiles(readAgentRuntimeContract({ ...genericRuntimeEnv, HOMEBOY_AGENT_RUNTIME_PROVIDER: codeboxProvider })));
+assert.deepEqual(renderedWorkspaceWorkflowInputs.workflow_inputs.runtime_profiles, runtimePackageProfiles(readAgentRuntimeContract({ ...genericRuntimeEnv, HOMEBOY_AGENT_RUNTIME_PROVIDER: selectedRuntimeProvider })));
 assert.deepEqual(renderedWorkspaceWorkflowInputs.tool_profile.tools.map(([name]) => name), runtimeToolProfiles.workspaceIteration.tools.map(([name]) => name));
 assert.deepEqual(runtimeWorkflowInputs('workspace-publication', readAgentRuntimeContract({
 	...genericRuntimeEnv,
-	HOMEBOY_AGENT_RUNTIME_PROVIDER: codeboxProvider,
-	HOMEBOY_AGENT_RUNTIME_WORKSPACE_PUBLISH_ABILITY: runtimeWorkspacePublishAbility(codeboxFixtureEnv),
+	HOMEBOY_AGENT_RUNTIME_PROVIDER: selectedRuntimeProvider,
+	HOMEBOY_AGENT_RUNTIME_WORKSPACE_PUBLISH_ABILITY: runtimeWorkspacePublishAbility(runtimeFixtureEnv),
 }), hbeDefaultRendererEnv), {
-	runtime_provider: codeboxProvider,
+	runtime_provider: selectedRuntimeProvider,
 	runtime_profile: 'wpsg-agent-runtime-package',
-	runtime_profiles: JSON.stringify(runtimePackageProfiles(readAgentRuntimeContract({ ...genericRuntimeEnv, HOMEBOY_AGENT_RUNTIME_PROVIDER: codeboxProvider }))),
-	ability_requirements: JSON.stringify([runtimePackageAbilityId, runtimeWorkspacePublishAbility(codeboxFixtureEnv)]),
+	runtime_profiles: JSON.stringify(runtimePackageProfiles(readAgentRuntimeContract({ ...genericRuntimeEnv, HOMEBOY_AGENT_RUNTIME_PROVIDER: selectedRuntimeProvider }))),
+	ability_requirements: JSON.stringify([runtimePackageAbilityId, runtimeWorkspacePublishAbility(runtimeFixtureEnv)]),
 	ability_tools: '[]',
 }, 'publication workload profile can consume externally supplied publish wrappers');
 assert.deepEqual(runtimeToolProfiles.workspacePublication.tools, []);
@@ -245,12 +245,12 @@ assert.throws(() => runtimeWorkflowBuilderExecution({ kind: 'wpsg-example' }), /
 
 const configuredRuntimeContract = readAgentRuntimeContract({
 	...genericRuntimeEnv,
-	HOMEBOY_AGENT_RUNTIME_PROVIDER: codeboxProvider,
+	HOMEBOY_AGENT_RUNTIME_PROVIDER: selectedRuntimeProvider,
 	HOMEBOY_AGENT_RUNTIME_BACKEND: 'codebox',
 	HOMEBOY_AGENT_RUNTIME_PROVIDER_ID: 'openai',
 	HOMEBOY_AGENT_RUNTIME_SELECTOR: 'sandbox',
-	HOMEBOY_AGENT_RUNTIME_WORKSPACE_COMMAND_ABILITY: runtimeWorkspaceCommandAbility(codeboxFixtureEnv),
-	HOMEBOY_AGENT_RUNTIME_WORKSPACE_PUBLISH_ABILITY: runtimeWorkspacePublishAbility(codeboxFixtureEnv),
+	HOMEBOY_AGENT_RUNTIME_WORKSPACE_COMMAND_ABILITY: runtimeWorkspaceCommandAbility(runtimeFixtureEnv),
+	HOMEBOY_AGENT_RUNTIME_WORKSPACE_PUBLISH_ABILITY: runtimeWorkspacePublishAbility(runtimeFixtureEnv),
 });
 assert.deepEqual(runtimePackageProfiles(configuredRuntimeContract)['wpsg-agent-runtime-package'].runtime_selection, {
 	backend: 'codebox',
@@ -258,7 +258,7 @@ assert.deepEqual(runtimePackageProfiles(configuredRuntimeContract)['wpsg-agent-r
 	selector: 'sandbox',
 }, 'runtime backend/provider/selector are config inputs, not WPSG constants');
 assert.deepEqual(runtimeToolProfileInputs('workspace-publication', configuredRuntimeContract), {
-	ability_requirements: JSON.stringify([runtimePackageAbilityId, runtimeWorkspacePublishAbility(codeboxFixtureEnv)]),
+	ability_requirements: JSON.stringify([runtimePackageAbilityId, runtimeWorkspacePublishAbility(runtimeFixtureEnv)]),
 	ability_tools: '[]',
 }, 'provider-compatible abilities can still be supplied externally');
 
@@ -268,8 +268,8 @@ const runtimeProfileManifest = {
 			id: 'example-runtime-package',
 			provider: 'example-runtime',
 			runtime_task_ability: 'example-runtime/run-package',
-			workspace_command_ability: runtimeWorkspaceCommandAbility(codeboxFixtureEnv),
-			workspace_publish_ability: runtimeWorkspacePublishAbility(codeboxFixtureEnv),
+			workspace_command_ability: runtimeWorkspaceCommandAbility(runtimeFixtureEnv),
+			workspace_publish_ability: runtimeWorkspacePublishAbility(runtimeFixtureEnv),
 			workspace_recipe_schema: 'example-runtime/workspace-recipe/v1',
 			validation_artifact_envelope_schema: 'example-runtime/validation-artifact-envelope/v1',
 			preview_url_base: 'https://preview.example.com/',

@@ -296,7 +296,7 @@ return static function (): array {
 	};
 
 	$validation_artifact_envelope = static function ( array $report ) use ( $get_path ): array {
-		foreach ( array( 'codebox_validation_artifact', 'codebox_validation', 'validation_artifact', 'validation_artifact_envelope' ) as $key ) {
+		foreach ( array( 'runtime_validation_artifact', 'runtime_validation', 'validation_artifact', 'validation_artifact_envelope', 'codebox_validation_artifact', 'codebox_validation' ) as $key ) {
 			$value = $get_path( $report, array( $key ) );
 			if ( is_array( $value ) ) {
 				return $value;
