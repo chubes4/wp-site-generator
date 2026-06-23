@@ -95,6 +95,7 @@ try {
 	for (const forbiddenKey of ['controller_state', 'provider_selection', 'dispatch_provider', 'runtime_substrate']) {
 		assert.equal(generatedController[forbiddenKey], undefined, `WPSG loop spec does not own ${forbiddenKey}`);
 	}
+	assert.doesNotMatch(JSON.stringify(generatedController), /wp[_-]?codebox|codebox_(?:result|envelope|payload)|playground_(?:url|result)/i, 'WPSG loop spec does not include private Codebox runtime result fields');
 
 	console.log('WPSG loop typed artifact contract tests passed');
 } finally {

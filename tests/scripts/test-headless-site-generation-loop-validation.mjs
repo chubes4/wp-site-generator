@@ -20,7 +20,7 @@ async function writeArtifact(name, artifact) {
 async function writeRealEvidenceArtifacts() {
 	await writeArtifact('static_site_candidate', {
 		schema: 'wp-site-generator/StaticSiteCandidate/v1',
-		runtime_preview: {
+		runtime_access: {
 			schema: 'homeboy/runtime-preview-access/v1',
 			url: 'https://preview.dev.chubes.net/runs/123/sites/proof-site',
 			access: { kind: 'preview' },

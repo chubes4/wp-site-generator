@@ -75,7 +75,7 @@ function assertProductionArtifact(artifact, artifactId) {
 	}
 	const evidenceText = JSON.stringify(artifact).toLowerCase();
 	if (/\b(fixture|synthetic|placeholder|mock)\b/.test(evidenceText)) {
-		fail(`${artifactId} is fixture or synthetic evidence; rerun with real Homeboy/WP Codebox artifacts or pass --proof-mode fixture for fixture-only tests`);
+		fail(`${artifactId} is fixture or synthetic evidence; rerun with real Homeboy runtime artifacts or pass --proof-mode fixture for fixture-only tests`);
 	}
 }
 
@@ -192,13 +192,16 @@ function optionalArtifact(artifacts, artifactSchemas, artifactId) {
 
 function runtimePreviewUrl(candidate) {
 	if (proofMode === 'fixture') {
-		return firstValue(candidate, ['runtime_access.url', 'runtime_access.access.url', 'runtime_preview.url', 'runtime_preview.access.url', 'preview_evidence.preview_url', 'preview_evidence.url', 'preview_url', 'urls.preview', 'preview.url', 'preview.access.url']);
+		return firstValue(candidate, ['runtime_access.url', 'runtime_access.access.url', 'runtime_preview.url', 'runtime_preview.access.url']);
 	}
-	return firstValue(candidate, ['runtime_access.url', 'runtime_access.access.url', 'runtime_preview.url', 'runtime_preview.access.url', 'preview_evidence.preview_url', 'preview_evidence.url', 'evidence.preview_url', 'preview.url', 'preview.access.url']);
+	return firstValue(candidate, ['runtime_access.url', 'runtime_access.access.url']);
 }
 
 function runtimePreviewEnvelope(candidate) {
-	return firstValue(candidate, ['runtime_access', 'runtime_preview', 'preview_evidence', 'evidence.preview', 'preview']);
+	if (proofMode === 'fixture') {
+		return firstValue(candidate, ['runtime_access', 'runtime_preview']);
+	}
+	return firstValue(candidate, ['runtime_access']);
 }
 
 function assertProductionRuntimePreviewEnvelope(candidate) {
@@ -207,8 +210,7 @@ function assertProductionRuntimePreviewEnvelope(candidate) {
 		return;
 	}
 	assert.ok(envelope && typeof envelope === 'object' && !Array.isArray(envelope), 'runtime preview evidence is a structured envelope');
-	const envelopeType = firstValue(envelope, ['schema', 'artifact_type', 'type', 'kind', 'access.schema', 'access.type', 'access.kind']);
-	assert.ok(envelopeType && /preview|access|runtime/i.test(String(envelopeType)), 'runtime preview evidence is a typed preview/access envelope');
+	assert.ok(['homeboy/runtime-preview-access/v1', 'homeboy/runtime-access/v1'].includes(String(envelope.schema || '')), 'runtime_access uses a public Homeboy runtime access envelope');
 }
 
 async function assertControllerEventProof(controllerRunSpec, loopId) {
