@@ -17,7 +17,7 @@ if (args.join(' ') === 'agent-task controller from-spec --help') {
   process.exit(0);
 }
 if (args.join(' ') === 'agent-task controller run-from-spec --help') {
-  console.log('Materialize, initialize, and run a bounded controller loop from a repo-authored JSON spec');
+  console.log('Materialize, initialize, and run a bounded controller loop from a repo-authored JSON spec\\n--output <PATH> Write structured result JSON to PATH');
   process.exit(0);
 }
 if (args.join(' ') === 'agent-task controller materialize --help') {
@@ -67,6 +67,7 @@ if (args[0] === 'agent-task' && args[1] === 'controller' && args[2] === 'from-sp
 if (args[0] === 'agent-task' && args[1] === 'controller' && args[2] === 'run-from-spec') {
   const specPath = args[3].replace(/^@/, '');
   const inputsIndex = args.indexOf('--inputs');
+  const outputIndex = args.indexOf('--output');
   const spec = JSON.parse(readFileSync(specPath, 'utf8'));
   const runInputs = inputsIndex === -1 ? {} : JSON.parse(readFileSync(args[inputsIndex + 1].replace(/^@/, ''), 'utf8'));
   const explicitInputs = runInputs.inputs || (runInputs.metadata ? null : runInputs);
@@ -129,7 +130,14 @@ if (args[0] === 'agent-task' && args[1] === 'controller' && args[2] === 'run-fro
       state: 'waiting',
     },
   };
-  console.log(JSON.stringify(result));
+  if (outputIndex !== -1) {
+    writeFileSync(args[outputIndex + 1], JSON.stringify(result, null, 2) + '\\n');
+  }
+  if (process.env.HOMEBOY_FIXTURE_GIANT_STDOUT === '1') {
+    console.log('not-json:' + 'x'.repeat(1024 * 1024 + 1));
+  } else {
+    console.log(JSON.stringify(result));
+  }
   process.exit(0);
 }
 if (args[0] === 'agent-task' && args[1] === 'controller' && args[2] === 'materialize') {

@@ -101,6 +101,21 @@ try {
 	assert.notEqual(fixtureResult.status, 0, 'headless validation refuses generated fixture artifacts by default');
 	assert.match(fixtureResult.stderr || fixtureResult.stdout, /--fixture-artifacts is disabled/);
 
+	const noArtifactProofResult = spawnSync(process.execPath, [
+		'.github/scripts/validate-headless-site-generation-loop.mjs',
+		'--homeboy-bin',
+		homeboyFixturePath,
+		'--work-dir',
+		tempDir,
+		'--artifact-root',
+		artifactRoot,
+	], {
+		cwd: repoRoot,
+		encoding: 'utf8',
+	});
+	assert.notEqual(noArtifactProofResult.status, 0, 'headless validation fails closed without Homeboy-emitted artifact proof');
+	assert.match(noArtifactProofResult.stderr || noArtifactProofResult.stdout, /artifact|proof|ENOENT/i);
+
 	await writeRealEvidenceArtifacts();
 	const result = spawnSync(process.execPath, [
 		'.github/scripts/validate-headless-site-generation-loop.mjs',
@@ -123,6 +138,7 @@ try {
 		encoding: 'utf8',
 		env: {
 			...process.env,
+			HOMEBOY_FIXTURE_GIANT_STDOUT: '1',
 			HOMEBOY_AGENT_RUNTIME_COMPONENTS: JSON.stringify([
 				{
 					slug: 'agents-api',
@@ -142,7 +158,12 @@ try {
 	assert.equal(evidence.runtime_id, 'contract-runtime');
 	assert.equal(evidence.fixture_artifacts, false);
 	assert.equal(evidence.artifact_source, 'homeboy-emitted');
-	assert.ok(evidence.commands.some((item) => item.command.includes('agent-task controller run-from-spec')), 'evidence records Homeboy run-from-spec command');
+	const runFromSpecCommand = evidence.commands.find((item) => item.command.includes('agent-task controller run-from-spec'));
+	assert.ok(runFromSpecCommand, 'evidence records Homeboy run-from-spec command');
+	assert.ok(runFromSpecCommand.command.includes('--output'), 'validator asks Homeboy to write structured run-from-spec output');
+	assert.equal(runFromSpecCommand.output_path, evidence.paths.controller_result, 'evidence records the exact Homeboy structured output path');
+	assert.equal(runFromSpecCommand.artifact_root, artifactRoot, 'evidence records the Homeboy artifact root');
+	assert.doesNotMatch(await readFile(evidence.paths.controller_result, 'utf8'), /^not-json:/, 'validator reads structured output from the output file instead of stdout');
 	assert.ok(evidence.commands.every((item) => !item.command.includes('agent-task controller from-spec')), 'headless path does not manually initialize controllers');
 	assert.ok(evidence.commands.every((item) => !item.command.includes('agent-task controller resume')), 'headless path does not manually resume controllers');
 	assert.ok(evidence.commands.every((item) => !item.command.includes('agent-task controller events')), 'headless path does not manually apply controller events');

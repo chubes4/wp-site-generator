@@ -124,7 +124,7 @@ jobs:
         run: |
           set -euo pipefail
           inputs_path="$(node .github/scripts/build-homeboy-controller-run-inputs.mjs)"
-          homeboy agent-task controller run-from-spec "@$HOMEBOY_CONTROLLER_SPEC_PATH" --inputs "@$inputs_path" --policy-result "@$HOMEBOY_POLICY_RESULT_PATH" --max-actions 100 > "$HOMEBOY_CONTROLLER_RUN_FROM_SPEC_RESULT_PATH"
+          homeboy agent-task controller run-from-spec "@$HOMEBOY_CONTROLLER_SPEC_PATH" --inputs "@$inputs_path" --policy-result "@$HOMEBOY_POLICY_RESULT_PATH" --max-actions 100 --output "$HOMEBOY_CONTROLLER_RUN_FROM_SPEC_RESULT_PATH"
           jq '.materialization // .data.materialization // .value.materialization' "$HOMEBOY_CONTROLLER_RUN_FROM_SPEC_RESULT_PATH" > "$HOMEBOY_CONTROLLER_MATERIALIZATION_RESULT_PATH"
           jq '.data.spec // .value.spec // .spec' "$HOMEBOY_CONTROLLER_MATERIALIZATION_RESULT_PATH" > "$HOMEBOY_CONTROLLER_RUN_SPEC_PATH"
           jq empty "$HOMEBOY_CONTROLLER_RUN_SPEC_PATH"
