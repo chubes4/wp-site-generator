@@ -1,6 +1,7 @@
 import { readFileSync } from 'node:fs';
+import { wpsgLoopConfig } from './wpsg-domain-config.mjs';
 
-const runtimePackageProfileId = 'wpsg-agent-runtime-package';
+const runtimePackageProfileId = wpsgLoopConfig.runtimePackageProfile;
 
 const defaultRuntimePackageAbility = 'homeboy/run-runtime-package';
 const defaultRuntimeWorkspaceRecipeSchema = 'homeboy/runtime-workspace-recipe/v1';

@@ -6,17 +6,18 @@ import {
 	requireLocalReplaySeed,
 	resolveReplayRunId,
 } from './ci-runtime-utils.mjs';
+import { siteGenerationLoopId, wpsgLoopConfig } from './wpsg-domain-config.mjs';
 
 export function buildSiteGenerationLoopRunContext({ env = process.env, root = env.GITHUB_WORKSPACE || process.cwd() } = {}) {
 	requireLocalReplaySeed(env);
 
 	const runId = resolveReplayRunId(env);
 	const loopId = buildSiteGenerationLoopId(runId);
-	const repository = env.GITHUB_REPOSITORY || 'chubes4/wp-site-generator';
+	const repository = env.GITHUB_REPOSITORY || wpsgLoopConfig.repository;
 	const source = resolveImmutableSourceRef({ env, root, repository });
 	const dependencyRefs = resolveDependencyRefs({ env, root });
-	validateRefPolicy({ policy: env.WPSG_REF_POLICY || 'branch-defaults', dependencyRefs, source });
-	const controllerSpecPath = env.HOMEBOY_CONTROLLER_SPEC_PATH || '.github/homeboy/controllers/static-site-generation-loop.controller.json';
+	validateRefPolicy({ policy: env.WPSG_REF_POLICY || wpsgLoopConfig.defaultRefPolicy, dependencyRefs, source });
+	const controllerSpecPath = env.HOMEBOY_CONTROLLER_SPEC_PATH || wpsgLoopConfig.controllerSpecPath;
 	const outputPath = env.HOMEBOY_CONTROLLER_RUN_INPUTS_PATH || path.join(root, '.ci', 'site-generation-loop.controller-run-inputs.json');
 	const policyResultPath = env.HOMEBOY_POLICY_RESULT_PATH || outputPath.replace(/\.json$/, '.complexity-policy-result.json');
 	const runtimeOverrides = readHomeboyAgentRuntimeOverrides(env);
@@ -34,7 +35,7 @@ export function buildSiteGenerationLoopRunContext({ env = process.env, root = en
 	};
 }
 
-export function resolveImmutableSourceRef({ env = process.env, root = env.GITHUB_WORKSPACE || process.cwd(), repository = env.GITHUB_REPOSITORY || 'chubes4/wp-site-generator' } = {}) {
+export function resolveImmutableSourceRef({ env = process.env, root = env.GITHUB_WORKSPACE || process.cwd(), repository = env.GITHUB_REPOSITORY || wpsgLoopConfig.repository } = {}) {
 	const artifactSource = env.SOURCE_ARTIFACT_SOURCE || env.STATIC_SITE_CANDIDATE || env.CONCEPT_PACKET || '';
 	if (artifactSource) {
 		return {
@@ -75,11 +76,11 @@ export function resolveDependencyRefs({ env = process.env, root = env.GITHUB_WOR
 	});
 }
 
-export function validateRefPolicy({ policy = 'branch-defaults', dependencyRefs = {}, source = null } = {}) {
-	if (policy === 'branch-defaults') {
+export function validateRefPolicy({ policy = wpsgLoopConfig.defaultRefPolicy, dependencyRefs = {}, source = null } = {}) {
+	if (policy === wpsgLoopConfig.defaultRefPolicy) {
 		return;
 	}
-	if (policy !== 'production') {
+	if (policy !== wpsgLoopConfig.productionRefPolicy) {
 		throw new Error(`Unknown WPSG ref policy: ${policy}`);
 	}
 
@@ -169,13 +170,5 @@ function compactObject(object) {
 }
 
 export function buildSiteGenerationLoopId(runId) {
-	return `wp-site-generator/static-site-generation-loop/${requiredLoopIdSegment(runId)}`;
-}
-
-function requiredLoopIdSegment(value) {
-	const segment = String(value || '').trim().replace(/[^A-Za-z0-9._-]+/g, '-').replace(/^-+|-+$/g, '');
-	if (!segment) {
-		throw new Error('Site generation loop run id is required.');
-	}
-	return segment;
+	return siteGenerationLoopId(runId);
 }
