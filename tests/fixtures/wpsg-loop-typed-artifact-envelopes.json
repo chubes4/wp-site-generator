@@ -1,0 +1,74 @@
+{
+  "concept_packet": {
+    "schema": "homeboy/agent-task-typed-artifact/v1",
+    "output_key": "concept_packet",
+    "artifact": "ConceptPacket",
+    "payload_schema": "wp-site-generator/ConceptPacket/v1",
+    "payload": {
+      "schema_version": 1,
+      "concept_kind": "website",
+      "title": "Neighborhood Repair Library",
+      "body_sections": {
+        "Recommended Concept": "A local repair-library website for volunteers and residents.",
+        "Who It Serves": "Neighbors with broken household items.",
+        "What It Offers": "Event schedule, volunteer profiles, and repair categories.",
+        "Why It Could Work": "Clear local utility with recurring events.",
+        "Distinctness Note": "Focuses on repair education rather than generic services."
+      },
+      "labels": ["site-kind:content", "commerce:none"],
+      "target_lane": "content-site",
+      "provenance": {
+        "fixture": "wpsg-loop-typed-artifact-envelopes"
+      }
+    }
+  },
+  "design_packet": {
+    "schema": "homeboy/agent-task-typed-artifact/v1",
+    "output_key": "design_packet",
+    "artifact": "DesignPacket",
+    "payload_schema": "wp-site-generator/DesignPacket/v1",
+    "payload": {
+      "schema_version": 1,
+      "source_concept_ref": "concept_packet",
+      "source_title": "Neighborhood Repair Library",
+      "design_system": "civic-workshop",
+      "palette_kind": "warm-utility",
+      "palette": ["#f5ead6", "#24342f", "#c65f2f"],
+      "typography_kind": "humanist-sans",
+      "typography": {
+        "heading": "system-ui",
+        "body": "system-ui"
+      },
+      "layout_direction": "noticeboard sections with practical cards",
+      "mood": "useful, neighborly, hands-on",
+      "accessibility_notes": ["High contrast text", "Large tap targets"],
+      "implementation_constraints": ["Static HTML/CSS only"],
+      "provenance": {
+        "fixture": "wpsg-loop-typed-artifact-envelopes"
+      }
+    }
+  },
+  "static_site_candidate": {
+    "schema": "homeboy/agent-task-typed-artifact/v1",
+    "output_key": "static_site_candidate",
+    "artifact": "StaticSiteCandidate",
+    "payload_schema": "wp-site-generator/StaticSiteCandidate/v1",
+    "payload": {
+      "schema_version": 1,
+      "source_concept_ref": "concept_packet",
+      "source_design_ref": "design_packet",
+      "title": "Neighborhood Repair Library",
+      "target_lane": "content-site",
+      "files": [
+        {
+          "path": "index.html",
+          "content": "<!doctype html><html><body><main><h1>Neighborhood Repair Library</h1></main></body></html>"
+        }
+      ],
+      "proposed_branch": "site/neighborhood-repair-library",
+      "provenance": {
+        "fixture": "wpsg-loop-typed-artifact-envelopes"
+      }
+    }
+  }
+}

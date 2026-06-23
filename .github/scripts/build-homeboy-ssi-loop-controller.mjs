@@ -25,6 +25,8 @@ const artifactSchemas = {
 	reviewer_gate_outcome: 'wp-site-generator/SsiStackReviewerGate/v1',
 };
 
+const typedArtifactIds = new Set(['concept_packet', 'design_packet', 'static_site_candidate']);
+
 const agentBundles = {
 	store_idea: { bundle: 'bundles/store-idea-agent', slug: 'store-idea-agent', flow: 'store-idea-artifact-flow', emits: ['concept_packet'] },
 	website_idea: { bundle: 'bundles/website-idea-agent', slug: 'website-idea-agent', flow: 'website-idea-artifact-flow', emits: ['concept_packet'] },
@@ -37,7 +39,7 @@ const agentBundles = {
 };
 
 const runtimeContract = readAgentRuntimeContract(process.env);
-const runtimePackageAbilityId = runtimePackageAbility(runtimeContract);
+const runtimePackageAbilityId = runtimePackageAbility(runtimeContract) || 'runtime-package/run';
 
 const abilityIds = [
 	runtimePackageAbilityId,
@@ -261,6 +263,13 @@ const controller = {
 		kind: schema,
 		description: `${artifact_id} artifact using ${schema}`,
 		required: !['static_site_pull_request', 'iterator_upstream_issue', 'iterator_upstream_pull_request'].includes(artifact_id),
+		...(typedArtifactIds.has(artifact_id) ? {
+			typed_artifact: {
+				schema: 'homeboy/agent-task-typed-artifact/v1',
+				output_key: artifact_id,
+				payload_schema: schema,
+			},
+		} : {}),
 		...(['static_site_pull_request', 'iterator_upstream_issue', 'iterator_upstream_pull_request'].includes(artifact_id) ? { evidence_only: true } : {}),
 	})),
 	dependencies: [

@@ -38,7 +38,7 @@ The generated spec declares these groups directly:
 - `dependencies`: SSI stack repositories and the behavior each owns.
 - `gates` and `metrics`: WPSG metric definitions and pass expressions.
 
-Homeboy maps these declarations to durable controller policy/actions through `agent-task controller run-from-spec`. Homeboy Extensions WordPress supplies WordPress runtime details behind generic Homeboy executor/provider contracts when Homeboy selects an implementation.
+Homeboy maps these declarations to durable controller policy/actions through `agent-task controller run-from-spec`. Homeboy Extensions WordPress supplies WordPress runtime details behind generic Homeboy executor/provider contracts when Homeboy selects an implementation. WPSG does not own controller lifecycle, dependency materialization, dispatch/provider selection, runtime substrate, or evidence capture.
 
 ## Runtime Inputs
 
@@ -70,6 +70,14 @@ The controller declares workflow artifact dependencies and emissions. Homeboy de
 7. `iterator` fans out per `finding_group`, grouped by `owner_repo`, `root_cause`, and `group_id`, then emits optional upstream issue and pull-request evidence artifacts.
 8. `revalidation` consumes the candidate, validation, visual, and finding artifacts directly, then emits a `revalidation_attempt` plus refreshed validation artifacts.
 9. `reviewer` consumes candidate, validation, visual, finding, and revalidation artifacts, then emits `reviewer_gate_outcome`. Promotion requires `reviewer_gate_outcome.decision === "PASS"` and blocks when artifact evidence is missing.
+
+The three model-produced handoff artifacts declare Homeboy typed-artifact envelopes in the loop spec and bundle completion assertions:
+
+- `concept_packet` -> `homeboy/agent-task-typed-artifact/v1` with payload schema `wp-site-generator/ConceptPacket/v1`.
+- `design_packet` -> `homeboy/agent-task-typed-artifact/v1` with payload schema `wp-site-generator/DesignPacket/v1`.
+- `static_site_candidate` -> `homeboy/agent-task-typed-artifact/v1` with payload schema `wp-site-generator/StaticSiteCandidate/v1`.
+
+Run `node tests/scripts/test-wpsg-loop-typed-artifact-contracts.mjs` to validate those declarations and deterministic fixture envelopes without launching providers.
 
 ## Complexity And Randomness Policy
 
@@ -161,3 +169,7 @@ node .github/scripts/assert-site-generation-loop-proof.mjs --controller-result <
 ```
 
 The proof requires artifacts emitted by Homeboy/runtime execution under `--artifact-root`. It fails closed when the artifact root does not include real evidence for a tiny fixture site run, import report, zero fallback/conversion findings, visual parity gates, typed runtime preview/access URL, required iterator fanout evidence for actionable findings, and controller run-from-spec evidence. Iterator issue/PR artifacts and publication PR artifacts are optional for a clean candidate-only run, but are validated when emitted. `--fixture-artifacts` is disabled and is not reviewer-facing proof. Runtime selection remains outside the controller spec through `HOMEBOY_AGENT_RUNTIME_*`; `--runtime-id wp-codebox` is one backend selection, not a WPSG-owned contract.
+
+Production success evidence is a single bundle of Homeboy artifacts: controller run-from-spec result, materialization proof, `runtime_access` preview/playground URL for the generated WordPress result, typed artifacts for `concept_packet`, `design_packet`, and `static_site_candidate`, and downstream validation/gate artifacts. Failure evidence is the same bundle plus the failing assertion or runtime message, for example `WP Codebox agent task did not produce required typed artifacts: concept_packet`.
+
+Temporary `HOMEBOY_AGENT_RUNTIME_*`, `HOMEBOY_REF`, and `HOMEBOY_EXTENSIONS_REF` inputs are staging seams pending the upstream Homeboy/Homeboy Extensions runtime contract work referenced from the loop spec metadata. They should disappear into Homeboy-owned runtime selection as that contract hardens.
