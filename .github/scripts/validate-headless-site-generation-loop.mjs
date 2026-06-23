@@ -11,6 +11,7 @@ import { parseArgs, readAgentRuntimeContract, readJsonFile, writeJsonFile } from
 const args = parseArgs(process.argv.slice(2));
 const repoRoot = path.resolve(args.get('--repo-root') || process.env.GITHUB_WORKSPACE || process.cwd());
 const homeboyBin = args.get('--homeboy-bin') || process.env.HOMEBOY_BIN || 'homeboy';
+const homeboyRunner = args.get('--homeboy-runner') || process.env.HOMEBOY_RUNNER || '';
 const keepTemp = args.has('--keep-temp');
 const tempDir = path.resolve(args.get('--work-dir') || await mkdtemp(path.join(tmpdir(), 'wpsg-headless-loop-')));
 const runId = args.get('--run-id') || process.env.WPSG_REPLAY_ID || 'headless-contract';
@@ -55,6 +56,10 @@ function run(label, command, commandArgs, options = {}) {
 			closeSync(stdoutFd);
 		}
 	}
+}
+
+function homeboyArgs(commandArgs) {
+	return homeboyRunner ? ['--runner', homeboyRunner, ...commandArgs] : commandArgs;
 }
 
 async function readRunFromSpecResult(result, outputPath) {
@@ -105,10 +110,11 @@ try {
 	};
 
 	run('build WPSG controller run inputs', process.execPath, ['.github/scripts/build-homeboy-controller-run-inputs.mjs'], { env: baseEnv });
-	const runFromSpecResult = run('run Homeboy controller from spec', homeboyBin, ['agent-task', 'controller', 'run-from-spec', `@${controllerSpecPath}`, '--inputs', `@${controllerRunInputsPath}`, '--policy-result', `@${policyResultPath}`, '--max-actions', '100', '--output', controllerResultPath], {
+	const runFromSpecResult = run('run Homeboy controller from spec', homeboyBin, homeboyArgs(['agent-task', 'controller', 'run-from-spec', `@${controllerSpecPath}`, '--inputs', `@${controllerRunInputsPath}`, '--policy-result', `@${policyResultPath}`, '--max-actions', '100', '--output', controllerResultPath]), {
 		env: baseEnv,
 		stdoutPath: controllerStdoutPath,
 		evidence: {
+			homeboy_runner: homeboyRunner,
 			output_path: controllerResultPath,
 			stdout_path: controllerStdoutPath,
 			artifact_root: artifactRoot,
@@ -118,7 +124,7 @@ try {
 	await writeJsonFile(materializationPath, controllerResult.materialization || controllerResult.data?.materialization || controllerResult.value?.materialization);
 	const materialization = await readJsonFile(materializationPath);
 	await writeJsonFile(materializationProofPath, materialization.data || materialization.value || materialization);
-	run('validate materialized Homeboy proof', homeboyBin, ['agent-task', 'controller', 'validate-proof', `@${materializationProofPath}`], { env: baseEnv });
+	run('validate materialized Homeboy proof', homeboyBin, homeboyArgs(['agent-task', 'controller', 'validate-proof', `@${materializationProofPath}`]), { env: baseEnv });
 	run('write run-scoped controller spec', process.execPath, ['.github/scripts/write-materialized-controller-run-spec.mjs', materializationPath, controllerRunSpecPath], { env: baseEnv });
 
 	run('assert WPSG semantic artifact proof', process.execPath, ['.github/scripts/assert-site-generation-loop-proof.mjs', '--controller-result', controllerResultPath, '--controller-run-spec', controllerRunSpecPath, '--artifact-root', artifactRoot], { env: baseEnv });
