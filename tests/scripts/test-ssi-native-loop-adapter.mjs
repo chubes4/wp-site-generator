@@ -169,8 +169,10 @@ const groupResult = spawnSync(process.execPath, ['.github/scripts/group-ssi-find
 	env: { ...process.env, FINDING_GROUPS_PATH: path.join(tempDir, 'groups.json') },
 });
 assert.equal(groupResult.status, 0, groupResult.stderr || groupResult.stdout);
+const groupedFindings = JSON.parse(await readFile(path.join(tempDir, 'groups.json'), 'utf8'));
+await writeFile(path.join(tempDir, 'group.json'), JSON.stringify(groupedFindings.slice(0, 1), null, 2));
 
-const workflowResult = spawnSync(process.execPath, ['bundles/php-transformer-iterator-agent/scripts/build-agent-iterator-workflow.mjs', path.join(tempDir, 'groups.json'), workflowPath], {
+const workflowResult = spawnSync(process.execPath, ['bundles/php-transformer-iterator-agent/scripts/build-agent-iterator-workflow.mjs', path.join(tempDir, 'group.json'), workflowPath], {
 	cwd: repoRoot,
 	encoding: 'utf8',
 });
