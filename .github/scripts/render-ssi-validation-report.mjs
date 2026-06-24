@@ -16,6 +16,11 @@ const consumedMetricPatterns = [
 	/^(max|mean|min|p50|p95|p99)_ms$/,
 	/^ssi_report_readable_(max|mean|min|p50|p95|p99)$/,
 	/^ssi_report_top_level_keys_(max|mean|min|p50|p95|p99)$/,
+	/^semantic_parity_status$/,
+	/^source_nav_count$/,
+	/^generated_navigation_count$/,
+	/^nav_item_mismatch_count$/,
+	/^landmark_mismatch_count$/,
 	...ssiSignalMetrics.map(([key]) => new RegExp(`^${escapeRegExp(key)}(_(max|mean|min|p50|p95|p99))?$`)),
 	...ssiBlocksEngineMetrics.map(([key]) => new RegExp(`^${escapeRegExp(key)}(_(max|mean|min|p50|p95|p99))?$`)),
 ];
@@ -88,6 +93,7 @@ function renderReport(ssi, stackManifest) {
 	sections.push(renderBlocksEngineStatus(metrics, importReportSummary?.blocks_engine));
 	sections.push(renderValidationArtifactEnvelope(importReportSummary?.validation_artifact_envelope || ssi?.metadata?.validation_artifact_envelope));
 	sections.push(renderSourceDocuments(importReportSummary?.source_documents, importReportSummary?.diagnostics));
+	sections.push(renderSemanticParity(metrics, importReportSummary));
 	sections.push(renderImportReport(importReportSummary));
 
 	return sections.filter(Boolean).join('\n\n');
@@ -199,6 +205,93 @@ function renderValidationArtifactEnvelope(envelope) {
 		.map(([label, value]) => `| ${escapeCell(label)} | ${escapeCell(formatValue(value))} |`);
 
 	return ['### Runtime Validation Artifact Envelope', '| Field | Value |', '| --- | --- |', ...rows].join('\n');
+}
+
+function renderSemanticParity(metrics, importReportSummary = {}) {
+	const semanticParity = normalizeSemanticParity(metrics, importReportSummary);
+	if (!semanticParity.present) {
+		return '';
+	}
+
+	const rows = [
+		['semantic_parity.status', semanticParity.status],
+		['source_nav_count', semanticParity.source_nav_count],
+		['generated_navigation_count', semanticParity.generated_navigation_count],
+		['nav_item_mismatch_count', semanticParity.nav_item_mismatch_count],
+		['landmark_mismatch_count', semanticParity.landmark_mismatch_count],
+	]
+		.filter(([, value]) => value !== undefined && value !== null && value !== '')
+		.map(([label, value]) => `| ${escapeCell(label)} | ${escapeCell(formatValue(value))} |`);
+
+	const lines = ['### Semantic Parity', '| Signal | Value |', '| --- | --- |', ...rows];
+	if (semanticParity.findings.length > 0) {
+		lines.push('', '| Finding | Severity | Message |');
+		lines.push('| --- | --- | --- |');
+		for (const finding of semanticParity.findings.slice(0, 5)) {
+			lines.push(`| \`${escapeCell(finding?.code || finding?.type || finding?.id || 'semantic_parity')}\` | \`${escapeCell(finding?.severity || finding?.level || '')}\` | ${escapeCell(finding?.message || finding?.summary || finding?.description || '')} |`);
+		}
+	}
+
+	return lines.join('\n');
+}
+
+function normalizeSemanticParity(metrics, importReportSummary = {}) {
+	const nested = firstObject([
+		importReportSummary?.semantic_parity,
+		importReportSummary?.semantic_parity_summary,
+		importReportSummary?.semanticParity,
+		metrics?.semantic_parity,
+	]);
+	const findings = firstArray([
+		nested?.top_findings,
+		nested?.findings,
+		nested?.issues,
+		importReportSummary?.semantic_parity_findings,
+		metrics?.semantic_parity_findings,
+	]);
+	const values = {
+		present: Boolean(nested) || findings.length > 0 || [
+			'semantic_parity_status',
+			'source_nav_count',
+			'generated_navigation_count',
+			'nav_item_mismatch_count',
+			'landmark_mismatch_count',
+		].some((key) => metrics?.[key] !== undefined || importReportSummary?.[key] !== undefined),
+		status: textValue(nested?.status ?? nested?.result ?? metrics?.semantic_parity_status ?? importReportSummary?.semantic_parity_status),
+		findings,
+	};
+
+	for (const key of ['source_nav_count', 'generated_navigation_count', 'nav_item_mismatch_count', 'landmark_mismatch_count']) {
+		values[key] = firstDefinedNumber([
+			nested?.[key],
+			metrics?.[key],
+			importReportSummary?.[key],
+		]);
+	}
+
+	return values;
+}
+
+function firstObject(values) {
+	return values.find((value) => value && typeof value === 'object' && !Array.isArray(value)) || null;
+}
+
+function firstArray(values) {
+	return values.find((value) => Array.isArray(value)) || [];
+}
+
+function firstDefinedNumber(values) {
+	for (const value of values) {
+		const number = numericValue(value);
+		if (number !== null) {
+			return number;
+		}
+	}
+	return null;
+}
+
+function textValue(value) {
+	return value === undefined || value === null ? '' : String(value);
 }
 
 function renderBlocksEngineStatus(metrics, compiler) {
