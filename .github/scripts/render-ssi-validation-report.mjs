@@ -87,6 +87,7 @@ function renderReport(ssi, stackManifest) {
 	const importReportSummary = ssi?.metadata?.import_report_summary;
 	sections.push(renderBlocksEngineStatus(metrics, importReportSummary?.blocks_engine));
 	sections.push(renderValidationArtifactEnvelope(importReportSummary?.validation_artifact_envelope || ssi?.metadata?.validation_artifact_envelope));
+	sections.push(renderVisualSemanticEvidence(importReportSummary, ssi?.metadata));
 	sections.push(renderSourceDocuments(importReportSummary?.source_documents, importReportSummary?.diagnostics));
 	sections.push(renderImportReport(importReportSummary));
 
@@ -199,6 +200,190 @@ function renderValidationArtifactEnvelope(envelope) {
 		.map(([label, value]) => `| ${escapeCell(label)} | ${escapeCell(formatValue(value))} |`);
 
 	return ['### Runtime Validation Artifact Envelope', '| Field | Value |', '| --- | --- |', ...rows].join('\n');
+}
+
+function renderVisualSemanticEvidence(importReportSummary, metadata = {}) {
+	const visual = firstObject(
+		importReportSummary?.visual_fidelity,
+		metadata?.visual_fidelity,
+		importReportSummary?.visual_parity,
+		metadata?.visual_parity,
+	);
+	const semantic = firstObject(
+		importReportSummary?.semantic_fidelity,
+		metadata?.semantic_fidelity,
+		importReportSummary?.semantic_parity,
+		metadata?.semantic_parity,
+	);
+	const visualArtifacts = firstObject(
+		visual?.artifacts,
+		metadata?.visual_artifact,
+		metadata?.visual_parity_artifact,
+		importReportSummary?.visual_artifact,
+		importReportSummary?.visual_parity_artifact,
+	);
+
+	if (!visual && !semantic && !visualArtifacts) {
+		return '';
+	}
+
+	const lines = ['### Visual/Semantic Evidence'];
+	if (visual) {
+		lines.push('', renderFidelityStatusTable('Visual fidelity', visual));
+		appendViewportRows(lines, visual);
+		appendExpectedArtifactRows(lines, 'Visual artifact slots', visual, [
+			'source screenshot',
+			'imported screenshot',
+			'diff screenshot',
+			'visual-diff.json',
+			'summary.json',
+			'comparison.html',
+		]);
+		appendDiffRows(lines, visual);
+	}
+
+	if (visualArtifacts) {
+		appendArtifactLinkRows(lines, 'Visual runner artifacts', visualArtifacts);
+	}
+
+	if (semantic) {
+		lines.push('', renderFidelityStatusTable('Semantic fidelity', semantic));
+		appendExpectedArtifactRows(lines, 'Semantic artifact slots', semantic, [
+			'DOM semantic fingerprint',
+			'source DOM snapshot',
+			'imported DOM snapshot',
+		]);
+		appendSemanticFingerprintRows(lines, semantic);
+	}
+
+	return lines.join('\n');
+}
+
+function renderFidelityStatusTable(title, fidelity) {
+	const rows = [
+		['status', fidelity.status],
+		['not captured reason', fidelity.not_captured_reason || fidelity.reason || fidelity.message],
+		['runner', fidelity.runner || fidelity.runtime || fidelity.provider],
+		['artifact', fidelity.artifact || fidelity.artifact_name],
+		['artifact URL', fidelity.artifact_url || fidelity.url],
+	]
+		.filter(([, value]) => value !== undefined && value !== null && value !== '')
+		.map(([label, value]) => `| ${escapeCell(label)} | ${escapeCell(formatValue(value))} |`);
+
+	return [`| ${escapeCell(title)} | Value |`, '| --- | --- |', ...rows].join('\n');
+}
+
+function appendViewportRows(lines, visual) {
+	const viewports = asArray(visual.viewports || visual.expected_viewports || visual.viewport_list)
+		.map(formatViewport)
+		.filter(Boolean);
+	if (viewports.length === 0) {
+		return;
+	}
+
+	lines.push('', '| Expected viewport | Value |');
+	lines.push('| --- | --- |');
+	for (const viewport of viewports) {
+		lines.push(`| viewport | ${escapeCell(viewport)} |`);
+	}
+}
+
+function appendExpectedArtifactRows(lines, title, fidelity, defaults) {
+	let slots = asArray(fidelity.expected_artifact_slots || fidelity.expected_artifacts || fidelity.artifact_slots)
+		.map((slot) => typeof slot === 'string' ? slot : slot?.name || slot?.path || slot?.id)
+		.filter(Boolean);
+	if (slots.length === 0 && String(fidelity.status || '').startsWith('requires_')) {
+		slots = defaults;
+	}
+	if (slots.length === 0) {
+		return;
+	}
+
+	lines.push('', `| ${escapeCell(title)} | Status |`);
+	lines.push('| --- | --- |');
+	for (const slot of slots) {
+		lines.push(`| ${escapeCell(slot)} | expected |`);
+	}
+}
+
+function appendDiffRows(lines, visual) {
+	const diff = firstObject(visual.diff, visual.visual_diff, visual.diff_status);
+	if (!diff) {
+		return;
+	}
+	const rows = [
+		['status', diff.status],
+		['pass', diff.pass],
+		['dimension mismatch', diff.dimension_mismatch ?? diff.dimensionMismatch],
+		['mismatch ratio', diff.mismatch_ratio ?? diff.mismatchRatio],
+		['mismatch pixels', diff.mismatch_pixels ?? diff.mismatchPixels],
+	]
+		.filter(([, value]) => value !== undefined && value !== null && value !== '')
+		.map(([label, value]) => `| ${escapeCell(label)} | ${escapeCell(formatValue(value))} |`);
+	if (rows.length === 0) {
+		return;
+	}
+
+	lines.push('', '| Visual diff | Value |');
+	lines.push('| --- | --- |');
+	lines.push(...rows);
+}
+
+function appendArtifactLinkRows(lines, title, artifacts) {
+	const rows = Object.entries(artifacts)
+		.filter(([, value]) => typeof value === 'string' && value !== '')
+		.map(([key, value]) => `| ${escapeCell(labelFromKey(key))} | ${escapeCell(value)} |`);
+	if (rows.length === 0) {
+		return;
+	}
+
+	lines.push('', `| ${escapeCell(title)} | Path/URL |`);
+	lines.push('| --- | --- |');
+	lines.push(...rows);
+}
+
+function appendSemanticFingerprintRows(lines, semantic) {
+	const fingerprint = firstObject(semantic.dom_semantic_fingerprint, semantic.dom_fingerprint, semantic.fingerprint);
+	if (!fingerprint) {
+		return;
+	}
+	const rows = [
+		['status', fingerprint.status],
+		['source hash', fingerprint.source_hash],
+		['imported hash', fingerprint.imported_hash],
+		['match', fingerprint.match],
+		['summary', fingerprint.summary],
+	]
+		.filter(([, value]) => value !== undefined && value !== null && value !== '')
+		.map(([label, value]) => `| ${escapeCell(label)} | ${escapeCell(formatValue(value))} |`);
+	if (rows.length === 0) {
+		return;
+	}
+
+	lines.push('', '| DOM semantic fingerprint | Value |');
+	lines.push('| --- | --- |');
+	lines.push(...rows);
+}
+
+function firstObject(...values) {
+	return values.find((value) => value && typeof value === 'object' && !Array.isArray(value)) || null;
+}
+
+function asArray(value) {
+	return Array.isArray(value) ? value : [];
+}
+
+function formatViewport(viewport) {
+	if (typeof viewport === 'string') {
+		return viewport;
+	}
+	if (!viewport || typeof viewport !== 'object') {
+		return '';
+	}
+	const label = viewport.name || viewport.label || viewport.id || 'viewport';
+	const width = viewport.width ?? viewport.w;
+	const height = viewport.height ?? viewport.h;
+	return width && height ? `${label} (${width}x${height})` : label;
 }
 
 function renderBlocksEngineStatus(metrics, compiler) {
