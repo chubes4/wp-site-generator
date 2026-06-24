@@ -194,6 +194,14 @@ Runtime preview/access links require immutable provenance from the PR head SHA, 
 
 The Homeboy WordPress extension capability that makes this possible (`wordpress_runtime_workloads`) is generic. SSI is just one consumer; any WordPress plugin can be exercised the same way through lab runtime workloads.
 
+To capture real raw HTML visual/semantic evidence, run the offloaded validation workflow instead of a local benchmark:
+
+```bash
+gh workflow run static-site-validation.yml --repo chubes4/wp-site-generator -f pr_number=<generated-site-pr-number>
+```
+
+The workflow runs Homeboy bench through `homeboy-action`, executes the Playwright visual parity helper in GitHub Actions, and uploads `ssi-validation-<site>` plus `visual-parity-<site>` artifacts. The PR comment renders the importer metrics, visual/semantic fidelity status, not-captured reasons, expected screenshot/diff/fingerprint slots, viewports, diff status, and artifact URLs when the runner supplies them.
+
 ---
 
 ## How Concepts Stay Distinct

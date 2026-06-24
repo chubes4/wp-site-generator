@@ -21,8 +21,18 @@ const consumedMetricPatterns = [
 	/^generated_navigation_count$/,
 	/^nav_item_mismatch_count$/,
 	/^landmark_mismatch_count$/,
+	/^(ssi_)?runtime_dependency_parity_(status|script_count|materialized_script_count|missing_target_count|unsupported_runtime_target_count|vendor_script_count)(_(max|mean|min|p50|p95|p99))?$/,
 	...ssiSignalMetrics.map(([key]) => new RegExp(`^${escapeRegExp(key)}(_(max|mean|min|p50|p95|p99))?$`)),
 	...ssiBlocksEngineMetrics.map(([key]) => new RegExp(`^${escapeRegExp(key)}(_(max|mean|min|p50|p95|p99))?$`)),
+];
+
+const runtimeDependencyParityFields = [
+	['status', 'status'],
+	['script_count', 'script count'],
+	['materialized_script_count', 'materialized script count'],
+	['missing_target_count', 'missing target count'],
+	['unsupported_runtime_target_count', 'unsupported runtime target count'],
+	['vendor_script_count', 'vendor script count'],
 ];
 
 const benchRead = await readInput(benchPath)
@@ -90,13 +100,89 @@ function renderReport(ssi, stackManifest) {
 	}
 
 	const importReportSummary = ssi?.metadata?.import_report_summary;
+	sections.push(renderRuntimeDependencyParity(findRuntimeDependencyParity(ssi, metrics, importReportSummary)));
 	sections.push(renderBlocksEngineStatus(metrics, importReportSummary?.blocks_engine));
 	sections.push(renderValidationArtifactEnvelope(importReportSummary?.validation_artifact_envelope || ssi?.metadata?.validation_artifact_envelope));
+	sections.push(renderVisualSemanticEvidence(importReportSummary, ssi?.metadata));
 	sections.push(renderSourceDocuments(importReportSummary?.source_documents, importReportSummary?.diagnostics));
 	sections.push(renderSemanticParity(metrics, importReportSummary));
 	sections.push(renderImportReport(importReportSummary));
 
 	return sections.filter(Boolean).join('\n\n');
+}
+
+function findRuntimeDependencyParity(ssi, metrics, importReportSummary) {
+	const candidates = [
+		importReportSummary?.runtime_dependency_parity,
+		importReportSummary?.summary?.runtime_dependency_parity,
+		importReportSummary?.metrics?.runtime_dependency_parity,
+		importReportSummary?.blocks_engine?.runtime_dependency_parity,
+		ssi?.metadata?.runtime_dependency_parity,
+		ssi?.metadata?.summary?.runtime_dependency_parity,
+		ssi?.metadata?.metrics?.runtime_dependency_parity,
+		ssi?.runtime_dependency_parity,
+		metrics?.runtime_dependency_parity,
+	];
+	for (const candidate of candidates) {
+		if (candidate && typeof candidate === 'object' && Object.keys(candidate).length > 0) {
+			return candidate;
+		}
+	}
+
+	const fromMetrics = runtimeDependencyParityFields.reduce((summary, [key]) => {
+		const value = metricValue(metrics, `runtime_dependency_parity_${key}`) ?? metricValue(metrics, `ssi_runtime_dependency_parity_${key}`);
+		if (value !== null) {
+			summary[key] = value;
+		}
+		return summary;
+	}, {});
+	const status = metrics?.runtime_dependency_parity_status ?? metrics?.ssi_runtime_dependency_parity_status;
+	if (status !== undefined && status !== null && status !== '') {
+		fromMetrics.status = status;
+	}
+
+	return Object.keys(fromMetrics).length > 0 ? fromMetrics : null;
+}
+
+function renderRuntimeDependencyParity(summary) {
+	const parity = summary && typeof summary === 'object' ? summary : {};
+	if (Object.keys(parity).length === 0) {
+		return '';
+	}
+
+	const rows = runtimeDependencyParityFields
+		.map(([key, label]) => [label, runtimeDependencyParityValue(parity, key)])
+		.filter(([, value]) => value !== undefined && value !== null && value !== '')
+		.map(([label, value]) => `| ${escapeCell(label)} | ${escapeCell(formatValue(value))} |`);
+
+	const lines = ['### Runtime Dependency Parity'];
+	if (rows.length > 0) {
+		lines.push('| Field | Value |', '| --- | --- |', ...rows);
+	}
+
+	const findings = runtimeDependencyParityFindings(parity);
+	if (findings.length > 0) {
+		lines.push('', '| Finding | Target | Script | Message |');
+		lines.push('| --- | --- | --- | --- |');
+		for (const finding of findings.slice(0, 5)) {
+			lines.push(`| \`${escapeCell(finding?.type || finding?.kind || finding?.code || finding?.reason_code || finding?.id)}\` | \`${escapeCell(finding?.target || finding?.selector || finding?.runtime_target)}\` | \`${escapeCell(finding?.script || finding?.script_path || finding?.src)}\` | ${escapeCell(finding?.message || finding?.excerpt || finding?.description)} |`);
+		}
+	}
+
+	return lines.join('\n');
+}
+
+function runtimeDependencyParityValue(summary, key) {
+	return summary[key] ?? summary[`runtime_dependency_parity_${key}`] ?? summary[`ssi_runtime_dependency_parity_${key}`];
+}
+
+function runtimeDependencyParityFindings(summary) {
+	for (const key of ['top_findings', 'findings', 'diagnostics', 'issues']) {
+		if (Array.isArray(summary[key])) {
+			return summary[key];
+		}
+	}
+	return [];
 }
 
 function renderStackManifest(manifest) {
@@ -235,20 +321,77 @@ function renderSemanticParity(metrics, importReportSummary = {}) {
 	return lines.join('\n');
 }
 
+function renderVisualSemanticEvidence(importReportSummary, metadata = {}) {
+	const visual = firstObject(
+		importReportSummary?.visual_fidelity,
+		metadata?.visual_fidelity,
+		importReportSummary?.visual_parity,
+		metadata?.visual_parity,
+	);
+	const semantic = firstObject(
+		importReportSummary?.semantic_fidelity,
+		metadata?.semantic_fidelity,
+		importReportSummary?.semantic_parity,
+		metadata?.semantic_parity,
+	);
+	const visualArtifacts = firstObject(
+		visual?.artifacts,
+		metadata?.visual_artifact,
+		metadata?.visual_parity_artifact,
+		importReportSummary?.visual_artifact,
+		importReportSummary?.visual_parity_artifact,
+	);
+
+	if (!visual && !semantic && !visualArtifacts) {
+		return '';
+	}
+
+	const lines = ['### Visual/Semantic Evidence'];
+	if (visual) {
+		lines.push('', renderFidelityStatusTable('Visual fidelity', visual));
+		appendViewportRows(lines, visual);
+		appendExpectedArtifactRows(lines, 'Visual artifact slots', visual, [
+			'source screenshot',
+			'imported screenshot',
+			'diff screenshot',
+			'visual-diff.json',
+			'summary.json',
+			'comparison.html',
+		]);
+		appendDiffRows(lines, visual);
+	}
+
+	if (visualArtifacts) {
+		appendArtifactLinkRows(lines, 'Visual runner artifacts', visualArtifacts);
+	}
+
+	if (semantic) {
+		lines.push('', renderFidelityStatusTable('Semantic fidelity', semantic));
+		appendExpectedArtifactRows(lines, 'Semantic artifact slots', semantic, [
+			'DOM semantic fingerprint',
+			'source DOM snapshot',
+			'imported DOM snapshot',
+		]);
+		appendSemanticFingerprintRows(lines, semantic);
+	}
+
+	return lines.join('\n');
+}
+
 function normalizeSemanticParity(metrics, importReportSummary = {}) {
-	const nested = firstObject([
+	const nested = firstObject(
 		importReportSummary?.semantic_parity,
 		importReportSummary?.semantic_parity_summary,
 		importReportSummary?.semanticParity,
 		metrics?.semantic_parity,
-	]);
-	const findings = firstArray([
+	);
+	const findings = firstArray(
 		nested?.top_findings,
 		nested?.findings,
 		nested?.issues,
 		importReportSummary?.semantic_parity_findings,
 		metrics?.semantic_parity_findings,
-	]);
+	);
 	const values = {
 		present: Boolean(nested) || findings.length > 0 || [
 			'semantic_parity_status',
@@ -272,11 +415,7 @@ function normalizeSemanticParity(metrics, importReportSummary = {}) {
 	return values;
 }
 
-function firstObject(values) {
-	return values.find((value) => value && typeof value === 'object' && !Array.isArray(value)) || null;
-}
-
-function firstArray(values) {
+function firstArray(...values) {
 	return values.find((value) => Array.isArray(value)) || [];
 }
 
@@ -292,6 +431,133 @@ function firstDefinedNumber(values) {
 
 function textValue(value) {
 	return value === undefined || value === null ? '' : String(value);
+}
+
+function renderFidelityStatusTable(title, fidelity) {
+	const rows = [
+		['status', fidelity.status],
+		['not captured reason', fidelity.not_captured_reason || fidelity.reason || fidelity.message],
+		['runner', fidelity.runner || fidelity.runtime || fidelity.provider],
+		['artifact', fidelity.artifact || fidelity.artifact_name],
+		['artifact URL', fidelity.artifact_url || fidelity.url],
+	]
+		.filter(([, value]) => value !== undefined && value !== null && value !== '')
+		.map(([label, value]) => `| ${escapeCell(label)} | ${escapeCell(formatValue(value))} |`);
+
+	return [`| ${escapeCell(title)} | Value |`, '| --- | --- |', ...rows].join('\n');
+}
+
+function appendViewportRows(lines, visual) {
+	const viewports = asArray(visual.viewports || visual.expected_viewports || visual.viewport_list)
+		.map(formatViewport)
+		.filter(Boolean);
+	if (viewports.length === 0) {
+		return;
+	}
+
+	lines.push('', '| Expected viewport | Value |');
+	lines.push('| --- | --- |');
+	for (const viewport of viewports) {
+		lines.push(`| viewport | ${escapeCell(viewport)} |`);
+	}
+}
+
+function appendExpectedArtifactRows(lines, title, fidelity, defaults) {
+	let slots = asArray(fidelity.expected_artifact_slots || fidelity.expected_artifacts || fidelity.artifact_slots)
+		.map((slot) => typeof slot === 'string' ? slot : slot?.name || slot?.path || slot?.id)
+		.filter(Boolean);
+	if (slots.length === 0 && String(fidelity.status || '').startsWith('requires_')) {
+		slots = defaults;
+	}
+	if (slots.length === 0) {
+		return;
+	}
+
+	lines.push('', `| ${escapeCell(title)} | Status |`);
+	lines.push('| --- | --- |');
+	for (const slot of slots) {
+		lines.push(`| ${escapeCell(slot)} | expected |`);
+	}
+}
+
+function appendDiffRows(lines, visual) {
+	const diff = firstObject(visual.diff, visual.visual_diff, visual.diff_status);
+	if (!diff) {
+		return;
+	}
+	const rows = [
+		['status', diff.status],
+		['pass', diff.pass],
+		['dimension mismatch', diff.dimension_mismatch ?? diff.dimensionMismatch],
+		['mismatch ratio', diff.mismatch_ratio ?? diff.mismatchRatio],
+		['mismatch pixels', diff.mismatch_pixels ?? diff.mismatchPixels],
+	]
+		.filter(([, value]) => value !== undefined && value !== null && value !== '')
+		.map(([label, value]) => `| ${escapeCell(label)} | ${escapeCell(formatValue(value))} |`);
+	if (rows.length === 0) {
+		return;
+	}
+
+	lines.push('', '| Visual diff | Value |');
+	lines.push('| --- | --- |');
+	lines.push(...rows);
+}
+
+function appendArtifactLinkRows(lines, title, artifacts) {
+	const rows = Object.entries(artifacts)
+		.filter(([, value]) => typeof value === 'string' && value !== '')
+		.map(([key, value]) => `| ${escapeCell(labelFromKey(key))} | ${escapeCell(value)} |`);
+	if (rows.length === 0) {
+		return;
+	}
+
+	lines.push('', `| ${escapeCell(title)} | Path/URL |`);
+	lines.push('| --- | --- |');
+	lines.push(...rows);
+}
+
+function appendSemanticFingerprintRows(lines, semantic) {
+	const fingerprint = firstObject(semantic.dom_semantic_fingerprint, semantic.dom_fingerprint, semantic.fingerprint);
+	if (!fingerprint) {
+		return;
+	}
+	const rows = [
+		['status', fingerprint.status],
+		['source hash', fingerprint.source_hash],
+		['imported hash', fingerprint.imported_hash],
+		['match', fingerprint.match],
+		['summary', fingerprint.summary],
+	]
+		.filter(([, value]) => value !== undefined && value !== null && value !== '')
+		.map(([label, value]) => `| ${escapeCell(label)} | ${escapeCell(formatValue(value))} |`);
+	if (rows.length === 0) {
+		return;
+	}
+
+	lines.push('', '| DOM semantic fingerprint | Value |');
+	lines.push('| --- | --- |');
+	lines.push(...rows);
+}
+
+function firstObject(...values) {
+	return values.find((value) => value && typeof value === 'object' && !Array.isArray(value)) || null;
+}
+
+function asArray(value) {
+	return Array.isArray(value) ? value : [];
+}
+
+function formatViewport(viewport) {
+	if (typeof viewport === 'string') {
+		return viewport;
+	}
+	if (!viewport || typeof viewport !== 'object') {
+		return '';
+	}
+	const label = viewport.name || viewport.label || viewport.id || 'viewport';
+	const width = viewport.width ?? viewport.w;
+	const height = viewport.height ?? viewport.h;
+	return width && height ? `${label} (${width}x${height})` : label;
 }
 
 function renderBlocksEngineStatus(metrics, compiler) {
