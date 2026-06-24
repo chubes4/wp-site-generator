@@ -16,8 +16,18 @@ const consumedMetricPatterns = [
 	/^(max|mean|min|p50|p95|p99)_ms$/,
 	/^ssi_report_readable_(max|mean|min|p50|p95|p99)$/,
 	/^ssi_report_top_level_keys_(max|mean|min|p50|p95|p99)$/,
+	/^(ssi_)?runtime_dependency_parity_(status|script_count|materialized_script_count|missing_target_count|unsupported_runtime_target_count|vendor_script_count)(_(max|mean|min|p50|p95|p99))?$/,
 	...ssiSignalMetrics.map(([key]) => new RegExp(`^${escapeRegExp(key)}(_(max|mean|min|p50|p95|p99))?$`)),
 	...ssiBlocksEngineMetrics.map(([key]) => new RegExp(`^${escapeRegExp(key)}(_(max|mean|min|p50|p95|p99))?$`)),
+];
+
+const runtimeDependencyParityFields = [
+	['status', 'status'],
+	['script_count', 'script count'],
+	['materialized_script_count', 'materialized script count'],
+	['missing_target_count', 'missing target count'],
+	['unsupported_runtime_target_count', 'unsupported runtime target count'],
+	['vendor_script_count', 'vendor script count'],
 ];
 
 const benchRead = await readInput(benchPath)
@@ -85,12 +95,87 @@ function renderReport(ssi, stackManifest) {
 	}
 
 	const importReportSummary = ssi?.metadata?.import_report_summary;
+	sections.push(renderRuntimeDependencyParity(findRuntimeDependencyParity(ssi, metrics, importReportSummary)));
 	sections.push(renderBlocksEngineStatus(metrics, importReportSummary?.blocks_engine));
 	sections.push(renderValidationArtifactEnvelope(importReportSummary?.validation_artifact_envelope || ssi?.metadata?.validation_artifact_envelope));
 	sections.push(renderSourceDocuments(importReportSummary?.source_documents, importReportSummary?.diagnostics));
 	sections.push(renderImportReport(importReportSummary));
 
 	return sections.filter(Boolean).join('\n\n');
+}
+
+function findRuntimeDependencyParity(ssi, metrics, importReportSummary) {
+	const candidates = [
+		importReportSummary?.runtime_dependency_parity,
+		importReportSummary?.summary?.runtime_dependency_parity,
+		importReportSummary?.metrics?.runtime_dependency_parity,
+		importReportSummary?.blocks_engine?.runtime_dependency_parity,
+		ssi?.metadata?.runtime_dependency_parity,
+		ssi?.metadata?.summary?.runtime_dependency_parity,
+		ssi?.metadata?.metrics?.runtime_dependency_parity,
+		ssi?.runtime_dependency_parity,
+		metrics?.runtime_dependency_parity,
+	];
+	for (const candidate of candidates) {
+		if (candidate && typeof candidate === 'object' && Object.keys(candidate).length > 0) {
+			return candidate;
+		}
+	}
+
+	const fromMetrics = runtimeDependencyParityFields.reduce((summary, [key]) => {
+		const value = metricValue(metrics, `runtime_dependency_parity_${key}`) ?? metricValue(metrics, `ssi_runtime_dependency_parity_${key}`);
+		if (value !== null) {
+			summary[key] = value;
+		}
+		return summary;
+	}, {});
+	const status = metrics?.runtime_dependency_parity_status ?? metrics?.ssi_runtime_dependency_parity_status;
+	if (status !== undefined && status !== null && status !== '') {
+		fromMetrics.status = status;
+	}
+
+	return Object.keys(fromMetrics).length > 0 ? fromMetrics : null;
+}
+
+function renderRuntimeDependencyParity(summary) {
+	const parity = summary && typeof summary === 'object' ? summary : {};
+	if (Object.keys(parity).length === 0) {
+		return '';
+	}
+
+	const rows = runtimeDependencyParityFields
+		.map(([key, label]) => [label, runtimeDependencyParityValue(parity, key)])
+		.filter(([, value]) => value !== undefined && value !== null && value !== '')
+		.map(([label, value]) => `| ${escapeCell(label)} | ${escapeCell(formatValue(value))} |`);
+
+	const lines = ['### Runtime Dependency Parity'];
+	if (rows.length > 0) {
+		lines.push('| Field | Value |', '| --- | --- |', ...rows);
+	}
+
+	const findings = runtimeDependencyParityFindings(parity);
+	if (findings.length > 0) {
+		lines.push('', '| Finding | Target | Script | Message |');
+		lines.push('| --- | --- | --- | --- |');
+		for (const finding of findings.slice(0, 5)) {
+			lines.push(`| \`${escapeCell(finding?.type || finding?.kind || finding?.code || finding?.reason_code || finding?.id)}\` | \`${escapeCell(finding?.target || finding?.selector || finding?.runtime_target)}\` | \`${escapeCell(finding?.script || finding?.script_path || finding?.src)}\` | ${escapeCell(finding?.message || finding?.excerpt || finding?.description)} |`);
+		}
+	}
+
+	return lines.join('\n');
+}
+
+function runtimeDependencyParityValue(summary, key) {
+	return summary[key] ?? summary[`runtime_dependency_parity_${key}`] ?? summary[`ssi_runtime_dependency_parity_${key}`];
+}
+
+function runtimeDependencyParityFindings(summary) {
+	for (const key of ['top_findings', 'findings', 'diagnostics', 'issues']) {
+		if (Array.isArray(summary[key])) {
+			return summary[key];
+		}
+	}
+	return [];
 }
 
 function renderStackManifest(manifest) {
