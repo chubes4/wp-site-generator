@@ -170,12 +170,22 @@ assert.equal(controllerRunSpec.metadata.run.materialized_by, 'homeboy agent-task
 		'controller records the enforceable artifact handoff chain'
 	);
 	assert.deepEqual(controllerRunSpec.artifact_flow.filter((edge) => edge.fan_out).map((edge) => edge.edge_id), ['findings-to-iterator-groups'], 'only grouped findings fan out iterator work');
+	const expectedIteratorFanoutBatch = {
+		schema: 'wp-site-generator/php-transformer-iterator-fanout-input/v1',
+		input_contract: 'homeboy/agent-task-fanout-input/v1',
+		builder: '.github/scripts/build-php-transformer-iterator-fanout-config.mjs',
+		command: 'agent-task fanout submit-batch',
+		status_command: 'agent-task fanout status',
+		artifacts_command: 'agent-task fanout artifacts',
+		packet_input_key: 'finding_group',
+	};
 	assert.deepEqual(controllerRunSpec.iterator_groups, {
 		artifact: 'finding_group',
 		primitive: 'homeboy.agent-task.fanout.plan',
 		group_by: ['owner_repo', 'root_cause', 'group_id'],
 		fan_out_workflow: 'iterator',
 		join_workflows: ['revalidation', 'reviewer'],
+		batch_input: expectedIteratorFanoutBatch,
 	}, 'iterator fan-out is scoped by finding group ownership and joined before review');
 
 	const workflows = Object.fromEntries(controllerRunSpec.workflows.map((workflow) => [workflow.workflow_id, workflow]));
@@ -208,6 +218,7 @@ assert.equal(controllerRunSpec.metadata.run.materialized_by, 'homeboy agent-task
 	}, 'publication requires publish_allowed=true');
 	assert.equal(workflows.iterator.fan_out.primitive, 'homeboy.agent-task.fanout.plan', 'iterator fan-out is declared as a Homeboy primitive');
 	assert.deepEqual(workflows.iterator.fan_out.group_by, ['owner_repo', 'root_cause', 'group_id'], 'iterator fan-out is grouped by owner/root cause/group id');
+	assert.deepEqual(workflows.iterator.fan_out.batch_input, expectedIteratorFanoutBatch, 'iterator fan-out declares the Homeboy batch input shape WPSG builds');
 	assert.deepEqual(workflows.reviewer.consumes, ['static_site_candidate', 'import_validation_result', 'static_validation_run', 'visual_parity_artifact', 'finding_packet_set', 'revalidation_attempt'], 'reviewer consumes candidate, validation, visual, finding, and revalidation artifacts');
 	assert.equal(controllerRunSpec.artifacts.find((artifact) => artifact.artifact_id === 'static_site_pull_request').required, false, 'generated PR artifact is not required runtime transport');
 	assert.equal(controllerRunSpec.artifacts.find((artifact) => artifact.artifact_id === 'iterator_upstream_pull_request').evidence_only, true, 'upstream iterator PR is optional evidence only');

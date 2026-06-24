@@ -576,7 +576,16 @@
           "root_cause",
           "group_id"
         ],
-        "requires_non_empty": true
+        "requires_non_empty": true,
+        "batch_input": {
+          "schema": "wp-site-generator/php-transformer-iterator-fanout-input/v1",
+          "input_contract": "homeboy/agent-task-fanout-input/v1",
+          "builder": ".github/scripts/build-php-transformer-iterator-fanout-config.mjs",
+          "command": "agent-task fanout submit-batch",
+          "status_command": "agent-task fanout status",
+          "artifacts_command": "agent-task fanout artifacts",
+          "packet_input_key": "finding_group"
+        }
       },
       "dependencies": [
         "static-site-importer",
@@ -979,7 +988,16 @@
     "join_workflows": [
       "revalidation",
       "reviewer"
-    ]
+    ],
+    "batch_input": {
+      "schema": "wp-site-generator/php-transformer-iterator-fanout-input/v1",
+      "input_contract": "homeboy/agent-task-fanout-input/v1",
+      "builder": ".github/scripts/build-php-transformer-iterator-fanout-config.mjs",
+      "command": "agent-task fanout submit-batch",
+      "status_command": "agent-task fanout status",
+      "artifacts_command": "agent-task fanout artifacts",
+      "packet_input_key": "finding_group"
+    }
   },
   "artifacts": [
     {
