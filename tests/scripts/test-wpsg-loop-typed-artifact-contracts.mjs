@@ -19,18 +19,24 @@ const typedArtifacts = {
 			'bundles/store-idea-agent/pipelines/store-idea-artifact-pipeline.json',
 			'bundles/website-idea-agent/pipelines/website-idea-artifact-pipeline.json',
 		],
+		flows: [
+			'bundles/store-idea-agent/flows/store-idea-artifact-flow.json',
+			'bundles/website-idea-agent/flows/website-idea-artifact-flow.json',
+		],
 	},
 	design_packet: {
 		schema: 'wp-site-generator/DesignPacket/v1',
 		artifact: 'DesignPacket',
 		workflows: ['design-store', 'design-website'],
 		pipelines: ['bundles/design-agent/pipelines/design-artifact-pipeline.json'],
+		flows: ['bundles/design-agent/flows/design-artifact-flow.json'],
 	},
 	static_site_candidate: {
 		schema: 'wp-site-generator/StaticSiteCandidate/v1',
 		artifact: 'StaticSiteCandidate',
 		workflows: ['static-store', 'static-site'],
 		pipelines: ['bundles/static-site-agent/pipelines/static-site-candidate-pipeline.json'],
+		flows: ['bundles/static-site-agent/flows/static-site-candidate-flow.json'],
 	},
 };
 
@@ -88,7 +94,20 @@ try {
 			const requiredOutputs = pipeline.steps.flatMap((step) => step.step_config?.completion_assertions?.required_artifact_outputs || []);
 			assert.ok(requiredOutputs.some((output) => output.output_key === artifactId && output.schema === contract.schema && output.artifact === contract.artifact), `${pipelinePath} requires ${artifactId}`);
 			const pipelineText = await readFile(path.join(repoRoot, pipelinePath), 'utf8');
-			assert.match(pipelineText, new RegExp(`typed_artifacts\\.${artifactId}\\s*=`), `${pipelinePath} documents the ${artifactId} typed-artifact envelope`);
+			assert.match(pipelineText, /emit_typed_artifact/, `${pipelinePath} tells the model to call the typed artifact handler tool`);
+			assert.equal(pipeline.steps[1]?.step_type, 'publish', `${pipelinePath} declares an adjacent publish step for handler tool exposure`);
+		}
+
+		for (const flowPath of contract.flows) {
+			const flow = await readJson(flowPath);
+			const publishStep = flow.steps.find((step) => step.step_type === 'publish');
+			assert.ok(publishStep, `${flowPath} declares a typed artifact publish step`);
+			assert.deepEqual(publishStep.handler_slugs, ['typed_artifact'], `${flowPath} exposes typed_artifact as the adjacent handler`);
+			assert.deepEqual(publishStep.handler_configs?.typed_artifact, {
+				output_key: artifactId,
+				schema: contract.schema,
+				artifact: contract.artifact,
+			}, `${flowPath} configures the typed artifact handler contract`);
 		}
 	}
 

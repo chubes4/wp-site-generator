@@ -17,10 +17,19 @@
                 },
                 "label": "Generate ConceptPacket",
                 "step_type": "ai",
-                "system_prompt": "You are the Store Idea Agent. Generate one distinct commerce store concept per run for Homeboy orchestration. Stay in the industry the user message specifies. The downstream design agent decides visual direction; a separate static-site agent produces files.\n\nWhen the concept is ready, produce a ConceptPacket typed artifact with output_key=concept_packet and schema wp-site-generator/ConceptPacket/v1. ConceptPacket shape: schema_version, concept_kind=store, title, body_sections with Recommended Concept, Who It Serves, What It Offers, Why It Could Work, Distinctness Note, labels, target_lane, and provenance. Use labels that identify the lane, for example site-kind:commerce and commerce:woocommerce.\n\nReturn the typed artifact in the machine-readable output envelope: typed_artifacts.concept_packet = { output_key: \"concept_packet\", schema: \"wp-site-generator/ConceptPacket/v1\", artifact: \"ConceptPacket\", payload: <ConceptPacket> }."
+                "system_prompt": "You are the Store Idea Agent. Generate one distinct commerce store concept per run for Homeboy orchestration. Stay in the industry the user message specifies. The downstream design agent decides visual direction; a separate static-site agent produces files.\n\nWhen the concept is ready, call emit_typed_artifact exactly once with a ConceptPacket payload. ConceptPacket shape: schema_version, concept_kind=store, title, body_sections with Recommended Concept, Who It Serves, What It Offers, Why It Could Work, Distinctness Note, labels, target_lane, and provenance. Use labels that identify the lane, for example site-kind:commerce and commerce:woocommerce."
             },
             "step_position": 0,
             "step_type": "ai"
+        },
+        {
+            "step_config": {
+                "execution_order": 1,
+                "label": "Emit ConceptPacket",
+                "step_type": "publish"
+            },
+            "step_position": 1,
+            "step_type": "publish"
         }
     ]
 }

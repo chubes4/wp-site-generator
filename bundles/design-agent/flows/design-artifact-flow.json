@@ -15,6 +15,24 @@
             "queue_mode": "static",
             "step_position": 0,
             "step_type": "ai"
+        },
+        {
+            "disabled_tools": [],
+            "enabled": true,
+            "handler_configs": {
+                "typed_artifact": {
+                    "output_key": "design_packet",
+                    "schema": "wp-site-generator/DesignPacket/v1",
+                    "artifact": "DesignPacket"
+                }
+            },
+            "handler_slugs": [
+                "typed_artifact"
+            ],
+            "prompt_queue": [],
+            "queue_mode": "static",
+            "step_position": 1,
+            "step_type": "publish"
         }
     ]
 }

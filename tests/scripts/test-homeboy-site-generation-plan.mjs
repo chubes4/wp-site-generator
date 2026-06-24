@@ -227,18 +227,24 @@ assert.equal(controllerRunSpec.metadata.run.materialized_by, 'homeboy agent-task
 	assert.match(staticAiStep.step_config.system_prompt, /preserve the remaining title text verbatim/, 'static agent preserves full source concept title text');
 
 	const packetPipelines = [
-		['bundles/store-idea-agent/pipelines/store-idea-artifact-pipeline.json', 'concept_packet', 'wp-site-generator/ConceptPacket/v1'],
-		['bundles/website-idea-agent/pipelines/website-idea-artifact-pipeline.json', 'concept_packet', 'wp-site-generator/ConceptPacket/v1'],
-		['bundles/design-agent/pipelines/design-artifact-pipeline.json', 'design_packet', 'wp-site-generator/DesignPacket/v1'],
-		['bundles/static-site-agent/pipelines/static-site-candidate-pipeline.json', 'static_site_candidate', 'wp-site-generator/StaticSiteCandidate/v1'],
+		['bundles/store-idea-agent/pipelines/store-idea-artifact-pipeline.json', 'bundles/store-idea-agent/flows/store-idea-artifact-flow.json', 'concept_packet', 'wp-site-generator/ConceptPacket/v1', 'ConceptPacket'],
+		['bundles/website-idea-agent/pipelines/website-idea-artifact-pipeline.json', 'bundles/website-idea-agent/flows/website-idea-artifact-flow.json', 'concept_packet', 'wp-site-generator/ConceptPacket/v1', 'ConceptPacket'],
+		['bundles/design-agent/pipelines/design-artifact-pipeline.json', 'bundles/design-agent/flows/design-artifact-flow.json', 'design_packet', 'wp-site-generator/DesignPacket/v1', 'DesignPacket'],
+		['bundles/static-site-agent/pipelines/static-site-candidate-pipeline.json', 'bundles/static-site-agent/flows/static-site-candidate-flow.json', 'static_site_candidate', 'wp-site-generator/StaticSiteCandidate/v1', 'StaticSiteCandidate'],
 	];
-	for (const [pipelinePath, outputKey, schema] of packetPipelines) {
+	for (const [pipelinePath, flowPath, outputKey, schema, artifact] of packetPipelines) {
 		const packetPipeline = JSON.parse(await readFile(path.join(repoRoot, pipelinePath), 'utf8'));
 		const assertions = packetPipeline.steps[0].step_config.completion_assertions;
 		assert.equal(assertions.required_artifact_outputs[0].output_key, outputKey, `${pipelinePath} asserts the typed packet output key`);
 		assert.equal(assertions.required_artifact_outputs[0].schema, schema, `${pipelinePath} asserts the typed packet schema`);
 		assert.equal(assertions.required_tool_names, undefined, `${pipelinePath} no longer requires the WPSG tool`);
-		assert.match(packetPipeline.steps[0].step_config.system_prompt, new RegExp(`typed_artifacts\\.${outputKey}`), `${pipelinePath} instructs the model to return the machine-readable typed artifact envelope`);
+		assert.match(packetPipeline.steps[0].step_config.system_prompt, /emit_typed_artifact/, `${pipelinePath} instructs the model to call the typed artifact handler`);
+		assert.equal(packetPipeline.steps[1]?.step_type, 'publish', `${pipelinePath} declares adjacent publish handler step`);
+
+		const packetFlow = JSON.parse(await readFile(path.join(repoRoot, flowPath), 'utf8'));
+		const publishStep = packetFlow.steps.find((step) => step.step_type === 'publish');
+		assert.deepEqual(publishStep?.handler_slugs, ['typed_artifact'], `${flowPath} exposes typed_artifact as the adjacent handler`);
+		assert.deepEqual(publishStep?.handler_configs?.typed_artifact, { output_key: outputKey, schema, artifact }, `${flowPath} configures typed_artifact output contract`);
 	}
 
 	const pluginShim = await readFile(path.join(repoRoot, 'wp-site-generator.php'), 'utf8');

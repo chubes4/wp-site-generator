@@ -15,12 +15,30 @@
             "prompt_queue": [
                 {
                     "added_at": "2026-06-10T00:00:00+00:00",
-                    "prompt": "Industry: open. Generate one distinct, buildable store concept as a ConceptPacket typed artifact with output_key=concept_packet and schema wp-site-generator/ConceptPacket/v1."
+                    "prompt": "Industry: open. Generate one distinct, buildable store concept. Call emit_typed_artifact exactly once with the ConceptPacket payload."
                 }
             ],
             "queue_mode": "static",
             "step_position": 0,
             "step_type": "ai"
+        },
+        {
+            "disabled_tools": [],
+            "enabled": true,
+            "handler_configs": {
+                "typed_artifact": {
+                    "output_key": "concept_packet",
+                    "schema": "wp-site-generator/ConceptPacket/v1",
+                    "artifact": "ConceptPacket"
+                }
+            },
+            "handler_slugs": [
+                "typed_artifact"
+            ],
+            "prompt_queue": [],
+            "queue_mode": "static",
+            "step_position": 1,
+            "step_type": "publish"
         }
     ]
 }
