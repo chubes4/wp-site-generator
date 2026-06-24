@@ -43,6 +43,7 @@ try {
 	assert.match(payload.workloads[0].run[1].code, /static-site-importer\/import-website-artifact/, 'SSI workload imports through the current website artifact ability');
 	assert.match(payload.workloads[0].run[1].code, /blocks_engine_php_transformer_compile_artifact|Automattic\\\\BlocksEngine\\\\PhpTransformer/, 'SSI import path requires Blocks Engine php-transformer helpers/classes');
 	assert.doesNotMatch(payload.workloads[0].run[1].code, /static-site-importer\/import-theme/, 'SSI workload does not depend on the legacy import-theme ability');
+	assert.match(payload.workloads[0].run[1].code, /'fail_on_quality' => true/, 'SSI workload fails validation when SSI reports quality failures');
 	assert.equal(
 		await readFile(path.join(repoRoot, payload.candidate_source.relativeSourceDirectory, 'index.html'), 'utf8'),
 		'<!doctype html><html><body><main>Direct candidate</main></body></html>',

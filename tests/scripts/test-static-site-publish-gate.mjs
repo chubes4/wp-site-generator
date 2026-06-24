@@ -43,4 +43,39 @@ assert.equal(failing.gates.fallback_blocks.passed, false, 'fallback failures are
 assert.equal(failing.gates.conversion_findings.passed, false, 'conversion failures are deterministic');
 assert.equal(failing.gates.visual_parity.passed, false, 'visual parity failures are deterministic');
 
+const blockQualityFailure = evaluateStaticSitePublishGate({
+	validation: {
+		status: 'failed',
+		metrics: {
+			ssi_core_html_count: 1,
+			ssi_freeform_block_count: 1,
+			ssi_invalid_block_count: 1,
+		},
+	},
+	visualParity: {
+		summary: {
+			status: 'pass',
+			mismatch_count: 0,
+			max_delta_ratio: 0,
+		},
+	},
+});
+assert.equal(blockQualityFailure.publish_allowed, false, 'SSI quality failures block publication even without fallback blocks');
+assert.equal(blockQualityFailure.gates.block_quality.passed, false, 'block quality gate fails on import validation and generated block defects');
+assert.deepEqual(
+	{
+		core_html_count: blockQualityFailure.gates.block_quality.core_html_count,
+		freeform_block_count: blockQualityFailure.gates.block_quality.freeform_block_count,
+		invalid_block_count: blockQualityFailure.gates.block_quality.invalid_block_count,
+		import_validation_status: blockQualityFailure.gates.block_quality.import_validation_status,
+	},
+	{
+		core_html_count: 1,
+		freeform_block_count: 1,
+		invalid_block_count: 1,
+		import_validation_status: 'failed',
+	},
+	'block quality gate exposes the concrete failure signals'
+);
+
 console.log('static site publish gate tests passed');

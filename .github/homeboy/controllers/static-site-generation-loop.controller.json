@@ -425,11 +425,13 @@
       ],
       "gates": [
         "fallback_blocks",
+        "block_quality",
         "conversion_findings",
         "visual_parity"
       ],
       "metrics": [
         "fallback_blocks",
+        "block_quality",
         "conversion_findings",
         "visual_parity"
       ]
@@ -456,11 +458,13 @@
       ],
       "gates": [
         "fallback_blocks",
+        "block_quality",
         "conversion_findings",
         "visual_parity"
       ],
       "metrics": [
         "fallback_blocks",
+        "block_quality",
         "conversion_findings",
         "visual_parity"
       ],
@@ -469,6 +473,7 @@
         "requires": [
           "publish_allowed",
           "gates.fallback_blocks.passed",
+          "gates.block_quality.passed",
           "gates.conversion_findings.passed",
           "gates.visual_parity.passed"
         ],
@@ -502,11 +507,13 @@
       ],
       "gates": [
         "fallback_blocks",
+        "block_quality",
         "conversion_findings",
         "visual_parity"
       ],
       "metrics": [
         "fallback_blocks",
+        "block_quality",
         "conversion_findings",
         "visual_parity"
       ],
@@ -629,11 +636,13 @@
       ],
       "gates": [
         "fallback_blocks",
+        "block_quality",
         "conversion_findings",
         "visual_parity"
       ],
       "metrics": [
         "fallback_blocks",
+        "block_quality",
         "conversion_findings",
         "visual_parity"
       ]
@@ -1138,6 +1147,13 @@
       ]
     },
     {
+      "gate_id": "block_quality",
+      "description": "SSI import validation must pass with no core/html, core/freeform, or invalid generated blocks.",
+      "metrics": [
+        "block_quality"
+      ]
+    },
+    {
       "gate_id": "conversion_findings",
       "description": "SSI and Blocks Engine transformer diagnostics must not include actionable conversion findings.",
       "metrics": [
@@ -1169,6 +1185,20 @@
           "import_validation_result.metrics.fallback_blocks",
           "import_validation_result.metrics.fallback_block_count",
           "import_validation_result.metrics.ssi_fallback_count"
+        ]
+      }
+    },
+    {
+      "metric_id": "block_quality",
+      "description": "Core HTML, freeform, invalid block counts, and import validation status reported by SSI import validation.",
+      "target": "import validation passes and values are 0",
+      "input": {
+        "paths": [
+          "import_validation_result.status",
+          "import_validation_result.passed",
+          "import_validation_result.metrics.ssi_core_html_count",
+          "import_validation_result.metrics.ssi_freeform_block_count",
+          "import_validation_result.metrics.ssi_invalid_block_count"
         ]
       }
     },
