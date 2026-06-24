@@ -170,7 +170,8 @@ const groupResult = spawnSync(process.execPath, ['.github/scripts/group-ssi-find
 });
 assert.equal(groupResult.status, 0, groupResult.stderr || groupResult.stdout);
 const groupedFindings = JSON.parse(await readFile(path.join(tempDir, 'groups.json'), 'utf8'));
-await writeFile(path.join(tempDir, 'group.json'), JSON.stringify(groupedFindings.slice(0, 1), null, 2));
+const singleGroupedFinding = { ...groupedFindings, group_count: 1, groups: groupedFindings.groups.slice(0, 1) };
+await writeFile(path.join(tempDir, 'group.json'), JSON.stringify(singleGroupedFinding, null, 2));
 
 const workflowResult = spawnSync(process.execPath, ['bundles/php-transformer-iterator-agent/scripts/build-agent-iterator-workflow.mjs', path.join(tempDir, 'group.json'), workflowPath], {
 	cwd: repoRoot,
