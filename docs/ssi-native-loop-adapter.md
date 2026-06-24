@@ -67,7 +67,7 @@ The controller declares workflow artifact dependencies and emissions. Homeboy de
 4. `static-validation` consumes `static_site_candidate` and emits `static_validation_run`, `import_validation_result`, and `visual_parity_artifact`.
 5. `static-publication` consumes the validated candidate evidence and emits optional `static_site_pull_request` publication evidence through deterministic publication.
 6. `finding-packets` consumes validation and visual artifacts, then emits `finding_packet_set` and grouped `finding_group` artifacts.
-7. `iterator` fans out per `finding_group`, grouped by `owner_repo`, `root_cause`, and `group_id`, then emits optional upstream issue and pull-request evidence artifacts.
+7. `iterator` fans out per `finding_group`, grouped by `owner_repo`, `root_cause`, and `group_id`, then emits optional upstream issue and pull-request evidence artifacts. The controller declaration points at `.github/scripts/build-php-transformer-iterator-fanout-config.mjs`, which builds `wp-site-generator/php-transformer-iterator-fanout-input/v1` for Homeboy's `homeboy/agent-task-fanout-input/v1` submit-batch contract.
 8. `revalidation` consumes the candidate, validation, visual, and finding artifacts directly, then emits a `revalidation_attempt` plus refreshed validation artifacts.
 9. `reviewer` consumes candidate, validation, visual, finding, and revalidation artifacts, then emits `reviewer_gate_outcome`. Promotion requires `reviewer_gate_outcome.decision === "PASS"` and blocks when artifact evidence is missing.
 

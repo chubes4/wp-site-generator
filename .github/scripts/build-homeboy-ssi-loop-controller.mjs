@@ -48,6 +48,16 @@ const abilityIds = [
 	'comment_github_pull_request',
 ];
 
+const iteratorFanoutBatch = {
+	schema: 'wp-site-generator/php-transformer-iterator-fanout-input/v1',
+	input_contract: 'homeboy/agent-task-fanout-input/v1',
+	builder: '.github/scripts/build-php-transformer-iterator-fanout-config.mjs',
+	command: 'agent-task fanout submit-batch',
+	status_command: 'agent-task fanout status',
+	artifacts_command: 'agent-task fanout artifacts',
+	packet_input_key: 'finding_group',
+};
+
 const artifactFlow = [
 	{ edge_id: 'concept-to-design', from: ['store-idea', 'website-idea'], to: ['design-store', 'design-website'], artifact: 'concept_packet', required: true },
 	{ edge_id: 'design-to-static', from: ['design-store', 'design-website'], to: ['static-store', 'static-site'], artifact: 'design_packet', required: true },
@@ -224,6 +234,7 @@ const controller = {
 				artifact: 'finding_group',
 				group_by: ['owner_repo', 'root_cause', 'group_id'],
 				requires_non_empty: true,
+				batch_input: iteratorFanoutBatch,
 			},
 			dependencies: ['static-site-importer', 'blocks-engine', 'homeboy-extensions'],
 		},
@@ -257,6 +268,7 @@ const controller = {
 		group_by: ['owner_repo', 'root_cause', 'group_id'],
 		fan_out_workflow: 'iterator',
 		join_workflows: ['revalidation', 'reviewer'],
+		batch_input: iteratorFanoutBatch,
 	},
 	artifacts: Object.entries(artifactSchemas).map(([artifact_id, schema]) => ({
 		artifact_id,

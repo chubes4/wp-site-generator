@@ -67,6 +67,15 @@ assert.equal(controller.artifacts.find((artifact) => artifact.artifact_id === 's
 assert.deepEqual(controller.workflows.find((workflow) => workflow.workflow_id === 'iterator').artifacts.slice(-2), ['iterator_upstream_issue', 'iterator_upstream_pull_request'], 'iterator workflow declares emitted artifacts');
 assert.ok(controller.workflows.find((workflow) => workflow.workflow_id === 'iterator').dependencies.includes('homeboy-extensions'), 'iterator routing can target Homeboy Extensions runtime findings');
 assert.equal(controller.workflows.find((workflow) => workflow.workflow_id === 'iterator').builder, undefined, 'iterator workflow does not expose backend-specific builder policy');
+assert.deepEqual(controller.workflows.find((workflow) => workflow.workflow_id === 'iterator').fan_out.batch_input, {
+	schema: 'wp-site-generator/php-transformer-iterator-fanout-input/v1',
+	input_contract: 'homeboy/agent-task-fanout-input/v1',
+	builder: '.github/scripts/build-php-transformer-iterator-fanout-config.mjs',
+	command: 'agent-task fanout submit-batch',
+	status_command: 'agent-task fanout status',
+	artifacts_command: 'agent-task fanout artifacts',
+	packet_input_key: 'finding_group',
+}, 'iterator workflow declares the Homeboy-consumable fanout batch input shape');
 assert.equal(controller.artifacts.find((artifact) => artifact.artifact_id === 'revalidation_attempt').kind, 'wp-site-generator/RevalidationAttempt/v1', 'controller declares artifact schemas');
 assert.ok(controller.dependencies.some((dependency) => dependency.value === 'chubes4/static-site-importer'), 'controller declares SSI stack dependencies');
 assert.ok(controller.dependencies.some((dependency) => dependency.value === 'Extra-Chill/homeboy-extensions'), 'controller declares upstream Homeboy Extensions owner for runtime workload findings');
