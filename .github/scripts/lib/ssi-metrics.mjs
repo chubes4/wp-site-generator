@@ -108,6 +108,7 @@ export function normalizePublishGateRows(publishGate = {}) {
 	const gates = publishGate.gates && typeof publishGate.gates === 'object' ? publishGate.gates : {};
 	return [
 		['fallback_blocks', 'Fallback blocks'],
+		['block_quality', 'Block quality'],
 		['conversion_findings', 'Conversion findings'],
 		['visual_parity', 'Visual parity'],
 	].filter(([key]) => gates[key] && typeof gates[key] === 'object').map(([key, label]) => ({
@@ -115,6 +116,8 @@ export function normalizePublishGateRows(publishGate = {}) {
 		passed: gates[key].passed === true,
 		value: key === 'visual_parity'
 			? `status=${gates[key].status ?? ''}; mismatches=${gates[key].mismatch_count ?? 0}; max_delta=${gates[key].max_delta_ratio ?? 0}`
+			: key === 'block_quality'
+				? `status=${gates[key].import_validation_status ?? ''}; core_html=${gates[key].core_html_count ?? 0}; freeform=${gates[key].freeform_block_count ?? 0}; invalid=${gates[key].invalid_block_count ?? 0}`
 			: gates[key].value,
 		target: gates[key].target || '',
 	}));
@@ -136,6 +139,11 @@ export function evaluateValidationGateContracts({ validation = {}, visualParity 
 				: {};
 
 	const fallbackCount = validationMetricValue(validation, 'ssi_fallback_count');
+	const coreHtmlCount = validationMetricValue(validation, 'ssi_core_html_count');
+	const freeformBlockCount = validationMetricValue(validation, 'ssi_freeform_block_count');
+	const invalidBlockCount = validationMetricValue(validation, 'ssi_invalid_block_count');
+	const importValidationStatus = text(validation.status ?? metrics.status ?? validation.import_validation_status ?? metrics.import_validation_status).toLowerCase();
+	const importValidationFailed = validation.passed === false || ['failed', 'fail', 'error'].includes(importValidationStatus);
 	const conversionFindingCount = numberValue(
 		conversion.actionable ?? conversion.actionable_count ?? conversion.total ?? metrics.actionable_conversion_count ?? metrics.total_findings ?? metrics.diagnostic_count ?? metrics.ssi_signal_total_count
 	);
@@ -154,6 +162,14 @@ export function evaluateValidationGateContracts({ validation = {}, visualParity 
 			passed: conversionFindingCount === 0,
 			value: conversionFindingCount,
 			target: 'value === 0',
+		},
+		block_quality: {
+			passed: !importValidationFailed && coreHtmlCount === 0 && freeformBlockCount === 0 && invalidBlockCount === 0,
+			core_html_count: coreHtmlCount,
+			freeform_block_count: freeformBlockCount,
+			invalid_block_count: invalidBlockCount,
+			import_validation_status: importValidationStatus || (validation.passed === false ? 'failed' : 'passed'),
+			target: 'import validation passes and core/html, freeform, and invalid block counts are 0',
 		},
 		visual_parity: {
 			passed: visualStatusPasses && visualMismatchCount === 0 && visualMaxDeltaRatio === 0,

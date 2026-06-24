@@ -80,6 +80,7 @@ assert.equal(controller.artifacts.find((artifact) => artifact.artifact_id === 'r
 assert.ok(controller.dependencies.some((dependency) => dependency.value === 'chubes4/static-site-importer'), 'controller declares SSI stack dependencies');
 assert.ok(controller.dependencies.some((dependency) => dependency.value === 'Extra-Chill/homeboy-extensions'), 'controller declares upstream Homeboy Extensions owner for runtime workload findings');
 assert.equal(controller.metrics.find((metric) => metric.metric_id === 'fallback_blocks').target, 'value === 0', 'fallback block metric gate is explicit');
+assert.equal(controller.metrics.find((metric) => metric.metric_id === 'block_quality').target, 'import validation passes and values are 0', 'block quality metric gate is explicit');
 assert.equal(controller.metrics.find((metric) => metric.metric_id === 'conversion_findings').target, 'value === 0', 'conversion finding metric gate is explicit');
 assert.equal(controller.metrics.find((metric) => metric.metric_id === 'visual_parity').target, 'status === "pass" && mismatch_count === 0 && max_delta_ratio === 0', 'visual parity metric gate is explicit');
 assert.equal(controller.gates.find((gate) => gate.gate_id === 'fallback_blocks').on_fail, undefined, 'gates do not encode Homeboy routing decisions');
@@ -99,6 +100,7 @@ assert.match(settingsPayload.workloads[0].run[1].code, /wp_get_ability\( 'static
 assert.match(settingsPayload.workloads[0].run[1].code, /blocks_engine_php_transformer_compile_artifact|Automattic\\\\BlocksEngine\\\\PhpTransformer/, 'import path requires Blocks Engine php-transformer helpers/classes');
 assert.doesNotMatch(settingsPayload.workloads[0].run[1].code, /static-site-importer import-theme/, 'workload does not depend on the SSI WP-CLI command');
 assert.doesNotMatch(settingsPayload.workloads[0].run[1].code, /static-site-importer\/import-theme/, 'workload does not depend on the legacy import-theme ability');
+assert.match(settingsPayload.workloads[0].run[1].code, /'fail_on_quality' => true/, 'workload asks SSI to fail on quality defects');
 assert.doesNotMatch(settingsPayload.workloads[0].run[1].code, /^<\?php/, 'inline PHP workload code omits an opening tag for eval execution');
 assert.deepEqual(settingsPayload.website_artifact.files.map((file) => file.path), ['website/assets/styles.css', 'website/index.html'], 'validation settings pass candidate files as a website artifact');
 assert.equal(settingsPayload.workloads[0].artifacts, undefined, 'runtime import report stays in workload metadata instead of a collectable bench artifact declaration');
@@ -130,10 +132,13 @@ const previewResult = spawnSync(process.execPath, ['.github/scripts/build-static
 assert.equal(previewResult.status, 0, previewResult.stderr || previewResult.stdout);
 const previewPayload = JSON.parse(await readFile(previewPath, 'utf8'));
 const previewSourceStep = previewPayload.blueprint.steps.find((step) => step.step === 'writeFiles');
+const previewImportStep = previewPayload.blueprint.steps.find((step) => step.step === 'runPHP');
 assert.equal(previewSourceStep.filesTree.ref, 'a'.repeat(40), 'preview blueprint consumes immutable head SHA when available');
 assert.equal(previewSourceStep.filesTree.refType, 'commit', 'preview blueprint records commit ref type for immutable previews');
 assert.equal(previewPayload.source.provenance, 'immutable-head-sha', 'preview output records immutable provenance');
 assert.equal(previewPayload.url, 'https://preview.example.test/issue-123-native-loop', 'preview output consumes runtime preview evidence refs');
+assert.match(previewImportStep.code, /wp_get_ability\( 'static-site-importer\/import-website-artifact' \)/, 'preview imports through website artifact ability');
+assert.doesNotMatch(previewImportStep.code, /static-site-importer\/import-theme/, 'preview does not depend on the legacy import-theme ability');
 
 const runtimePreviewPath = path.join(tempDir, 'runtime-preview.json');
 const runtimePreviewBase = 'https://runtime-preview.example.test/';
