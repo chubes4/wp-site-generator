@@ -132,7 +132,7 @@ const previewResult = spawnSync(process.execPath, ['.github/scripts/build-static
 assert.equal(previewResult.status, 0, previewResult.stderr || previewResult.stdout);
 const previewPayload = JSON.parse(await readFile(previewPath, 'utf8'));
 const previewSourceStep = previewPayload.blueprint.steps.find((step) => step.step === 'writeFiles');
-const previewImportStep = previewPayload.blueprint.steps.find((step) => step.step === 'runPHP');
+const previewImportStep = previewPayload.blueprint.steps.find((step) => step.step === 'runPHP' && /static-site-importer\/import-website-artifact/.test(step.code));
 assert.equal(previewSourceStep.filesTree.ref, 'a'.repeat(40), 'preview blueprint consumes immutable head SHA when available');
 assert.equal(previewSourceStep.filesTree.refType, 'commit', 'preview blueprint records commit ref type for immutable previews');
 assert.equal(previewPayload.source.provenance, 'immutable-head-sha', 'preview output records immutable provenance');
