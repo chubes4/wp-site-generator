@@ -11,7 +11,12 @@
                 "create_github_issue"
             ],
             "handler_configs": {},
-            "prompt_queue": [],
+            "prompt_queue": [
+                {
+                    "added_at": "2026-06-24T00:00:00+00:00",
+                    "prompt": "Use the available concept_packet context for this workflow. Produce one DesignPacket for the concept and call emit_typed_artifact exactly once with the DesignPacket payload."
+                }
+            ],
             "queue_mode": "static",
             "step_position": 0,
             "step_type": "ai"
