@@ -9,8 +9,7 @@ import { assertVisualArtifactContract, writeVisualParityArtifact } from '../help
 const repoRoot = path.resolve(new URL('../..', import.meta.url).pathname);
 const tempDir = await mkdtemp(path.join(tmpdir(), 'wp-site-generator-agent-workflow-'));
 const outputPath = path.join(tempDir, 'workflow.json');
-const continuationPath = path.join(tempDir, 'continuation.json');
-const truncatedOutputPath = path.join(tempDir, 'workflow-truncated.json');
+const multiGroupOutputPath = path.join(tempDir, 'workflow-multi-group.json');
 const groupedPath = path.join(tempDir, 'groups.json');
 const fanoutConfigPath = path.join(tempDir, 'fanout-config.json');
 const fanoutPlanPath = path.join(tempDir, 'fanout-plan.json');
@@ -66,12 +65,18 @@ assert.deepEqual(fanoutConfig.primitive, {
 	controller_workflow: 'iterator',
 }, 'iterator fanout config declares the Homeboy batch primitive contract');
 assert.equal(fanoutConfig.packets.length, 8, 'iterator passes WPSG-owned grouped findings as caller-provided Homeboy packets');
+assert.ok(fanoutConfig.packets.every((packet) => packet.schema === 'wp-site-generator/finding-group-loop-request/v1'), 'each fanout packet uses the generated WPSG finding-group loop request contract');
 assert.equal(fanoutConfig.packets[0].inputs.finding_group.count, 1, 'each Homeboy packet preserves one WPSG finding group');
 assert.equal(fanoutConfig.packets[0].metadata.finding_group.group_id, fanoutConfig.packets[0].inputs.finding_group.group_id, 'packet metadata preserves the typed WPSG finding group');
+assert.ok(fanoutConfig.packets.every((packet) => Array.isArray(packet.metadata.accepted_outcomes)), 'each fanout packet carries accepted outcomes');
+const visualRequest = fanoutConfig.packets.find((packet) => packet.inputs.finding_group.kind === 'visual_parity_mismatch');
+assert.ok(visualRequest, 'fixture contains a visual issue-only request');
+assert.equal(visualRequest.metadata.repair_mode, 'issue_only');
+assert.deepEqual(visualRequest.metadata.accepted_outcomes, ['issue_path'], 'issue-only requests accept the issue outcome only');
 
 await writeFile(fanoutPlanPath, `${JSON.stringify({
 	schema: 'homeboy/agent-task-plan/v1',
-	tasks: fanoutConfig.packets.map((packet) => ({
+	tasks: [visualRequest].map((packet) => ({
 		task_id: packet.task_id,
 		group_key: packet.group_key,
 		inputs: packet.inputs,
@@ -100,6 +105,9 @@ assert.equal(result.status, 0, result.stderr || result.stdout);
 
 const payload = JSON.parse(await readFile(outputPath, 'utf8'));
 assert.equal(payload.workflow.steps.length, 1, 'workflow embeds grouped findings in a single iterator AI step');
+assert.equal(payload.initial_data.finding_group.kind, 'visual_parity_mismatch', 'workflow initial_data carries exactly one finding_group');
+assert.equal(payload.initial_data.repair_mode, 'issue_only', 'workflow initial_data carries structured repair_mode');
+assert.deepEqual(payload.initial_data.accepted_outcomes, ['issue_path'], 'workflow initial_data constrains accepted outcomes');
 
 const [aiStep] = payload.workflow.steps;
 assert.equal(aiStep.step_type, 'ai', 'only step is iterator AI');
@@ -111,18 +119,16 @@ assert.ok(iteratorPrompt.includes('Run the PR-first iterator'), 'iterator flow p
 assert.ok(iteratorPrompt.length < 30000, 'iterator prompt stays bounded for reliable agent runs');
 assert.match(iteratorPrompt, /DataPacket child-job hydration/, 'iterator prompt documents embedded finding context');
 assert.match(iteratorPrompt, /"kind": "visual_parity_mismatch"/, 'visual finding is embedded in the AI prompt');
-assert.match(iteratorPrompt, /"candidate_repo": "Automattic\/blocks-engine"/, 'Blocks Engine route is embedded in the AI prompt');
+assert.match(iteratorPrompt, /"candidate_repo": "chubes4\/wp-site-generator"/, 'WPSG visual route is embedded in the AI prompt');
 assert.match(iteratorPrompt, /"repair_mode": "issue_only"/, 'issue-only routing is embedded in the AI prompt');
-assert.match(iteratorPrompt, /Use issue_path for repair_mode=issue_only/, 'issue-only groups use issue completion unless patch evidence exists');
+assert.match(iteratorPrompt, /accepted_outcomes contract/, 'iterator prompt delegates outcome choice to the structured contract');
 assert.match(iteratorPrompt, /"source_screenshot_path": "/, 'visual artifact paths are embedded in the AI prompt');
 assert.match(iteratorPrompt, /"selector": "section\.hero"/, 'visual source selector evidence is embedded in the AI prompt');
-const promptGroups = JSON.parse(iteratorPrompt.slice(iteratorPrompt.indexOf('[\n')));
-const visualGroup = promptGroups.find((group) => group.visual_artifact);
+const visualGroup = JSON.parse(iteratorPrompt.slice(iteratorPrompt.indexOf('{\n')));
 assert.ok(visualGroup, 'iterator prompt includes visual artifact evidence for visual findings');
 assertVisualArtifactContract(visualGroup.visual_artifact, path.relative(repoRoot, visualArtifactDir));
 const outcomeAssertions = aiStep.completion_assertions.complete_when_any;
-assert.ok(outcomeAssertions.some((outcome) => outcome.name === 'pull_request_path'), 'PR completion outcome is preserved');
-assert.ok(outcomeAssertions.some((outcome) => outcome.name === 'issue_path'), 'issue completion outcome is available for weak-evidence groups');
+assert.deepEqual(outcomeAssertions.map((outcome) => outcome.name), ['issue_path'], 'issue-only workflow exposes only the structured accepted outcome');
 assert.deepEqual(aiStep.completion_assertions.required_tool_names, ['comment_github_pull_request'], 'source callback remains a direct required tool');
 assert.match(aiStep.system_prompt, /immediately comment back on the source generated-site PR/, 'prompt requires callback immediately after upstream action');
 for (const outcome of outcomeAssertions) {
@@ -146,47 +152,23 @@ assert.ok(
 );
 assert.ok(!aiStep.enabled_tools.includes('list_github_issues'), 'issue-list tool is disabled to avoid fallback search loops');
 
-const truncatedResult = spawnSync(
+const multiGroupResult = spawnSync(
 	process.execPath,
 	[
 		path.join(repoRoot, 'bundles/php-transformer-iterator-agent/scripts/build-agent-iterator-workflow.mjs'),
 		groupedPath,
-		truncatedOutputPath,
+		multiGroupOutputPath,
 	],
 	{
 		cwd: repoRoot,
 		env: {
 			...process.env,
-			ITERATOR_CONTINUATION_PATH: continuationPath,
-			ITERATOR_MAX_PROMPT_GROUPS: '1',
 			VISUAL_ARTIFACT_DIR: visualArtifactDir,
 		},
 		encoding: 'utf8',
 	},
 );
-assert.equal(truncatedResult.status, 0, truncatedResult.stderr || truncatedResult.stdout);
-const truncatedPayload = JSON.parse(await readFile(truncatedOutputPath, 'utf8'));
-assert.equal(truncatedPayload.initial_data.finding_group_continuation.status, 'truncated', 'workflow records prompt truncation explicitly');
-assert.equal(truncatedPayload.initial_data.finding_group_continuation.embedded_group_count, 1, 'workflow records embedded group count');
-assert.ok(truncatedPayload.initial_data.finding_group_continuation.omitted_group_count > 0, 'workflow records omitted group count');
-assert.equal(
-	truncatedPayload.initial_data.finding_group_continuation.artifact_path,
-	path.relative(repoRoot, continuationPath),
-	'workflow points to continuation artifact',
-);
-const truncatedPrompt = truncatedPayload.workflow.steps[0].prompt_queue[0].prompt;
-assert.ok(
-	truncatedPrompt.includes(truncatedPayload.initial_data.finding_group_continuation.artifact_path),
-	'iterator prompt names the continuation artifact for omitted groups',
-);
-const continuation = JSON.parse(await readFile(continuationPath, 'utf8'));
-assert.equal(continuation.status, 'truncated', 'continuation artifact records truncation');
-assert.equal(continuation.embedded_group_count, 1, 'continuation artifact records prompt-visible groups');
-assert.equal(continuation.groups.length, continuation.omitted_group_count, 'continuation artifact contains omitted groups');
-assert.equal(continuation.runtime_packets.length, continuation.omitted_group_count, 'continuation artifact contains hydratable runtime packets');
-assert.ok(
-	continuation.runtime_packets.every((packet) => packet.type === 'ssi_finding_group'),
-	'continuation artifact preserves grouped finding packet type',
-);
+assert.notEqual(multiGroupResult.status, 0, 'iterator builder rejects multi-group task inputs');
+assert.match(multiGroupResult.stderr || multiGroupResult.stdout, /expects exactly one finding_group per task; received 8/);
 
 console.log('build-agent-iterator-workflow smoke passed');

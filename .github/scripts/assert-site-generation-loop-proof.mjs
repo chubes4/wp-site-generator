@@ -25,6 +25,7 @@ const upstreamDependencies = {
 	runtimeArtifacts: 'https://github.com/Extra-Chill/homeboy-extensions/pull/1645',
 	controllerRunFromSpec: 'https://github.com/Extra-Chill/homeboy/pull/5764',
 	fanout: 'https://github.com/Extra-Chill/homeboy/pull/5691',
+	genericLoopPrimitives: 'https://github.com/Extra-Chill/homeboy-extensions/pull/1816',
 };
 
 function fail(message) {
@@ -289,21 +290,23 @@ async function assertControllerArtifactProof(controllerRunSpec) {
 		assertProductionArtifact(findingGroup, 'finding_group');
 		assertRealArtifactUrl(firstValue(findingGroup, ['artifact_url', 'url', 'report_url']), 'iterator finding group artifact URL');
 	} else if (actionableFindingCount > 0) {
-		failDependency('artifact root is missing Homeboy-emitted finding_group for actionable findings', upstreamDependencies.fanout);
+		failDependency('artifact root is missing Homeboy-emitted finding_group for actionable findings', upstreamDependencies.genericLoopPrimitives);
 	}
 	const iteratorIssue = optionalArtifact(artifacts, artifactSchemas, 'iterator_upstream_issue');
+	let acceptedUpstreamActionCount = 0;
 	if (iteratorIssue) {
 		assertProductionArtifact(iteratorIssue, 'iterator_upstream_issue');
 		assertRealArtifactUrl(firstValue(iteratorIssue, ['url', 'html_url', 'issue_url']), 'iterator upstream issue URL');
-	} else if (actionableFindingCount > 0) {
-		failDependency('artifact root is missing iterator upstream issue evidence for actionable findings', upstreamDependencies.fanout);
+		acceptedUpstreamActionCount += 1;
 	}
 	const iteratorPr = optionalArtifact(artifacts, artifactSchemas, 'iterator_upstream_pull_request');
 	if (iteratorPr) {
 		assertProductionArtifact(iteratorPr, 'iterator_upstream_pull_request');
 		assertRealArtifactUrl(firstValue(iteratorPr, ['url', 'html_url', 'pr_url', 'pull_request.url']), 'iterator upstream PR URL');
-	} else if (actionableFindingCount > 0) {
-		failDependency('artifact root is missing iterator upstream PR evidence for actionable findings', upstreamDependencies.fanout);
+		acceptedUpstreamActionCount += 1;
+	}
+	if (actionableFindingCount > 0 && acceptedUpstreamActionCount < 1) {
+		failDependency('artifact root is missing one accepted iterator upstream action for actionable findings', upstreamDependencies.genericLoopPrimitives);
 	}
 
 	const revalidation = optionalArtifact(artifacts, artifactSchemas, 'revalidation_attempt');
@@ -311,7 +314,7 @@ async function assertControllerArtifactProof(controllerRunSpec) {
 		assertProductionArtifact(revalidation, 'revalidation_attempt');
 		assert.ok(['pass', 'passed', 'succeeded', 'success'].includes(String(firstValue(revalidation, ['status', 'decision', 'result']) || '').toLowerCase()) || firstValue(revalidation, ['passed', 'success']) === true, 'revalidation evidence records success');
 		assertRealArtifactUrl(firstValue(revalidation, ['artifact_url', 'url', 'report_url']), 'revalidation artifact URL');
-	} else if (actionableFindingCount > 0 || iteratorPr) {
+	} else if (iteratorPr) {
 		failDependency('artifact root is missing revalidation evidence after iterator changes', upstreamDependencies.fanout);
 	}
 

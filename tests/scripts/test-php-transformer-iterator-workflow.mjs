@@ -32,11 +32,12 @@ assert.doesNotMatch(workflow, /runtime_workspace_(command|publish)_ability/, 'it
 assert.match(workflow, /runtime_output_projections.*source_callback_url/, 'iterator declares generic runtime output projections');
 assert.match(workflow, /evidence_projections.*create_github_pull_request.*upstream_action_url/, 'iterator records upstream action evidence through generic evidence projections');
 assert.doesNotMatch(workflow, /actions_artifact_items/, 'iterator consumes prepared validation artifact downloads');
-assert.match(iteratorFlow, /upstream pull requests as durable per source finding/, 'iterator treats upstream PRs as durable across reruns');
+assert.match(iteratorFlow, /upstream pull requests as durable per source finding/, 'iterator treats upstream PRs as durable across reruns when PRs are accepted');
 assert.match(iteratorFlow, /deterministic titles/, 'iterator uses stable fallback issue titles for cleanup');
-assert.match(iteratorFlow, /repair_mode=issue_only/, 'iterator treats aggregate-only packets as issue-only evidence');
+assert.match(iteratorFlow, /accepted_outcomes/, 'iterator consumes structured repair mode outcome contract');
 assert.match(iteratorFlow, /Blocks Engine php-transformer/, 'iterator prompt includes canonical transformer routing');
 assert.match(iteratorFlow, /Do not call list_github_issues/, 'iterator prompt prevents repeated issue-list loops');
+assert.doesNotMatch(iteratorFlow, /This workflow succeeds only through a pull request|issue-only fallback is not a successful completion path|Do not create fallback issues/, 'iterator flow avoids contradictory issue-only and PR-only instructions');
 assert.doesNotMatch(iteratorFlow, /"list_github_issues"/, 'iterator does not expose issue listing in the live tool path');
 
 console.log('php-transformer-iterator workflow smoke passed');
