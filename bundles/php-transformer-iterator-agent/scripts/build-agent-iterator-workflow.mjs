@@ -4,33 +4,26 @@ import { existsSync, readdirSync, readFileSync } from 'node:fs';
 import { mkdir, readFile, writeFile } from 'node:fs/promises';
 import path from 'node:path';
 import { buildSingleAiWorkflow, buildSingleAiWorkflowStep } from './lib/agent-ai-workflow.mjs';
-import { normalizeFindingInput, summarizeFindingForPrompt } from '../../../.github/scripts/lib/ssi-finding-packets.mjs';
-import { formatRatio, summarizeVisualDiff } from '../../../.github/scripts/lib/visual-artifacts.mjs';
+import { acceptedOutcomesForRepairMode, normalizeFindingInput, summarizeFindingForPrompt } from '../../../.github/scripts/lib/ssi-finding-packets.mjs';
+import { summarizeVisualDiff } from '../../../.github/scripts/lib/visual-artifacts.mjs';
 
 const repoRoot = new URL('../../..', import.meta.url).pathname;
 const packetsPath = process.env.FINDING_PACKETS_PATH || process.argv[2] || 'homeboy-ci-results/finding-packets.json';
 const outputPath = process.env.AGENT_WORKFLOW_PATH || process.argv[3] || 'homeboy-ci-results/agent-iterator-workflow.json';
-const continuationPath = process.env.ITERATOR_CONTINUATION_PATH || path.join(path.dirname(outputPath), 'agent-iterator-continuation.json');
 const pipelinePath = process.env.ITERATOR_PIPELINE_PATH || 'bundles/php-transformer-iterator-agent/pipelines/php-transformer-iterator-pipeline.json';
 const flowPath = process.env.ITERATOR_FLOW_PATH || 'bundles/php-transformer-iterator-agent/flows/php-transformer-iterator-manual-flow.json';
 const visualArtifactDir = process.env.VISUAL_ARTIFACT_DIR || '';
-const maxPromptFindingGroups = numberOrDefault(process.env.ITERATOR_MAX_PROMPT_GROUPS, 12);
 const maxPromptTextLength = numberOrDefault(process.env.ITERATOR_MAX_PROMPT_TEXT_LENGTH, 600);
 
-const findingPackets = normalizeIteratorFindingInput(await readJson(resolveRepoPath(packetsPath)));
+const findingGroup = normalizeIteratorFindingInput(await readJson(resolveRepoPath(packetsPath)));
 const pipeline = await readJson(resolveRepoPath(pipelinePath));
 const flow = await readJson(resolveRepoPath(flowPath));
 
-const continuation = buildContinuation(findingPackets);
-const workflow = buildWorkflow(findingPackets, pipeline, flow, continuation);
+const workflow = buildWorkflow(findingGroup, pipeline, flow);
 await mkdir(path.dirname(resolveRepoPath(outputPath)), { recursive: true });
 await writeFile(resolveRepoPath(outputPath), `${JSON.stringify(workflow, null, 2)}\n`);
-if (continuation.omitted_group_count > 0) {
-	await mkdir(path.dirname(resolveRepoPath(continuationPath)), { recursive: true });
-	await writeFile(resolveRepoPath(continuationPath), `${JSON.stringify(continuation, null, 2)}\n`);
-}
 
-function buildWorkflow(packets, pipelineConfig, flowConfig, continuation) {
+function buildWorkflow(findingGroup, pipelineConfig, flowConfig) {
 	const iteratorPipelineStep = pipelineConfig.steps.find((step) => step?.step_type === 'ai' || step?.step_config?.step_type === 'ai');
 	const iteratorFlowStep = flowConfig.steps.find((step) => step?.step_type === 'ai');
 	if (!iteratorPipelineStep || !iteratorFlowStep) {
@@ -41,13 +34,16 @@ function buildWorkflow(packets, pipelineConfig, flowConfig, continuation) {
 	const promptQueue = Array.isArray(iteratorFlowStep.prompt_queue) ? iteratorFlowStep.prompt_queue : [];
 	const userMessage = [
 		...promptQueue.map((item) => item?.prompt || '').filter(Boolean),
-		formatFindingPrompt(packets),
+		formatFindingPrompt(findingGroup),
 	].filter(Boolean).join('\n\n');
+	const acceptedOutcomes = acceptedOutcomesForRepairMode(repairModeForGroup(findingGroup));
 	const completionAssertions = {
 		...(aiConfig.completion_assertions || iteratorFlowStep.completion_assertions || {}),
 	};
 	completionAssertions.required_tool_names = completionAssertions.required_tool_names || ['comment_github_pull_request'];
-	completionAssertions.complete_when_any = (completionAssertions.complete_when_any || []).map((outcome) => {
+	completionAssertions.complete_when_any = (completionAssertions.complete_when_any || [])
+		.filter((outcome) => acceptedOutcomes.includes(outcome?.name))
+		.map((outcome) => {
 		const tools = Array.isArray(outcome.tools) ? [...outcome.tools] : [];
 		if (!tools.some((tool) => tool?.name === 'comment_github_pull_request')) {
 			tools.push({ name: 'comment_github_pull_request' });
@@ -68,9 +64,11 @@ function buildWorkflow(packets, pipelineConfig, flowConfig, continuation) {
 	const initialData = {
 		job_source: 'system',
 		job_label: 'SSI finding iterator workflow',
-		finding_group_continuation: continuationMetadata(continuation),
+		finding_group: findingGroup,
+		repair_mode: repairModeForGroup(findingGroup),
+		accepted_outcomes: acceptedOutcomes,
 	};
-	if (packets.length === 0) {
+	if (!findingGroup) {
 		initialData.completion_assertions_satisfied = {
 			complete_when_any: ['no_actionable_findings'],
 		};
@@ -94,122 +92,43 @@ function buildWorkflow(packets, pipelineConfig, flowConfig, continuation) {
 
 function normalizeIteratorFindingInput(input) {
 	if (Array.isArray(input?.task_requests)) {
-		return input.task_requests
-			.map((request) => request?.finding_group || request?.inputs?.finding_group || null)
-			.filter(Boolean);
+		return exactlyOneFindingGroup(input.task_requests.map((request) => request?.finding_group || request?.inputs?.finding_group || null));
 	}
 	if (Array.isArray(input?.tasks)) {
-		return input.tasks
-			.map((task) => task?.inputs?.finding_group || task?.metadata?.finding_group || null)
-			.filter(Boolean);
+		return exactlyOneFindingGroup(input.tasks.map((task) => task?.inputs?.finding_group || task?.metadata?.finding_group || null));
 	}
 
-	return normalizeFindingInput(input);
+	return exactlyOneFindingGroup(normalizeFindingInput(input));
 }
 
-function formatFindingPrompt(packets) {
-	if (packets.length === 0) {
-		return 'No actionable finding groups were supplied. Finish with the no_actionable_findings outcome.';
+function exactlyOneFindingGroup(groups) {
+	const present = groups.filter(Boolean);
+	if (present.length === 0) {
+		return null;
+	}
+	if (present.length !== 1) {
+		throw new Error(`Iterator workflow expects exactly one finding_group per task; received ${present.length}.`);
+	}
+	return present[0];
+}
+
+function formatFindingPrompt(findingGroup) {
+	if (!findingGroup) {
+		return 'No actionable finding group was supplied. Finish with the no_actionable_findings outcome.';
 	}
 
-	const visiblePackets = packets.slice(0, maxPromptFindingGroups);
-	const summaries = visiblePackets.map((item, index) => summarizeFindingForPrompt(item, index, { maxPromptTextLength, visualArtifactForPacket }));
-	const omittedCount = Math.max(0, packets.length - visiblePackets.length);
+	const summary = summarizeFindingForPrompt(findingGroup, 0, { maxPromptTextLength, visualArtifactForPacket });
 	return [
-		'Process these grouped static-site validation findings. They are embedded here so the iterator does not depend on DataPacket child-job hydration.',
-		'For each group: route owner, open or reuse the required upstream issue or PR, and comment back to the source generated-site PR. Use issue_path for repair_mode=issue_only groups unless the packet has enough concrete patch evidence for a safe narrow PR. A run is incomplete until comment_github_pull_request is called.',
-		omittedCount > 0 ? `Only the first ${visiblePackets.length} of ${packets.length} finding groups are embedded. The omitted ${omittedCount} group(s) are written to ${repoRelativePath(continuationPath)} and recorded in initial_data.finding_group_continuation.` : '',
-		'Finding groups:',
-		JSON.stringify(summaries, null, 2),
+		'Process exactly one grouped static-site validation finding. It is embedded here so the iterator task does not depend on DataPacket child-job hydration.',
+		'Use the structured repair_mode and accepted_outcomes contract from initial_data. Open one accepted upstream action for this finding group, then call comment_github_pull_request. A run is incomplete until the source callback succeeds.',
+		'Finding group:',
+		JSON.stringify(summary, null, 2),
 	].filter(Boolean).join('\n\n');
 }
 
-function buildContinuation(packets) {
-	const embeddedGroups = packets.slice(0, maxPromptFindingGroups);
-	const omittedGroups = packets.slice(embeddedGroups.length);
-	const artifactPath = repoRelativePath(continuationPath);
-	return {
-		schema_version: 1,
-		status: omittedGroups.length > 0 ? 'truncated' : 'complete',
-		source_packets_path: repoRelativePath(packetsPath),
-		workflow_path: repoRelativePath(outputPath),
-		artifact_path: artifactPath,
-		total_group_count: packets.length,
-		embedded_group_count: embeddedGroups.length,
-		omitted_group_count: omittedGroups.length,
-		next_start_index: omittedGroups.length > 0 ? embeddedGroups.length : null,
-		groups: omittedGroups,
-		runtime_packets: omittedGroups.map((item, index) => toRuntimePacket(item, embeddedGroups.length + index)),
-	};
-}
-
-function continuationMetadata(continuation) {
-	return {
-		schema_version: continuation.schema_version,
-		status: continuation.status,
-		artifact_path: continuation.artifact_path,
-		total_group_count: continuation.total_group_count,
-		embedded_group_count: continuation.embedded_group_count,
-		omitted_group_count: continuation.omitted_group_count,
-		next_start_index: continuation.next_start_index,
-	};
-}
-
-function toRuntimePacket(item, index) {
-	const packet = Array.isArray(item?.packets) ? item.packets[0] || {} : item;
-	const kind = text(item.kind) || text(packet.kind) || 'finding';
-	const pathLabel = text(packet.path) || text(packet.selector) || `finding-${index + 1}`;
-	const sourceRepo = text(packet.source_repo) || 'chubes4/wp-site-generator';
-	const sourcePr = text(packet.source_pr);
-	const validationRunId = text(packet.validation_run_id);
-	const identifierParts = [sourceRepo, sourcePr, validationRunId, kind, pathLabel].filter(Boolean);
-	const isGroup = Array.isArray(item?.packets);
-	const title = isGroup
-		? `${kind}: ${text(item.reason) || pathLabel}`
-		: `${kind}: ${pathLabel}`;
-	let body = isGroup
-		? `Grouped SSI finding with ${item.count || item.packets.length} packet(s). ${text(item.reason) || text(packet.reason) || text(packet.preview)}`
-		: text(packet.reason) || text(packet.preview) || 'Static Site Importer validation finding.';
-	body = `${body}\n\nDiagnostic: ${text(packet.diagnostic_id) || '(none)'}\nSource path: ${text(packet.source_path) || text(packet.path) || '(none)'}\nCategory: ${text(packet.category) || '(none)'}\nReason code: ${text(packet.reason_code) || '(none)'}\nSuggested repair class: ${text(packet.suggested_repair_class) || '(none)'}`;
-	if (Array.isArray(packet.asset_map_refs) && packet.asset_map_refs.length > 0) {
-		body = `${body}\nAsset map refs: ${packet.asset_map_refs.join(', ')}`;
-	}
-	if (text(packet.repair_mode) === 'issue_only' || text(item.repair_mode) === 'issue_only') {
-		body = `${body}\n\nRepair mode: issue_only. This packet has weak or aggregate evidence; open or reuse a focused upstream issue unless additional concrete patch evidence is present.`;
-	}
-	const visualArtifact = visualArtifactForPacket(packet);
-	if (visualArtifact) {
-		body = `${body}\n\n${formatVisualArtifactContext(visualArtifact)}`;
-	}
-
-	return {
-		type: isGroup ? 'ssi_finding_group' : 'ssi_finding',
-		data: {
-			title,
-			body,
-			finding_packet: packet,
-			finding_group: isGroup ? item : null,
-			visual_artifact: visualArtifact,
-		},
-		metadata: {
-			source_type: 'ssi_validation',
-			item_identifier: identifierParts.join(':'),
-			kind,
-			candidate_repo: text(item.candidate_repo) || text(packet.candidate_repo),
-			repair_mode: text(item.repair_mode) || text(packet.repair_mode),
-			route_reason: text(item.route_reason),
-			diagnostic_id: text(packet.diagnostic_id),
-			source_path: text(packet.source_path) || text(packet.path),
-			category: text(packet.category),
-			reason_code: text(packet.reason_code),
-			suggested_repair_class: text(packet.suggested_repair_class),
-			_engine_data: {
-				finding_packet: packet,
-				finding_group: isGroup ? item : null,
-				visual_artifact: visualArtifact,
-			},
-		},
-	};
+function repairModeForGroup(group) {
+	const packet = Array.isArray(group?.packets) ? group.packets[0] || {} : {};
+	return text(group?.repair_mode) || text(packet.repair_mode) || 'pr_or_issue';
 }
 
 function visualArtifactForPacket(packet) {
@@ -255,60 +174,6 @@ function existingArtifactFiles(artifactDirPath) {
 	return known.filter((file) => entries.has(file));
 }
 
-function formatVisualArtifactContext(artifact) {
-	const lines = [
-		'Visual parity artifact context:',
-		`- artifact: ${artifact.artifact_name || 'visual-parity'}`,
-		`- directory: ${artifact.directory}`,
-	];
-	for (const [label, value] of [
-		['source screenshot', artifact.source_screenshot_path],
-		['imported screenshot', artifact.imported_screenshot_path],
-		['diff screenshot', artifact.diff_screenshot_path],
-		['visual diff json', artifact.visual_diff_path],
-		['summary json', artifact.summary_path],
-		['comparison html', artifact.comparison_html_path],
-	]) {
-		if (value) {
-			lines.push(`- ${label}: ${value}`);
-		}
-	}
-
-	const diff = artifact.visual_diff;
-	if (diff) {
-		lines.push(
-			`- mismatch: ${formatRatio(diff.mismatch_ratio)}; threshold: ${formatRatio(diff.threshold)}; pixels: ${diff.mismatch_pixels || 0}/${diff.total_pixels || 0}; dimension_mismatch: ${diff.dimension_mismatch ? 'yes' : 'no'}`
-		);
-		if (diff.source && diff.imported) {
-			lines.push(`- source size: ${diff.source.width || 0}x${diff.source.height || 0}; imported size: ${diff.imported.width || 0}x${diff.imported.height || 0}`);
-		}
-		for (const region of diff.regions.slice(0, 3)) {
-			lines.push(
-				`- region ${region.rank || '?'}: x=${region.x || 0}, y=${region.y || 0}, w=${region.width || 0}, h=${region.height || 0}, mismatch=${formatRatio(region.mismatch_ratio)}`
-			);
-			const sourceMatch = region.source_matches[0];
-			const importedMatch = region.imported_matches[0];
-			if (sourceMatch) {
-				lines.push(`  source match: ${sourceMatch.selector || '(selector unknown)'} ${sourceMatch.text ? `"${sourceMatch.text}"` : ''}`.trimEnd());
-			}
-			if (importedMatch) {
-				lines.push(`  imported match: ${importedMatch.selector || '(selector unknown)'} ${importedMatch.text ? `"${importedMatch.text}"` : ''}`.trimEnd());
-			}
-			for (const delta of region.layout_deltas.slice(0, 2)) {
-				const rect = delta.rect_delta || {};
-				lines.push(
-					`  layout delta ${delta.pair || '?'}: ${delta.source_selector || '(source)'} -> ${delta.imported_selector || '(imported)'}; rect dx=${rect.x || 0}, dy=${rect.y || 0}, dw=${rect.width || 0}, dh=${rect.height || 0}`
-				);
-				for (const diff of delta.style_diffs.slice(0, 4)) {
-					lines.push(`    style ${diff.property}: source=${diff.source || '(empty)'} imported=${diff.imported || '(empty)'}`);
-				}
-			}
-		}
-	}
-
-	return lines.join('\n');
-}
-
 function resolveRepoPath(inputPath) {
 	return path.isAbsolute(inputPath) ? inputPath : path.join(repoRoot, inputPath);
 }
@@ -328,11 +193,6 @@ function readJsonSync(inputPath) {
 
 function text(value) {
 	return value === undefined || value === null ? '' : String(value);
-}
-
-function compactText(value, maxLength = maxPromptTextLength) {
-	const compacted = text(value).replace(/\s+/g, ' ').trim();
-	return compacted.length > maxLength ? `${compacted.slice(0, maxLength - 3)}...` : compacted;
 }
 
 function numberOrDefault(value, fallback) {

@@ -104,19 +104,19 @@
                 },
                 {
                     "added_at": "2026-05-14T00:00:00+00:00",
-                    "prompt": "If the fetched finding packet or finding group has repair_mode=issue_only, keep the PR-first contract for this iterator run: inspect the owner repository, create a narrow branch with the smallest defensible regression or evidence-preserving change, push it, open a pull request, and comment back to the source PR. The PR may explain remaining human narrowing needed, but issue-only fallback is not a successful completion path for this workflow."
+                    "prompt": "Use the structured repair_mode and accepted_outcomes fields supplied in initial_data. For repair_mode=issue_only, create or reuse a focused upstream issue and then comment back to the source PR. For repair_mode=pr_or_issue, open the smallest safe upstream PR when packet evidence supports a patch, otherwise create a focused upstream issue. One accepted upstream action plus comment_github_pull_request completes the finding group."
                 },
                 {
                     "added_at": "2026-06-08T00:00:00+00:00",
-                    "prompt": "This workflow succeeds only through a pull request. After workspace_worktree_add, continue through workspace_edit, workspace_git_status, workspace_git_commit, workspace_git_push, create_github_pull_request, and comment_github_pull_request. After workspace_git_push succeeds, create_github_pull_request is the next lifecycle action. If tests can be run through the available workspace surface, include the command and result in the PR; if they cannot, state that limitation in the PR body."
+                    "prompt": "When the accepted outcome is pull_request_path and a patch is safe, continue through workspace_edit, workspace_git_status, workspace_git_commit, workspace_git_push, create_github_pull_request, and comment_github_pull_request. After workspace_git_push succeeds, create_github_pull_request is the next lifecycle action. If tests can be run through the available workspace surface, include the command and result in the PR; if they cannot, state that limitation in the PR body."
                 },
                 {
                     "added_at": "2026-06-01T01:00:00+00:00",
-                    "prompt": "Do not call list_github_issues in the iterator path. Do not create fallback issues for fetched findings in this PR-first workflow; source PR callback is complete after one comment_github_pull_request call succeeds following create_github_pull_request."
+                    "prompt": "Do not call list_github_issues in the iterator path. Source PR callback is complete after one comment_github_pull_request call succeeds following an accepted upstream issue or pull request action."
                 },
                 {
                     "added_at": "2026-06-17T00:00:00+00:00",
-                    "prompt": "For finding packets or groups with repair_mode=issue_only, use the issue path: create a focused upstream issue with the packet evidence and then comment back to the source PR. Use the pull-request path only when the packet contains enough concrete patch evidence for a safe narrow code change. Treat a valid structured candidate_repo as the owner before applying broad routing heuristics."
+                    "prompt": "Treat a valid structured candidate_repo as the owner before applying broad routing heuristics. Follow initial_data.accepted_outcomes exactly when choosing issue_path or pull_request_path."
                 }
             ],
             "queue_mode": "static",

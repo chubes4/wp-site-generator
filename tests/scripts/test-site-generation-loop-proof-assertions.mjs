@@ -190,10 +190,6 @@ try {
     schema: 'github/Issue/v1',
     url: 'https://github.com/chubes4/wp-site-generator/issues/123',
   });
-  await writeArtifact('iterator_upstream_pull_request', {
-    schema: 'github/PullRequest/v1',
-    url: 'https://github.com/chubes4/wp-site-generator/pull/124',
-  });
   await writeArtifact('revalidation_attempt', {
     schema: 'wp-site-generator/RevalidationAttempt/v1',
     artifact_url: 'https://artifacts.example.test/revalidation.json',
@@ -379,6 +375,49 @@ try {
   );
   assert.notEqual(githubArtifactPreviewProof.status, 0, 'production controller proof rejects GitHub artifact URLs as preview evidence');
   assert.match(githubArtifactPreviewProof.stderr || githubArtifactPreviewProof.stdout, /runtime preview URL is not a GitHub Actions artifact URL/);
+
+  await writeArtifact('static_site_candidate', {
+    schema: 'wp-site-generator/StaticSiteCandidate/v1',
+    runtime_access: {
+      schema: 'homeboy/runtime-preview-access/v1',
+      url: 'https://preview.dev.chubes.net/runs/123/sites/proof-site',
+      access: { kind: 'preview' },
+    },
+    artifact_url: 'https://github.com/chubes4/wp-site-generator/actions/runs/123/artifacts/static-site-candidate',
+  });
+  await writeArtifact('finding_packet_set', {
+    schema: 'wp-site-generator/FindingPacketSet/v1',
+    artifact_url: 'https://github.com/chubes4/wp-site-generator/actions/runs/123/artifacts/finding-packets',
+    packets: [{ kind: 'visual_parity_mismatch' }],
+    actionable_conversion_count: 1,
+  });
+  await writeArtifact('finding_group', {
+    schema: 'wp-site-generator/FindingGroup/v1',
+    artifact_url: 'https://github.com/chubes4/wp-site-generator/actions/runs/123/artifacts/finding-group',
+  });
+  const missingUpstreamActionProof = spawnSync(
+    process.execPath,
+    [
+      '.github/scripts/assert-site-generation-loop-proof.mjs',
+      '--controller-result',
+      controllerResultPath,
+      '--controller-run-spec',
+      controllerRunSpecPath,
+      '--artifact-root',
+      artifactRoot,
+    ],
+    {
+      cwd: repoRoot,
+      encoding: 'utf8',
+    }
+  );
+  assert.notEqual(missingUpstreamActionProof.status, 0, 'production proof requires one accepted upstream action for actionable findings');
+  assert.match(missingUpstreamActionProof.stderr || missingUpstreamActionProof.stdout, /missing one accepted iterator upstream action/);
+
+  await writeArtifact('iterator_upstream_issue', {
+    schema: 'github/Issue/v1',
+    url: 'https://github.com/chubes4/wp-site-generator/issues/123',
+  });
 
   await writeArtifact('static_site_candidate', {
     schema: 'wp-site-generator/StaticSiteCandidate/v1',

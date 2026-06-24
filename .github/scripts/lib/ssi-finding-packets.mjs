@@ -198,6 +198,29 @@ export function groupFindingPackets(rawPackets, routing) {
 	};
 }
 
+export function buildFindingGroupLoopRequest(group, options = {}) {
+	const packet = Array.isArray(group?.packets) ? group.packets[0] || {} : {};
+	const groupKey = text(group?.group_id) || text(group?.owner_repo) || text(group?.candidate_repo) || `finding-group-${Number(options.index || 0) + 1}`;
+	const repairMode = text(group?.repair_mode) || text(packet.repair_mode) || 'pr_or_issue';
+	return {
+		schema: 'wp-site-generator/finding-group-loop-request/v1',
+		task_id: `php-transformer-iterator-${groupKey}`,
+		group_key: groupKey,
+		inputs: { finding_group: group },
+		metadata: {
+			item_ids: Array.isArray(group?.item_ids) ? group.item_ids : [],
+			finding_group: group,
+			repair_mode: repairMode,
+			accepted_outcomes: acceptedOutcomesForRepairMode(repairMode),
+		},
+		instructions: `Run the PHP transformer iterator for one finding_group (${groupKey}) using repair_mode=${repairMode}.`,
+	};
+}
+
+export function acceptedOutcomesForRepairMode(repairMode) {
+	return text(repairMode) === 'issue_only' ? ['issue_path'] : ['pull_request_path', 'issue_path'];
+}
+
 export function routeContextForPacket(packet, routing) {
 	const candidateRepo = routing.routeCandidateRepo(packet);
 	const repairMode = routing.routeRepairMode(packet, candidateRepo);

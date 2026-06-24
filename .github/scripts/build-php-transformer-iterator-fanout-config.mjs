@@ -4,6 +4,7 @@ import { mkdir, readFile, writeFile } from 'node:fs/promises';
 import path from 'node:path';
 
 import { runtimeWorkflowBuilderExecution } from './lib/ci-runtime-utils.mjs';
+import { buildFindingGroupLoopRequest } from './lib/ssi-finding-packets.mjs';
 
 const inputPath = process.env.FINDING_GROUPS_PATH || process.argv[2] || 'homeboy-ci-results/grouped-finding-packets.json';
 const outputPath = process.env.FANOUT_CONFIG_PATH || process.argv[3] || 'homeboy-ci-results/php-transformer-iterator-fanout-config.json';
@@ -31,19 +32,7 @@ const config = {
 		artifact_name: process.env.ARTIFACT_NAME || '',
 		visual_artifact_name: process.env.VISUAL_ARTIFACT_NAME || '',
 	},
-	packets: groups.map((group, index) => {
-		const key = group.group_id || group.owner_repo || group.candidate_repo || `finding-group-${index + 1}`;
-		return {
-			task_id: `php-transformer-iterator-${key}`,
-			group_key: key,
-			inputs: { finding_group: group },
-			metadata: {
-				item_ids: Array.isArray(group.item_ids) ? group.item_ids : [],
-				finding_group: group,
-			},
-			instructions: `Run the PHP transformer iterator for ${key} with ${group.count || 1} grouped finding artifact(s).`,
-		};
-	}),
+	packets: groups.map((group, index) => buildFindingGroupLoopRequest(group, { index })),
 	...runtimeWorkflowBuilderExecution({
 		kind: 'wpsg-php-transformer-iterator',
 		workflowBuilder: 'bundles/php-transformer-iterator-agent/scripts/build-agent-iterator-workflow.mjs',
