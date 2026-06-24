@@ -180,7 +180,7 @@ The validation workflow:
 
 1. Boots WordPress Playground inside GitHub Actions.
 2. Installs Static Site Importer plus the shared block conversion stack via `wp_codebox_blueprint`; WooCommerce is added only for the commerce/WooCommerce lane.
-3. Runs the Static Site Importer `static-site-importer/import-theme` ability on the PR's `static-sites/<slug>/index.html`.
+3. Runs the Static Site Importer `static-site-importer/import-website-artifact` ability with `fail_on_quality` enabled against the generated website artifact.
 4. Captures a Playwright visual parity comparison between the source static HTML and imported WordPress result.
 5. Reads the resulting `import-report.json` and emits importer metrics + the report itself as a Homeboy bench artifact.
 6. Builds `finding-packets.json` for actionable importer, block, and visual parity failures.

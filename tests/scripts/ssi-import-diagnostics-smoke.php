@@ -51,7 +51,8 @@ if ( ! function_exists( 'wp_json_encode' ) ) {
 
 $report = array(
 	'quality'     => array(
-		'fallback_count' => 1,
+		'fallback_count'         => 1,
+		'core_html_block_count'  => 2,
 	),
 	'source_metadata' => array(
 		'source' => 'website_artifact',
@@ -105,7 +106,7 @@ $modern_rows = $summary['diagnostics'] ?? array();
 assert_same( $theme_dir . '/import-report.json', $summary['path'] ?? null, 'resolved report path' );
 assert_same( true, $summary['readable'] ?? null, 'resolved report readable' );
 assert_same( 1, $result['metrics']['ssi_fallback_count'] ?? null, 'fallback metric' );
-assert_same( 1, $result['metrics']['ssi_core_html_count'] ?? null, 'core/html metric' );
+assert_same( 2, $result['metrics']['ssi_core_html_count'] ?? null, 'core/html metric from quality summary' );
 assert_same( 1, $result['metrics']['ssi_bac_available'] ?? null, 'BAC available metric' );
 assert_same( 1, $result['metrics']['ssi_bac_fragment_count'] ?? null, 'BAC fragment metric' );
 assert_same( 5, $result['metrics']['ssi_bac_component_count'] ?? null, 'BAC component metric' );

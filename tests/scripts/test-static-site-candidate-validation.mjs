@@ -40,6 +40,7 @@ try {
 	assert.equal(payload.workloads[0].run[0].type, 'php', 'SSI workload imports through the ability PHP bridge');
 	assert.match(payload.workloads[0].run[0].code, /static-site-importer\/import-website-artifact/, 'SSI workload imports through the current website artifact ability');
 	assert.doesNotMatch(payload.workloads[0].run[0].code, /static-site-importer\/import-theme/, 'SSI workload does not depend on the legacy import-theme ability');
+	assert.match(payload.workloads[0].run[0].code, /'fail_on_quality' => true/, 'SSI workload fails validation when SSI reports quality failures');
 	assert.equal(
 		await readFile(path.join(repoRoot, payload.candidate_source.relativeSourceDirectory, 'index.html'), 'utf8'),
 		'<!doctype html><html><body><main>Direct candidate</main></body></html>',

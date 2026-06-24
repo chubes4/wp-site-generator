@@ -133,7 +133,7 @@ function assertPublishGates() {
   for (const taskItem of planTasks.filter((item) => item.executor?.config?.artifact_outputs?.static_site_publish_gate)) {
     const gate = outputValue(outcome(taskItem.task_id), 'static_site_publish_gate');
     assert.equal(gate?.publish_allowed, true, `${taskItem.task_id} emitted publish_allowed=true`);
-    for (const gateId of ['fallback_blocks', 'conversion_findings', 'visual_parity']) {
+    for (const gateId of ['fallback_blocks', 'block_quality', 'conversion_findings', 'visual_parity']) {
       assert.equal(gate?.gates?.[gateId]?.passed, true, `${taskItem.task_id} ${gateId} gate passed`);
     }
   }

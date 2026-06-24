@@ -158,7 +158,7 @@ try {
 	assert.equal(workflows['static-site'].runtime_execution.input.workflow.id, 'static-site-candidate-flow', 'static generation selects the candidate artifact workflow');
 	assert.equal(workflows['store-idea'].abilities.includes('github_issue_publish'), false, 'concept generation does not publish GitHub issues');
 	assert.equal(workflows['static-site'].abilities.includes('github_pull_request_publish'), false, 'candidate generation does not publish GitHub pull requests');
-	assert.deepEqual(workflows['static-publication-gate'].publish_gate.requires, ['publish_allowed', 'gates.fallback_blocks.passed', 'gates.conversion_findings.passed', 'gates.visual_parity.passed'], 'publication gate requires explicit pass/fail fields');
+	assert.deepEqual(workflows['static-publication-gate'].publish_gate.requires, ['publish_allowed', 'gates.fallback_blocks.passed', 'gates.block_quality.passed', 'gates.conversion_findings.passed', 'gates.visual_parity.passed'], 'publication gate requires explicit pass/fail fields');
 	assert.deepEqual(workflows['static-publication'].publish_gate, {
 		artifact: 'static_site_publish_gate',
 		requires: ['publish_allowed'],

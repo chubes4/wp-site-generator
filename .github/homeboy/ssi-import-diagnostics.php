@@ -383,10 +383,13 @@ return static function (): array {
 		}
 		$set_metric( 'ssi_fallback_count', $fallback_count );
 
-		$core_html_count = $count_diagnostics(
-			$report,
-			static fn ( array $diagnostic ): bool => isset( $diagnostic['block_name'] ) && 'core/html' === strtolower( (string) $diagnostic['block_name'] )
-		);
+		$core_html_count = $get_path( $report, array( 'quality', 'core_html_block_count' ) );
+		if ( null === $core_html_count ) {
+			$core_html_count = $count_diagnostics(
+				$report,
+				static fn ( array $diagnostic ): bool => isset( $diagnostic['block_name'] ) && 'core/html' === strtolower( (string) $diagnostic['block_name'] )
+			);
+		}
 		$set_metric( 'ssi_core_html_count', $core_html_count );
 
 		$freeform_block_count = $get_path( $report, array( 'quality', 'freeform_block_count' ) );
