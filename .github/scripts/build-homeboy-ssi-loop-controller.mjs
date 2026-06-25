@@ -185,6 +185,11 @@ const controller = {
 			workflow_id: 'static-validation',
 			tasks: ['Validate a StaticSiteCandidate artifact through SSI import, static checks, and visual parity before any generated-site pull request is published.'],
 			...handoff({ consumes: ['static_site_candidate'], emits: ['static_validation_run', 'import_validation_result', 'visual_parity_artifact', 'finding_packet_set'] }),
+			execution: {
+				kind: 'command',
+				command: 'node',
+				args: ['.github/scripts/run-static-validation-loop-action.mjs'],
+			},
 			dependencies: ['wp-site-generator', 'static-site-importer', 'blocks-engine'],
 			gates: ['fallback_blocks', 'conversion_findings', 'visual_parity'],
 			metrics: ['fallback_blocks', 'conversion_findings', 'visual_parity'],
