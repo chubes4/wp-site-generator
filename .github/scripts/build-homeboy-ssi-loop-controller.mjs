@@ -275,10 +275,13 @@ const controller = {
 		},
 		{
 			workflow_id: 'reviewer',
-			agent_id: 'ssi_stack_reviewer',
 			prompt: 'Review candidate, validation, visual parity, finding, and revalidation artifacts before promotion. Treat generated-site and upstream GitHub issue/PR URLs as optional publication evidence only.',
-			abilities: [runtimePackageAbilityId, 'comment_github_pull_request'],
 			...handoff({ consumes: ['static_site_candidate', 'import_validation_result', 'static_validation_run', 'visual_parity_artifact', 'finding_packet_set', 'revalidation_attempt'], emits: ['reviewer_gate_outcome'] }),
+			execution: {
+				kind: 'command',
+				command: 'node',
+				args: ['.github/scripts/run-reviewer-gate-loop-action.mjs'],
+			},
 			dependencies: ['wp-site-generator', 'static-site-importer', 'blocks-engine'],
 			gates: ['reviewer_evidence'],
 			promotion_gate: {
