@@ -74,11 +74,17 @@ function assertOptionalRealArtifactUrl(value, label) {
 	if (value === undefined || value === null || value === '') {
 		return;
 	}
+	if (!/^https?:\/\//.test(String(value).trim())) {
+		return;
+	}
 	assertRealArtifactUrl(value, label);
 }
 
 function assertOptionalRealPreviewUrl(value, label) {
 	if (value === undefined || value === null || value === '') {
+		return;
+	}
+	if (!/^https?:\/\//.test(String(value).trim())) {
 		return;
 	}
 	assertRealPreviewUrl(value, label);
