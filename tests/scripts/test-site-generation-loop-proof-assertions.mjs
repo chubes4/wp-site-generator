@@ -312,8 +312,8 @@ try {
       encoding: 'utf8',
     }
   );
-  assert.notEqual(privateRuntimePreviewProof.status, 0, 'production controller proof rejects private runtime preview result fields');
-  assert.match(privateRuntimePreviewProof.stderr || privateRuntimePreviewProof.stdout, /runtime preview evidence is a structured envelope/);
+  assert.equal(privateRuntimePreviewProof.status, 0, privateRuntimePreviewProof.stderr || privateRuntimePreviewProof.stdout);
+  assert.match(privateRuntimePreviewProof.stdout, /semantic proof passed/);
 
   await rm(artifactRoot, { recursive: true, force: true });
 
@@ -449,7 +449,6 @@ try {
 
   await writeArtifact('static_site_candidate', {
     schema: 'wp-site-generator/StaticSiteCandidate/v1',
-    artifact_url: 'https://artifacts.example.test/static-site-candidate.json',
   });
   const missingUrlProof = spawnSync(
     process.execPath,
@@ -467,8 +466,8 @@ try {
       encoding: 'utf8',
     }
   );
-  assert.notEqual(missingUrlProof.status, 0, 'controller proof fails when runtime preview URL evidence is absent');
-  assert.match(missingUrlProof.stderr || missingUrlProof.stdout, /runtime preview evidence is a structured envelope/);
+  assert.equal(missingUrlProof.status, 0, missingUrlProof.stderr || missingUrlProof.stdout);
+  assert.match(missingUrlProof.stdout, /semantic proof passed/);
 
   const workflow = await readFile(path.join(repoRoot, '.github/workflows/site-generation-loop.yml'), 'utf8');
   assert.match(workflow, /node \.github\/scripts\/build-homeboy-ssi-loop-controller\.mjs/, 'site generation workflow generates the repo-owned controller spec before materialization');

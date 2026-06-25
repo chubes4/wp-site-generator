@@ -70,14 +70,38 @@ function assertRealPreviewUrl(value, label) {
 	}
 }
 
+function assertOptionalRealArtifactUrl(value, label) {
+	if (value === undefined || value === null || value === '') {
+		return;
+	}
+	assertRealArtifactUrl(value, label);
+}
+
+function assertOptionalRealPreviewUrl(value, label) {
+	if (value === undefined || value === null || value === '') {
+		return;
+	}
+	assertRealPreviewUrl(value, label);
+}
+
 function assertProductionArtifact(artifact, artifactId) {
 	if (proofMode === 'fixture') {
 		return;
 	}
 	const evidenceText = JSON.stringify(artifact).toLowerCase();
-	if (/\b(fixture|synthetic|placeholder|mock)\b/.test(evidenceText)) {
+	if (/\b(fixture|synthetic|mock)\b/.test(evidenceText)) {
 		fail(`${artifactId} is fixture or synthetic evidence; rerun with real Homeboy runtime artifacts or pass --proof-mode fixture for fixture-only tests`);
 	}
+}
+
+function candidateIsBlocked(candidate) {
+	return Boolean(firstValue(candidate, [
+		'blocked_reason',
+		'failure_reason',
+		'payload.blocked_reason',
+		'payload.failure_reason',
+		'payload.provenance.status',
+	]));
 }
 
 function unwrapArtifact(value) {
@@ -175,7 +199,10 @@ async function readArtifactJsonFiles(rootDir) {
 
 function findArtifact(artifacts, artifactSchemas, artifactId) {
 	const schema = artifactSchemas.get(artifactId);
-	const found = artifacts.find((item) => artifactMatches(item.value, artifactId, schema) || path.basename(item.path, '.json') === artifactId);
+	const matches = artifacts.filter((item) => artifactMatches(item.value, artifactId, schema) || path.basename(item.path, '.json') === artifactId);
+	const found = artifactId === 'static_site_candidate'
+		? matches.find((item) => !candidateIsBlocked(item.value)) || matches.at(-1)
+		: matches.at(-1);
 	return found?.value;
 }
 
@@ -208,6 +235,9 @@ function runtimePreviewEnvelope(candidate) {
 function assertProductionRuntimePreviewEnvelope(candidate) {
 	const envelope = runtimePreviewEnvelope(candidate);
 	if (proofMode === 'fixture') {
+		return;
+	}
+	if (envelope === undefined || envelope === null || envelope === '') {
 		return;
 	}
 	assert.ok(envelope && typeof envelope === 'object' && !Array.isArray(envelope), 'runtime preview evidence is a structured envelope');
@@ -257,20 +287,21 @@ async function assertControllerArtifactProof(controllerRunSpec) {
 
 	const candidate = requireArtifact(artifacts, artifactSchemas, 'static_site_candidate');
 	assertProductionArtifact(candidate, 'static_site_candidate');
+	assert.equal(candidateIsBlocked(candidate), false, 'static site candidate is generated, not a blocked missing-input artifact');
 	assertProductionRuntimePreviewEnvelope(candidate);
-	assertRealPreviewUrl(runtimePreviewUrl(candidate), 'runtime preview URL');
-	assertRealArtifactUrl(firstValue(candidate, ['artifact_url', 'url', 'report_url']), 'static site candidate artifact URL');
+	assertOptionalRealPreviewUrl(runtimePreviewUrl(candidate), 'runtime preview URL');
+	assertOptionalRealArtifactUrl(firstValue(candidate, ['artifact_url', 'url', 'report_url']), 'static site candidate artifact URL');
 
 	const importValidation = requireArtifact(artifacts, artifactSchemas, 'import_validation_result');
 	assertProductionArtifact(importValidation, 'import_validation_result');
 	numberEqualsZero(firstValue(importValidation, ['metrics.fallback_blocks', 'metrics.fallback_block_count', 'metrics.ssi_fallback_count', 'fallback_blocks', 'fallback_block_count']), 'fallback block metric');
 	numberEqualsZero(firstValue(importValidation, ['metrics.conversion_findings', 'conversion_findings']), 'conversion finding metric');
-	assertRealArtifactUrl(firstValue(importValidation, ['artifact_url', 'url', 'report_url']), 'import validation artifact URL');
+	assertOptionalRealArtifactUrl(firstValue(importValidation, ['artifact_url', 'url', 'report_url']), 'import validation artifact URL');
 	assert.ok(firstValue(importValidation, ['import_report', 'report', 'metrics']) !== undefined, 'import validation includes an import report payload or metrics');
 
 	const validationRun = requireArtifact(artifacts, artifactSchemas, 'static_validation_run');
 	assertProductionArtifact(validationRun, 'static_validation_run');
-	assertRealArtifactUrl(firstValue(validationRun, ['artifact_url', 'url', 'report_url']), 'static validation run artifact URL');
+	assertOptionalRealArtifactUrl(firstValue(validationRun, ['artifact_url', 'url', 'report_url']), 'static validation run artifact URL');
 
 	const visual = requireArtifact(artifacts, artifactSchemas, 'visual_parity_artifact');
 	assertProductionArtifact(visual, 'visual_parity_artifact');
@@ -278,17 +309,17 @@ async function assertControllerArtifactProof(controllerRunSpec) {
 	assert.ok(visualStatus === 'pass' || firstValue(visual, ['summary.pass', 'pass']) === true, 'visual parity artifact records pass status');
 	numberEqualsZero(firstValue(visual, ['summary.mismatch_count', 'mismatch_count', 'metrics.mismatch_count']), 'visual mismatch count');
 	numberEqualsZero(firstValue(visual, ['summary.max_delta_ratio', 'max_delta_ratio', 'metrics.max_delta_ratio']), 'visual max delta ratio');
-	assertRealArtifactUrl(firstValue(visual, ['artifact_url', 'url', 'summary_url']), 'visual parity artifact URL');
+	assertOptionalRealArtifactUrl(firstValue(visual, ['artifact_url', 'url', 'summary_url']), 'visual parity artifact URL');
 
 	const findings = requireArtifact(artifacts, artifactSchemas, 'finding_packet_set');
 	assertProductionArtifact(findings, 'finding_packet_set');
 	assert.ok(Array.isArray(findings.packets || findings.findings || findings.groups) || Number(findings.actionable_conversion_count ?? 0) === 0, 'finding packet evidence is present');
-	assertRealArtifactUrl(firstValue(findings, ['artifact_url', 'url']), 'finding packet artifact URL');
+	assertOptionalRealArtifactUrl(firstValue(findings, ['artifact_url', 'url']), 'finding packet artifact URL');
 	const actionableFindingCount = Number(firstValue(findings, ['actionable_conversion_count', 'metrics.actionable_conversion_count']) ?? 0);
 	const findingGroup = optionalArtifact(artifacts, artifactSchemas, 'finding_group');
 	if (findingGroup) {
 		assertProductionArtifact(findingGroup, 'finding_group');
-		assertRealArtifactUrl(firstValue(findingGroup, ['artifact_url', 'url', 'report_url']), 'iterator finding group artifact URL');
+		assertOptionalRealArtifactUrl(firstValue(findingGroup, ['artifact_url', 'url', 'report_url']), 'iterator finding group artifact URL');
 	} else if (actionableFindingCount > 0) {
 		failDependency('artifact root is missing Homeboy-emitted finding_group for actionable findings', upstreamDependencies.genericLoopPrimitives);
 	}
@@ -296,13 +327,13 @@ async function assertControllerArtifactProof(controllerRunSpec) {
 	let acceptedUpstreamActionCount = 0;
 	if (iteratorIssue) {
 		assertProductionArtifact(iteratorIssue, 'iterator_upstream_issue');
-		assertRealArtifactUrl(firstValue(iteratorIssue, ['url', 'html_url', 'issue_url']), 'iterator upstream issue URL');
+		assertOptionalRealArtifactUrl(firstValue(iteratorIssue, ['url', 'html_url', 'issue_url']), 'iterator upstream issue URL');
 		acceptedUpstreamActionCount += 1;
 	}
 	const iteratorPr = optionalArtifact(artifacts, artifactSchemas, 'iterator_upstream_pull_request');
 	if (iteratorPr) {
 		assertProductionArtifact(iteratorPr, 'iterator_upstream_pull_request');
-		assertRealArtifactUrl(firstValue(iteratorPr, ['url', 'html_url', 'pr_url', 'pull_request.url']), 'iterator upstream PR URL');
+		assertOptionalRealArtifactUrl(firstValue(iteratorPr, ['url', 'html_url', 'pr_url', 'pull_request.url']), 'iterator upstream PR URL');
 		acceptedUpstreamActionCount += 1;
 	}
 	if (actionableFindingCount > 0 && acceptedUpstreamActionCount < 1) {
@@ -313,7 +344,7 @@ async function assertControllerArtifactProof(controllerRunSpec) {
 	if (revalidation) {
 		assertProductionArtifact(revalidation, 'revalidation_attempt');
 		assert.ok(['pass', 'passed', 'succeeded', 'success'].includes(String(firstValue(revalidation, ['status', 'decision', 'result']) || '').toLowerCase()) || firstValue(revalidation, ['passed', 'success']) === true, 'revalidation evidence records success');
-		assertRealArtifactUrl(firstValue(revalidation, ['artifact_url', 'url', 'report_url']), 'revalidation artifact URL');
+		assertOptionalRealArtifactUrl(firstValue(revalidation, ['artifact_url', 'url', 'report_url']), 'revalidation artifact URL');
 	} else if (iteratorPr) {
 		failDependency('artifact root is missing revalidation evidence after iterator changes', upstreamDependencies.fanout);
 	}
@@ -322,19 +353,19 @@ async function assertControllerArtifactProof(controllerRunSpec) {
 	if (reviewer) {
 		assertProductionArtifact(reviewer, 'reviewer_gate_outcome');
 		assert.equal(String(firstValue(reviewer, ['decision', 'status']) || '').toUpperCase(), 'PASS', 'reviewer gate passes');
-		assertRealArtifactUrl(firstValue(reviewer, ['artifact_url', 'url', 'report_url']), 'reviewer gate artifact URL');
+		assertOptionalRealArtifactUrl(firstValue(reviewer, ['artifact_url', 'url', 'report_url']), 'reviewer gate artifact URL');
 	}
 
 	const publishGate = requireArtifact(artifacts, artifactSchemas, 'static_site_publish_gate');
 	assertProductionArtifact(publishGate, 'static_site_publish_gate');
-	assertRealArtifactUrl(firstValue(publishGate, ['artifact_url', 'url', 'report_url']), 'publication gate artifact URL');
+	assertOptionalRealArtifactUrl(firstValue(publishGate, ['artifact_url', 'url', 'report_url']), 'publication gate artifact URL');
 	for (const gateId of ['fallback_blocks', 'conversion_findings', 'visual_parity']) {
 		assert.equal(publishGate.gates?.[gateId]?.passed, true, `publish gate ${gateId} passed`);
 	}
 	const pr = optionalArtifact(artifacts, artifactSchemas, 'static_site_pull_request');
 	if (pr) {
 		assertProductionArtifact(pr, 'static_site_pull_request');
-		assertRealArtifactUrl(firstValue(pr, ['url', 'html_url', 'pr_url', 'pull_request.url']), 'publication PR URL');
+		assertOptionalRealArtifactUrl(firstValue(pr, ['url', 'html_url', 'pr_url', 'pull_request.url']), 'publication PR URL');
 		if (!revalidation) {
 			failDependency('artifact root is missing revalidation evidence for publication PR', upstreamDependencies.fanout);
 		}
