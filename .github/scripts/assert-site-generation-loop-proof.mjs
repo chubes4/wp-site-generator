@@ -218,10 +218,10 @@ async function assertControllerEventProof(controllerRunSpec, loopId) {
 	const controllerResult = await readJsonFile(controllerResultPath);
 	const schema = controllerResult.schema || controllerResult.data?.schema || controllerResult.value?.schema;
 	if (schema === 'homeboy/agent-task-loop-controller-run-from-spec-result/v1') {
-		assert.equal(controllerResult.loop_id || controllerResult.data?.loop_id || controllerResult.value?.loop_id, loopId, 'run-from-spec evidence records the durable loop id');
-		assert.ok(controllerResult.materialization || controllerResult.data?.materialization || controllerResult.value?.materialization, 'run-from-spec evidence records materialization proof');
-		assert.ok(controllerResult.from_spec || controllerResult.data?.from_spec || controllerResult.value?.from_spec, 'run-from-spec evidence records controller initialization proof');
-		assert.ok(controllerResult.status || controllerResult.data?.status || controllerResult.value?.status, 'run-from-spec evidence records final controller status');
+		assert.equal(controllerResult.loop_id || controllerResult.data?.loop_id || controllerResult.value?.loop_id, loopId, 'from-spec evidence records the durable loop id');
+		assert.ok(controllerResult.materialization || controllerResult.data?.materialization || controllerResult.value?.materialization, 'from-spec evidence records materialization proof');
+		assert.ok(controllerResult.from_spec || controllerResult.data?.from_spec || controllerResult.value?.from_spec, 'from-spec evidence records controller initialization proof');
+		assert.ok(controllerResult.status || controllerResult.data?.status || controllerResult.value?.status, 'from-spec evidence records final controller status');
 		return;
 	}
 	if (!controllerResumePath) {

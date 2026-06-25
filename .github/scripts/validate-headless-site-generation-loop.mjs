@@ -74,11 +74,11 @@ async function readRunFromSpecResult(result, outputPath) {
 	let stdout = result.stdout || '';
 	if (result.stdoutPath) {
 		const stdoutStat = await stat(result.stdoutPath);
-		assert.ok(stdoutStat.size <= maxStdoutJsonBytes, `Homeboy run-from-spec did not write structured output to ${outputPath} and stdout exceeded the bounded JSON fallback (${maxStdoutJsonBytes} bytes)`);
+		assert.ok(stdoutStat.size <= maxStdoutJsonBytes, `Homeboy from-spec did not write structured output to ${outputPath} and stdout exceeded the bounded JSON fallback (${maxStdoutJsonBytes} bytes)`);
 		stdout = await readFile(result.stdoutPath, 'utf8');
 	}
-	assert.ok(stdout.length > 0, `Homeboy run-from-spec did not write structured output to ${outputPath} and stdout was empty`);
-	assert.ok(Buffer.byteLength(stdout, 'utf8') <= maxStdoutJsonBytes, `Homeboy run-from-spec did not write structured output to ${outputPath} and stdout exceeded the bounded JSON fallback (${maxStdoutJsonBytes} bytes)`);
+	assert.ok(stdout.length > 0, `Homeboy from-spec did not write structured output to ${outputPath} and stdout was empty`);
+	assert.ok(Buffer.byteLength(stdout, 'utf8') <= maxStdoutJsonBytes, `Homeboy from-spec did not write structured output to ${outputPath} and stdout exceeded the bounded JSON fallback (${maxStdoutJsonBytes} bytes)`);
 	const parsed = JSON.parse(stdout);
 	await writeJsonFile(outputPath, parsed);
 	return parsed;
@@ -110,7 +110,7 @@ try {
 	};
 
 	run('build WPSG controller run inputs', process.execPath, ['.github/scripts/build-homeboy-controller-run-inputs.mjs'], { env: baseEnv });
-	const runFromSpecResult = run('run Homeboy controller from spec', homeboyBin, homeboyArgs(['agent-task', 'controller', 'run-from-spec', `@${controllerSpecPath}`, '--inputs', `@${controllerRunInputsPath}`, '--policy-result', `@${policyResultPath}`, '--max-actions', '100', '--output', controllerResultPath]), {
+	const runFromSpecResult = run('run Homeboy controller from spec', homeboyBin, homeboyArgs(['agent-task', 'controller', 'from-spec', `@${controllerSpecPath}`, '--inputs', `@${controllerRunInputsPath}`, '--policy-result', `@${policyResultPath}`, '--max-actions', '100', '--output', controllerResultPath]), {
 		env: baseEnv,
 		stdoutPath: controllerStdoutPath,
 		evidence: {

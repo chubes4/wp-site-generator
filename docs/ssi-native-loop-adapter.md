@@ -38,7 +38,7 @@ The generated spec declares these groups directly:
 - `dependencies`: SSI stack repositories and the behavior each owns.
 - `gates` and `metrics`: WPSG metric definitions and pass expressions.
 
-Homeboy maps these declarations to durable controller policy/actions through `agent-task controller run-from-spec`. Homeboy Extensions WordPress supplies WordPress runtime details behind generic Homeboy executor/provider contracts when Homeboy selects an implementation. WPSG does not own controller lifecycle, dependency materialization, dispatch/provider selection, runtime substrate, or evidence capture.
+Homeboy maps these declarations to durable controller policy/actions through `agent-task controller from-spec`. Homeboy Extensions WordPress supplies WordPress runtime details behind generic Homeboy executor/provider contracts when Homeboy selects an implementation. WPSG does not own controller lifecycle, dependency materialization, dispatch/provider selection, runtime substrate, or evidence capture.
 
 ## Runtime Inputs
 
@@ -81,7 +81,7 @@ Run `node tests/scripts/test-wpsg-loop-typed-artifact-contracts.mjs` to validate
 
 ## Complexity And Randomness Policy
 
-Prompt difficulty is owned by WP Site Generator, not Homeboy. The checked-in policy at `.github/site-generation-complexity-policy.json` is evaluated by `.github/scripts/build-homeboy-controller-run-inputs.mjs` before Homeboy runs the controller spec with `homeboy agent-task controller run-from-spec --policy-result @<policy-result.json>`.
+Prompt difficulty is owned by WP Site Generator, not Homeboy. The checked-in policy at `.github/site-generation-complexity-policy.json` is evaluated by `.github/scripts/build-homeboy-controller-run-inputs.mjs` before Homeboy runs the controller spec with `homeboy agent-task controller from-spec --policy-result @<policy-result.json>`.
 
 The materialized controller run spec records the full decision on each workflow at `workflows[].inputs.policy_results["wpsg-complexity-policy"]`, including:
 
@@ -162,7 +162,7 @@ The command sequence it records is the reviewer-facing contract evidence:
 
 ```bash
 node .github/scripts/build-homeboy-controller-run-inputs.mjs
-homeboy agent-task controller run-from-spec @.github/homeboy/controllers/static-site-generation-loop.controller.json --inputs @<run-inputs> --policy-result @<policy-result> --max-actions 100 > <controller-result>
+homeboy agent-task controller from-spec @.github/homeboy/controllers/static-site-generation-loop.controller.json --inputs @<run-inputs> --policy-result @<policy-result> --max-actions 100 > <controller-result>
 homeboy agent-task controller validate-proof @<materialization-proof>
 node .github/scripts/write-materialized-controller-run-spec.mjs <materialization> <controller-run-spec>
 node .github/scripts/assert-site-generation-loop-proof.mjs --controller-result <controller-result> --controller-run-spec <controller-run-spec> --artifact-root <artifact-root>

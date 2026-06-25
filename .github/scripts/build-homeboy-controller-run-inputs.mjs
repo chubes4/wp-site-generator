@@ -76,7 +76,7 @@ await writeJsonFile(outputPath, {
 			runtime_input_contract: runtimeOverrides.source,
 			runtime_config: runtimeConfig,
 			generated_by: '.github/scripts/build-homeboy-controller-run-inputs.mjs',
-			materialized_by: 'homeboy agent-task controller run-from-spec',
+			materialized_by: 'homeboy agent-task controller from-spec',
 		},
 	},
 });

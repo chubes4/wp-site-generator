@@ -30,10 +30,6 @@ if (args.join(' ') === 'agent-task controller from-spec --help') {
   console.log('Initialize or resume a durable loop controller from a repo-authored JSON spec');
   process.exit(0);
 }
-if (args.join(' ') === 'agent-task controller run-from-spec --help') {
-  console.log('Materialize, initialize, and run a bounded controller loop from a repo-authored JSON spec\\n--output <PATH> Write structured result JSON to PATH');
-  process.exit(0);
-}
 if (args.join(' ') === 'agent-task controller materialize --help') {
   console.log('Materialize a repo-authored loop spec with explicit run inputs');
   process.exit(0);
@@ -52,38 +48,10 @@ if (args.join(' ') === 'agent-task controller events --help') {
 }
 if (args[0] === 'agent-task' && args[1] === 'controller' && args[2] === 'from-spec') {
   const specPath = args[3].replace(/^@/, '');
-  const outputIndex = args.indexOf('--output');
-  const spec = JSON.parse(readFileSync(specPath, 'utf8'));
-  const loopId = String(spec.loop_id || 'wp-site-generator/static-site-generation-loop').replaceAll('/', '_');
-  const result = {
-    schema: 'homeboy/agent-task-loop-controller-from-spec-result/v1',
-    loop_id: loopId,
-    initialized: true,
-    controller: {
-      schema: 'homeboy/agent-task-loop-controller/v1',
-      loop_id: loopId,
-      source_loop_id: spec.loop_id,
-      state: 'running',
-      spec,
-      pending_actions: (spec.workflows || []).map((workflow, index) => ({
-        action_id: 'action-' + (index + 1),
-        dedupe_key: 'workflow:' + workflow.workflow_id,
-        status: 'pending',
-      })),
-    },
-  };
-  if (outputIndex !== -1) {
-    writeFileSync(args[outputIndex + 1], JSON.stringify(result, null, 2) + '\\n');
-  }
-  console.log(JSON.stringify(result));
-  process.exit(0);
-}
-if (args[0] === 'agent-task' && args[1] === 'controller' && args[2] === 'run-from-spec') {
-  const specPath = args[3].replace(/^@/, '');
   const inputsIndex = args.indexOf('--inputs');
   const outputIndex = args.indexOf('--output');
   if (process.env.HOMEBOY_FIXTURE_REQUIRE_OUTPUT === '1' && outputIndex === -1) {
-    console.error('run-from-spec fixture requires --output');
+    console.error('from-spec fixture requires --output');
     process.exit(64);
   }
   const spec = JSON.parse(readFileSync(specPath, 'utf8'));

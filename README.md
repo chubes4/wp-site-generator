@@ -177,7 +177,7 @@ Static-site validation is driven by `.github/homeboy/controllers/static-site-gen
 
 The validation loop:
 
-1. Materializes a controller run spec with `agent-task controller run-from-spec`.
+1. Materializes a controller run spec with `agent-task controller from-spec`.
 2. Installs Static Site Importer plus the shared block conversion stack via `wordpress_runtime_blueprint`; WooCommerce is added only for the commerce/WooCommerce lane.
 3. Runs the Static Site Importer `static-site-importer/import-website-artifact` ability against the candidate website artifact.
 4. Captures a Playwright visual parity comparison between the source static HTML and imported WordPress result.
@@ -255,7 +255,7 @@ That's the loop. Generate. Design. Build. Validate. Review. Decide. Repeat.
 
 ## Operating The Loop
 
-The primary loop is a Homeboy lab controller run. WPSG declares `.github/homeboy/controllers/static-site-generation-loop.controller.json` and the workflow selects that loop spec for `homeboy agent-task controller run-from-spec`, which materializes policy inputs, initializes durable state, and executes bounded controller actions. Homeboy owns controller state, action scheduling, event application, durable fanout batches, dependency materialization, runtime substrate, dispatch/provider selection, and evidence capture.
+The primary loop is a Homeboy lab controller run. WPSG declares `.github/homeboy/controllers/static-site-generation-loop.controller.json` and the workflow selects that loop spec for `homeboy agent-task controller from-spec`, which materializes policy inputs, initializes durable state, and executes bounded controller actions. Homeboy owns controller state, action scheduling, event application, durable fanout batches, dependency materialization, runtime substrate, dispatch/provider selection, and evidence capture.
 
 Required credentials depend on the selected Homeboy runtime and AI provider. Configure provider credentials in the Homeboy/runtime contract rather than in WPSG workflows.
 
@@ -266,7 +266,7 @@ The reusable `.github/workflows/wpsg-runtime-agent-ci.yml` seam accepts a `runti
 
 For deterministic contract validation, run `node tests/scripts/test-wpsg-loop-typed-artifact-contracts.mjs`. It validates the WPSG-owned loop spec, bundle completion assertions, and fixture envelopes for `concept_packet`, `design_packet`, and `static_site_candidate` without launching model providers.
 
-For production-loop proof, run `.github/scripts/validate-headless-site-generation-loop.mjs`. It drives `homeboy agent-task controller run-from-spec`, validates the returned materialization proof, then asserts WPSG artifact evidence with `.github/scripts/assert-site-generation-loop-proof.mjs`. The reviewer-facing success evidence is `runtime_access` typed preview/playground access for the generated WordPress result plus durable typed artifacts for `concept_packet`, `design_packet`, `static_site_candidate`, import validation, static validation, visual parity, finding packets, revalidation, and reviewer gate output. Failure evidence should include the controller result, materialization proof, artifact root listing, and the exact missing typed artifact message such as `WP Codebox agent task did not produce required typed artifacts: concept_packet`. The validator fails closed when required runtime, fanout, typed runtime preview/access, import, visual, or artifact URL evidence is absent. Iterator issue/PR artifacts and publication PR artifacts are optional for a clean candidate-only run, but are validated when emitted. Fixture assertions must pass `--proof-mode fixture`; production proof is the default and rejects fixture-only artifacts or placeholder `example.*` URLs.
+For production-loop proof, run `.github/scripts/validate-headless-site-generation-loop.mjs`. It drives `homeboy agent-task controller from-spec`, validates the returned materialization proof, then asserts WPSG artifact evidence with `.github/scripts/assert-site-generation-loop-proof.mjs`. The reviewer-facing success evidence is `runtime_access` typed preview/playground access for the generated WordPress result plus durable typed artifacts for `concept_packet`, `design_packet`, `static_site_candidate`, import validation, static validation, visual parity, finding packets, revalidation, and reviewer gate output. Failure evidence should include the controller result, materialization proof, artifact root listing, and the exact missing typed artifact message such as `WP Codebox agent task did not produce required typed artifacts: concept_packet`. The validator fails closed when required runtime, fanout, typed runtime preview/access, import, visual, or artifact URL evidence is absent. Iterator issue/PR artifacts and publication PR artifacts are optional for a clean candidate-only run, but are validated when emitted. Fixture assertions must pass `--proof-mode fixture`; production proof is the default and rejects fixture-only artifacts or placeholder `example.*` URLs.
 
 Temporary `HOMEBOY_AGENT_RUNTIME_*`, `HOMEBOY_REF`, and `HOMEBOY_EXTENSIONS_REF` workflow inputs exist only until Homeboy and Homeboy Extensions expose the finalized repo-loop runtime contract tracked by the linked upstream Homeboy/HBE issues in the controller metadata. They select upstream runtime contracts; they are not WPSG orchestration state.
 
