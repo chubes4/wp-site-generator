@@ -59,7 +59,8 @@ assert.equal(controller.workflows.find((workflow) => workflow.workflow_id === 'd
 assert.equal(controller.workflows.find((workflow) => workflow.workflow_id === 'static-site').runtime_execution.input.workflow.id, 'static-site-candidate-flow', 'static workflow selects the candidate artifact workflow');
 assert.equal(controller.workflows.find((workflow) => workflow.workflow_id === 'store-idea').abilities.includes('github_issue_publish'), false, 'concept artifact workflows do not publish GitHub issues');
 assert.equal(controller.workflows.find((workflow) => workflow.workflow_id === 'static-site').abilities.includes('github_pull_request_publish'), false, 'candidate artifact workflows do not publish GitHub pull requests');
-assert.deepEqual(controller.workflows.find((workflow) => workflow.workflow_id === 'static-validation').artifacts.slice(0, 1), ['static_site_candidate'], 'static validation declares candidate artifact dependencies');
+assert.deepEqual(controller.workflows.find((workflow) => workflow.workflow_id === 'static-validation').consumes, ['static_site_candidate'], 'static validation declares candidate artifact dependencies');
+assert.deepEqual(controller.workflows.find((workflow) => workflow.workflow_id === 'static-validation').artifacts, ['static_validation_run', 'import_validation_result', 'visual_parity_artifact', 'finding_packet_set'], 'static validation required runtime artifacts are emitted outputs only');
 assert.deepEqual(controller.workflows.find((workflow) => workflow.workflow_id === 'static-publication').emits, ['static_site_pull_request'], 'static publication emits the generated PR artifact');
 assert.deepEqual(controller.workflows.find((workflow) => workflow.workflow_id === 'revalidation').consumes, ['static_site_candidate', 'import_validation_result', 'visual_parity_artifact', 'finding_packet_set'], 'revalidation consumes artifact evidence instead of PR transport');
 assert.deepEqual(controller.workflows.find((workflow) => workflow.workflow_id === 'reviewer').consumes, ['static_site_candidate', 'import_validation_result', 'static_validation_run', 'visual_parity_artifact', 'finding_packet_set', 'revalidation_attempt'], 'reviewer consumes artifact evidence instead of PR transport');
@@ -165,7 +166,10 @@ const groupResult = spawnSync(process.execPath, ['.github/scripts/group-ssi-find
 });
 assert.equal(groupResult.status, 0, groupResult.stderr || groupResult.stdout);
 
-const workflowResult = spawnSync(process.execPath, ['bundles/php-transformer-iterator-agent/scripts/build-agent-iterator-workflow.mjs', path.join(tempDir, 'groups.json'), workflowPath], {
+const groupedFindings = JSON.parse(await readFile(path.join(tempDir, 'groups.json'), 'utf8'));
+await writeFile(path.join(tempDir, 'one-group.json'), `${JSON.stringify(groupedFindings.groups[0], null, 2)}\n`);
+
+const workflowResult = spawnSync(process.execPath, ['bundles/php-transformer-iterator-agent/scripts/build-agent-iterator-workflow.mjs', path.join(tempDir, 'one-group.json'), workflowPath], {
 	cwd: repoRoot,
 	encoding: 'utf8',
 });
