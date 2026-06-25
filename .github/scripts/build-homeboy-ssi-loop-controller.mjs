@@ -87,7 +87,7 @@ const artifactFlow = [
 ];
 
 function handoff({ consumes = [], emits = [] } = {}) {
-	return { consumes, emits, artifacts: [...emits] };
+	return { consumes, emits, inputs: { consumes }, artifacts: [...emits] };
 }
 
 function bundleInputs(agent_id, extra = {}) {

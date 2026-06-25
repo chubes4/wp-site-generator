@@ -212,6 +212,9 @@
       "emits": [
         "concept_packet"
       ],
+      "inputs": {
+        "consumes": []
+      },
       "artifacts": [
         "concept_packet"
       ]
@@ -243,6 +246,9 @@
       "emits": [
         "concept_packet"
       ],
+      "inputs": {
+        "consumes": []
+      },
       "artifacts": [
         "concept_packet"
       ]
@@ -277,6 +283,11 @@
       "emits": [
         "design_packet"
       ],
+      "inputs": {
+        "consumes": [
+          "concept_packet"
+        ]
+      },
       "artifacts": [
         "design_packet"
       ]
@@ -311,6 +322,11 @@
       "emits": [
         "design_packet"
       ],
+      "inputs": {
+        "consumes": [
+          "concept_packet"
+        ]
+      },
       "artifacts": [
         "design_packet"
       ]
@@ -346,6 +362,12 @@
       "emits": [
         "static_site_candidate"
       ],
+      "inputs": {
+        "consumes": [
+          "concept_packet",
+          "design_packet"
+        ]
+      },
       "artifacts": [
         "static_site_candidate"
       ],
@@ -384,6 +406,12 @@
       "emits": [
         "static_site_candidate"
       ],
+      "inputs": {
+        "consumes": [
+          "concept_packet",
+          "design_packet"
+        ]
+      },
       "artifacts": [
         "static_site_candidate"
       ],
@@ -405,6 +433,11 @@
         "visual_parity_artifact",
         "finding_packet_set"
       ],
+      "inputs": {
+        "consumes": [
+          "static_site_candidate"
+        ]
+      },
       "artifacts": [
         "static_validation_run",
         "import_validation_result",
@@ -446,6 +479,12 @@
       "emits": [
         "static_site_publish_gate"
       ],
+      "inputs": {
+        "consumes": [
+          "import_validation_result",
+          "visual_parity_artifact"
+        ]
+      },
       "artifacts": [
         "static_site_publish_gate"
       ],
@@ -489,6 +528,13 @@
       "emits": [
         "static_site_pull_request"
       ],
+      "inputs": {
+        "consumes": [
+          "static_site_candidate",
+          "import_validation_result",
+          "static_site_publish_gate"
+        ]
+      },
       "artifacts": [
         "static_site_pull_request"
       ],
@@ -527,6 +573,13 @@
         "finding_packet_set",
         "finding_group"
       ],
+      "inputs": {
+        "consumes": [
+          "import_validation_result",
+          "static_validation_run",
+          "visual_parity_artifact"
+        ]
+      },
       "artifacts": [
         "finding_packet_set",
         "finding_group"
@@ -554,6 +607,11 @@
         "iterator_upstream_issue",
         "iterator_upstream_pull_request"
       ],
+      "inputs": {
+        "consumes": [
+          "finding_group"
+        ]
+      },
       "artifacts": [
         "iterator_upstream_issue",
         "iterator_upstream_pull_request"
@@ -602,6 +660,14 @@
         "visual_parity_artifact",
         "finding_packet_set"
       ],
+      "inputs": {
+        "consumes": [
+          "static_site_candidate",
+          "import_validation_result",
+          "visual_parity_artifact",
+          "finding_packet_set"
+        ]
+      },
       "artifacts": [
         "revalidation_attempt",
         "static_validation_run",
@@ -644,6 +710,16 @@
       "emits": [
         "reviewer_gate_outcome"
       ],
+      "inputs": {
+        "consumes": [
+          "static_site_candidate",
+          "import_validation_result",
+          "static_validation_run",
+          "visual_parity_artifact",
+          "finding_packet_set",
+          "revalidation_attempt"
+        ]
+      },
       "artifacts": [
         "reviewer_gate_outcome"
       ],
