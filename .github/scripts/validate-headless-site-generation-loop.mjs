@@ -102,6 +102,7 @@ try {
 		GITHUB_REPOSITORY: 'chubes4/wp-site-generator',
 		WPSG_REPLAY_ID: runId,
 		WPSG_RANDOMNESS_SEED: randomnessSeed,
+		HOMEBOY_BIN: homeboyBin,
 		HOMEBOY_AGENT_RUNTIME: runtimeId,
 		HOMEBOY_CONTROLLER_SPEC_PATH: controllerSpecPath,
 		HOMEBOY_CONTROLLER_RUN_INPUTS_PATH: controllerRunInputsPath,
