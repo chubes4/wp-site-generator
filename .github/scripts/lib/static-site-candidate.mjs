@@ -73,8 +73,8 @@ export async function resolveStaticSiteCandidateSource({
 
 export async function buildWebsiteArtifactFromSource(candidateSource) {
 	const files = await readSourceFiles(candidateSource.sourceDirectory);
-	if (!files.some((file) => file.path === 'website/index.html')) {
-		throw new Error(`StaticSiteCandidate source must include index.html: ${candidateSource.sourceDirectory}`);
+	if (files.length === 0) {
+		throw new Error(`StaticSiteCandidate source must include at least one file: ${candidateSource.sourceDirectory}`);
 	}
 
 	return {
@@ -97,8 +97,8 @@ async function materializeCandidateFile({ repoRoot, site, candidatePath, materia
 	}
 
 	const files = normalizeCandidateFiles(candidate);
-	if (!files.some((file) => file.relativePath === 'index.html')) {
-		throw new Error('StaticSiteCandidate must include index.html in files, file_set, or static_site.files.');
+	if (files.length === 0) {
+		throw new Error('StaticSiteCandidate must include at least one file in files, file_set, or static_site.files.');
 	}
 
 	const outputRoot = resolveInputPath(repoRoot, materializedRoot);

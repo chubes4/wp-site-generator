@@ -26,7 +26,6 @@ const candidateSource = await resolveStaticSiteCandidateSource({
 	site,
 	candidatePath,
 	materializedRoot: path.join(outputRoot, 'materialized'),
-	requireIndex: true,
 });
 const websiteArtifact = await buildWebsiteArtifactFromSource(candidateSource);
 const manifest = await loadSsiStackManifest('');

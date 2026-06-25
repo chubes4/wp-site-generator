@@ -14,7 +14,7 @@ try {
 		schema_version: 'wp-site-generator/StaticSiteCandidate/v1',
 		site_id: 'issue-777-direct-candidate',
 		files: {
-			'index.html': '<!doctype html><html><body><main>Direct candidate</main></body></html>',
+			'pages/home.html': '<!doctype html><html><body><main>Direct candidate</main></body></html>',
 			'assets/styles.css': 'body { color: #111; }',
 		},
 	}, null, 2));
@@ -36,7 +36,7 @@ try {
 	assert.equal(payload.candidate_source.source, 'static-site-candidate-json', 'validator records direct candidate JSON provenance');
 	assert.match(payload.candidate_source.relativeSourceDirectory, /^\.ci\/static-site-candidates\/issue-777-direct-candidate$/, 'candidate is materialized into a concrete static-site directory');
 	assert.equal(payload.website_artifact.schema, 'blocks-engine/php-transformer/site-artifact/v1', 'validator converts candidate files to SSI-compatible Blocks Engine site artifact input');
-	assert.deepEqual(payload.website_artifact.files.map((file) => file.path), ['website/assets/styles.css', 'website/index.html'], 'website artifact contains candidate files under website/');
+	assert.deepEqual(payload.website_artifact.files.map((file) => file.path), ['website/assets/styles.css', 'website/pages/home.html'], 'website artifact contains candidate files under website/ without requiring index.html');
 	assert.equal(payload.workloads[0].run[0].type, 'php', 'SSI workload probes transformer availability through PHP');
 	assert.match(payload.workloads[0].run[0].code, /blocks_engine_php_transformer_compile_artifact|Automattic\\\\BlocksEngine\\\\PhpTransformer/, 'SSI workload probes Blocks Engine php-transformer helpers/classes');
 	assert.equal(payload.workloads[0].run[1].type, 'php', 'SSI workload imports through the ability PHP bridge');
@@ -44,7 +44,7 @@ try {
 	assert.match(payload.workloads[0].run[1].code, /blocks_engine_php_transformer_compile_artifact|Automattic\\\\BlocksEngine\\\\PhpTransformer/, 'SSI import path requires Blocks Engine php-transformer helpers/classes');
 	assert.doesNotMatch(payload.workloads[0].run[1].code, /static-site-importer\/import-theme/, 'SSI workload does not depend on the legacy import-theme ability');
 	assert.equal(
-		await readFile(path.join(repoRoot, payload.candidate_source.relativeSourceDirectory, 'index.html'), 'utf8'),
+		await readFile(path.join(repoRoot, payload.candidate_source.relativeSourceDirectory, 'pages/home.html'), 'utf8'),
 		'<!doctype html><html><body><main>Direct candidate</main></body></html>',
 		'materialized candidate payload preserves file contents'
 	);
