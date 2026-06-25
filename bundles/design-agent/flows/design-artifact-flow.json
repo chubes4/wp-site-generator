@@ -14,7 +14,7 @@
             "prompt_queue": [
                 {
                     "added_at": "2026-06-24T00:00:00+00:00",
-                    "prompt": "Use the available concept_packet context for this workflow. Produce one DesignPacket for the concept and call emit_typed_artifact exactly once with the DesignPacket payload."
+                    "prompt": "Read the Runtime task input JSON in this task. Use concept_packet as the ConceptPacket payload; if only artifacts.concept_packet is present, use artifacts.concept_packet.payload. Produce one DesignPacket for that concept and call emit_typed_artifact exactly once with the DesignPacket payload."
                 }
             ],
             "queue_mode": "static",

@@ -14,7 +14,7 @@
             "prompt_queue": [
                 {
                     "added_at": "2026-06-24T00:00:00+00:00",
-                    "prompt": "Use the available concept_packet and design_packet context for this workflow. Produce one StaticSiteCandidate artifact and call emit_typed_artifact exactly once with the StaticSiteCandidate payload."
+                    "prompt": "Read the Runtime task input JSON in this task. Use concept_packet and design_packet directly when present; if only artifacts entries are present, use artifacts.concept_packet.payload and artifacts.design_packet.payload. Produce one StaticSiteCandidate artifact with an index.html file and call emit_typed_artifact exactly once with the StaticSiteCandidate payload."
                 }
             ],
             "queue_mode": "static",
