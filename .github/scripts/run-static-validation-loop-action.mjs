@@ -89,13 +89,26 @@ await writeFile(outputPath, `${JSON.stringify({
 
 function findArtifact(controller, artifactId) {
 	for (const lineage of [...(controller?.task_lineage || [])].reverse()) {
-		const artifacts = lineage?.outputs?.artifacts || lineage?.outputs?.typed_artifacts || {};
-		const value = artifacts[artifactId];
+		const value = artifactFromOutputs(lineage?.outputs, artifactId);
 		if (value) {
 			return value.payload || value;
 		}
 	}
+	for (const event of [...(controller?.history || [])].reverse()) {
+		const outcomes = event?.payload?.execution?.result?.aggregate?.outcomes || [];
+		for (const outcome of [...outcomes].reverse()) {
+			const value = artifactFromOutputs(outcome?.outputs, artifactId) || artifactFromOutputs(outcome?.metadata, artifactId);
+			if (value) {
+				return value.payload || value;
+			}
+		}
+	}
 	return null;
+}
+
+function artifactFromOutputs(outputs, artifactId) {
+	const artifacts = outputs?.artifacts || outputs?.typed_artifacts || outputs?.typedArtifacts || {};
+	return artifacts[artifactId];
 }
 
 function slug(value) {
