@@ -215,8 +215,12 @@ const controller = {
 		{
 			workflow_id: 'static-publication',
 			tasks: ['Publish one generated-site pull request from a validated StaticSiteCandidate only when the deterministic StaticSitePublishGate allows publication.'],
-			abilities: ['github_pull_request_publish'],
 			...handoff({ consumes: ['static_site_candidate', 'import_validation_result', 'static_site_publish_gate'], emits: ['static_site_pull_request'] }),
+			execution: {
+				kind: 'command',
+				command: 'node',
+				args: ['.github/scripts/run-static-publication-loop-action.mjs'],
+			},
 			dependencies: ['wp-site-generator'],
 			gates: ['fallback_blocks', 'conversion_findings', 'visual_parity'],
 			metrics: ['fallback_blocks', 'conversion_findings', 'visual_parity'],
