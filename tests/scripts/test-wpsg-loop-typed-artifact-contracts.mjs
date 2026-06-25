@@ -85,7 +85,8 @@ try {
 			const workflow = workflowsById.get(workflowId);
 			assert.ok(workflow, `${workflowId} workflow exists`);
 			assert.ok(workflow.emits.includes(artifactId), `${workflowId} emits ${artifactId}`);
-			assert.ok(workflow.artifacts.includes(artifactId), `${workflowId} artifact handoff includes ${artifactId}`);
+			assert.ok(workflow.artifacts.includes(artifactId), `${workflowId} artifact handoff requires emitted ${artifactId}`);
+			assert.deepEqual(workflow.artifacts, workflow.emits, `${workflowId} required runtime artifacts are emitted outputs only`);
 			assert.equal(workflow.runtime_execution?.kind, 'bundle', `${workflowId} declares a Homeboy-owned bundle execution input`);
 		}
 

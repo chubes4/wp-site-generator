@@ -278,7 +278,6 @@
         "design_packet"
       ],
       "artifacts": [
-        "concept_packet",
         "design_packet"
       ]
     },
@@ -313,7 +312,6 @@
         "design_packet"
       ],
       "artifacts": [
-        "concept_packet",
         "design_packet"
       ]
     },
@@ -349,8 +347,6 @@
         "static_site_candidate"
       ],
       "artifacts": [
-        "concept_packet",
-        "design_packet",
         "static_site_candidate"
       ],
       "dependencies": [
@@ -389,8 +385,6 @@
         "static_site_candidate"
       ],
       "artifacts": [
-        "concept_packet",
-        "design_packet",
         "static_site_candidate"
       ],
       "dependencies": [
@@ -412,7 +406,6 @@
         "finding_packet_set"
       ],
       "artifacts": [
-        "static_site_candidate",
         "static_validation_run",
         "import_validation_result",
         "visual_parity_artifact",
@@ -447,8 +440,6 @@
         "static_site_publish_gate"
       ],
       "artifacts": [
-        "import_validation_result",
-        "visual_parity_artifact",
         "static_site_publish_gate"
       ],
       "dependencies": [
@@ -492,9 +483,6 @@
         "static_site_pull_request"
       ],
       "artifacts": [
-        "static_site_candidate",
-        "import_validation_result",
-        "static_site_publish_gate",
         "static_site_pull_request"
       ],
       "dependencies": [
@@ -533,9 +521,6 @@
         "finding_group"
       ],
       "artifacts": [
-        "import_validation_result",
-        "static_validation_run",
-        "visual_parity_artifact",
         "finding_packet_set",
         "finding_group"
       ],
@@ -563,7 +548,6 @@
         "iterator_upstream_pull_request"
       ],
       "artifacts": [
-        "finding_group",
         "iterator_upstream_issue",
         "iterator_upstream_pull_request"
       ],
@@ -612,10 +596,6 @@
         "finding_packet_set"
       ],
       "artifacts": [
-        "static_site_candidate",
-        "import_validation_result",
-        "visual_parity_artifact",
-        "finding_packet_set",
         "revalidation_attempt",
         "static_validation_run",
         "import_validation_result",
@@ -658,12 +638,6 @@
         "reviewer_gate_outcome"
       ],
       "artifacts": [
-        "static_site_candidate",
-        "import_validation_result",
-        "static_validation_run",
-        "visual_parity_artifact",
-        "finding_packet_set",
-        "revalidation_attempt",
         "reviewer_gate_outcome"
       ],
       "dependencies": [
