@@ -234,6 +234,11 @@ const controller = {
 			workflow_id: 'finding-packets',
 			tasks: ['Group SSI and Blocks Engine transformer diagnostic artifacts into finding packets for upstream routing.'],
 			...handoff({ consumes: ['import_validation_result', 'static_validation_run', 'visual_parity_artifact'], emits: ['finding_packet_set', 'finding_group'] }),
+			execution: {
+				kind: 'command',
+				command: 'node',
+				args: ['.github/scripts/run-finding-packets-loop-action.mjs'],
+			},
 			dependencies: ['wp-site-generator', 'static-site-importer', 'blocks-engine'],
 		},
 		{

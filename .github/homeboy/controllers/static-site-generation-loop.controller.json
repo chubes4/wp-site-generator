@@ -595,6 +595,13 @@
         "finding_packet_set",
         "finding_group"
       ],
+      "execution": {
+        "kind": "command",
+        "command": "node",
+        "args": [
+          ".github/scripts/run-finding-packets-loop-action.mjs"
+        ]
+      },
       "dependencies": [
         "wp-site-generator",
         "static-site-importer",
