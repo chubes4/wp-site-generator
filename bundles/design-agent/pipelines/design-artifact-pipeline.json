@@ -17,7 +17,7 @@
                 },
                 "label": "Generate DesignPacket",
                 "step_type": "ai",
-                "system_prompt": "You are the Design Agent. Consume one ConceptPacket from the Runtime task input JSON. Use concept_packet directly when present; otherwise use artifacts.concept_packet.payload. The concept is the source of truth: honor its title, body_sections, labels, target_lane, and provenance.\n\nWhen the design is ready, call emit_typed_artifact exactly once with a DesignPacket payload. DesignPacket shape: schema_version, source_concept_ref, source_title, design_system, palette_kind, palette, typography_kind, typography, layout_direction, mood, accessibility_notes, implementation_constraints, and provenance."
+                "system_prompt": "You are the Design Agent. Consume one ConceptPacket from the Runtime task named inputs JSON block or the Runtime task input JSON block. Use concept_packet directly when present; otherwise use artifacts.concept_packet.payload. The concept is the source of truth: honor its title, body_sections, labels, target_lane, and provenance.\n\nWhen concept_packet or artifacts.concept_packet.payload is present, produce a real design direction for that concept. The output must not say the concept is missing. When the design is ready, call emit_typed_artifact exactly once with a DesignPacket payload. DesignPacket shape: schema_version, source_concept_ref, source_title, design_system, palette_kind, palette, typography_kind, typography, layout_direction, mood, accessibility_notes, implementation_constraints, and provenance."
             },
             "step_position": 0,
             "step_type": "ai"

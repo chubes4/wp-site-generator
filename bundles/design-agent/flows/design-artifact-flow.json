@@ -14,7 +14,7 @@
             "prompt_queue": [
                 {
                     "added_at": "2026-06-24T00:00:00+00:00",
-                    "prompt": "Read the Runtime task input JSON in this task. Use concept_packet as the ConceptPacket payload; if only artifacts.concept_packet is present, use artifacts.concept_packet.payload. Produce one DesignPacket for that concept and call emit_typed_artifact exactly once with the DesignPacket payload."
+                    "prompt": "Read the Runtime task named inputs JSON block first, then the Runtime task input JSON block. If concept_packet is present in named inputs, it is the ConceptPacket payload. If artifacts.concept_packet.payload is present, it is also the ConceptPacket payload. Use that payload as the source of truth and produce one DesignPacket for it. The output must not report missing concept input when either source is present. Call emit_typed_artifact exactly once with the DesignPacket payload."
                 }
             ],
             "queue_mode": "static",
