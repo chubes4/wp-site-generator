@@ -264,6 +264,11 @@ const controller = {
 			workflow_id: 'revalidation',
 			tasks: ['Revalidate the static-site candidate from candidate, validation, visual parity, and finding artifacts without requiring a generated-site or upstream pull request.'],
 			...handoff({ consumes: ['static_site_candidate', 'import_validation_result', 'visual_parity_artifact', 'finding_packet_set'], emits: ['revalidation_attempt', 'static_validation_run', 'import_validation_result', 'visual_parity_artifact', 'finding_packet_set'] }),
+			execution: {
+				kind: 'command',
+				command: 'node',
+				args: ['.github/scripts/run-revalidation-loop-action.mjs'],
+			},
 			dependencies: ['wp-site-generator', 'static-site-importer', 'blocks-engine'],
 			gates: ['fallback_blocks', 'conversion_findings', 'visual_parity'],
 			metrics: ['fallback_blocks', 'conversion_findings', 'visual_parity'],

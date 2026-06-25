@@ -693,6 +693,13 @@
         "visual_parity_artifact",
         "finding_packet_set"
       ],
+      "execution": {
+        "kind": "command",
+        "command": "node",
+        "args": [
+          ".github/scripts/run-revalidation-loop-action.mjs"
+        ]
+      },
       "dependencies": [
         "wp-site-generator",
         "static-site-importer",
