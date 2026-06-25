@@ -110,7 +110,7 @@ try {
 	};
 
 	run('build WPSG controller run inputs', process.execPath, ['.github/scripts/build-homeboy-controller-run-inputs.mjs'], { env: baseEnv });
-	const runFromSpecResult = run('run Homeboy controller from spec', homeboyBin, homeboyArgs(['agent-task', 'controller', 'from-spec', `@${controllerSpecPath}`, '--inputs', `@${controllerRunInputsPath}`, '--policy-result', `@${policyResultPath}`, '--max-actions', '100', '--output', controllerResultPath]), {
+	const runFromSpecResult = run('run Homeboy controller from spec', homeboyBin, homeboyArgs(['agent-task', 'controller', 'from-spec', `@${controllerSpecPath}`, '--resume', '--inputs', `@${controllerRunInputsPath}`, '--policy-result', `@${policyResultPath}`, '--max-actions', '100', '--output', controllerResultPath]), {
 		env: baseEnv,
 		stdoutPath: controllerStdoutPath,
 		evidence: {

@@ -63,7 +63,7 @@ try {
   assert.equal(controllerRunSpec.metadata.run.materialized_by, 'homeboy agent-task controller from-spec');
   assert.ok(controllerRunSpec.workflows.every((workflow) => workflow.inputs?.policy_results?.['wpsg-complexity-policy']), 'materialized workflows include WPSG complexity policy results');
 
-  const fromSpecResult = spawnSync(homeboyFixturePath, ['agent-task', 'controller', 'from-spec', '@.github/homeboy/controllers/static-site-generation-loop.controller.json', '--inputs', `@${controllerRunInputsPath}`, '--policy-result', `@${controllerPolicyResultPath}`, '--max-actions', '100'], {
+  const fromSpecResult = spawnSync(homeboyFixturePath, ['agent-task', 'controller', 'from-spec', '@.github/homeboy/controllers/static-site-generation-loop.controller.json', '--resume', '--inputs', `@${controllerRunInputsPath}`, '--policy-result', `@${controllerPolicyResultPath}`, '--max-actions', '100'], {
     cwd: repoRoot,
     encoding: 'utf8',
   });
