@@ -207,7 +207,15 @@ function loadVisualParityArtifact(root) {
 }
 
 function candidateIsBlocked(candidate) {
-	return Boolean(candidate.blocked_reason || candidate.failure_reason || candidate.status === 'blocked' || candidate.source?.concept_packet === null || candidate.source?.design_packet === null);
+	return Boolean(
+		candidate.blocked_reason
+		|| candidate.failure_reason
+		|| candidate.status === 'blocked'
+		|| candidate.source?.concept_packet === null
+		|| candidate.source?.design_packet === null
+		|| candidate.source?.concept_packet_present === false
+		|| candidate.source?.design_packet_present === false
+	);
 }
 
 function artifactFromOutputs(outputs, artifactId) {

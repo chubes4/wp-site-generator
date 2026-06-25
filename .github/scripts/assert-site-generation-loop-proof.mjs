@@ -107,7 +107,10 @@ function candidateIsBlocked(candidate) {
 		'payload.blocked_reason',
 		'payload.failure_reason',
 		'payload.provenance.status',
-	]));
+	]) || candidate.source?.concept_packet_present === false
+		|| candidate.source?.design_packet_present === false
+		|| candidate.payload?.source?.concept_packet_present === false
+		|| candidate.payload?.source?.design_packet_present === false);
 }
 
 function unwrapArtifact(value) {
