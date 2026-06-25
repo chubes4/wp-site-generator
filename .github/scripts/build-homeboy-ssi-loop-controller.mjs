@@ -243,10 +243,13 @@ const controller = {
 		},
 		{
 			workflow_id: 'iterator',
-			agent_id: 'php_transformer_iterator',
 			prompt: 'Route each finding group to the owning SSI stack repository and open the focused upstream issue or pull request described by the packet evidence.',
-			abilities: [runtimePackageAbilityId, 'github_issue_publish', 'github_pull_request_publish', 'comment_github_pull_request'],
 			...handoff({ consumes: ['finding_group'], emits: ['iterator_upstream_issue', 'iterator_upstream_pull_request'] }),
+			execution: {
+				kind: 'command',
+				command: 'node',
+				args: ['.github/scripts/run-iterator-loop-action.mjs'],
+			},
 			fan_out: {
 				primitive: 'homeboy.agent-task.fanout.plan',
 				mode: 'per_artifact',
