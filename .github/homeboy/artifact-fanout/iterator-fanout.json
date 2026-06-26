@@ -1,0 +1,49 @@
+{
+  "schema": "homeboy-extensions/artifact-fanout-materializer-config/v1",
+  "mode": "run",
+  "artifact": "finding_group",
+  "item_path": "items",
+  "group_by": ["owner_repo", "root_cause", "group_id"],
+  "requires_non_empty": true,
+  "plan_id": "wpsg-iterator-fanout",
+  "batch_id": "wpsg-iterator-fanout",
+  "output_artifact": "iterator_fanout_batch",
+  "task_request_template": {
+    "schema": "homeboy/agent-task-request/v1",
+    "task_id": "wpsg-iterator-{{group.key}}",
+    "group_key": "{{group.key}}",
+    "executor": {
+      "backend": "codebox",
+      "selector": "wordpress.codebox-agent-task-executor",
+      "model": "{{env.HOMEBOY_AGENT_RUNTIME_MODEL}}",
+      "config": {
+        "provider": "{{env.HOMEBOY_AGENT_RUNTIME_PROVIDER}}",
+        "provider_plugin_paths": ["{{env.HOMEBOY_AGENT_RUNTIME_PROVIDER_PLUGIN_PATHS}}"],
+        "homeboy_extensions_path": "{{env.HOMEBOY_EXTENSIONS_PATH}}"
+      }
+    },
+    "instructions": "Route WPSG finding group {{group.key}} to the owning upstream repository and return durable issue or pull request evidence when a change is required.",
+    "inputs": {
+      "runtime_task": {
+        "ability": "runtime-package/run",
+        "kind": "bundle",
+        "input": {
+          "package": {
+            "source": "bundles/php-transformer-iterator-agent",
+            "slug": "php-transformer-iterator-agent"
+          },
+          "input": {
+            "wait_for_completion": true,
+            "finding_group": "{{group.items}}"
+          }
+        }
+      },
+      "finding_group": "{{group.items}}"
+    },
+    "expected_artifacts": ["iterator_upstream_issue", "iterator_upstream_pull_request"],
+    "metadata": {
+      "workflow_id": "iterator",
+      "source_artifact": "finding_group"
+    }
+  }
+}
