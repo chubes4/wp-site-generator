@@ -6,7 +6,7 @@
   "group_by": ["owner_repo", "root_cause", "group_id"],
   "requires_non_empty": true,
   "plan_id": "wpsg-iterator-fanout",
-  "batch_id": "wpsg-iterator-fanout",
+  "batch_id": "{{env.HOMEBOY_LOOP_ID}}-{{env.HOMEBOY_LOOP_ACTION_ID}}-iterator-fanout",
   "output_artifact": "iterator_fanout_batch",
   "task_request_template": {
     "schema": "homeboy/agent-task-request/v1",
