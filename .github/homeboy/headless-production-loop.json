@@ -16,6 +16,26 @@
       "ability_requirements": ["homeboy/run-runtime-package"]
     }
   },
+  "controller_execution": {
+    "schema": "homeboy/headless-controller-execution/v1",
+    "spec": ".github/homeboy/controllers/static-site-generation-loop.controller.json",
+    "inputs": ".ci/headless-production-validation/site-generation-loop.controller-run-inputs.json",
+    "policy_result": ".ci/headless-production-validation/site-generation-loop.complexity-policy-result.json",
+    "output": ".ci/headless-production-validation/site-generation-loop.controller-run-from-spec.json",
+    "max_actions": 100,
+    "prepare": [
+      { "argv": ["node", ".github/scripts/build-homeboy-controller-run-inputs.mjs"] }
+    ],
+    "env": {
+      "GITHUB_REPOSITORY": "chubes4/wp-site-generator",
+      "WPSG_REPLAY_ID": "headless-production-validation",
+      "WPSG_RANDOMNESS_SEED": "headless-production-validation",
+      "HOMEBOY_CONTROLLER_SPEC_PATH": ".github/homeboy/controllers/static-site-generation-loop.controller.json",
+      "HOMEBOY_CONTROLLER_RUN_INPUTS_PATH": ".ci/headless-production-validation/site-generation-loop.controller-run-inputs.json",
+      "HOMEBOY_POLICY_RESULT_PATH": ".ci/headless-production-validation/site-generation-loop.complexity-policy-result.json",
+      "HOMEBOY_ARTIFACT_ROOT": ".ci/headless-production-validation/artifacts"
+    }
+  },
   "prompt": "Run the WP Site Generator true validation path headlessly. Generate or reuse the smallest candidate needed to exercise concept, design, static-site candidate, WordPress import validation, static validation, visual parity, runtime access, and reviewer evidence. Return a working Playground or runtime preview URL and durable typed artifacts for the required evidence.",
   "loop_policy": {
     "mode": "count",

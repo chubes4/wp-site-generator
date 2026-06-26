@@ -17,6 +17,12 @@ assert.ok(spec.runtime_profiles['wpsg-agent-runtime-package'], 'default runtime 
 assert.equal(spec.runtime_id, undefined, 'WPSG spec does not select a runtime backend');
 assert.equal(spec.provider, undefined, 'WPSG spec does not select an AI provider');
 assert.doesNotMatch(JSON.stringify(spec), /wp-codebox|codebox|codex|AI_PROVIDER_OPENAI/i, 'WPSG workload spec stays runtime/provider neutral');
+assert.equal(spec.controller_execution?.spec, '.github/homeboy/controllers/static-site-generation-loop.controller.json', 'headless spec runs the existing WPSG controller spec');
+assert.equal(spec.controller_execution?.inputs, '.ci/headless-production-validation/site-generation-loop.controller-run-inputs.json', 'headless spec declares generated controller inputs');
+assert.equal(spec.controller_execution?.policy_result, '.ci/headless-production-validation/site-generation-loop.complexity-policy-result.json', 'headless spec declares generated policy evidence');
+assert.equal(spec.controller_execution?.prepare?.[0]?.argv?.join(' '), 'node .github/scripts/build-homeboy-controller-run-inputs.mjs', 'headless spec builds controller inputs before execution');
+assert.equal(spec.runtime_profiles['wpsg-agent-runtime-package'].runtime_bundle_ability, 'homeboy/run-runtime-package', 'runtime profile remains a neutral runtime ability profile, not a bundle source');
+assert.equal(spec.controller_execution?.spec.includes('wpsg-agent-runtime-package'), false, 'runtime profile id is not used as a controller or bundle source');
 
 const artifactNames = new Set(spec.artifact_declarations.map((artifact) => artifact.name));
 for (const required of ['concept_packet', 'design_packet', 'static_site_candidate', 'import_validation_result', 'static_validation_run', 'visual_parity_artifact', 'reviewer_gate_outcome']) {
