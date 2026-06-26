@@ -351,7 +351,9 @@
           },
           "input": {
             "wait_for_completion": true,
-            "site_kind": "store"
+            "site_kind": "store",
+            "step_budget": 20,
+            "time_budget_ms": 900000
           }
         }
       },
@@ -395,7 +397,9 @@
           },
           "input": {
             "wait_for_completion": true,
-            "site_kind": "website"
+            "site_kind": "website",
+            "step_budget": 20,
+            "time_budget_ms": 900000
           }
         }
       },

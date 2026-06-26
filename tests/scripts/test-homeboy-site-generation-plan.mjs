@@ -208,6 +208,9 @@ assert.equal(controllerRunSpec.metadata.run.materialized_by, 'homeboy agent-task
 	assert.deepEqual(workflows['static-site'].consumes, ['concept_packet', 'design_packet'], 'static generation consumes concept and design packets explicitly');
 	assert.equal(workflows['store-idea'].runtime_execution.input.workflow.id, 'store-idea-artifact-flow', 'store concept generation selects the artifact workflow');
 	assert.equal(workflows['static-site'].runtime_execution.input.workflow.id, 'static-site-candidate-flow', 'static generation selects the candidate artifact workflow');
+	assert.equal(workflows['static-store'].runtime_execution.input.input.time_budget_ms, 900000, 'static store generation declares a longer bundle completion budget');
+	assert.equal(workflows['static-site'].runtime_execution.input.input.time_budget_ms, 900000, 'static site generation declares a longer bundle completion budget');
+	assert.equal(workflows['static-site'].runtime_execution.input.input.step_budget, 20, 'static site generation declares enough drain steps for AI plus publish');
 	assert.deepEqual(workflows['static-validation'].execution, {
 		kind: 'command',
 		command: 'node',

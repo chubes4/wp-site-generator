@@ -27,6 +27,11 @@ const artifactSchemas = {
 
 const typedArtifactIds = new Set(['concept_packet', 'design_packet', 'static_site_candidate']);
 
+const staticCandidateBundleBudget = {
+	step_budget: 20,
+	time_budget_ms: 900000,
+};
+
 const agentBundles = {
 	store_idea: { bundle: 'bundles/store-idea-agent', slug: 'store-idea-agent', flow: 'store-idea-artifact-flow', emits: ['concept_packet'] },
 	website_idea: { bundle: 'bundles/website-idea-agent', slug: 'website-idea-agent', flow: 'website-idea-artifact-flow', emits: ['concept_packet'] },
@@ -168,7 +173,7 @@ const controller = {
 			agent_id: 'static_store',
 			prompt: 'Produce a commerce static-site candidate artifact from a WPSG design packet.',
 			abilities: [runtimePackageAbilityId],
-			...bundleInputs('static_store', { site_kind: 'store' }),
+			...bundleInputs('static_store', { site_kind: 'store', ...staticCandidateBundleBudget }),
 			...handoff({ consumes: ['concept_packet', 'design_packet'], emits: ['static_site_candidate'] }),
 			dependencies: ['wp-site-generator'],
 		},
@@ -177,7 +182,7 @@ const controller = {
 			agent_id: 'static_site',
 			prompt: 'Produce a content static-site candidate artifact from a WPSG design packet.',
 			abilities: [runtimePackageAbilityId],
-			...bundleInputs('static_site', { site_kind: 'website' }),
+			...bundleInputs('static_site', { site_kind: 'website', ...staticCandidateBundleBudget }),
 			...handoff({ consumes: ['concept_packet', 'design_packet'], emits: ['static_site_candidate'] }),
 			dependencies: ['wp-site-generator'],
 		},
