@@ -110,11 +110,14 @@ function bundleInputs(agent_id, extra = {}) {
 		packageSource: bundle.bundle,
 		packageSlug: bundle.slug,
 		workflowId: bundle.flow,
-		ability: runtimePackageAbilityId,
 		input: {
-			wait_for_completion: true,
 			...extra,
 		},
+		options: {
+			wait_for_completion: true,
+			time_budget_ms: 1200000,
+		},
+		ability: runtimePackageAbilityId,
 	});
 }
 
