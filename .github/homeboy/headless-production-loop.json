@@ -1,0 +1,58 @@
+{
+  "schema": "homeboy/headless-production-loop-spec/v1",
+  "loop_id": "wp-site-generator/headless-production-validation",
+  "task_id": "wpsg-true-validation",
+  "workload_id": "wpsg-true-validation",
+  "target_repo": "chubes4/wp-site-generator",
+  "component_path": ".",
+  "runtime_profile": "wpsg-agent-runtime-package",
+  "runtime_profiles": {
+    "wpsg-agent-runtime-package": {
+      "schema": "homeboy/runtime-profile/v1",
+      "id": "wpsg-agent-runtime-package",
+      "runtime_task_ability": "homeboy/run-runtime-package",
+      "runtime_bundle_ability": "homeboy/run-runtime-package",
+      "runtime_workflow_ability": "homeboy/run-runtime-package",
+      "ability_requirements": ["homeboy/run-runtime-package"]
+    }
+  },
+  "prompt": "Run the WP Site Generator true validation path headlessly. Generate or reuse the smallest candidate needed to exercise concept, design, static-site candidate, WordPress import validation, static validation, visual parity, runtime access, and reviewer evidence. Return a working Playground or runtime preview URL and durable typed artifacts for the required evidence.",
+  "loop_policy": {
+    "mode": "count",
+    "max_iterations": 1,
+    "accepted_statuses": ["succeeded"],
+    "continue_conditions": [
+      { "outcome_status": "failed", "reason": "validation_failed" },
+      { "outcome_status": "provider_error", "reason": "provider_retry" },
+      { "outcome_status": "timeout", "reason": "runtime_timeout" }
+    ],
+    "repair_task_template": {
+      "task_id": "wpsg-true-validation-repair-{{iteration}}",
+      "workload_id": "wpsg-true-validation-repair-{{iteration}}",
+      "prompt": "Continue the WP Site Generator true validation path after this failure: {{failure_summary}}. Keep the runtime/backend selected by the caller and emit the same required evidence."
+    }
+  },
+  "artifact_declarations": [
+    { "name": "concept_packet", "kind": "wp-site-generator/ConceptPacket/v1", "required": true, "reviewer_facing": true },
+    { "name": "design_packet", "kind": "wp-site-generator/DesignPacket/v1", "required": true, "reviewer_facing": true },
+    { "name": "static_site_candidate", "kind": "wp-site-generator/StaticSiteCandidate/v1", "required": true, "reviewer_facing": true },
+    { "name": "import_validation_result", "kind": "wp-site-generator/ImportValidationResult/v1", "required": true, "reviewer_facing": true },
+    { "name": "static_validation_run", "kind": "wp-site-generator/StaticValidationRun/v1", "required": true, "reviewer_facing": true },
+    { "name": "visual_parity_artifact", "kind": "wp-site-generator/VisualParityArtifact/v1", "required": true, "reviewer_facing": true },
+    { "name": "reviewer_gate_outcome", "kind": "wp-site-generator/ReviewerGateOutcome/v1", "required": true, "reviewer_facing": true }
+  ],
+  "required_evidence_refs": [
+    { "kind": "runtime_access", "name": "playground_or_preview_url" },
+    { "kind": "artifact_bundle", "name": "homeboy_evidence_bundle" }
+  ],
+  "controller_loop_proof": {
+    "max_iterations": 1,
+    "accepted_statuses": ["succeeded"],
+    "allowed_statuses": ["succeeded"],
+    "allowed_stop_reasons": ["accepted"],
+    "preview_required": true,
+    "required_evidence": [
+      { "kind": "runtime_access", "name": "playground_or_preview_url" }
+    ]
+  }
+}
