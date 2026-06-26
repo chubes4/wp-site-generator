@@ -25,7 +25,8 @@ assert.match(workflow, /build-php-transformer-iterator-fanout-config\.mjs/, 'ite
 assert.match(workflow, /execute_workflow_path":"\.ci\/agent-iterator-workflow\.json"/, 'iterator runtime task receives the generated workflow path');
 assert.match(runtimeWorkflow, /runtime_workload_profile:[\s\S]*default: workspace-iteration/, 'WPSG seam exposes generic workload profile selection');
 assert.match(runtimeWorkflow, /runtime_profile:[\s\S]*default: wpsg-agent-runtime-package/, 'WPSG seam exposes a generic runtime package profile by default');
-assert.match(runtimeWorkflow, /render-homeboy-runtime-workflow-inputs\.mjs/, 'WPSG seam renders runtime profiles and tool abilities from the Homeboy runtime contract helper');
+assert.match(runtimeWorkflow, /render-wpsg-runtime-domain-inputs\.mjs/, 'WPSG seam renders only WPSG runtime domain inputs');
+assert.match(runtimeWorkflow, /render-runtime-workflow-inputs@[0-9a-f]{40}/, 'WPSG seam delegates canonical runtime workflow input rendering to Homeboy Extensions');
 assert.match(runtimeWorkflow, /ability_tools: \$\{\{ needs\.runtime-contracts\.outputs\.ability_tools \}\}/, 'WPSG seam consumes generated runtime tool declarations');
 assert.doesNotMatch(runtimeWorkflow, /ability_tools: .*wp-codebox\/runner-workspace-command/, 'WPSG seam consumes generated runtime tool declarations');
 assert.doesNotMatch(workflow, /runtime_workspace_(command|publish)_ability/, 'iterator receives runtime package abilities through profile output');

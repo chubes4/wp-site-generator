@@ -24,7 +24,6 @@ await writeJson(manifestPath, {
 	harness: manifestEntry('wp_site_generator_validation_harness', 'WP Site Generator validation harness scripts', 'https://github.com/chubes4/wp-site-generator', 'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa'),
 		repositories: {
 			homeboy_extensions: manifestEntry('homeboy_extensions', 'Homeboy Extensions', 'https://github.com/Extra-Chill/homeboy-extensions', 'bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb'),
-			wp_codebox: manifestEntry('wp_codebox', 'WP Codebox', 'https://github.com/Automattic/wp-codebox', 'cccccccccccccccccccccccccccccccccccccccc'),
 			static_site_importer: manifestEntry('static_site_importer', 'Static Site Importer', 'https://github.com/chubes4/static-site-importer', 'dddddddddddddddddddddddddddddddddddddddd'),
 			blocks_engine_php_transformer: manifestEntry('blocks_engine_php_transformer', 'Blocks Engine PHP Transformer', 'https://github.com/Automattic/blocks-engine', '9999999999999999999999999999999999999999', { path: 'php-transformer', target_folder_name: 'blocks-engine-php-transformer' }),
 		},
@@ -88,7 +87,6 @@ await writeJson(configPath, {
 	harness: manifestEntry('wp_site_generator_validation_harness', 'WP Site Generator validation harness scripts', 'https://github.com/example/wp-site-generator', 'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa'),
 		repositories: {
 			homeboy_extensions: manifestEntry('homeboy_extensions', 'Homeboy Extensions', 'https://github.com/Extra-Chill/homeboy-extensions', 'bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb'),
-			wp_codebox: manifestEntry('wp_codebox', 'WP Codebox', 'https://github.com/Automattic/wp-codebox', 'cccccccccccccccccccccccccccccccccccccccc'),
 			static_site_importer: manifestEntry('static_site_importer', 'Static Site Importer', 'https://github.com/example/static-site-importer', 'dddddddddddddddddddddddddddddddddddddddd'),
 			blocks_engine_php_transformer: manifestEntry('blocks_engine_php_transformer', 'Blocks Engine PHP Transformer', 'https://github.com/Automattic/blocks-engine', '9999999999999999999999999999999999999999', { path: 'php-transformer', target_folder_name: 'blocks-engine-php-transformer' }),
 		},

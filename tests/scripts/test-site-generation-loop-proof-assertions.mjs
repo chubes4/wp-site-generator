@@ -215,26 +215,6 @@ try {
     url: 'https://github.com/chubes4/wp-site-generator/pull/123',
   });
 
-  const fixtureControllerProof = spawnSync(
-    process.execPath,
-    [
-      '.github/scripts/assert-site-generation-loop-proof.mjs',
-      '--proof-mode',
-      'fixture',
-      '--controller-result',
-      controllerResultPath,
-      '--controller-run-spec',
-      controllerRunSpecPath,
-      '--artifact-root',
-      artifactRoot,
-    ],
-    {
-      cwd: repoRoot,
-      encoding: 'utf8',
-    }
-  );
-  assert.equal(fixtureControllerProof.status, 0, fixtureControllerProof.stderr || fixtureControllerProof.stdout);
-
   const fixtureAsProductionProof = spawnSync(
     process.execPath,
     [

@@ -22,7 +22,7 @@ Build or refresh the checked-in controller spec:
 node .github/scripts/build-homeboy-ssi-loop-controller.mjs
 ```
 
-The generated spec is intended for a Homeboy repo-loop bridge that consumes repo-owned domain ingredients. Homeboy supplies the executor backend, runtime provider, WordPress runtime, WP Codebox API mapping, controller state store, retry policy, dedupe implementation, routing policy, and fan-out mechanism.
+The generated spec is intended for a Homeboy repo-loop bridge that consumes repo-owned domain ingredients. Homeboy and Homeboy Extensions supply the executor backend, runtime provider, WordPress runtime, controller state store, retry policy, dedupe implementation, routing policy, and fan-out mechanism.
 
 Homeboy derives execution behavior from the declaration and its own controller policy. Resume, dedupe, joins, retries, routing, gate decisions, and lineage persistence are Homeboy responsibilities.
 
@@ -153,7 +153,7 @@ The deterministic headless validation path is `.github/scripts/validate-headless
 HOMEBOY_BIN=homeboy node .github/scripts/validate-headless-site-generation-loop.mjs \
   --run-id headless-contract \
   --randomness-seed headless-contract-seed \
-  --runtime-id wp-codebox \
+  --runtime-id <runtime-id> \
   --artifact-root .ci/homeboy-agent-task-artifacts \
   --evidence .ci/headless-site-generation-loop-evidence.json
 ```
@@ -168,9 +168,9 @@ node .github/scripts/write-materialized-controller-run-spec.mjs <materialization
 node .github/scripts/assert-site-generation-loop-proof.mjs --controller-result <controller-result> --controller-run-spec <controller-run-spec> --artifact-root <artifact-root>
 ```
 
-The proof requires artifacts emitted by Homeboy/runtime execution under `--artifact-root`. It fails closed when the artifact root does not include real evidence for a tiny fixture site run, import report, zero fallback/conversion findings, visual parity gates, typed runtime preview/access URL, required iterator fanout evidence for actionable findings, and controller run-from-spec evidence. Iterator issue/PR artifacts and publication PR artifacts are optional for a clean candidate-only run, but are validated when emitted. `--fixture-artifacts` is disabled and is not reviewer-facing proof. Runtime selection remains outside the controller spec through `HOMEBOY_AGENT_RUNTIME_*`; `--runtime-id wp-codebox` is one backend selection, not a WPSG-owned contract.
+The proof requires artifacts emitted by Homeboy/runtime execution under `--artifact-root`. It fails closed when the artifact root does not include real import report, zero fallback/conversion findings, visual parity gates, typed runtime preview/access URL, required iterator fanout evidence for actionable findings, and controller run-from-spec evidence. Iterator issue/PR artifacts and publication PR artifacts are optional for a clean candidate-only run, but are validated when emitted. Runtime selection remains outside the controller spec through `HOMEBOY_AGENT_RUNTIME_*`; `--runtime-id` is runner selection, not a WPSG-owned contract.
 
-Production success evidence is a single bundle of Homeboy artifacts: controller run-from-spec result, materialization proof, `runtime_access` preview/playground URL for the generated WordPress result, typed artifacts for `concept_packet`, `design_packet`, and `static_site_candidate`, and downstream validation/gate artifacts. Failure evidence is the same bundle plus the failing assertion or runtime message, for example `WP Codebox agent task did not produce required typed artifacts: concept_packet`.
+Production success evidence is a single bundle of Homeboy artifacts: controller run-from-spec result, materialization proof, `runtime_access` preview/playground URL for the generated WordPress result, typed artifacts for `concept_packet`, `design_packet`, and `static_site_candidate`, and downstream validation/gate artifacts. Failure evidence is the same bundle plus the failing assertion or runtime message, for example `runtime task did not produce required typed artifacts: concept_packet`.
 
 The headless N-revolution production workflow uses the same boundary with a generic HBE runner:
 

@@ -154,7 +154,6 @@ function validateConfigEntry(entry, path) {
 function repositoriesByExportName(repositories) {
 	return {
 		homeboyExtensions: repositories.homeboy_extensions,
-		wpCodebox: repositories.wp_codebox,
 		staticSiteImporter: repositories.static_site_importer,
 		blocksEnginePhpTransformer: repositories.blocks_engine_php_transformer,
 	};

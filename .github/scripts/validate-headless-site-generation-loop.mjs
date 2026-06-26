@@ -2,11 +2,11 @@
 import assert from 'node:assert/strict';
 import { spawnSync } from 'node:child_process';
 import { closeSync, openSync } from 'node:fs';
-import { mkdir, mkdtemp, readFile, rm, stat } from 'node:fs/promises';
+import { mkdir, mkdtemp, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 
-import { parseArgs, readAgentRuntimeContract, readJsonFile, writeJsonFile } from './lib/ci-runtime-utils.mjs';
+import { parseArgs, readJsonFile, writeJsonFile } from './lib/ci-runtime-utils.mjs';
 
 const args = parseArgs(process.argv.slice(2));
 const repoRoot = path.resolve(args.get('--repo-root') || process.env.GITHUB_WORKSPACE || process.cwd());
@@ -16,9 +16,7 @@ const keepTemp = args.has('--keep-temp');
 const tempDir = path.resolve(args.get('--work-dir') || await mkdtemp(path.join(tmpdir(), 'wpsg-headless-loop-')));
 const runId = args.get('--run-id') || process.env.WPSG_REPLAY_ID || 'headless-contract';
 const randomnessSeed = args.get('--randomness-seed') || process.env.WPSG_RANDOMNESS_SEED || 'headless-contract-seed';
-const runtimeContract = readAgentRuntimeContract(process.env);
-const runtimeId = args.get('--runtime-id') || process.env.HOMEBOY_AGENT_RUNTIME || runtimeContract.provider || runtimeContract.profile;
-const writeFixtureArtifacts = args.has('--fixture-artifacts');
+const runtimeId = args.get('--runtime-id') || process.env.HOMEBOY_AGENT_RUNTIME || process.env.HOMEBOY_AGENT_RUNTIME_PROVIDER || '';
 const artifactRoot = path.resolve(args.get('--artifact-root') || path.join(tempDir, 'homeboy-agent-task-artifacts'));
 const evidencePath = path.resolve(args.get('--evidence') || path.join(tempDir, 'headless-site-generation-loop-evidence.json'));
 
@@ -30,7 +28,6 @@ const materializationProofPath = path.join(tempDir, 'site-generation-loop.contro
 const controllerRunSpecPath = path.join(tempDir, 'site-generation-loop.controller-run-spec.json');
 const controllerResultPath = path.join(tempDir, 'site-generation-loop.controller-run-from-spec.json');
 const controllerStdoutPath = path.join(tempDir, 'site-generation-loop.controller-run-from-spec.stdout.log');
-const maxStdoutJsonBytes = 1024 * 1024;
 
 const commandEvidence = [];
 
@@ -62,28 +59,6 @@ function homeboyArgs(commandArgs) {
 	return homeboyRunner ? ['--runner', homeboyRunner, ...commandArgs] : commandArgs;
 }
 
-async function readRunFromSpecResult(result, outputPath) {
-	try {
-		return await readJsonFile(outputPath);
-	} catch (error) {
-		if (error?.code !== 'ENOENT') {
-			throw error;
-		}
-	}
-
-	let stdout = result.stdout || '';
-	if (result.stdoutPath) {
-		const stdoutStat = await stat(result.stdoutPath);
-		assert.ok(stdoutStat.size <= maxStdoutJsonBytes, `Homeboy run-from-spec did not write structured output to ${outputPath} and stdout exceeded the bounded JSON fallback (${maxStdoutJsonBytes} bytes)`);
-		stdout = await readFile(result.stdoutPath, 'utf8');
-	}
-	assert.ok(stdout.length > 0, `Homeboy run-from-spec did not write structured output to ${outputPath} and stdout was empty`);
-	assert.ok(Buffer.byteLength(stdout, 'utf8') <= maxStdoutJsonBytes, `Homeboy run-from-spec did not write structured output to ${outputPath} and stdout exceeded the bounded JSON fallback (${maxStdoutJsonBytes} bytes)`);
-	const parsed = JSON.parse(stdout);
-	await writeJsonFile(outputPath, parsed);
-	return parsed;
-}
-
 function assertBackendNeutralController(controllerRunSpec) {
 	assert.equal(controllerRunSpec.runtime, undefined, 'controller run spec does not embed a runtime backend');
 	assert.equal(controllerRunSpec.backend, undefined, 'controller run spec does not embed a backend selector');
@@ -93,9 +68,6 @@ function assertBackendNeutralController(controllerRunSpec) {
 }
 
 try {
-	if (writeFixtureArtifacts) {
-		throw new Error('--fixture-artifacts is disabled for headless validation; provide --artifact-root with Homeboy-emitted artifacts');
-	}
 	await mkdir(tempDir, { recursive: true });
 	const baseEnv = {
 		GITHUB_WORKSPACE: repoRoot,
@@ -110,7 +82,7 @@ try {
 	};
 
 	run('build WPSG controller run inputs', process.execPath, ['.github/scripts/build-homeboy-controller-run-inputs.mjs'], { env: baseEnv });
-	const runFromSpecResult = run('run Homeboy controller from spec', homeboyBin, homeboyArgs(['agent-task', 'controller', 'run-from-spec', `@${controllerSpecPath}`, '--inputs', `@${controllerRunInputsPath}`, '--policy-result', `@${policyResultPath}`, '--max-actions', '100', '--output', controllerResultPath]), {
+	run('run Homeboy controller from spec', homeboyBin, homeboyArgs(['agent-task', 'controller', 'run-from-spec', `@${controllerSpecPath}`, '--inputs', `@${controllerRunInputsPath}`, '--policy-result', `@${policyResultPath}`, '--max-actions', '100', '--output', controllerResultPath]), {
 		env: baseEnv,
 		stdoutPath: controllerStdoutPath,
 		evidence: {
@@ -120,7 +92,7 @@ try {
 			artifact_root: artifactRoot,
 		},
 	});
-	const controllerResult = await readRunFromSpecResult(runFromSpecResult, controllerResultPath);
+	const controllerResult = await readJsonFile(controllerResultPath);
 	await writeJsonFile(materializationPath, controllerResult.materialization || controllerResult.data?.materialization || controllerResult.value?.materialization);
 	const materialization = await readJsonFile(materializationPath);
 	await writeJsonFile(materializationProofPath, materialization.data || materialization.value || materialization);
@@ -140,8 +112,7 @@ try {
 		run_id: runId,
 		runtime_input_contract: runInputs.inputs.runtime_input_contract,
 		runtime_id: runtimeId,
-		fixture_artifacts: writeFixtureArtifacts,
-		artifact_source: writeFixtureArtifacts ? 'legacy-debug-fixture' : 'homeboy-emitted',
+		artifact_source: 'homeboy-emitted',
 		paths: {
 			controller_run_inputs: controllerRunInputsPath,
 			policy_result: policyResultPath,

@@ -87,20 +87,6 @@ async function writeRealEvidenceArtifacts() {
 }
 
 try {
-	const fixtureResult = spawnSync(process.execPath, [
-		'.github/scripts/validate-headless-site-generation-loop.mjs',
-		'--homeboy-bin',
-		homeboyFixturePath,
-		'--work-dir',
-		tempDir,
-		'--fixture-artifacts',
-	], {
-		cwd: repoRoot,
-		encoding: 'utf8',
-	});
-	assert.notEqual(fixtureResult.status, 0, 'headless validation refuses generated fixture artifacts by default');
-	assert.match(fixtureResult.stderr || fixtureResult.stdout, /--fixture-artifacts is disabled/);
-
 	const noArtifactProofResult = spawnSync(process.execPath, [
 		'.github/scripts/validate-headless-site-generation-loop.mjs',
 		'--homeboy-bin',
@@ -160,7 +146,6 @@ try {
 	assert.equal(evidence.valid, true);
 	assert.equal(evidence.runtime_input_contract, 'homeboy-agent-runtime-env');
 	assert.equal(evidence.runtime_id, 'contract-runtime');
-	assert.equal(evidence.fixture_artifacts, false);
 	assert.equal(evidence.artifact_source, 'homeboy-emitted');
 	const runFromSpecCommand = evidence.commands.find((item) => item.command.includes('agent-task controller run-from-spec'));
 	assert.ok(runFromSpecCommand, 'evidence records Homeboy run-from-spec command');

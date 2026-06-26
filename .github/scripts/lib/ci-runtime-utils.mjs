@@ -2,27 +2,17 @@ import { mkdir, readFile, writeFile } from 'node:fs/promises';
 import path from 'node:path';
 
 export {
-	runtimeApiAbilities,
 	buildRuntimePreviewUrl,
 	resolveVisualParityOutputRoot,
 	runtimeBundleExecution,
-	runtimePackageProfile,
 	runtimePackageProfiles,
 	runtimePackageAbility,
-	readAgentRuntimeContract,
-	runtimeProviderProfile,
-	runtimeProviderProfiles,
 	runtimeValidationArtifactEnvelopeSchema,
 	runtimeWorkspaceRecipeSchema,
-	runtimeWorkflowBuilderExecution,
-} from './agent-runtime-api.mjs';
-
-export {
-	renderRuntimeWorkflowInputs,
 	runtimeToolProfileInputs,
 	runtimeToolProfiles,
-	runtimeWorkflowInputs,
-} from './runtime-workflow-inputs.mjs';
+	runtimeWorkflowBuilderExecution,
+} from './runtime-domain-inputs.mjs';
 
 export {
 	wordpressRuntimeAbilityId,

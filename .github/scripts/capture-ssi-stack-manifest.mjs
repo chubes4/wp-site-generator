@@ -27,7 +27,6 @@ if (githubOutput) {
 		manifest_path: outputPath,
 		manifest: JSON.stringify(manifest),
 		homeboy_extensions_sha: manifest.repositories.homeboy_extensions.sha,
-		wp_codebox_sha: manifest.repositories.wp_codebox.sha,
 	});
 } else {
 	console.log(JSON.stringify(manifest, null, 2));
