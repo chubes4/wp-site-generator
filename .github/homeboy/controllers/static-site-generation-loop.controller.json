@@ -559,32 +559,24 @@
         "finding_group"
       ],
       "emits": [
-        "iterator_upstream_issue",
-        "iterator_upstream_pull_request"
+        "iterator_fanout_batch"
       ],
       "artifacts": [
-        "iterator_upstream_issue",
-        "iterator_upstream_pull_request"
+        "iterator_fanout_batch"
       ],
-      "fan_out": {
-        "primitive": "homeboy.agent-task.fanout.plan",
-        "mode": "per_artifact",
-        "artifact": "finding_group",
-        "group_by": [
-          "owner_repo",
-          "root_cause",
-          "group_id"
+      "runtime_execution": {
+        "kind": "command",
+        "command": "node",
+        "args": [
+          "-e",
+          "require(process.env.HOMEBOY_EXTENSIONS_PATH + '/runtime-agent-ci/scripts/homeboy-artifact-fanout.cjs')",
+          "--",
+          "--config",
+          ".github/homeboy/artifact-fanout/iterator-fanout.json",
+          "--mode",
+          "run"
         ],
-        "requires_non_empty": true,
-        "batch_input": {
-          "schema": "wp-site-generator/php-transformer-iterator-fanout-input/v1",
-          "input_contract": "homeboy/agent-task-fanout-input/v1",
-          "builder": ".github/scripts/build-php-transformer-iterator-fanout-config.mjs",
-          "command": "agent-task fanout submit-batch",
-          "status_command": "agent-task fanout status",
-          "artifacts_command": "agent-task fanout artifacts",
-          "packet_input_key": "finding_group"
-        }
+        "timeout_seconds": 1800
       },
       "dependencies": [
         "static-site-importer",
@@ -1065,6 +1057,12 @@
       "artifact_id": "finding_group",
       "kind": "wp-site-generator/FindingGroup/v1",
       "description": "finding_group artifact using wp-site-generator/FindingGroup/v1",
+      "required": true
+    },
+    {
+      "artifact_id": "iterator_fanout_batch",
+      "kind": "homeboy-extensions/ArtifactFanoutBatch/v1",
+      "description": "iterator_fanout_batch artifact using homeboy-extensions/ArtifactFanoutBatch/v1",
       "required": true
     },
     {
