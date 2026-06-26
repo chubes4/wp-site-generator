@@ -89,7 +89,18 @@ const artifactFlow = [
 ];
 
 function handoff({ consumes = [], emits = [] } = {}) {
-	return { consumes, emits, artifacts: [...consumes, ...emits] };
+	return { consumes, emits, artifacts: [...emits] };
+}
+
+function commandExecution({ command, args = [], timeoutSeconds = 900 }) {
+	return {
+		runtime_execution: {
+			kind: 'command',
+			command,
+			args,
+			timeout_seconds: timeoutSeconds,
+		},
+	};
 }
 
 function bundleInputs(agent_id, extra = {}) {
@@ -187,6 +198,11 @@ const controller = {
 			workflow_id: 'static-validation',
 			tasks: ['Validate a StaticSiteCandidate artifact through SSI import, static checks, and visual parity before any generated-site pull request is published.'],
 			...handoff({ consumes: ['static_site_candidate'], emits: ['static_validation_run', 'import_validation_result', 'visual_parity_artifact', 'finding_packet_set'] }),
+			...commandExecution({
+				command: 'node',
+				args: ['.github/scripts/run-static-validation-controller-action.mjs'],
+				timeoutSeconds: 1800,
+			}),
 			dependencies: ['wp-site-generator', 'static-site-importer', 'blocks-engine'],
 			gates: ['fallback_blocks', 'block_quality', 'conversion_findings', 'visual_parity'],
 			metrics: ['fallback_blocks', 'block_quality', 'conversion_findings', 'visual_parity'],
