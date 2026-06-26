@@ -94,7 +94,6 @@ This repository is the orchestration and generated-site source repo. The working
 
 - [`chubes4/wp-site-generator`](https://github.com/chubes4/wp-site-generator) — concept issues, runtime bundles, generated static-site candidates, validation declarations, and iterator fanout inputs.
 - [`Extra-Chill/homeboy`](https://github.com/Extra-Chill/homeboy) — deterministic lab loop controller, durable agent-task state, fanout batches, and evidence/artifact lifecycle.
-- [`Extra-Chill/homeboy-action`](https://github.com/Extra-Chill/homeboy-action) — optional GitHub Actions wrapper for triggering Homeboy from repository workflows.
 - [`Extra-Chill/homeboy-extensions`](https://github.com/Extra-Chill/homeboy-extensions) — reusable WordPress runtime workloads, runtime access evidence, validation reporting, and iterator plumbing.
 - [`chubes4/static-site-importer`](https://github.com/chubes4/static-site-importer) — WordPress plugin that imports each generated static site into a block theme.
 - [`Automattic/blocks-engine`](https://github.com/Automattic/blocks-engine) — tagged PHP transform contract used by Static Site Importer for HTML-to-block conversion, block serialization, and site-artifact diagnostics.
@@ -194,13 +193,7 @@ Runtime preview/access links require immutable provenance from the PR head SHA, 
 
 The Homeboy WordPress extension capability that makes this possible (`wordpress_runtime_workloads`) is generic. SSI is just one consumer; any WordPress plugin can be exercised the same way through lab runtime workloads.
 
-To capture real raw HTML visual/semantic evidence, run the offloaded validation workflow instead of a local benchmark:
-
-```bash
-gh workflow run static-site-validation.yml --repo chubes4/wp-site-generator -f pr_number=<generated-site-pr-number>
-```
-
-The workflow runs Homeboy bench through `homeboy-action`, executes the Playwright visual parity helper in GitHub Actions, and uploads `ssi-validation-<site>` plus `visual-parity-<site>` artifacts. The PR comment renders the importer metrics, visual/semantic fidelity status, not-captured reasons, expected screenshot/diff/fingerprint slots, viewports, diff status, and artifact URLs when the runner supplies them.
+Real raw HTML visual/semantic evidence belongs to Homeboy lab runs. Homeboy should execute the WordPress validation workload, capture Playwright visual parity evidence, and publish the importer metrics, visual/semantic fidelity status, not-captured reasons, screenshot/diff/fingerprint slots, viewports, diff status, and artifact URLs as run artifacts.
 
 ---
 
@@ -221,11 +214,7 @@ wp-site-generator/
   README.md
   homeboy.json                       Homeboy config: WordPress extension + base wordpress_runtime_blueprint
   .github/
-    workflows/
-      static-site-validation.yml     optional PR-triggered SSI import, visual parity, findings, iterator fanout
-      site-generation-loop.yml       optional trigger for the Homeboy controller loop
-      php-transformer-iterator.yml   upstream transformer repair loop from findings
-      ssi-stack-reviewer.yml         review-only gate for upstream iterator PRs
+    homeboy/                         Homeboy controller specs, validation snippets, and typed artifact contracts
   bundles/
     store-idea-agent/                runtime bundle: commerce concept generation
     website-idea-agent/              runtime bundle: non-commerce concept generation
@@ -253,7 +242,7 @@ You don't need any of the agent infrastructure to review a generated site. From 
 1. Inspect the generated static site files or artifact linked from the PR body.
 2. Review the Homeboy/SSI metrics, visual parity artifact, import report, typed runtime access evidence, and finding packets.
 3. If validation found importer/transformer gaps, follow the iterator callback to the upstream PR or fallback issue before judging the generated site itself.
-4. For upstream iterator PRs, run `ssi-stack-reviewer.yml` with the upstream PR URL and finding-packet context before merge or promotion.
+4. For upstream iterator PRs, run the Homeboy reviewer gate primitive with the upstream PR URL and finding-packet context before merge or promotion.
 5. If you like it, merge the PR. The source idea issue auto-closes via `Closes #<issue>` and remains `status:built`.
 6. If it misses the concept or design, close the PR without merging. If no other open target-lane PR still claims the idea, the lifecycle workflow moves the issue to `status:abandoned`; reopen the issue to return it to `status:idea-ready` for another pass.
 
@@ -263,14 +252,14 @@ That's the loop. Generate. Design. Build. Validate. Review. Decide. Repeat.
 
 ## Operating The Loop
 
-The primary loop is a Homeboy lab controller run. WPSG declares `.github/homeboy/controllers/static-site-generation-loop.controller.json` and the workflow selects that loop spec for `homeboy agent-task controller run-from-spec`, which materializes policy inputs, initializes durable state, and executes bounded controller actions. Homeboy owns controller state, action scheduling, event application, durable fanout batches, dependency materialization, runtime substrate, dispatch/provider selection, and evidence capture.
+The primary loop is a Homeboy lab controller run. WPSG declares `.github/homeboy/controllers/static-site-generation-loop.controller.json` and the lab runner selects that loop spec for `homeboy agent-task controller run-from-spec`, which materializes policy inputs, initializes durable state, and executes bounded controller actions. Homeboy owns controller state, action scheduling, event application, durable fanout batches, dependency materialization, runtime substrate, dispatch/provider selection, and evidence capture.
 
-Required credentials depend on the selected Homeboy runtime and AI provider. Configure provider credentials in the Homeboy/runtime contract rather than in WPSG workflows.
+Required credentials depend on the selected Homeboy runtime and AI provider. Configure provider credentials in the Homeboy/runtime contract rather than in WPSG.
 
 1. Runtime provider/model credentials supplied by the selected runtime profile.
 2. Runtime package ability/profile values supplied by the selected upstream runtime contract.
 
-The reusable `.github/workflows/wpsg-runtime-agent-ci.yml` seam accepts a `runtime_workload_profile` such as `workspace-iteration` or `workspace-publication`, renders WPSG-owned profile/tool requirements through `.github/scripts/render-wpsg-runtime-domain-inputs.mjs`, and delegates canonical runtime workflow input rendering to Homeboy Extensions. Runtime execution descriptors are rendered through `.github/scripts/render-runtime-bundle-execution.mjs` so workflows pass domain inputs instead of embedding provider internals.
+Homeboy lab runners select a `runtime_workload_profile` such as `workspace-iteration` or `workspace-publication`, render WPSG-owned profile/tool requirements through `.github/scripts/render-wpsg-runtime-domain-inputs.mjs`, and delegate canonical runtime input rendering to Homeboy Extensions. Runtime execution descriptors are rendered through `.github/scripts/render-runtime-bundle-execution.mjs` so WPSG passes domain inputs instead of embedding provider internals.
 
 For deterministic contract validation, run `node tests/scripts/test-wpsg-loop-typed-artifact-contracts.mjs`. It validates the WPSG-owned loop spec, bundle completion assertions, and fixture envelopes for `concept_packet`, `design_packet`, and `static_site_candidate` without launching model providers.
 
@@ -280,16 +269,11 @@ For the generic N-revolution headless production path, run the checked-in worklo
 
 The PHP transformer iterator supplies WPSG-owned finding grouping and fanout packet input, then calls Homeboy's public `homeboy agent-task fanout plan`, `submit-batch`, `status`, and `artifacts` primitives for durable fanout lifecycle evidence.
 
-Useful workflow entry points:
+Useful Homeboy entry points:
 
-1. **`store-idea-agent.yml`** — manually generate one commerce concept issue from a prompt.
-2. **`website-idea-agent.yml`** — manually generate one content concept issue from a selected website flow.
-3. **`design-agent.yml`** — attach a design direction to one issue.
-4. **`static-site-agent.yml`** — build one design-ready issue into a static-site PR.
-5. **`site-generation-loop.yml`** — optional trigger for the end-to-end Homeboy controller contract: concept packets, design packets, static candidates, validation, publication gates, iterator/revalidation, and reviewer evidence.
-6. **`static-site-validation.yml`** — optional PR-triggered validation for labeled target-lane static-site PRs.
-7. **`php-transformer-iterator.yml`** — automatic or manual upstream repair loop from validation finding packets.
-8. **`ssi-stack-reviewer.yml`** — manual review-only gate for upstream iterator PRs before merge or promotion.
+1. **Controller loop spec** — `.github/homeboy/controllers/static-site-generation-loop.controller.json` describes concept packets, design packets, static candidates, validation, publication gates, iterator/revalidation, and reviewer evidence.
+2. **Headless loop spec** — `.github/homeboy/headless-production-loop.json` describes the generic N-revolution production loop without choosing a runtime/provider.
+3. **Primitive gap list** — `docs/homeboy-lab-primitive-gaps.md` records the Homeboy/Homeboy Extensions surfaces required before WPSG can run fully without repo-local orchestration.
 
 Local Studio remains useful for bundle development or manual runtime experiments. A local host needs:
 

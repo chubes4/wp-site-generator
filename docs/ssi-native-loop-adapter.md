@@ -1,6 +1,6 @@
 # SSI Native Loop Adapter
 
-This repo owns the Static Site Importer-specific domain declaration for the continuous site-generation loop. The reusable contract is the generated Homeboy from-spec loop declaration at `.github/homeboy/controllers/static-site-generation-loop.controller.json`. GitHub Actions can trigger that contract, but Homeboy owns orchestration and proof.
+This repo owns the Static Site Importer-specific domain declaration for the continuous site-generation loop. The reusable contract is the generated Homeboy from-spec loop declaration at `.github/homeboy/controllers/static-site-generation-loop.controller.json`. Homeboy lab runners trigger that contract and own orchestration and proof.
 
 The controller builder is `.github/scripts/build-homeboy-ssi-loop-controller.mjs`. It emits only the WPSG-owned domain contract: agents, abilities, workflows, artifact schemas, SSI stack dependencies, and quality gate metric definitions.
 
@@ -42,7 +42,7 @@ Homeboy maps these declarations to durable controller policy/actions through `ag
 
 ## Runtime Inputs
 
-WPSG keeps its controller and domain specs backend-agnostic. Reusable Homeboy Agent CI selects the concrete runtime behind its own contract, so WPSG callers pass domain inputs only. Controller run specs use clean `HOMEBOY_AGENT_RUNTIME_*` environment variables as a visible input contract. Runtime-specific fields stay in the Homeboy runtime contract.
+WPSG keeps its controller and domain specs backend-agnostic. Homeboy lab runners select the concrete runtime behind their own contract, so WPSG callers pass domain inputs only. Controller run specs use clean runtime input fields as a visible contract. Runtime-specific fields stay in the Homeboy runtime contract.
 
 Controller run specs record `inputs.runtime_input_contract: "homeboy-agent-runtime-env"` to make the seam visible. Runtime selection flows through the Homeboy runtime contract rather than `.github/homeboy/controllers/static-site-generation-loop.controller.json` fields.
 
@@ -128,9 +128,9 @@ The default policy has three tiers:
 
 Stable quality raises at most one tier for the next run. Regressions lower at most one tier. The floor and ceiling hold when the policy cannot move farther. This keeps prompt complexity reproducible and prevents a single good or bad run from skipping the configured ladder.
 
-### Optional Workflow Overrides
+### Optional Run Overrides
 
-The optional GitHub Actions trigger exposes these inputs, which map directly to environment variables:
+Homeboy lab runners can expose these inputs, which map directly to environment variables:
 
 - `complexity_tier` -> `WPSG_COMPLEXITY_TIER`
 - `randomness_profile` -> `WPSG_RANDOMNESS_PROFILE`

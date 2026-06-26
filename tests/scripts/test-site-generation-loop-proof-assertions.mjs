@@ -450,19 +450,6 @@ try {
   assert.notEqual(missingUrlProof.status, 0, 'controller proof fails when runtime preview URL evidence is absent');
   assert.match(missingUrlProof.stderr || missingUrlProof.stdout, /runtime preview evidence is a structured envelope/);
 
-  const workflow = await readFile(path.join(repoRoot, '.github/workflows/site-generation-loop.yml'), 'utf8');
-  assert.match(workflow, /node \.github\/scripts\/build-homeboy-ssi-loop-controller\.mjs/, 'site generation workflow generates the repo-owned controller spec before materialization');
-  assert.match(workflow, /homeboy agent-task controller run-from-spec/, 'site generation workflow runs specs through Homeboy');
-  assert.match(workflow, /run-from-spec[\s\S]*--output "\$HOMEBOY_CONTROLLER_RUN_FROM_SPEC_RESULT_PATH"/, 'site generation workflow asks Homeboy to write structured run-from-spec output');
-  assert.ok(
-    workflow.indexOf('node .github/scripts/build-homeboy-ssi-loop-controller.mjs') < workflow.indexOf('homeboy agent-task controller run-from-spec'),
-    'site generation workflow generates the controller spec before Homeboy run-from-spec'
-  );
-  assert.match(workflow, /jq '\.data \/\/ \.value \/\/ \.'/, 'site generation workflow unwraps the materialization envelope before proof validation');
-  assert.match(workflow, /validate-proof "@\$materialization_proof_path"/, 'site generation workflow validates the unwrapped materialized controller output through Homeboy');
-  assert.doesNotMatch(workflow, /homeboy agent-task controller from-spec/, 'site generation workflow does not manually initialize controllers');
-  assert.doesNotMatch(workflow, /homeboy agent-task controller resume/, 'site generation workflow does not manually resume controllers');
-  assert.doesNotMatch(workflow, /homeboy agent-task controller events/, 'site generation workflow does not manually record controller events');
   console.log('site generation loop proof assertion tests passed');
 } finally {
   await rm(tempDir, { recursive: true, force: true });

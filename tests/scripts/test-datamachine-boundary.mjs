@@ -62,9 +62,6 @@ assert.deepEqual(unclassified, [], 'new Data Machine references must be removed 
 assert.deepEqual(stale, [], 'remove stale Data Machine quarantine entries when references are cleaned up');
 
 const runtimeGlueFiles = candidateFiles.filter((file) => [
-  '.github/workflows/php-transformer-iterator.yml',
-  '.github/workflows/ssi-stack-reviewer.yml',
-  '.github/workflows/wpsg-runtime-agent-ci.yml',
   '.github/scripts/render-wpsg-runtime-domain-inputs.mjs',
   '.github/scripts/render-runtime-bundle-execution.mjs',
   '.github/scripts/lib/ci-runtime-utils.mjs',
