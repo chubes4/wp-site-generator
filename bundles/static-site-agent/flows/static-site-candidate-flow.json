@@ -11,10 +11,33 @@
                 "github_pull_request_publish"
             ],
             "handler_configs": {},
-            "prompt_queue": [],
+            "prompt_queue": [
+                {
+                    "added_at": "2026-06-26T00:00:00+00:00",
+                    "prompt": "Use the runtime input concept_packet and design_packet artifacts as source material. Produce one StaticSiteCandidate typed artifact by calling emit_typed_artifact."
+                }
+            ],
             "queue_mode": "static",
             "step_position": 0,
             "step_type": "ai"
+        },
+        {
+            "disabled_tools": [],
+            "enabled": true,
+            "handler_configs": {
+                "typed_artifact": {
+                    "output_key": "static_site_candidate",
+                    "schema": "wp-site-generator/StaticSiteCandidate/v1",
+                    "artifact": "StaticSiteCandidate"
+                }
+            },
+            "handler_slugs": [
+                "typed_artifact"
+            ],
+            "prompt_queue": [],
+            "queue_mode": "static",
+            "step_position": 1,
+            "step_type": "publish"
         }
     ]
 }
