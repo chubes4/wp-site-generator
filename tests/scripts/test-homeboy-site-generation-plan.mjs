@@ -14,6 +14,7 @@ const homeboyFixturePath = await createHomeboyControllerContractFixture(tempDir)
 
 const controllerBuilderEnv = (overrides = {}) => ({
 	...process.env,
+	HOMEBOY_AGENT_RUNTIME_TASK_ABILITY: 'runtime-package/run',
 	...overrides,
 });
 

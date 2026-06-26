@@ -17,14 +17,6 @@
       "ref": "main",
       "ref_type": "branch"
     },
-    "wp_codebox": {
-      "id": "wp_codebox",
-      "label": "WP Codebox",
-      "url": "https://github.com/Automattic/wp-codebox",
-      "git_url": "https://github.com/Automattic/wp-codebox.git",
-      "ref": "main",
-      "ref_type": "branch"
-    },
     "static_site_importer": {
       "id": "static_site_importer",
       "label": "Static Site Importer",

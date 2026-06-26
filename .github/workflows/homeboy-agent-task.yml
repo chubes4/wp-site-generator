@@ -47,14 +47,6 @@ on:
         description: Model to use for imported agent flows.
         required: true
         default: gpt-5.5
-      homeboy_ref:
-        description: Homeboy ref with agent-task DAG support.
-        required: true
-        default: main
-      homeboy_extensions_ref:
-        description: Homeboy Extensions ref with generic runtime package agent-task support.
-        required: true
-        default: main
       runtime_task_ability:
         description: Runtime package task ability supplied by the upstream runtime contract.
         required: true
@@ -98,26 +90,6 @@ jobs:
 
       - name: Render runtime controller spec
         run: node .github/scripts/build-homeboy-ssi-loop-controller.mjs --output "$HOMEBOY_CONTROLLER_SPEC_PATH"
-
-      - name: Check out Homeboy
-        uses: actions/checkout@v4
-        with:
-          repository: Extra-Chill/homeboy
-          ref: ${{ inputs.homeboy_ref }}
-          path: .ci/homeboy
-
-      - name: Check out Homeboy Extensions
-        uses: actions/checkout@v4
-        with:
-          repository: Extra-Chill/homeboy-extensions
-          ref: ${{ inputs.homeboy_extensions_ref }}
-          path: .ci/homeboy-extensions
-
-      - name: Build Homeboy
-        run: cargo install --path .ci/homeboy --locked
-
-      - name: Install WordPress extension
-        run: homeboy extension install .ci/homeboy-extensions/wordpress --id wordpress
 
       - name: Run Homeboy controller from spec
         id: controller-spec

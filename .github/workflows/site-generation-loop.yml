@@ -7,14 +7,6 @@ on:
         description: Model to use for imported agent flows.
         required: true
         default: gpt-5.5
-      homeboy_ref:
-        description: Homeboy ref with agent-task DAG support.
-        required: true
-        default: main
-      homeboy_extensions_ref:
-        description: Homeboy Extensions ref with generic runtime package agent-task support.
-        required: true
-        default: main
       runtime_task_ability:
         description: Runtime package task ability supplied by the upstream runtime contract.
         required: true
@@ -73,8 +65,6 @@ jobs:
     env:
       GITHUB_TOKEN: ${{ github.token }}
       HOMEBOY_AGENT_RUNTIME_MODEL: ${{ inputs.model }}
-      HOMEBOY_REF: ${{ inputs.homeboy_ref }}
-      HOMEBOY_EXTENSIONS_REF: ${{ inputs.homeboy_extensions_ref }}
       WPSG_REF_POLICY: ${{ inputs.ref_policy }}
       HOMEBOY_AGENT_RUNTIME_TASK_ABILITY: ${{ inputs.runtime_task_ability }}
       HOMEBOY_CONTROLLER_RUN_INPUTS_PATH: ${{ github.workspace }}/.ci/site-generation-loop.controller-run-inputs.json
@@ -97,26 +87,6 @@ jobs:
 
       - name: Validate production ref policy
         run: node .github/scripts/validate-production-ref-policy.mjs
-
-      - name: Check out Homeboy
-        uses: actions/checkout@v4
-        with:
-          repository: Extra-Chill/homeboy
-          ref: ${{ env.HOMEBOY_REF }}
-          path: .ci/homeboy
-
-      - name: Check out Homeboy Extensions
-        uses: actions/checkout@v4
-        with:
-          repository: Extra-Chill/homeboy-extensions
-          ref: ${{ env.HOMEBOY_EXTENSIONS_REF }}
-          path: .ci/homeboy-extensions
-
-      - name: Build Homeboy
-        run: cargo install --path .ci/homeboy --locked
-
-      - name: Install WordPress extension
-        run: homeboy extension install .ci/homeboy-extensions/wordpress --id wordpress
 
       - name: Generate Homeboy controller spec
         run: node .github/scripts/build-homeboy-ssi-loop-controller.mjs

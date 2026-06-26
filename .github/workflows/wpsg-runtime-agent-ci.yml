@@ -50,21 +50,28 @@ jobs:
   runtime-contracts:
     runs-on: ubuntu-latest
     outputs:
-      runtime_provider: ${{ steps.contract.outputs.runtime_provider }}
-      runtime_profile: ${{ steps.contract.outputs.runtime_profile }}
-      runtime_profiles: ${{ steps.contract.outputs.runtime_profiles }}
-      ability_requirements: ${{ steps.contract.outputs.ability_requirements }}
-      ability_tools: ${{ steps.contract.outputs.ability_tools }}
+      runtime_provider: ${{ steps.hbe-runtime.outputs.runtime }}
+      runtime_profile: ${{ steps.hbe-runtime.outputs.profile }}
+      runtime_profiles: ${{ steps.hbe-runtime.outputs.runtime_profiles }}
+      ability_requirements: ${{ steps.domain.outputs.ability_requirements }}
+      ability_tools: ${{ steps.domain.outputs.ability_tools }}
     steps:
       - uses: actions/checkout@v4
-      - id: contract
+      - id: domain
         env:
           RUNTIME_WORKLOAD_PROFILE: ${{ inputs.runtime_workload_profile }}
           HOMEBOY_AGENT_RUNTIME_PROVIDER: ${{ inputs.runtime_provider }}
           HOMEBOY_AGENT_RUNTIME_PROFILE: ${{ inputs.runtime_profile }}
           HOMEBOY_AGENT_RUNTIME_PROFILES: ${{ inputs.runtime_profiles }}
           HOMEBOY_AGENT_RUNTIME_TASK_ABILITY: ${{ inputs.runtime_task_ability }}
-        run: node .github/scripts/render-homeboy-runtime-workflow-inputs.mjs
+        run: node .github/scripts/render-wpsg-runtime-domain-inputs.mjs
+      - id: hbe-runtime
+        uses: Extra-Chill/homeboy-extensions/.github/actions/render-runtime-workflow-inputs@dc02521a3505e100b9a9c91ce3944c0891c090f3
+        with:
+          runtime: ${{ steps.domain.outputs.runtime_provider }}
+          runtime_profile: ${{ steps.domain.outputs.runtime_profile }}
+          runtime_profiles: ${{ steps.domain.outputs.runtime_profiles }}
+          tool_profile: ${{ steps.domain.outputs.tool_profile }}
 
   workspace-iteration:
     needs: runtime-contracts

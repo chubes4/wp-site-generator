@@ -147,7 +147,7 @@ const runtimePreviewResult = spawnSync(process.execPath, ['.github/scripts/build
 	encoding: 'utf8',
 	env: {
 		...process.env,
-		HOMEBOY_AGENT_RUNTIME_MANIFEST: JSON.stringify({ profiles: [{ id: 'test-runtime-preview', preview_url_base: runtimePreviewBase }] }),
+		HOMEBOY_AGENT_RUNTIME_PREVIEW_URL_BASE: runtimePreviewBase,
 	},
 });
 assert.equal(runtimePreviewResult.status, 0, runtimePreviewResult.stderr || runtimePreviewResult.stdout);

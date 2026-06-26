@@ -2,7 +2,7 @@
 
 import { mkdir, writeFile } from 'node:fs/promises';
 import path from 'node:path';
-import { parseArgs, readAgentRuntimeContract, runtimeBundleExecution, runtimePackageAbility } from './lib/ci-runtime-utils.mjs';
+import { parseArgs, runtimeBundleExecution, runtimePackageAbility } from './lib/ci-runtime-utils.mjs';
 
 const args = parseArgs(process.argv.slice(2));
 const root = process.env.GITHUB_WORKSPACE || process.cwd();
@@ -38,8 +38,10 @@ const agentBundles = {
 	ssi_stack_reviewer: { bundle: 'bundles/ssi-stack-reviewer-agent', slug: 'ssi-stack-reviewer-agent', requires: ['static_site_candidate', 'import_validation_result', 'static_validation_run', 'visual_parity_artifact', 'finding_packet_set', 'revalidation_attempt'], emits: ['reviewer_gate_outcome'] },
 };
 
-const runtimeContract = readAgentRuntimeContract(process.env);
-const runtimePackageAbilityId = runtimePackageAbility(runtimeContract) || 'runtime-package/run';
+const runtimePackageAbilityId = runtimePackageAbility(process.env);
+if (!runtimePackageAbilityId) {
+	throw new Error('HOMEBOY_AGENT_RUNTIME_TASK_ABILITY is required to build the site-generation loop controller.');
+}
 
 const abilityIds = [
 	runtimePackageAbilityId,

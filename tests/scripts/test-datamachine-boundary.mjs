@@ -65,10 +65,10 @@ const runtimeGlueFiles = candidateFiles.filter((file) => [
   '.github/workflows/php-transformer-iterator.yml',
   '.github/workflows/ssi-stack-reviewer.yml',
   '.github/workflows/wpsg-runtime-agent-ci.yml',
-  '.github/scripts/render-homeboy-runtime-workflow-inputs.mjs',
+  '.github/scripts/render-wpsg-runtime-domain-inputs.mjs',
   '.github/scripts/render-runtime-bundle-execution.mjs',
   '.github/scripts/lib/ci-runtime-utils.mjs',
-  '.github/scripts/lib/agent-runtime-api.mjs',
+  '.github/scripts/lib/runtime-domain-inputs.mjs',
   '.github/scripts/lib/homeboy-runtime-api.mjs',
   '.github/scripts/build-homeboy-ssi-loop-controller.mjs',
 ].includes(file));

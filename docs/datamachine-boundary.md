@@ -15,11 +15,11 @@ Current behavior coverage lives in the generic `runtime-agent-ci` workflow wirin
 ## Generic Runtime Execution
 
 - Controller specs and workflow callers use `runtime_execution.kind = "bundle"` with a runtime-package `package`, `workflow`, `input`, and `options` envelope.
-- Runtime profiles set `runtime_task_ability`, `runtime_bundle_ability`, and `runtime_workflow_ability` through `.github/scripts/lib/agent-runtime-api.mjs`, which is the only WPSG source file allowed to name the runtime package dispatcher directly.
+- Runtime profiles set `runtime_task_ability`, `runtime_bundle_ability`, and `runtime_workflow_ability` through `.github/scripts/lib/runtime-domain-inputs.mjs`, which only renders WPSG-owned domain inputs from explicit upstream runtime env values.
 - Iterator fanout lifecycle uses Homeboy's public `homeboy agent-task fanout plan`, `submit-batch`, `status`, and `artifacts` primitives with WPSG-owned packet input.
 - WPSG workflows check out Agents API and Homeboy Extensions for the current runtime support path.
 - Iterator callback publication uses generic `runtime_output_projections` over semantic `outputs.*` values populated by `evidence_projections`.
 
 Runtime packages materialize `agent-runtime/workspace-preload`, so WPSG declares workspace preload artifacts directly with `agent-runtime/workspace-preload/v1` extension payloads instead of adapter artifact metadata.
 
-WPSG relies on WP Codebox, the selected runtime package, and Homeboy Extensions runtime execution support for provider-specific behavior.
+WPSG relies on the selected runtime package and Homeboy Extensions runtime execution support for provider-specific behavior.

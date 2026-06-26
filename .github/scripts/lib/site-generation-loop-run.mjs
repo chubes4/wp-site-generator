@@ -70,10 +70,7 @@ export function resolveImmutableSourceRef({ env = process.env, root = env.GITHUB
 }
 
 export function resolveDependencyRefs({ env = process.env, root = env.GITHUB_WORKSPACE || process.cwd() } = {}) {
-	return compactObject({
-		homeboy: dependencyRef({ id: 'homeboy', repository: 'Extra-Chill/homeboy', inputRef: env.HOMEBOY_REF || '', checkoutPath: path.join(root, '.ci/homeboy') }),
-		homeboy_extensions: dependencyRef({ id: 'homeboy_extensions', repository: 'Extra-Chill/homeboy-extensions', inputRef: env.HOMEBOY_EXTENSIONS_REF || '', checkoutPath: path.join(root, '.ci/homeboy-extensions') }),
-	});
+	return {};
 }
 
 export function validateRefPolicy({ policy = wpsgLoopConfig.defaultRefPolicy, dependencyRefs = {}, source = null } = {}) {

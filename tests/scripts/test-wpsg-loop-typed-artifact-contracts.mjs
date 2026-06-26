@@ -50,6 +50,7 @@ try {
 	const buildResult = spawnSync(process.execPath, ['.github/scripts/build-homeboy-ssi-loop-controller.mjs', '--output', generatedControllerPath], {
 		cwd: repoRoot,
 		encoding: 'utf8',
+		env: { ...process.env, HOMEBOY_AGENT_RUNTIME_TASK_ABILITY: 'runtime-package/run' },
 	});
 	assert.equal(buildResult.status, 0, buildResult.stderr || buildResult.stdout);
 
