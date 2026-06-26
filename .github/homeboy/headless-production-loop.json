@@ -23,6 +23,7 @@
     "policy_result": ".ci/headless-production-validation/site-generation-loop.complexity-policy-result.json",
     "output": ".ci/headless-production-validation/site-generation-loop.controller-run-from-spec.json",
     "max_actions": 100,
+    "reconcile_stale": true,
     "prepare": [
       { "argv": ["node", ".github/scripts/build-homeboy-controller-run-inputs.mjs"] }
     ],
