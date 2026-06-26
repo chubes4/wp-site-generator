@@ -59,23 +59,21 @@ assert.equal(controller.workflows.find((workflow) => workflow.workflow_id === 'd
 assert.equal(controller.workflows.find((workflow) => workflow.workflow_id === 'static-site').runtime_execution.input.workflow.id, 'static-site-candidate-flow', 'static workflow selects the candidate artifact workflow');
 assert.equal(controller.workflows.find((workflow) => workflow.workflow_id === 'store-idea').abilities.includes('github_issue_publish'), false, 'concept artifact workflows do not publish GitHub issues');
 assert.equal(controller.workflows.find((workflow) => workflow.workflow_id === 'static-site').abilities.includes('github_pull_request_publish'), false, 'candidate artifact workflows do not publish GitHub pull requests');
-assert.deepEqual(controller.workflows.find((workflow) => workflow.workflow_id === 'static-validation').artifacts.slice(0, 1), ['static_site_candidate'], 'static validation declares candidate artifact dependencies');
+assert.deepEqual(controller.workflows.find((workflow) => workflow.workflow_id === 'static-validation').consumes, ['static_site_candidate'], 'static validation declares candidate artifact dependencies');
+assert.equal(controller.workflows.find((workflow) => workflow.workflow_id === 'static-validation').runtime_execution.kind, 'command', 'static validation runs as a deterministic controller action');
+assert.deepEqual(controller.workflows.find((workflow) => workflow.workflow_id === 'static-validation').artifacts, ['static_validation_run', 'import_validation_result', 'visual_parity_artifact', 'finding_packet_set'], 'static validation artifacts declare emitted outputs only');
 assert.deepEqual(controller.workflows.find((workflow) => workflow.workflow_id === 'static-publication').emits, ['static_site_pull_request'], 'static publication emits the generated PR artifact');
 assert.deepEqual(controller.workflows.find((workflow) => workflow.workflow_id === 'revalidation').consumes, ['static_site_candidate', 'import_validation_result', 'visual_parity_artifact', 'finding_packet_set'], 'revalidation consumes artifact evidence instead of PR transport');
 assert.deepEqual(controller.workflows.find((workflow) => workflow.workflow_id === 'reviewer').consumes, ['static_site_candidate', 'import_validation_result', 'static_validation_run', 'visual_parity_artifact', 'finding_packet_set', 'revalidation_attempt'], 'reviewer consumes artifact evidence instead of PR transport');
 assert.equal(controller.artifacts.find((artifact) => artifact.artifact_id === 'static_site_pull_request').evidence_only, true, 'generated PR is optional publication evidence');
-assert.deepEqual(controller.workflows.find((workflow) => workflow.workflow_id === 'iterator').artifacts.slice(-2), ['iterator_upstream_issue', 'iterator_upstream_pull_request'], 'iterator workflow declares emitted artifacts');
+assert.deepEqual(controller.workflows.find((workflow) => workflow.workflow_id === 'iterator').artifacts, ['iterator_fanout_batch'], 'iterator workflow declares emitted artifact fanout batch');
+assert.equal(controller.workflows.find((workflow) => workflow.workflow_id === 'iterator').runtime_execution.kind, 'command', 'iterator fanout runs as a deterministic controller action');
 assert.ok(controller.workflows.find((workflow) => workflow.workflow_id === 'iterator').dependencies.includes('homeboy-extensions'), 'iterator routing can target Homeboy Extensions runtime findings');
 assert.equal(controller.workflows.find((workflow) => workflow.workflow_id === 'iterator').builder, undefined, 'iterator workflow does not expose backend-specific builder policy');
-assert.deepEqual(controller.workflows.find((workflow) => workflow.workflow_id === 'iterator').fan_out.batch_input, {
-	schema: 'wp-site-generator/php-transformer-iterator-fanout-input/v1',
-	input_contract: 'homeboy/agent-task-fanout-input/v1',
-	builder: '.github/scripts/build-php-transformer-iterator-fanout-config.mjs',
-	command: 'agent-task fanout submit-batch',
-	status_command: 'agent-task fanout status',
-	artifacts_command: 'agent-task fanout artifacts',
-	packet_input_key: 'finding_group',
-}, 'iterator workflow declares the Homeboy-consumable fanout batch input shape');
+const iteratorFanout = JSON.parse(await readFile(path.join(repoRoot, '.github/homeboy/artifact-fanout/iterator-fanout.json'), 'utf8'));
+assert.equal(iteratorFanout.schema, 'homeboy-extensions/artifact-fanout-materializer-config/v1', 'iterator workflow declares the Homeboy-consumable artifact fanout config');
+assert.equal(iteratorFanout.output_artifact, 'iterator_fanout_batch', 'iterator fanout emits the controller-visible batch artifact');
+assert.equal(iteratorFanout.task_request_template.inputs.runtime_task.input.package.source, 'bundles/php-transformer-iterator-agent', 'iterator fanout keeps bundle execution in worker tasks');
 assert.equal(controller.artifacts.find((artifact) => artifact.artifact_id === 'revalidation_attempt').kind, 'wp-site-generator/RevalidationAttempt/v1', 'controller declares artifact schemas');
 assert.ok(controller.dependencies.some((dependency) => dependency.value === 'chubes4/static-site-importer'), 'controller declares SSI stack dependencies');
 assert.ok(controller.dependencies.some((dependency) => dependency.value === 'Extra-Chill/homeboy-extensions'), 'controller declares upstream Homeboy Extensions owner for runtime workload findings');

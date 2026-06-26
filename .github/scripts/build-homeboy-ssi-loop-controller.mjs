@@ -19,6 +19,7 @@ const artifactSchemas = {
 	static_site_publish_gate: 'wp-site-generator/StaticSitePublishGate/v1',
 	finding_packet_set: 'wp-site-generator/FindingPacketSet/v1',
 	finding_group: 'wp-site-generator/FindingGroup/v1',
+	iterator_fanout_batch: 'homeboy-extensions/ArtifactFanoutBatch/v1',
 	iterator_upstream_issue: 'github/Issue/v1',
 	iterator_upstream_pull_request: 'github/PullRequest/v1',
 	revalidation_attempt: 'wp-site-generator/RevalidationAttempt/v1',
@@ -89,7 +90,18 @@ const artifactFlow = [
 ];
 
 function handoff({ consumes = [], emits = [] } = {}) {
-	return { consumes, emits, artifacts: [...consumes, ...emits] };
+	return { consumes, emits, artifacts: [...emits] };
+}
+
+function commandExecution({ command, args = [], timeoutSeconds = 900 }) {
+	return {
+		runtime_execution: {
+			kind: 'command',
+			command,
+			args,
+			timeout_seconds: timeoutSeconds,
+		},
+	};
 }
 
 function bundleInputs(agent_id, extra = {}) {
@@ -187,6 +199,11 @@ const controller = {
 			workflow_id: 'static-validation',
 			tasks: ['Validate a StaticSiteCandidate artifact through SSI import, static checks, and visual parity before any generated-site pull request is published.'],
 			...handoff({ consumes: ['static_site_candidate'], emits: ['static_validation_run', 'import_validation_result', 'visual_parity_artifact', 'finding_packet_set'] }),
+			...commandExecution({
+				command: 'node',
+				args: ['.github/scripts/run-static-validation-controller-action.mjs'],
+				timeoutSeconds: 1800,
+			}),
 			dependencies: ['wp-site-generator', 'static-site-importer', 'blocks-engine'],
 			gates: ['fallback_blocks', 'block_quality', 'conversion_findings', 'visual_parity'],
 			metrics: ['fallback_blocks', 'block_quality', 'conversion_findings', 'visual_parity'],
@@ -229,15 +246,12 @@ const controller = {
 			agent_id: 'php_transformer_iterator',
 			prompt: 'Route each finding group to the owning SSI stack repository and open the focused upstream issue or pull request described by the packet evidence.',
 			abilities: [runtimePackageAbilityId, 'github_issue_publish', 'github_pull_request_publish', 'comment_github_pull_request'],
-			...handoff({ consumes: ['finding_group'], emits: ['iterator_upstream_issue', 'iterator_upstream_pull_request'] }),
-			fan_out: {
-				primitive: 'homeboy.agent-task.fanout.plan',
-				mode: 'per_artifact',
-				artifact: 'finding_group',
-				group_by: ['owner_repo', 'root_cause', 'group_id'],
-				requires_non_empty: true,
-				batch_input: iteratorFanoutBatch,
-			},
+			...handoff({ consumes: ['finding_group'], emits: ['iterator_fanout_batch'] }),
+			...commandExecution({
+				command: 'node',
+				args: ['-e', "require(process.env.HOMEBOY_EXTENSIONS_PATH + '/runtime-agent-ci/scripts/homeboy-artifact-fanout.cjs')", '--', '--config', '.github/homeboy/artifact-fanout/iterator-fanout.json', '--mode', 'run'],
+				timeoutSeconds: 1800,
+			}),
 			dependencies: ['static-site-importer', 'blocks-engine', 'homeboy-extensions'],
 		},
 		{

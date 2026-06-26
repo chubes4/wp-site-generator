@@ -11,10 +11,33 @@
                 "create_github_issue"
             ],
             "handler_configs": {},
-            "prompt_queue": [],
+            "prompt_queue": [
+                {
+                    "added_at": "2026-06-26T00:00:00+00:00",
+                    "prompt": "Use the runtime input concept_packet artifact as the source concept. Produce one DesignPacket typed artifact for that concept by calling emit_typed_artifact."
+                }
+            ],
             "queue_mode": "static",
             "step_position": 0,
             "step_type": "ai"
+        },
+        {
+            "disabled_tools": [],
+            "enabled": true,
+            "handler_configs": {
+                "typed_artifact": {
+                    "output_key": "design_packet",
+                    "schema": "wp-site-generator/DesignPacket/v1",
+                    "artifact": "DesignPacket"
+                }
+            },
+            "handler_slugs": [
+                "typed_artifact"
+            ],
+            "prompt_queue": [],
+            "queue_mode": "static",
+            "step_position": 1,
+            "step_type": "publish"
         }
     ]
 }

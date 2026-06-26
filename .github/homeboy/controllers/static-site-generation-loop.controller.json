@@ -278,7 +278,6 @@
         "design_packet"
       ],
       "artifacts": [
-        "concept_packet",
         "design_packet"
       ]
     },
@@ -313,7 +312,6 @@
         "design_packet"
       ],
       "artifacts": [
-        "concept_packet",
         "design_packet"
       ]
     },
@@ -349,8 +347,6 @@
         "static_site_candidate"
       ],
       "artifacts": [
-        "concept_packet",
-        "design_packet",
         "static_site_candidate"
       ],
       "dependencies": [
@@ -389,8 +385,6 @@
         "static_site_candidate"
       ],
       "artifacts": [
-        "concept_packet",
-        "design_packet",
         "static_site_candidate"
       ],
       "dependencies": [
@@ -412,12 +406,19 @@
         "finding_packet_set"
       ],
       "artifacts": [
-        "static_site_candidate",
         "static_validation_run",
         "import_validation_result",
         "visual_parity_artifact",
         "finding_packet_set"
       ],
+      "runtime_execution": {
+        "kind": "command",
+        "command": "node",
+        "args": [
+          ".github/scripts/run-static-validation-controller-action.mjs"
+        ],
+        "timeout_seconds": 1800
+      },
       "dependencies": [
         "wp-site-generator",
         "static-site-importer",
@@ -449,8 +450,6 @@
         "static_site_publish_gate"
       ],
       "artifacts": [
-        "import_validation_result",
-        "visual_parity_artifact",
         "static_site_publish_gate"
       ],
       "dependencies": [
@@ -497,9 +496,6 @@
         "static_site_pull_request"
       ],
       "artifacts": [
-        "static_site_candidate",
-        "import_validation_result",
-        "static_site_publish_gate",
         "static_site_pull_request"
       ],
       "dependencies": [
@@ -540,9 +536,6 @@
         "finding_group"
       ],
       "artifacts": [
-        "import_validation_result",
-        "static_validation_run",
-        "visual_parity_artifact",
         "finding_packet_set",
         "finding_group"
       ],
@@ -610,10 +603,6 @@
         "finding_packet_set"
       ],
       "artifacts": [
-        "static_site_candidate",
-        "import_validation_result",
-        "visual_parity_artifact",
-        "finding_packet_set",
         "revalidation_attempt",
         "static_validation_run",
         "import_validation_result",
@@ -658,12 +647,6 @@
         "reviewer_gate_outcome"
       ],
       "artifacts": [
-        "static_site_candidate",
-        "import_validation_result",
-        "static_validation_run",
-        "visual_parity_artifact",
-        "finding_packet_set",
-        "revalidation_attempt",
         "reviewer_gate_outcome"
       ],
       "dependencies": [
@@ -1077,6 +1060,12 @@
       "required": true
     },
     {
+      "artifact_id": "iterator_fanout_batch",
+      "kind": "homeboy-extensions/ArtifactFanoutBatch/v1",
+      "description": "iterator_fanout_batch artifact using homeboy-extensions/ArtifactFanoutBatch/v1",
+      "required": true
+    },
+    {
       "artifact_id": "iterator_upstream_issue",
       "kind": "github/Issue/v1",
       "description": "iterator_upstream_issue artifact using github/Issue/v1",
@@ -1087,13 +1076,6 @@
       "artifact_id": "iterator_upstream_pull_request",
       "kind": "github/PullRequest/v1",
       "description": "iterator_upstream_pull_request artifact using github/PullRequest/v1",
-      "required": false,
-      "evidence_only": true
-    },
-    {
-      "artifact_id": "iterator_fanout_batch",
-      "kind": "homeboy/agent-task-fanout-batch/v1",
-      "description": "Durable Homeboy fanout batch for WPSG iterator finding-group workers.",
       "required": false,
       "evidence_only": true
     },
