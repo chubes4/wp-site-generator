@@ -452,6 +452,14 @@
       "artifacts": [
         "static_site_publish_gate"
       ],
+      "runtime_execution": {
+        "kind": "command",
+        "command": "node",
+        "args": [
+          ".github/scripts/run-static-publication-gate-controller-action.mjs"
+        ],
+        "timeout_seconds": 900
+      },
       "dependencies": [
         "wp-site-generator"
       ],
