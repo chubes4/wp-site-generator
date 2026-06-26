@@ -172,4 +172,20 @@ The proof requires artifacts emitted by Homeboy/runtime execution under `--artif
 
 Production success evidence is a single bundle of Homeboy artifacts: controller run-from-spec result, materialization proof, `runtime_access` preview/playground URL for the generated WordPress result, typed artifacts for `concept_packet`, `design_packet`, and `static_site_candidate`, and downstream validation/gate artifacts. Failure evidence is the same bundle plus the failing assertion or runtime message, for example `WP Codebox agent task did not produce required typed artifacts: concept_packet`.
 
+The headless N-revolution production workflow uses the same boundary with a generic HBE runner:
+
+```bash
+HOMEBOY_HEADLESS_LOOP_REVOLUTIONS=3 \
+HOMEBOY_AGENT_RUNTIME=wp-codebox \
+HOMEBOY_AGENT_RUNTIME_PROVIDER=codex \
+HOMEBOY_AGENT_RUNTIME_MODEL=gpt-5.5 \
+HOMEBOY_AGENT_RUNTIME_PROVIDER_PLUGIN_PATHS=/path/to/ai-provider-for-openai \
+HOMEBOY_AGENT_RUNTIME_SECRET_ENV=AI_PROVIDER_OPENAI_CODEX_ACCESS_TOKEN,AI_PROVIDER_OPENAI_CODEX_REFRESH_TOKEN,AI_PROVIDER_OPENAI_CODEX_EXPIRES_AT,AI_PROVIDER_OPENAI_CODEX_ACCOUNT_ID,AI_PROVIDER_OPENAI_CODEX_FEDRAMP \
+node .ci/homeboy-extensions/runtime-agent-ci/scripts/run-headless-loop.cjs \
+  --spec .github/homeboy/headless-production-loop.json \
+  --revolutions 3
+```
+
+The WPSG spec does not name Codebox or Codex. Those are selected by the runtime profile/env contract, so another runtime profile can swap in without changing WPSG workload code.
+
 Temporary `HOMEBOY_AGENT_RUNTIME_*`, `HOMEBOY_REF`, and `HOMEBOY_EXTENSIONS_REF` inputs are staging seams pending the upstream Homeboy/Homeboy Extensions runtime contract work referenced from the loop spec metadata. They should disappear into Homeboy-owned runtime selection as that contract hardens.
