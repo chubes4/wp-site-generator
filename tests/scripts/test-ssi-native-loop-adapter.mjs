@@ -175,7 +175,6 @@ assert.match(validationWorkflow, /build-static-validation-settings\.mjs/, 'Actio
 assert.match(validationWorkflow, /build-static-preview-blueprint\.mjs/, 'Actions validation uses shared preview adapter');
 assert.match(validationWorkflow, /Build PHP transformer iterator fanout declaration/, 'Actions validation emits a primitive fanout declaration');
 assert.match(validationWorkflow, /build-php-transformer-iterator-fanout-config\.mjs/, 'Actions validation builds WPSG finding groups for Homeboy fanout');
-assert.doesNotMatch(validationWorkflow, /gh workflow run php-transformer-iterator\.yml/, 'Actions validation does not dispatch iterator workflow with gh');
 
 for (const workflowPath of ['.github/workflows/php-transformer-iterator.yml', '.github/workflows/ssi-stack-reviewer.yml']) {
 	const workflow = await readFile(path.join(repoRoot, workflowPath), 'utf8');

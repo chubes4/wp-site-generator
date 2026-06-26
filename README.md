@@ -276,9 +276,7 @@ For deterministic contract validation, run `node tests/scripts/test-wpsg-loop-ty
 
 For production-loop proof, run `.github/scripts/validate-headless-site-generation-loop.mjs`. It drives `homeboy agent-task controller run-from-spec`, validates the returned materialization proof, then asserts WPSG artifact evidence with `.github/scripts/assert-site-generation-loop-proof.mjs`. The reviewer-facing success evidence is a typed `runtime_access` envelope for the generated WordPress result plus durable typed artifacts for `concept_packet`, `design_packet`, `static_site_candidate`, import validation, static validation, visual parity, finding packets, revalidation, and reviewer gate output. Failure evidence should include the controller result, materialization proof, artifact root listing, and the exact missing typed artifact message such as `runtime task did not produce required typed artifacts: concept_packet`. The validator fails closed when required runtime, fanout, typed runtime access, import, visual, artifact URL evidence, or the structured `--output` JSON is absent. Iterator issue/PR artifacts and publication PR artifacts are optional for a clean candidate-only run, but are validated when emitted. Fixture proof modes are not supported; production proof rejects fixture-only artifacts or placeholder `example.*` URLs.
 
-For the generic N-revolution headless production path, use `.github/workflows/headless-production-validation.yml`. The checked-in workload spec `.github/homeboy/headless-production-loop.json` is runtime-neutral; the workflow dispatch inputs select `runtime_id=wp-codebox`, `runtime_provider=codex`, `model=gpt-5.5`, and `revolutions=N`. A live run needs Codex subscription secrets exposed as the `AI_PROVIDER_OPENAI_CODEX_*` secret env names and the `ai-provider-for-openai` provider plugin mounted through `provider_plugin_paths` or the selected runtime profile. If secrets or lab capacity are unavailable, dispatch with `dry_run=true` to materialize the exact generic runtime request and evidence file paths without launching the provider.
-
-Temporary `HOMEBOY_AGENT_RUNTIME_*`, `HOMEBOY_REF`, and `HOMEBOY_EXTENSIONS_REF` workflow inputs exist only until Homeboy and Homeboy Extensions expose the finalized repo-loop runtime contract tracked by the linked upstream Homeboy/HBE issues in the controller metadata. They select upstream runtime contracts; they are not WPSG orchestration state.
+For the generic N-revolution headless production path, run the checked-in workload spec `.github/homeboy/headless-production-loop.json` through a Homeboy lab runner. The spec is runtime-neutral: runtime id, AI provider, model, provider plugin mounts, credentials, wall-clock limits, and cancellation are Homeboy/runtime concerns, not WPSG workflow state.
 
 The PHP transformer iterator supplies WPSG-owned finding grouping and fanout packet input, then calls Homeboy's public `homeboy agent-task fanout plan`, `submit-batch`, `status`, and `artifacts` primitives for durable fanout lifecycle evidence.
 
@@ -289,10 +287,9 @@ Useful workflow entry points:
 3. **`design-agent.yml`** — attach a design direction to one issue.
 4. **`static-site-agent.yml`** — build one design-ready issue into a static-site PR.
 5. **`site-generation-loop.yml`** — optional trigger for the end-to-end Homeboy controller contract: concept packets, design packets, static candidates, validation, publication gates, iterator/revalidation, and reviewer evidence.
-6. **`headless-production-validation.yml`** — generic N-revolution headless loop for true validation through the selected Homeboy runtime/provider.
-7. **`static-site-validation.yml`** — optional PR-triggered validation for labeled target-lane static-site PRs.
-8. **`php-transformer-iterator.yml`** — automatic or manual upstream repair loop from validation finding packets.
-9. **`ssi-stack-reviewer.yml`** — manual review-only gate for upstream iterator PRs before merge or promotion.
+6. **`static-site-validation.yml`** — optional PR-triggered validation for labeled target-lane static-site PRs.
+7. **`php-transformer-iterator.yml`** — automatic or manual upstream repair loop from validation finding packets.
+8. **`ssi-stack-reviewer.yml`** — manual review-only gate for upstream iterator PRs before merge or promotion.
 
 Local Studio remains useful for bundle development or manual runtime experiments. A local host needs:
 

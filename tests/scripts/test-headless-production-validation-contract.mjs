@@ -32,13 +32,4 @@ for (const required of ['concept_packet', 'design_packet', 'static_site_candidat
 assert.ok(spec.required_evidence_refs.some((ref) => ref.kind === 'runtime_access' && ref.name === 'runtime_access_url'), 'runtime access evidence is required with runtime-access terminology');
 assert.doesNotMatch(JSON.stringify(spec), /playground_or_preview_url/, 'generic evidence names avoid Playground/preview terminology');
 
-const workflow = await readFile(path.join(repoRoot, '.github/workflows/headless-production-validation.yml'), 'utf8');
-assert.match(workflow, /default: wp-codebox/, 'workflow selects Codebox through dispatch defaults');
-assert.match(workflow, /default: codex/, 'workflow selects Codex provider through dispatch defaults');
-assert.match(workflow, /HOMEBOY_HEADLESS_LOOP_REVOLUTIONS/, 'workflow forwards N revolutions through the generic HBE contract');
-assert.match(workflow, /HOMEBOY_AGENT_RUNTIME_PROVIDER_PLUGIN_PATHS/, 'workflow forwards provider plugin mounts through the generic runtime contract');
-assert.match(workflow, /AI_PROVIDER_OPENAI_CODEX_REFRESH_TOKEN/, 'workflow declares Codex subscription secret env names without values');
-assert.match(workflow, /HOMEBOY_AGENT_RUNTIME_SECRET_ENV: \$\{\{ inputs\.secret_env \}\}/, 'workflow forwards secret env names through dispatch input');
-assert.doesNotMatch(workflow, /secret_env_values|credentials:/, 'workflow does not inline provider credential values');
-
 console.log('Headless production validation contract tests passed');
