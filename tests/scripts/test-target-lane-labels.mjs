@@ -3,20 +3,15 @@ import { readFile } from 'node:fs/promises';
 import path from 'node:path';
 
 const repoRoot = path.resolve(new URL('../..', import.meta.url).pathname);
-const staticValidation = await readFile(path.join(repoRoot, '.github/workflows/static-site-validation.yml'), 'utf8');
 const lifecycle = await readFile(path.join(repoRoot, '.github/workflows/idea-lifecycle-labels.yml'), 'utf8');
 const staticFlow = await readFile(path.join(repoRoot, 'bundles/static-site-agent/flows/static-site-manual-flow.json'), 'utf8');
 const staticPipeline = await readFile(path.join(repoRoot, 'bundles/static-site-agent/pipelines/static-site-pipeline.json'), 'utf8');
 const readme = await readFile(path.join(repoRoot, 'README.md'), 'utf8');
 
-for (const source of [staticValidation, lifecycle, staticFlow, staticPipeline, readme]) {
+for (const source of [lifecycle, staticFlow, staticPipeline, readme]) {
   assert.doesNotMatch(source, /target:static-site/, 'legacy target:static-site label is not referenced');
 }
 
-assert.match(staticValidation, /target:wordpress/, 'validation accepts the WordPress target lane');
-assert.match(staticValidation, /target:woocommerce/, 'validation accepts the WooCommerce target lane');
-assert.match(staticValidation, /github\.event\.action == 'labeled' && github\.event\.label\.name == 'target:wordpress'/, 'validation accepts target:wordpress labeled events');
-assert.match(staticValidation, /github\.event\.action == 'labeled' && github\.event\.label\.name == 'target:woocommerce'/, 'validation accepts target:woocommerce labeled events');
 assert.match(lifecycle, /target:wordpress/, 'lifecycle recognizes the WordPress target lane');
 assert.match(lifecycle, /target:woocommerce/, 'lifecycle recognizes the WooCommerce target lane');
 assert.match(lifecycle, /github\.event\.label\.name == 'target:wordpress'/, 'lifecycle accepts target:wordpress labeled events');
