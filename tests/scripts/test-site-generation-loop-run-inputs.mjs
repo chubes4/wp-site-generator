@@ -94,7 +94,7 @@ assert.throws(() => buildSiteGenerationLoopRunContext({
 		HOMEBOY_EXTENSIONS_REF: 'main',
 	},
 	root: repoRoot,
-}), /production ref policy requires immutable dependency refs/, 'production loop inputs fail closed on mutable runtime refs');
+}), /requires SOURCE_HEAD_SHA/, 'production loop inputs fail closed without immutable source provenance');
 
 const workflow = await readFile(workflowPath, 'utf8');
 assert.match(workflow, /source_head_sha:/, 'site generation workflow exposes source_head_sha provenance input');

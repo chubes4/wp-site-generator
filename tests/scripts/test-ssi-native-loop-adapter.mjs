@@ -140,21 +140,12 @@ assert.equal(previewPayload.url, 'https://preview.example.test/issue-123-native-
 assert.match(previewImportStep.code, /wp_get_ability\( 'static-site-importer\/import-website-artifact' \)/, 'preview imports through website artifact ability');
 assert.doesNotMatch(previewImportStep.code, /static-site-importer\/import-theme/, 'preview does not depend on the legacy import-theme ability');
 
-const runtimePreviewPath = path.join(tempDir, 'runtime-preview.json');
-const runtimePreviewBase = 'https://runtime-preview.example.test/';
-const runtimePreviewResult = spawnSync(process.execPath, ['.github/scripts/build-static-preview-blueprint.mjs', '--site', 'issue-123-native-loop', '--source-repo', 'chubes4/wp-site-generator', '--source-head-sha', 'b'.repeat(40), '--output', runtimePreviewPath], {
+const missingRuntimeAccessResult = spawnSync(process.execPath, ['.github/scripts/build-static-preview-blueprint.mjs', '--site', 'issue-123-native-loop', '--source-repo', 'chubes4/wp-site-generator', '--source-head-sha', 'b'.repeat(40), '--output', path.join(tempDir, 'missing-runtime-access.json')], {
 	cwd: repoRoot,
 	encoding: 'utf8',
-	env: {
-		...process.env,
-		HOMEBOY_AGENT_RUNTIME_PREVIEW_URL_BASE: runtimePreviewBase,
-	},
 });
-assert.equal(runtimePreviewResult.status, 0, runtimePreviewResult.stderr || runtimePreviewResult.stdout);
-const runtimePreviewPayload = JSON.parse(await readFile(runtimePreviewPath, 'utf8'));
-assert.ok(runtimePreviewPayload.url.startsWith(`${runtimePreviewBase}#`), 'preview URL uses the runtime preview base');
-const runtimePreviewBlueprint = JSON.parse(decodeURIComponent(runtimePreviewPayload.url.slice(runtimePreviewBase.length + 1)));
-assert.deepEqual(runtimePreviewBlueprint, runtimePreviewPayload.blueprint, 'preview URL fragment encodes the generated blueprint');
+assert.notEqual(missingRuntimeAccessResult.status, 0, 'preview generation fails closed without runtime access evidence');
+assert.match(missingRuntimeAccessResult.stderr, /runtime access evidence refs|HOMEBOY_RUNTIME_PREVIEW_URL/, 'preview failure explains required runtime access evidence');
 
 const fallbackPreviewResult = spawnSync(process.execPath, ['.github/scripts/build-static-preview-blueprint.mjs', '--site', 'issue-123-native-loop', '--output', path.join(tempDir, 'preview-fallback.json')], {
 	cwd: repoRoot,

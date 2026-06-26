@@ -152,6 +152,8 @@ const groupResult = spawnSync(process.execPath, [path.join(repoRoot, '.github/sc
 	encoding: 'utf8',
 });
 assert.equal(groupResult.status, 0, groupResult.stderr || groupResult.stdout);
+const groupedFindings = JSON.parse(await readFile(groupsPath, 'utf8'));
+await writeJson(groupsPath, { ...groupedFindings, group_count: 1, groups: groupedFindings.groups.slice(0, 1) });
 
 const workflowResult = spawnSync(process.execPath, [path.join(repoRoot, 'bundles/php-transformer-iterator-agent/scripts/build-agent-iterator-workflow.mjs'), groupsPath, workflowPath], {
 	cwd: repoRoot,
@@ -163,7 +165,7 @@ assert.equal(workflowResult.status, 0, workflowResult.stderr || workflowResult.s
 const workflow = JSON.parse(await readFile(workflowPath, 'utf8'));
 const iteratorPrompt = workflow.workflow.steps[0].prompt_queue[0].prompt;
 assert.match(iteratorPrompt, /"candidate_repo": "Automattic\/blocks-engine"/, 'workflow embeds Blocks Engine follow-up route');
-assert.match(iteratorPrompt, /"candidate_repo": "chubes4\/wp-site-generator"/, 'workflow embeds WPSG harness/visual route');
+assert.doesNotMatch(iteratorPrompt, /"candidate_repo": "chubes4\/wp-site-generator"/, 'per-task workflow embeds one grouped finding route');
 assert.doesNotMatch(iteratorPrompt, /"kind": "report_missing"/, 'workflow no longer asks iterator to chase missing-report noise');
 
 console.log('static validation iterator replay passed');

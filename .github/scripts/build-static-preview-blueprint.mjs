@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 
-import { appendGithubOutput, buildRuntimePreviewUrl, parseArgs, writeJsonFile } from './lib/ci-runtime-utils.mjs';
+import { appendGithubOutput, parseArgs, resolveRuntimeAccessUrl, writeJsonFile } from './lib/ci-runtime-utils.mjs';
 import { buildSsiPreviewBlueprint, buildSsiPreviewSource, loadSsiStackManifest } from './lib/ssi-stack-runtime.mjs';
 
 const args = parseArgs(process.argv.slice(2));
@@ -22,10 +22,7 @@ if (!site) {
 const source = buildSsiPreviewSource({ repo: sourceRepo, sha: sourceHeadSha, tag: sourceTag, artifactSource: sourceArtifact });
 const manifest = await loadSsiStackManifest(manifestPath);
 const blueprint = buildSsiPreviewBlueprint({ site, source, lane, manifest });
-const url = buildRuntimePreviewUrl({
-	blueprint,
-	evidenceRefs: previewEvidenceRefs ? JSON.parse(previewEvidenceRefs) : [],
-});
+const url = resolveRuntimeAccessUrl({ evidenceRefs: previewEvidenceRefs ? JSON.parse(previewEvidenceRefs) : [] });
 
 if (outputPath) {
 	await writeJsonFile(outputPath, { site, lane, source, url, blueprint, stack_manifest: manifest });
