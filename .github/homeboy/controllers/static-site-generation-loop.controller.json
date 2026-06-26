@@ -566,33 +566,24 @@
         "finding_group"
       ],
       "emits": [
-        "iterator_upstream_issue",
-        "iterator_upstream_pull_request"
+        "iterator_fanout_batch"
       ],
       "artifacts": [
-        "finding_group",
-        "iterator_upstream_issue",
-        "iterator_upstream_pull_request"
+        "iterator_fanout_batch"
       ],
-      "fan_out": {
-        "primitive": "homeboy.agent-task.fanout.plan",
-        "mode": "per_artifact",
-        "artifact": "finding_group",
-        "group_by": [
-          "owner_repo",
-          "root_cause",
-          "group_id"
+      "runtime_execution": {
+        "kind": "command",
+        "command": "node",
+        "args": [
+          "-e",
+          "require(process.env.HOMEBOY_EXTENSIONS_PATH + '/runtime-agent-ci/scripts/homeboy-artifact-fanout.cjs')",
+          "--",
+          "--config",
+          ".github/homeboy/artifact-fanout/iterator-fanout.json",
+          "--mode",
+          "run"
         ],
-        "requires_non_empty": true,
-        "batch_input": {
-          "schema": "wp-site-generator/php-transformer-iterator-fanout-input/v1",
-          "input_contract": "homeboy/agent-task-fanout-input/v1",
-          "builder": ".github/scripts/build-php-transformer-iterator-fanout-config.mjs",
-          "command": "agent-task fanout submit-batch",
-          "status_command": "agent-task fanout status",
-          "artifacts_command": "agent-task fanout artifacts",
-          "packet_input_key": "finding_group"
-        }
+        "timeout_seconds": 1800
       },
       "dependencies": [
         "static-site-importer",
@@ -1096,6 +1087,13 @@
       "artifact_id": "iterator_upstream_pull_request",
       "kind": "github/PullRequest/v1",
       "description": "iterator_upstream_pull_request artifact using github/PullRequest/v1",
+      "required": false,
+      "evidence_only": true
+    },
+    {
+      "artifact_id": "iterator_fanout_batch",
+      "kind": "homeboy/agent-task-fanout-batch/v1",
+      "description": "Durable Homeboy fanout batch for WPSG iterator finding-group workers.",
       "required": false,
       "evidence_only": true
     },
