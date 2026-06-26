@@ -73,6 +73,34 @@ try {
 	assert.equal(materializedPayload.workloads[0].run[1].type, 'php', 'materialized directory imports through the ability PHP bridge');
 	assert.match(materializedPayload.workloads[0].run[1].code, /static-site-importer\/import-website-artifact/, 'SSI workload imports provided directory through website artifact ability');
 
+	const fileSetCandidatePath = path.join(tempDir, 'FileSetCandidate.json');
+	const fileSetSettingsPath = path.join(tempDir, 'file-set-settings.json');
+	await writeFile(fileSetCandidatePath, JSON.stringify({
+		schema_version: 'wp-site-generator/StaticSiteCandidate/v1',
+		site_id: 'issue-888-file-set-candidate',
+		files: {
+			'pages/home.html': '<!doctype html><html><body><main>Captured home page</main></body></html>',
+			'assets/styles.css': 'body { color: #222; }',
+		},
+	}, null, 2));
+	const fileSetResult = spawnSync(process.execPath, [
+		'.github/scripts/build-static-validation-settings.mjs',
+		'--candidate',
+		fileSetCandidatePath,
+		'--output',
+		fileSetSettingsPath,
+	], {
+		cwd: repoRoot,
+		encoding: 'utf8',
+	});
+	assert.equal(fileSetResult.status, 0, fileSetResult.stderr || fileSetResult.stdout);
+	const fileSetPayload = JSON.parse(await readFile(fileSetSettingsPath, 'utf8'));
+	assert.deepEqual(
+		fileSetPayload.website_artifact.files.map((file) => file.path),
+		['website/assets/styles.css', 'website/pages/home.html'],
+		'website artifact captures the candidate file set without requiring index.html'
+	);
+
 	const unresolvedResult = spawnSync(process.execPath, ['.github/scripts/build-static-validation-settings.mjs'], {
 		cwd: repoRoot,
 		encoding: 'utf8',
@@ -85,6 +113,7 @@ try {
 	assert.match(unresolvedResult.stderr, /STATIC_SITE_CANDIDATE_PATH was not resolved before validation/, 'failure names the unresolved StaticSiteCandidate input');
 } finally {
 	await rm(path.join(repoRoot, '.ci/static-site-candidates/issue-777-direct-candidate'), { recursive: true, force: true });
+	await rm(path.join(repoRoot, '.ci/static-site-candidates/issue-888-file-set-candidate'), { recursive: true, force: true });
 	await rm(path.join(repoRoot, '.ci/static-site-candidates/direct-static-site'), { recursive: true, force: true });
 	await rm(tempDir, { recursive: true, force: true });
 }
