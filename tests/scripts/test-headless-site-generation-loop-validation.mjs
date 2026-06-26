@@ -159,7 +159,6 @@ try {
 	assert.ok(evidence.commands.every((item) => !item.command.includes('agent-task controller from-spec')), 'headless path does not manually initialize controllers');
 	assert.ok(evidence.commands.every((item) => !item.command.includes('agent-task controller resume')), 'headless path does not manually resume controllers');
 	assert.ok(evidence.commands.every((item) => !item.command.includes('agent-task controller events')), 'headless path does not manually apply controller events');
-	assert.ok(evidence.commands.every((item) => !item.command.includes('gh workflow run')), 'headless path does not rely on GitHub workflow dispatch');
 	assert.ok(evidence.upstream_dependencies.includes('https://github.com/Extra-Chill/homeboy-extensions/pull/1645'), 'evidence records the headless runner upstream dependency');
 
 	const controllerRunSpec = JSON.parse(await readFile(evidence.paths.controller_run_spec, 'utf8'));

@@ -172,7 +172,7 @@ The proof requires artifacts emitted by Homeboy/runtime execution under `--artif
 
 Production success evidence is a single bundle of Homeboy artifacts: controller run-from-spec result, materialization proof, a typed `runtime_access` envelope for the generated WordPress result, typed artifacts for `concept_packet`, `design_packet`, and `static_site_candidate`, and downstream validation/gate artifacts. Failure evidence is the same bundle plus the failing assertion or runtime message, for example `runtime task did not produce required typed artifacts: concept_packet`.
 
-The headless N-revolution production workflow uses the same boundary with a generic HBE runner:
+The headless N-revolution production run uses the same boundary with a generic HBE runner:
 
 ```bash
 HOMEBOY_HEADLESS_LOOP_REVOLUTIONS=3 \
@@ -188,4 +188,4 @@ node .ci/homeboy-extensions/runtime-agent-ci/scripts/run-headless-loop.cjs \
 
 The WPSG spec does not name Codebox or Codex. Those are selected by the runtime profile/env contract, so another runtime profile can swap in without changing WPSG workload code.
 
-Temporary `HOMEBOY_AGENT_RUNTIME_*`, `HOMEBOY_REF`, and `HOMEBOY_EXTENSIONS_REF` inputs are staging seams pending the upstream Homeboy/Homeboy Extensions runtime contract work referenced from the loop spec metadata. They should disappear into Homeboy-owned runtime selection as that contract hardens.
+Runtime selection is Homeboy-owned. WPSG keeps the workload spec and artifact contract runtime-neutral while lab runners provide the selected runtime profile, provider credentials, and execution budget.
