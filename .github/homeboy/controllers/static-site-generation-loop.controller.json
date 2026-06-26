@@ -203,8 +203,10 @@
           "workflow": {
             "id": "store-idea-artifact-flow"
           },
-          "input": {
-            "wait_for_completion": true
+          "input": {},
+          "options": {
+            "wait_for_completion": true,
+            "time_budget_ms": 1200000
           }
         }
       },
@@ -234,8 +236,10 @@
           "workflow": {
             "id": "website-idea-artifact-flow"
           },
-          "input": {
-            "wait_for_completion": true
+          "input": {},
+          "options": {
+            "wait_for_completion": true,
+            "time_budget_ms": 1200000
           }
         }
       },
@@ -266,8 +270,11 @@
             "id": "design-artifact-flow"
           },
           "input": {
-            "wait_for_completion": true,
             "site_kind": "store"
+          },
+          "options": {
+            "wait_for_completion": true,
+            "time_budget_ms": 1200000
           }
         }
       },
@@ -300,8 +307,11 @@
             "id": "design-artifact-flow"
           },
           "input": {
-            "wait_for_completion": true,
             "site_kind": "website"
+          },
+          "options": {
+            "wait_for_completion": true,
+            "time_budget_ms": 1200000
           }
         }
       },
@@ -334,8 +344,11 @@
             "id": "static-site-candidate-flow"
           },
           "input": {
-            "wait_for_completion": true,
             "site_kind": "store"
+          },
+          "options": {
+            "wait_for_completion": true,
+            "time_budget_ms": 1200000
           }
         }
       },
@@ -372,8 +385,11 @@
             "id": "static-site-candidate-flow"
           },
           "input": {
-            "wait_for_completion": true,
             "site_kind": "website"
+          },
+          "options": {
+            "wait_for_completion": true,
+            "time_budget_ms": 1200000
           }
         }
       },
@@ -452,6 +468,14 @@
       "artifacts": [
         "static_site_publish_gate"
       ],
+      "runtime_execution": {
+        "kind": "command",
+        "command": "node",
+        "args": [
+          ".github/scripts/run-static-publication-gate-controller-action.mjs"
+        ],
+        "timeout_seconds": 900
+      },
       "dependencies": [
         "wp-site-generator"
       ],

@@ -82,6 +82,10 @@ try {
 			assert.ok(workflow.emits.includes(artifactId), `${workflowId} emits ${artifactId}`);
 			assert.ok(workflow.artifacts.includes(artifactId), `${workflowId} artifact handoff includes ${artifactId}`);
 			assert.equal(workflow.runtime_execution?.kind, 'bundle', `${workflowId} declares a Homeboy-owned bundle execution input`);
+			assert.equal(workflow.runtime_execution?.input?.options?.wait_for_completion, true, `${workflowId} places wait_for_completion in runtime-package options`);
+			assert.equal(workflow.runtime_execution?.input?.options?.time_budget_ms, 1200000, `${workflowId} places time_budget_ms in runtime-package options`);
+			assert.equal(workflow.runtime_execution?.input?.input?.wait_for_completion, undefined, `${workflowId} does not mix wait_for_completion into domain input`);
+			assert.equal(workflow.runtime_execution?.input?.input?.time_budget_ms, undefined, `${workflowId} does not mix time_budget_ms into domain input`);
 		}
 
 		for (const pipelinePath of contract.pipelines) {

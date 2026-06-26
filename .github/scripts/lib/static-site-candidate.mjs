@@ -90,7 +90,7 @@ export async function buildWebsiteArtifactFromSource(candidateSource) {
 
 async function materializeCandidateFile({ repoRoot, site, candidatePath, materializedRoot }) {
 	const candidate = unwrapCandidate(JSON.parse(await readFile(candidatePath, 'utf8')));
-	const candidateSite = site || candidate.site_id || candidate.slug || candidate.site_slug || candidate.id || path.basename(candidatePath, path.extname(candidatePath));
+	const candidateSite = site || candidate.site_id || candidate.slug || candidate.site_slug || candidate.base_slug || candidate.id || path.basename(candidatePath, path.extname(candidatePath));
 	const siteSlug = slugify(candidateSite);
 	if (!siteSlug) {
 		throw new Error('StaticSiteCandidate must include site_id, slug, site_slug, or id when --site/SITE is not provided.');
@@ -145,18 +145,25 @@ function sourceDescriptor({ site, sourceDirectory, source, candidatePath = '', r
 }
 
 function unwrapCandidate(value) {
-	return value?.payload || value?.typed_artifacts?.static_site_candidate?.payload || value?.static_site_candidate || value;
+	const candidate = value?.payload || value?.typed_artifacts?.static_site_candidate?.payload || value?.static_site_candidate || value;
+	return candidate?.candidate || candidate;
 }
 
 function normalizeCandidateFiles(candidate) {
 	const source = candidate?.files || candidate?.file_set || candidate?.static_site?.files || [];
+	const prefix = candidate.directory ? `${String(candidate.directory).replaceAll('\\', '/').replace(/\/$/, '')}/` : '';
 	if (Array.isArray(source)) {
-		return source.map((file) => normalizeFile(file.path || file.name || file.relative_path, file.content ?? file.body ?? ''));
+		return source.map((file) => normalizeFile(stripCandidateDirectoryPrefix(file.path || file.name || file.relative_path, prefix), file.content ?? file.body ?? ''));
 	}
 	if (source && typeof source === 'object') {
-		return Object.entries(source).map(([relativePath, content]) => normalizeFile(relativePath, typeof content === 'object' ? content.content : content));
+		return Object.entries(source).map(([relativePath, content]) => normalizeFile(stripCandidateDirectoryPrefix(relativePath, prefix), typeof content === 'object' ? content.content : content));
 	}
 	throw new Error('StaticSiteCandidate files must be an array or object.');
+}
+
+function stripCandidateDirectoryPrefix(relativePath, prefix) {
+	const normalizedPath = String(relativePath || '').replaceAll('\\', '/').replace(/^\.\//, '');
+	return prefix && normalizedPath.startsWith(prefix) ? normalizedPath.slice(prefix.length) : normalizedPath;
 }
 
 function normalizeFile(relativePath, content) {

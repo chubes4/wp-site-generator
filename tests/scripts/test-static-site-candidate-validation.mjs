@@ -50,6 +50,72 @@ try {
 		'materialized candidate payload preserves file contents'
 	);
 
+	const prefixedCandidatePath = path.join(tempDir, 'PrefixedStaticSiteCandidate.json');
+	const prefixedSettingsPath = path.join(tempDir, 'prefixed-settings.json');
+	await writeFile(prefixedCandidatePath, JSON.stringify({
+		schema_version: 'wp-site-generator/StaticSiteCandidate/v1',
+		site_id: 'issue-778-prefixed-candidate',
+		directory: 'static-sites/issue-778-prefixed-candidate',
+		files: [
+			{
+				path: 'static-sites/issue-778-prefixed-candidate/index.html',
+				content: '<!doctype html><html><body><main>Prefixed candidate</main></body></html>',
+			},
+			{
+				path: 'static-sites/issue-778-prefixed-candidate/assets/styles.css',
+				content: 'body { background: #faf7ef; }',
+			},
+		],
+	}, null, 2));
+	const prefixedResult = spawnSync(process.execPath, [
+		'.github/scripts/build-static-validation-settings.mjs',
+		'--candidate',
+		prefixedCandidatePath,
+		'--output',
+		prefixedSettingsPath,
+	], {
+		cwd: repoRoot,
+		encoding: 'utf8',
+	});
+	assert.equal(prefixedResult.status, 0, prefixedResult.stderr || prefixedResult.stdout);
+	const prefixedPayload = JSON.parse(await readFile(prefixedSettingsPath, 'utf8'));
+	assert.deepEqual(prefixedPayload.website_artifact.files.map((file) => file.path), ['website/assets/styles.css', 'website/index.html'], 'validator strips the declared candidate directory from generated file paths');
+	assert.equal(
+		await readFile(path.join(repoRoot, prefixedPayload.candidate_source.relativeSourceDirectory, 'index.html'), 'utf8'),
+		'<!doctype html><html><body><main>Prefixed candidate</main></body></html>',
+		'prefixed candidate materializes index.html at the static-site root'
+	);
+
+	const nestedCandidatePath = path.join(tempDir, 'NestedStaticSiteCandidate.json');
+	const nestedSettingsPath = path.join(tempDir, 'nested-settings.json');
+	await writeFile(nestedCandidatePath, JSON.stringify({
+		artifact: 'StaticSiteCandidate',
+		candidate: {
+			base_slug: 'issue-779-nested-candidate',
+			directory: 'static-sites/issue-779-nested-candidate/',
+			files: [
+				{
+					path: 'static-sites/issue-779-nested-candidate/index.html',
+					content: '<!doctype html><html><body><main>Nested candidate</main></body></html>',
+				},
+			],
+		},
+	}, null, 2));
+	const nestedResult = spawnSync(process.execPath, [
+		'.github/scripts/build-static-validation-settings.mjs',
+		'--candidate',
+		nestedCandidatePath,
+		'--output',
+		nestedSettingsPath,
+	], {
+		cwd: repoRoot,
+		encoding: 'utf8',
+	});
+	assert.equal(nestedResult.status, 0, nestedResult.stderr || nestedResult.stdout);
+	const nestedPayload = JSON.parse(await readFile(nestedSettingsPath, 'utf8'));
+	assert.equal(nestedPayload.site, 'issue-779-nested-candidate', 'validator derives the site slug from nested candidate.base_slug');
+	assert.deepEqual(nestedPayload.website_artifact.files.map((file) => file.path), ['website/index.html'], 'validator unwraps nested candidate file sets');
+
 	const materializedDir = path.join(tempDir, 'direct-static-site');
 	const materializedSettingsPath = path.join(tempDir, 'materialized-settings.json');
 	await mkdir(path.join(materializedDir, 'assets'), { recursive: true });
@@ -113,6 +179,8 @@ try {
 	assert.match(unresolvedResult.stderr, /STATIC_SITE_CANDIDATE_PATH was not resolved before validation/, 'failure names the unresolved StaticSiteCandidate input');
 } finally {
 	await rm(path.join(repoRoot, '.ci/static-site-candidates/issue-777-direct-candidate'), { recursive: true, force: true });
+	await rm(path.join(repoRoot, '.ci/static-site-candidates/issue-778-prefixed-candidate'), { recursive: true, force: true });
+	await rm(path.join(repoRoot, '.ci/static-site-candidates/issue-779-nested-candidate'), { recursive: true, force: true });
 	await rm(path.join(repoRoot, '.ci/static-site-candidates/issue-888-file-set-candidate'), { recursive: true, force: true });
 	await rm(path.join(repoRoot, '.ci/static-site-candidates/direct-static-site'), { recursive: true, force: true });
 	await rm(tempDir, { recursive: true, force: true });

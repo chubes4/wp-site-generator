@@ -110,11 +110,14 @@ function bundleInputs(agent_id, extra = {}) {
 		packageSource: bundle.bundle,
 		packageSlug: bundle.slug,
 		workflowId: bundle.flow,
-		ability: runtimePackageAbilityId,
 		input: {
-			wait_for_completion: true,
 			...extra,
 		},
+		options: {
+			wait_for_completion: true,
+			time_budget_ms: 1200000,
+		},
+		ability: runtimePackageAbilityId,
 	});
 }
 
@@ -212,6 +215,10 @@ const controller = {
 			workflow_id: 'static-publication-gate',
 			tasks: ['Evaluate deterministic publication gates from validation and visual parity artifacts before any generated-site pull request is published.'],
 			...handoff({ consumes: ['import_validation_result', 'visual_parity_artifact'], emits: ['static_site_publish_gate'] }),
+			...commandExecution({
+				command: 'node',
+				args: ['.github/scripts/run-static-publication-gate-controller-action.mjs'],
+			}),
 			dependencies: ['wp-site-generator'],
 			gates: ['fallback_blocks', 'block_quality', 'conversion_findings', 'visual_parity'],
 			metrics: ['fallback_blocks', 'block_quality', 'conversion_findings', 'visual_parity'],
