@@ -2,10 +2,9 @@ import { mkdir, readFile, writeFile } from 'node:fs/promises';
 import path from 'node:path';
 
 export {
-	buildRuntimePreviewUrl,
 	resolveVisualParityOutputRoot,
+	resolveRuntimeAccessUrl,
 	runtimeBundleExecution,
-	runtimePackageProfiles,
 	runtimePackageAbility,
 	runtimeValidationArtifactEnvelopeSchema,
 	runtimeWorkspaceRecipeSchema,

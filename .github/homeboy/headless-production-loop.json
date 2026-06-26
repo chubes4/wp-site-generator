@@ -6,20 +6,10 @@
   "target_repo": "chubes4/wp-site-generator",
   "component_path": ".",
   "runtime_profile": "wpsg-agent-runtime-package",
-  "runtime_profiles": {
-    "wpsg-agent-runtime-package": {
-      "schema": "homeboy/runtime-profile/v1",
-      "id": "wpsg-agent-runtime-package",
-      "runtime_task_ability": "homeboy/run-runtime-package",
-      "runtime_bundle_ability": "homeboy/run-runtime-package",
-      "runtime_workflow_ability": "homeboy/run-runtime-package",
-      "ability_requirements": ["homeboy/run-runtime-package"]
-    }
-  },
-  "prompt": "Run the WP Site Generator true validation path headlessly. Generate or reuse the smallest candidate needed to exercise concept, design, static-site candidate, WordPress import validation, static validation, visual parity, runtime access, and reviewer evidence. Return a working Playground or runtime preview URL and durable typed artifacts for the required evidence.",
+  "prompt": "Run the WP Site Generator true validation path headlessly. Generate or reuse the smallest candidate needed to exercise concept, design, static-site candidate, WordPress import validation, static validation, visual parity, runtime access, and reviewer evidence. Return a structured runtime access envelope supplied by the runtime plus durable typed artifacts for the required evidence.",
   "loop_policy": {
     "mode": "count",
-    "max_iterations": 1,
+    "max_iterations": 3,
     "accepted_statuses": ["succeeded"],
     "continue_conditions": [
       { "outcome_status": "failed", "reason": "validation_failed" },
@@ -39,20 +29,22 @@
     { "name": "import_validation_result", "kind": "wp-site-generator/ImportValidationResult/v1", "required": true, "reviewer_facing": true },
     { "name": "static_validation_run", "kind": "wp-site-generator/StaticValidationRun/v1", "required": true, "reviewer_facing": true },
     { "name": "visual_parity_artifact", "kind": "wp-site-generator/VisualParityArtifact/v1", "required": true, "reviewer_facing": true },
+    { "name": "finding_packet_set", "kind": "wp-site-generator/FindingPacketSet/v1", "required": true, "reviewer_facing": true },
+    { "name": "static_site_publish_gate", "kind": "wp-site-generator/StaticSitePublishGate/v1", "required": true, "reviewer_facing": true },
     { "name": "reviewer_gate_outcome", "kind": "wp-site-generator/ReviewerGateOutcome/v1", "required": true, "reviewer_facing": true }
   ],
   "required_evidence_refs": [
-    { "kind": "runtime_access", "name": "playground_or_preview_url" },
+    { "kind": "runtime_access", "name": "runtime_access_url" },
     { "kind": "artifact_bundle", "name": "homeboy_evidence_bundle" }
   ],
   "controller_loop_proof": {
-    "max_iterations": 1,
+    "max_iterations": 3,
     "accepted_statuses": ["succeeded"],
     "allowed_statuses": ["succeeded"],
     "allowed_stop_reasons": ["accepted"],
     "preview_required": true,
     "required_evidence": [
-      { "kind": "runtime_access", "name": "playground_or_preview_url" }
+      { "kind": "runtime_access", "name": "runtime_access_url" }
     ]
   }
 }

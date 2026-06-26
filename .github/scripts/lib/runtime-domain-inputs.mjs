@@ -1,6 +1,4 @@
 import { wpsgLoopConfig } from './wpsg-domain-config.mjs';
-
-const runtimePackageProfileId = wpsgLoopConfig.runtimePackageProfile;
 const defaultRuntimeWorkspaceRecipeSchema = 'homeboy/runtime-workspace-recipe/v1';
 const defaultValidationArtifactEnvelopeSchema = 'homeboy/validation-artifact-envelope/v1';
 const defaultVisualParityOutputRoot = 'visual-parity-artifacts';
@@ -46,20 +44,6 @@ export function runtimeToolProfileInputs(profileId, env = process.env) {
 	return {
 		ability_requirements: JSON.stringify(abilityRequirements),
 		ability_tools: JSON.stringify(abilityTools),
-	};
-}
-
-export function runtimePackageProfiles(env = process.env) {
-	const ability = runtimePackageAbility(env);
-	return {
-		[runtimePackageProfileId]: {
-			schema: 'homeboy/runtime-profile/v1',
-			id: runtimePackageProfileId,
-			runtime_task_ability: ability,
-			runtime_bundle_ability: ability,
-			runtime_workflow_ability: ability,
-			ability_requirements: ability ? [ability] : [],
-		},
 	};
 }
 
@@ -120,24 +104,21 @@ export function resolveVisualParityOutputRoot(env = process.env) {
 	return text(env.VISUAL_PARITY_OUTPUT) || text(env.HOMEBOY_AGENT_RUNTIME_VISUAL_PARITY_OUTPUT) || defaultVisualParityOutputRoot;
 }
 
-export function buildRuntimePreviewUrl(options = {}) {
-	const { blueprint, evidenceRefs = [], env = process.env } = Object.hasOwn(options, 'blueprint') || Object.hasOwn(options, 'evidenceRefs') || Object.hasOwn(options, 'env')
+export function resolveRuntimeAccessUrl(options = {}) {
+	const { evidenceRefs = [], env = process.env } = Object.hasOwn(options, 'evidenceRefs') || Object.hasOwn(options, 'env')
 		? options
-		: { blueprint: options };
-	const evidenceUrl = previewUrlFromEvidenceRefs(Array.isArray(evidenceRefs) ? evidenceRefs : [evidenceRefs]);
+		: { evidenceRefs: options };
+	const evidenceUrl = runtimeAccessUrlFromEvidenceRefs(Array.isArray(evidenceRefs) ? evidenceRefs : [evidenceRefs]);
 	if (evidenceUrl) {
 		return evidenceUrl;
 	}
 	if (env.HOMEBOY_RUNTIME_PREVIEW_URL) {
 		return env.HOMEBOY_RUNTIME_PREVIEW_URL;
 	}
-	if (!env.HOMEBOY_AGENT_RUNTIME_PREVIEW_URL_BASE) {
-		throw new Error('HOMEBOY_AGENT_RUNTIME_PREVIEW_URL_BASE or preview evidence refs are required for runtime preview URLs.');
-	}
-	return `${env.HOMEBOY_AGENT_RUNTIME_PREVIEW_URL_BASE}#${encodeURIComponent(JSON.stringify(blueprint))}`;
+	throw new Error('runtime access evidence refs or HOMEBOY_RUNTIME_PREVIEW_URL are required for runtime access URLs.');
 }
 
-function previewUrlFromEvidenceRefs(refs) {
+function runtimeAccessUrlFromEvidenceRefs(refs) {
 	for (const ref of refs) {
 		if (typeof ref === 'string' && /^https?:\/\//.test(ref)) {
 			return ref;
@@ -145,7 +126,7 @@ function previewUrlFromEvidenceRefs(refs) {
 		if (!ref || typeof ref !== 'object') {
 			continue;
 		}
-		const candidate = ref.preview_url || ref.url || ref.urls?.preview || ref.preview?.url || ref.evidence?.preview_url;
+		const candidate = ref.runtime_access_url || ref.url || ref.runtime_access?.url || ref.access?.url || ref.urls?.runtime_access || ref.preview_url || ref.urls?.preview || ref.preview?.url || ref.evidence?.preview_url;
 		if (candidate) {
 			return candidate;
 		}

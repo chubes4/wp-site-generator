@@ -5,7 +5,6 @@ import path from 'node:path';
 
 import { buildSingleAiWorkflow, buildSingleAiWorkflowStep } from '../../bundles/php-transformer-iterator-agent/scripts/lib/agent-ai-workflow.mjs';
 import {
-	buildRuntimePreviewUrl,
 	envOrArg,
 	homeboyRuntimeProviderProfile,
 	numberValue,
@@ -13,9 +12,9 @@ import {
 	readJsonOrNull,
 	repoPathResolver,
 	resolveVisualParityOutputRoot,
+	resolveRuntimeAccessUrl,
 	runtimeBundleExecution,
 	runtimePackageAbility,
-	runtimePackageProfiles,
 	runtimeProviderInvocationContract,
 	runtimeValidationArtifactEnvelopeSchema,
 	runtimeWorkspaceCommandAbility,
@@ -84,24 +83,14 @@ assert.equal(runtimePackageAbilityId, genericRuntimeEnv.HOMEBOY_AGENT_RUNTIME_TA
 assert.equal(resolveVisualParityOutputRoot({}), 'visual-parity-artifacts');
 assert.equal(resolveVisualParityOutputRoot({ VISUAL_PARITY_OUTPUT: 'custom-artifacts' }), 'custom-artifacts');
 assert.equal(runtimeWorkspaceRecipeSchema(runtimeFixtureEnv), runtimeFixtureEnv.HOMEBOY_AGENT_RUNTIME_WORKSPACE_RECIPE_SCHEMA);
-assert.equal(buildRuntimePreviewUrl({ evidenceRefs: [{ preview_url: 'https://example.com/preview' }] }), 'https://example.com/preview');
-assert.equal(buildRuntimePreviewUrl({ evidenceRefs: { preview_url: 'https://example.com/single-preview' } }), 'https://example.com/single-preview');
-assert.equal(buildRuntimePreviewUrl({ env: { HOMEBOY_RUNTIME_PREVIEW_URL: 'https://example.com/runtime-preview' } }), 'https://example.com/runtime-preview');
-assert.throws(() => buildRuntimePreviewUrl({ blueprint: { steps: [] } }), /preview evidence refs|preview_url_base|runtime preview URLs/);
+assert.equal(resolveRuntimeAccessUrl({ evidenceRefs: [{ runtime_access_url: 'https://example.com/runtime-access' }] }), 'https://example.com/runtime-access');
+assert.equal(resolveRuntimeAccessUrl({ evidenceRefs: { runtime_access: { url: 'https://example.com/single-runtime-access' } } }), 'https://example.com/single-runtime-access');
+assert.equal(resolveRuntimeAccessUrl({ env: { HOMEBOY_RUNTIME_PREVIEW_URL: 'https://example.com/runtime-preview' } }), 'https://example.com/runtime-preview');
+assert.throws(() => resolveRuntimeAccessUrl({ evidenceRefs: [] }), /runtime access evidence refs|HOMEBOY_RUNTIME_PREVIEW_URL/);
 const tempDir = await mkdtemp(path.join(tmpdir(), 'wp-site-generator-shared-libs-'));
 const defaultRuntimeEnv = { ...genericRuntimeEnv };
 assert.equal(runtimeWorkspaceRecipeSchema(defaultRuntimeEnv), 'homeboy/runtime-workspace-recipe/v1', 'runtime workspace recipe schema defaults to the generic Homeboy contract');
 assert.equal(runtimeValidationArtifactEnvelopeSchema(defaultRuntimeEnv), 'homeboy/validation-artifact-envelope/v1', 'validation artifact envelope schema defaults to the generic Homeboy contract');
-assert.deepEqual(runtimePackageProfiles(defaultRuntimeEnv), {
-	'wpsg-agent-runtime-package': {
-		schema: 'homeboy/runtime-profile/v1',
-		id: 'wpsg-agent-runtime-package',
-		runtime_task_ability: runtimePackageAbilityId,
-		runtime_bundle_ability: runtimePackageAbilityId,
-		runtime_workflow_ability: runtimePackageAbilityId,
-		ability_requirements: [runtimePackageAbilityId],
-	},
-}, 'runtime package profiles derive from the generic runtime package API');
 const workspaceIterationEnv = {
 	...genericRuntimeEnv,
 	HOMEBOY_AGENT_RUNTIME_WORKSPACE_COMMAND_ABILITY: runtimeWorkspaceCommandAbility(runtimeFixtureEnv),
@@ -180,7 +169,7 @@ assert.deepEqual(runtimeToolProfileInputs('workspace-publication', configuredRun
 	ability_requirements: JSON.stringify([runtimePackageAbilityId, runtimeWorkspacePublishAbility(runtimeFixtureEnv)]),
 	ability_tools: '[]',
 }, 'provider-compatible abilities can still be supplied externally');
-assert.equal(buildRuntimePreviewUrl({ blueprint: { steps: [{ step: 'login' }] }, env: { HOMEBOY_AGENT_RUNTIME_PREVIEW_URL_BASE: 'https://preview.example.com/' } }), 'https://preview.example.com/#%7B%22steps%22%3A%5B%7B%22step%22%3A%22login%22%7D%5D%7D', 'preview URL shape is supplied by the runtime env contract');
+assert.throws(() => resolveRuntimeAccessUrl({ env: { HOMEBOY_AGENT_RUNTIME_PREVIEW_URL_BASE: 'https://preview.example.com/' } }), /runtime access evidence refs|HOMEBOY_RUNTIME_PREVIEW_URL/, 'WPSG does not construct runtime access URLs from runtime-specific preview bases');
 
 const workflow = buildSingleAiWorkflow({
 	step: buildSingleAiWorkflowStep({
