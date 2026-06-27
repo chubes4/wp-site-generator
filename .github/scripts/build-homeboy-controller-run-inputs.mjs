@@ -2,6 +2,7 @@
 import path from 'node:path';
 
 import { buildHomeboyAgentRuntimeConfig, writeJsonFile } from './lib/ci-runtime-utils.mjs';
+import { validateRuntimeBundleSources } from './lib/runtime-bundle-source-preflight.mjs';
 import { buildSiteGenerationLoopRunContext } from './lib/site-generation-loop-run.mjs';
 import {
 	evaluateComplexityPolicy,
@@ -13,6 +14,7 @@ import { wpsgLoopConfig } from './lib/wpsg-domain-config.mjs';
 
 const root = process.env.GITHUB_WORKSPACE || process.cwd();
 const { runId, loopId, repository, controllerSpecPath, outputPath, policyResultPath, runtimeOverrides, source, dependencyRefs } = buildSiteGenerationLoopRunContext({ env: process.env, root });
+validateRuntimeBundleSources({ root, controllerSpecPath });
 const runtimeConfig = buildHomeboyAgentRuntimeConfig(runtimeOverrides);
 const policyInputs = resolvePolicyInputs({ root });
 const complexityPolicy = loadPolicy(policyInputs.policyPath);
