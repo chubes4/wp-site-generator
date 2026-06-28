@@ -13,7 +13,7 @@
     "task_id": "wpsg-iterator-{{group.key}}",
     "group_key": "{{group.key}}",
     "executor": {
-      "backend": "codebox",
+      "backend": "wp-codebox",
       "selector": "wordpress.codebox-agent-task-executor",
       "model": "{{env.HOMEBOY_AGENT_RUNTIME_MODEL}}",
       "config": {
