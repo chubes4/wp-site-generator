@@ -40,7 +40,7 @@ import { ssiPrBodyMetrics, validationMetricValue } from '../../.github/scripts/l
 const repoRoot = path.resolve(import.meta.dirname, '../..');
 const args = parseArgs(['--repo', 'owner/repo', '--dry-run']);
 const genericRuntimeEnv = {
-	HOMEBOY_AGENT_RUNTIME_TASK_ABILITY: 'runtime-package/run',
+	HOMEBOY_AGENT_RUNTIME_TASK_ABILITY: 'homeboy/run-runtime-package',
 };
 const homeboyRuntimeContractFixture = JSON.parse(await readFile(path.join(repoRoot, 'tests/fixtures/homeboy-runtime-provider-contract.json'), 'utf8'));
 const selectedRuntimeProvider = 'wp-codebox';
@@ -80,6 +80,7 @@ assert.equal(wordpressRuntimeRequireWpLoadPhp(), "require_once '/wordpress/wp-lo
 assert.equal(wordpressRuntimeAbilityId('importWebsiteArtifact'), 'static-site-importer/import-website-artifact');
 assert.throws(() => wordpressRuntimeAbilityId('missing'), /Unknown WordPress runtime ability/);
 assert.equal(runtimePackageAbilityId, genericRuntimeEnv.HOMEBOY_AGENT_RUNTIME_TASK_ABILITY, 'runtime package ability is read from the runtime env contract');
+assert.equal(runtimePackageAbility({}), 'homeboy/run-runtime-package', 'runtime package ability defaults to the Homeboy-neutral contract');
 assert.equal(resolveVisualParityOutputRoot({}), 'visual-parity-artifacts');
 assert.equal(resolveVisualParityOutputRoot({ VISUAL_PARITY_OUTPUT: 'custom-artifacts' }), 'custom-artifacts');
 assert.equal(runtimeWorkspaceRecipeSchema(runtimeFixtureEnv), runtimeFixtureEnv.HOMEBOY_AGENT_RUNTIME_WORKSPACE_RECIPE_SCHEMA);

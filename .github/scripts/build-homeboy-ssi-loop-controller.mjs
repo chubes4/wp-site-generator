@@ -19,7 +19,7 @@ const artifactSchemas = {
 	static_site_publish_gate: 'wp-site-generator/StaticSitePublishGate/v1',
 	finding_packet_set: 'wp-site-generator/FindingPacketSet/v1',
 	finding_group: 'wp-site-generator/FindingGroup/v1',
-	iterator_fanout_batch: 'homeboy-extensions/ArtifactFanoutBatch/v1',
+	iterator_fanout_batch: 'homeboy/agent-task-fanout-aggregate/v1',
 	iterator_upstream_issue: 'github/Issue/v1',
 	iterator_upstream_pull_request: 'github/PullRequest/v1',
 	revalidation_attempt: 'wp-site-generator/RevalidationAttempt/v1',
@@ -41,7 +41,7 @@ const agentBundles = {
 
 const runtimePackageAbilityId = runtimePackageAbility(process.env);
 if (!runtimePackageAbilityId) {
-	throw new Error('HOMEBOY_AGENT_RUNTIME_TASK_ABILITY is required to build the site-generation loop controller.');
+	throw new Error('runtime package ability is required to build the site-generation loop controller.');
 }
 
 const abilityIds = [
