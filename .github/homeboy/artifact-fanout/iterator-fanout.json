@@ -25,7 +25,7 @@
     "instructions": "Route WPSG finding group {{group.key}} to the owning upstream repository and return durable issue or pull request evidence when a change is required.",
     "inputs": {
       "runtime_task": {
-        "ability": "runtime-package/run",
+        "ability": "homeboy/run-runtime-package",
         "kind": "bundle",
         "input": {
           "package": {

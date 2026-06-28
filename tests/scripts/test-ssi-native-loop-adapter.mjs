@@ -6,7 +6,7 @@ import { spawnSync } from 'node:child_process';
 import { runtimePackageAbility } from '../../.github/scripts/lib/ci-runtime-utils.mjs';
 
 const repoRoot = path.resolve(new URL('../..', import.meta.url).pathname);
-const runtimeContractEnv = { HOMEBOY_AGENT_RUNTIME_TASK_ABILITY: 'runtime-package/run' };
+const runtimeContractEnv = { HOMEBOY_AGENT_RUNTIME_TASK_ABILITY: 'homeboy/run-runtime-package' };
 const runtimePackageAbilityId = runtimePackageAbility(runtimeContractEnv);
 const tempDir = await mkdtemp(path.join(tmpdir(), 'wpsg-ssi-native-loop-'));
 const settingsPath = path.join(tempDir, 'settings.json');
@@ -75,6 +75,7 @@ const iteratorFanout = JSON.parse(await readFile(path.join(repoRoot, '.github/ho
 assert.equal(iteratorFanout.schema, 'homeboy-extensions/artifact-fanout-materializer-config/v1', 'iterator workflow declares the Homeboy-consumable artifact fanout config');
 assert.equal(iteratorFanout.output_artifact, 'iterator_fanout_batch', 'iterator fanout emits the controller-visible batch artifact');
 assert.equal(iteratorFanout.task_request_template.inputs.runtime_task.input.package.source, 'bundles/php-transformer-iterator-agent', 'iterator fanout keeps bundle execution in worker tasks');
+assert.equal(iteratorFanout.task_request_template.inputs.runtime_task.ability, 'homeboy/run-runtime-package', 'iterator fanout uses the Homeboy-neutral runtime package ability');
 assert.equal(controller.artifacts.find((artifact) => artifact.artifact_id === 'revalidation_attempt').kind, 'wp-site-generator/RevalidationAttempt/v1', 'controller declares artifact schemas');
 assert.ok(controller.dependencies.some((dependency) => dependency.value === 'chubes4/static-site-importer'), 'controller declares SSI stack dependencies');
 assert.ok(controller.dependencies.some((dependency) => dependency.value === 'Extra-Chill/homeboy-extensions'), 'controller declares upstream Homeboy Extensions owner for runtime workload findings');

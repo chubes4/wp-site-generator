@@ -50,7 +50,7 @@ try {
 	const buildResult = spawnSync(process.execPath, ['.github/scripts/build-homeboy-ssi-loop-controller.mjs', '--output', generatedControllerPath], {
 		cwd: repoRoot,
 		encoding: 'utf8',
-		env: { ...process.env, HOMEBOY_AGENT_RUNTIME_TASK_ABILITY: 'runtime-package/run' },
+		env: { ...process.env, HOMEBOY_AGENT_RUNTIME_TASK_ABILITY: 'homeboy/run-runtime-package' },
 	});
 	assert.equal(buildResult.status, 0, buildResult.stderr || buildResult.stdout);
 
@@ -93,7 +93,9 @@ try {
 			const requiredOutputs = pipeline.steps.flatMap((step) => step.step_config?.completion_assertions?.required_artifact_outputs || []);
 			assert.ok(requiredOutputs.some((output) => output.output_key === artifactId && output.schema === contract.schema && output.artifact === contract.artifact), `${pipelinePath} requires ${artifactId}`);
 			const pipelineText = await readFile(path.join(repoRoot, pipelinePath), 'utf8');
-			assert.match(pipelineText, new RegExp(`typed_artifacts\\.${artifactId}\\s*=`), `${pipelinePath} documents the ${artifactId} typed-artifact envelope`);
+			assert.match(pipelineText, /emit_typed_artifact/, `${pipelinePath} requires typed-artifact tool emission`);
+			assert.match(pipelineText, new RegExp(`output_key=${artifactId}`), `${pipelinePath} documents the ${artifactId} output key`);
+			assert.match(pipelineText, new RegExp(`schema=${contract.schema}`), `${pipelinePath} documents the ${artifactId} schema`);
 		}
 	}
 

@@ -2,6 +2,7 @@ import { wpsgLoopConfig } from './wpsg-domain-config.mjs';
 const defaultRuntimeWorkspaceRecipeSchema = 'homeboy/runtime-workspace-recipe/v1';
 const defaultValidationArtifactEnvelopeSchema = 'homeboy/validation-artifact-envelope/v1';
 const defaultVisualParityOutputRoot = 'visual-parity-artifacts';
+const defaultRuntimePackageAbility = 'homeboy/run-runtime-package';
 
 export const runtimeToolProfiles = Object.freeze({
 	workspaceIteration: Object.freeze({
@@ -48,7 +49,7 @@ export function runtimeToolProfileInputs(profileId, env = process.env) {
 }
 
 export function runtimePackageAbility(env = process.env) {
-	return text(env.HOMEBOY_AGENT_RUNTIME_TASK_ABILITY);
+	return text(env.HOMEBOY_AGENT_RUNTIME_TASK_ABILITY) || defaultRuntimePackageAbility;
 }
 
 export function runtimeBundleExecution({ packageSource, packageSlug, workflowId, input = {}, options = {}, ability = runtimePackageAbility() } = {}) {
@@ -56,7 +57,7 @@ export function runtimeBundleExecution({ packageSource, packageSlug, workflowId,
 		throw new Error('packageSource, packageSlug, and workflowId are required for runtime bundle execution.');
 	}
 	if (!ability) {
-		throw new Error('HOMEBOY_AGENT_RUNTIME_TASK_ABILITY is required for runtime bundle execution.');
+		throw new Error('runtime package ability is required for runtime bundle execution.');
 	}
 
 	return {
