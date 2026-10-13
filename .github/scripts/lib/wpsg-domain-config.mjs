@@ -1,6 +1,5 @@
 export const wpsgLoopConfig = Object.freeze({
 	repository: 'chubes4/wp-site-generator',
-	controllerSpecPath: '.github/homeboy/controllers/static-site-generation-loop.controller.json',
 	complexityPolicyId: 'wpsg-complexity-policy',
 	complexityPolicyPath: '.github/site-generation-complexity-policy.json',
 	defaultWebsiteFlowSlug: 'website-idea-artifact-flow',
@@ -13,15 +12,3 @@ export const wpsgLoopConfig = Object.freeze({
 	}),
 	runtimePackageProfile: 'wpsg-agent-runtime-package',
 });
-
-export function siteGenerationLoopId(runId) {
-	return `wp-site-generator/static-site-generation-loop/${requiredLoopIdSegment(runId)}`;
-}
-
-function requiredLoopIdSegment(value) {
-	const segment = String(value || '').trim().replace(/[^A-Za-z0-9._-]+/g, '-').replace(/^-+|-+$/g, '');
-	if (!segment) {
-		throw new Error('Site generation loop run id is required.');
-	}
-	return segment;
-}

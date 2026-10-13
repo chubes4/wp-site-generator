@@ -1,39 +1,6 @@
-import path from 'node:path';
 import { execFileSync } from 'node:child_process';
 
-import {
-	readHomeboyAgentRuntimeOverrides,
-	requireLocalReplaySeed,
-	resolveReplayRunId,
-} from './ci-runtime-utils.mjs';
-import { siteGenerationLoopId, wpsgLoopConfig } from './wpsg-domain-config.mjs';
-
-export function buildSiteGenerationLoopRunContext({ env = process.env, root = env.GITHUB_WORKSPACE || process.cwd() } = {}) {
-	requireLocalReplaySeed(env);
-
-	const runId = resolveReplayRunId(env);
-	const loopId = buildSiteGenerationLoopId(runId);
-	const repository = env.GITHUB_REPOSITORY || wpsgLoopConfig.repository;
-	const source = resolveImmutableSourceRef({ env, root, repository });
-	const dependencyRefs = resolveDependencyRefs({ env, root });
-	validateRefPolicy({ policy: env.WPSG_REF_POLICY || wpsgLoopConfig.defaultRefPolicy, dependencyRefs, source });
-	const controllerSpecPath = env.HOMEBOY_CONTROLLER_SPEC_PATH || wpsgLoopConfig.controllerSpecPath;
-	const outputPath = env.HOMEBOY_CONTROLLER_RUN_INPUTS_PATH || path.join(root, '.ci', 'site-generation-loop.controller-run-inputs.json');
-	const policyResultPath = env.HOMEBOY_POLICY_RESULT_PATH || outputPath.replace(/\.json$/, '.complexity-policy-result.json');
-	const runtimeOverrides = readHomeboyAgentRuntimeOverrides(env);
-
-	return {
-		runId,
-		loopId,
-		repository,
-		controllerSpecPath,
-		outputPath,
-		policyResultPath,
-		runtimeOverrides,
-		source,
-		dependencyRefs,
-	};
-}
+import { wpsgLoopConfig } from './wpsg-domain-config.mjs';
 
 export function resolveImmutableSourceRef({ env = process.env, root = env.GITHUB_WORKSPACE || process.cwd(), repository = env.GITHUB_REPOSITORY || wpsgLoopConfig.repository } = {}) {
 	const artifactSource = env.SOURCE_ARTIFACT_SOURCE || env.STATIC_SITE_CANDIDATE || env.CONCEPT_PACKET || '';
@@ -69,10 +36,6 @@ export function resolveImmutableSourceRef({ env = process.env, root = env.GITHUB
 	};
 }
 
-export function resolveDependencyRefs({ env = process.env, root = env.GITHUB_WORKSPACE || process.cwd() } = {}) {
-	return {};
-}
-
 export function validateRefPolicy({ policy = wpsgLoopConfig.defaultRefPolicy, dependencyRefs = {}, source = null } = {}) {
 	if (policy === wpsgLoopConfig.defaultRefPolicy) {
 		return;
@@ -90,21 +53,6 @@ export function validateRefPolicy({ policy = wpsgLoopConfig.defaultRefPolicy, de
 	if (source && !isImmutableSourceRef(source)) {
 		throw new Error('WPSG production ref policy requires SOURCE_HEAD_SHA, SOURCE_TAG, or SOURCE_ARTIFACT_SOURCE for source provenance.');
 	}
-}
-
-function dependencyRef({ id, repository, inputRef, checkoutPath }) {
-	const sha = gitRev(checkoutPath);
-	if (!sha && !inputRef) {
-		return null;
-	}
-	return compactObject({
-		id,
-		repository,
-		input_ref: inputRef,
-		sha,
-		ref_type: sha ? dependencyRefType(inputRef) : 'mutable-ref-unresolved',
-		provenance: sha ? 'checkout-head' : 'workflow-input-ref',
-	});
 }
 
 export function isImmutableDependencyRef(dependency = {}) {
@@ -128,16 +76,6 @@ export function isImmutableSourceRef(source = {}) {
 	return source.ref_type === 'commit' && source.provenance === 'source-head-sha' && isFullSha(source.sha);
 }
 
-function dependencyRefType(inputRef) {
-	if (isFullSha(inputRef)) {
-		return 'commit';
-	}
-	if (isPinnedTagRef(inputRef)) {
-		return 'tag';
-	}
-	return 'branch';
-}
-
 function gitRev(cwd) {
 	try {
 		return execFileSync('git', ['rev-parse', 'HEAD'], { cwd, encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'] }).trim();
@@ -152,20 +90,4 @@ function isFullSha(value) {
 
 function isPinnedTagRef(value) {
 	return /^refs\/tags\/.+/.test(String(value || '')) || /^v?\d+\.\d+\.\d+(?:[-+][0-9A-Za-z.-]+)?$/.test(String(value || ''));
-}
-
-function compactObject(object) {
-	return Object.fromEntries(Object.entries(object).filter(([, value]) => {
-		if (!value) {
-			return false;
-		}
-		if (typeof value === 'object' && !Array.isArray(value)) {
-			return Object.keys(value).length > 0;
-		}
-		return true;
-	}));
-}
-
-export function buildSiteGenerationLoopId(runId) {
-	return siteGenerationLoopId(runId);
 }

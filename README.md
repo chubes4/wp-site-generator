@@ -2,9 +2,9 @@
 
 A factory for **WordPress static site implementations**, generated and validated through lab-native Homeboy loops. Sites can be commerce-shaped (WooCommerce storefronts) or content-shaped (blogs, local business sites, portfolios, professional services, nonprofits, etc.). Commerce is **one supported profile**, not the identity of the repo.
 
-The repo knows about WordPress. The generation agents inside it do not — they describe real-world businesses, websites, designs, and static HTML, and never mention WordPress, themes, blocks, or import tooling. The WordPress-aware lane lives in the Homeboy controller spec, the Homeboy/Static Site Importer integration, and the transformer iterator.
+The repo knows about WordPress. The generation agents inside it do not — they describe real-world businesses, websites, designs, and static HTML, and never mention WordPress, themes, blocks, or import tooling. The WordPress-aware lane lives in the Homeboy/Static Site Importer integration and the transformer iterator.
 
-The lab-native loop is represented by `.github/homeboy/controllers/static-site-generation-loop.controller.json`: concept packets, design packets, static-site candidates, import validation, static validation, visual parity, finding packets, revalidation attempts, and reviewer gate outcomes are controller runtime lineage entities. Generated-site PRs and upstream issue/PR URLs are publication evidence emitted after artifact gates, not transport required before validation or review.
+The Homeboy agent-task controller pipeline that used to drive this loop has been removed, because Homeboy deleted `agent-task controller` and `agent-task loop`. Homeboy now runs pre-defined multi-step and repeating work as `homeboy/workflow/v1` definitions (`homeboy workflow run`). A WPSG workflow definition has not been written yet. Until one is, generation and validation run as individual Homeboy runtime workloads, Cooks, and fanout batches.
 
 Concurrency is the strategy. The system is designed to produce many credible starting points fast, not one perfect site slowly.
 
@@ -84,7 +84,7 @@ Every layer is intentionally generic on its own:
 - **The selected WordPress runtime** doesn't know about Homeboy.
 - **The iterator** doesn't know about generated-site strategy; it consumes validation findings and routes upstream transformer gaps.
 
-This repo is the only place all of them meet. The Homeboy controller spec is the shared contract for Lab execution and declares the enforceable artifact chain from concept packet through reviewer gate.
+This repo is the only place all of them meet.
 
 ---
 
@@ -93,7 +93,7 @@ This repo is the only place all of them meet. The Homeboy controller spec is the
 This repository is the orchestration and generated-site source repo. The working system spans these repos:
 
 - [`chubes4/wp-site-generator`](https://github.com/chubes4/wp-site-generator) — concept issues, runtime bundles, generated static-site candidates, validation declarations, and iterator fanout inputs.
-- [`Extra-Chill/homeboy`](https://github.com/Extra-Chill/homeboy) — deterministic lab loop controller, durable agent-task state, fanout batches, and evidence/artifact lifecycle.
+- [`Extra-Chill/homeboy`](https://github.com/Extra-Chill/homeboy) — deterministic workflows (`homeboy workflow`), durable agent-task state, fanout batches, and evidence/artifact lifecycle.
 - [`Extra-Chill/homeboy-extensions`](https://github.com/Extra-Chill/homeboy-extensions) — reusable WordPress runtime workloads, runtime access evidence, validation reporting, and iterator plumbing.
 - [`chubes4/static-site-importer`](https://github.com/chubes4/static-site-importer) — WordPress plugin that imports each generated static site into a block theme.
 - [`Automattic/blocks-engine`](https://github.com/Automattic/blocks-engine) — tagged PHP transform contract used by Static Site Importer for HTML-to-block conversion, block serialization, and site-artifact diagnostics.
@@ -172,18 +172,17 @@ Idea flows publish issues with `status:idea-ready` plus the relevant `site-kind:
 
 ## Validation Lane
 
-Static-site validation is driven by `.github/homeboy/controllers/static-site-generation-loop.controller.json` with Homeboy-owned WordPress runtime execution. WPSG supplies backend-neutral runtime settings; Homeboy Extensions selects and normalizes the concrete adapter.
+Static-site validation runs with Homeboy-owned WordPress runtime execution. WPSG supplies backend-neutral runtime settings; Homeboy Extensions selects and normalizes the concrete adapter.
 
 The validation loop:
 
-1. Materializes a controller run spec with `agent-task controller run-from-spec`.
-2. Installs Static Site Importer plus the shared block conversion stack via `wordpress_runtime_blueprint`; WooCommerce is added only for the commerce/WooCommerce lane.
-3. Runs the Static Site Importer `static-site-importer/import-website-artifact` ability with `fail_on_quality` enabled against the generated website artifact.
-4. Captures a Playwright visual parity comparison between the source static HTML and imported WordPress result.
-5. Reads the resulting `import-report.json` and emits importer metrics plus durable artifact evidence.
-6. Builds `finding-packets.json` for actionable importer, block, and visual parity failures.
-7. Emits typed runtime access evidence, including reviewer-facing preview/access URLs supplied by the selected runtime.
-8. Submits durable Homeboy fanout batches for the PHP transformer iterator when actionable finding packets exist.
+1. Installs Static Site Importer plus the shared block conversion stack via `wordpress_runtime_blueprint`; WooCommerce is added only for the commerce/WooCommerce lane.
+2. Runs the Static Site Importer `static-site-importer/import-website-artifact` ability with `fail_on_quality` enabled against the generated website artifact.
+3. Captures a Playwright visual parity comparison between the source static HTML and imported WordPress result.
+4. Reads the resulting `import-report.json` and emits importer metrics plus durable artifact evidence.
+5. Builds `finding-packets.json` for actionable importer, block, and visual parity failures.
+6. Emits typed runtime access evidence, including reviewer-facing preview/access URLs supplied by the selected runtime.
+7. Submits durable Homeboy fanout batches for the PHP transformer iterator when actionable finding packets exist.
 
 This whole loop runs **without a hosted WordPress site**. The selected Homeboy runtime supplies the WordPress environment, access URLs, artifacts, provider credentials, and execution backend through generic contracts.
 
@@ -214,7 +213,7 @@ wp-site-generator/
   README.md
   homeboy.json                       Homeboy config: WordPress extension + base wordpress_runtime_blueprint
   .github/
-    homeboy/                         Homeboy controller specs, validation snippets, and typed artifact contracts
+    homeboy/                         Homeboy runtime descriptors, validation snippets, and fanout configs
   bundles/
     store-idea-agent/                runtime bundle: commerce concept generation
     website-idea-agent/              runtime bundle: non-commerce concept generation
@@ -252,7 +251,7 @@ That's the loop. Generate. Design. Build. Validate. Review. Decide. Repeat.
 
 ## Operating The Loop
 
-The primary loop is a Homeboy lab controller run. WPSG declares `.github/homeboy/controllers/static-site-generation-loop.controller.json` and the lab runner selects that loop spec for `homeboy agent-task controller run-from-spec`, which materializes policy inputs, initializes durable state, and executes bounded controller actions. Homeboy owns controller state, action scheduling, event application, durable fanout batches, dependency materialization, runtime substrate, dispatch/provider selection, and evidence capture.
+Homeboy owns execution: workflow and Cook state, durable fanout batches, dependency materialization, runtime substrate, dispatch/provider selection, and evidence capture. WPSG supplies domain inputs.
 
 Required credentials depend on the selected Homeboy runtime and AI provider. Configure provider credentials in the Homeboy/runtime contract rather than in WPSG.
 
@@ -261,19 +260,11 @@ Required credentials depend on the selected Homeboy runtime and AI provider. Con
 
 Homeboy lab runners select a `runtime_workload_profile` such as `workspace-iteration` or `workspace-publication`, render WPSG-owned profile/tool requirements through `.github/scripts/render-wpsg-runtime-domain-inputs.mjs`, and delegate canonical runtime input rendering to Homeboy Extensions. Runtime execution descriptors are rendered through `.github/scripts/render-runtime-bundle-execution.mjs` so WPSG passes domain inputs instead of embedding provider internals.
 
-For deterministic contract validation, run `node tests/scripts/test-wpsg-loop-typed-artifact-contracts.mjs`. It validates the WPSG-owned loop spec, bundle completion assertions, and fixture envelopes for `concept_packet`, `design_packet`, and `static_site_candidate` without launching model providers.
-
-For production-loop proof, run `.github/scripts/validate-headless-site-generation-loop.mjs`. It drives `homeboy agent-task controller run-from-spec`, validates the returned materialization proof, then asserts WPSG artifact evidence with `.github/scripts/assert-site-generation-loop-proof.mjs`. The reviewer-facing success evidence is a typed `runtime_access` envelope for the generated WordPress result plus durable typed artifacts for `concept_packet`, `design_packet`, `static_site_candidate`, import validation, static validation, visual parity, finding packets, revalidation, and reviewer gate output. Failure evidence should include the controller result, materialization proof, artifact root listing, and the exact missing typed artifact message such as `runtime task did not produce required typed artifacts: concept_packet`. The validator fails closed when required runtime, fanout, typed runtime access, import, visual, artifact URL evidence, or the structured `--output` JSON is absent. Iterator issue/PR artifacts and publication PR artifacts are optional for a clean candidate-only run, but are validated when emitted. Fixture proof modes are not supported; production proof rejects fixture-only artifacts or placeholder `example.*` URLs.
-
-For the generic N-revolution headless production path, run the checked-in workload spec `.github/homeboy/headless-production-loop.json` through a Homeboy lab runner. The spec is runtime-neutral: runtime id, AI provider, model, provider plugin mounts, credentials, wall-clock limits, and cancellation are Homeboy/runtime concerns, not WPSG workflow state.
-
 The PHP transformer iterator supplies WPSG-owned finding grouping and fanout packet input, then calls Homeboy's public `homeboy agent-task fanout plan`, `submit-batch`, `status`, and `artifacts` primitives for durable fanout lifecycle evidence.
 
 Useful Homeboy entry points:
 
-1. **Controller loop spec** — `.github/homeboy/controllers/static-site-generation-loop.controller.json` describes concept packets, design packets, static candidates, validation, publication gates, iterator/revalidation, and reviewer evidence.
-2. **Headless loop spec** — `.github/homeboy/headless-production-loop.json` describes the generic N-revolution production loop without choosing a runtime/provider.
-3. **Primitive gap list** — `docs/homeboy-lab-primitive-gaps.md` records the Homeboy/Homeboy Extensions surfaces required before WPSG can run fully without repo-local orchestration.
+1. **Primitive gap list** — `docs/homeboy-lab-primitive-gaps.md` records the Homeboy/Homeboy Extensions surfaces required before WPSG can run fully without repo-local orchestration.
 
 Local Studio remains useful for bundle development or manual runtime experiments. A local host needs:
 
